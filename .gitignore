@@ -1,0 +1,10 @@
+.nyc_output/
+.rollup.cache/
+.tsbuildinfo
+*.local
+local/
+coverage/
+dist/
+esm/
+node_modules/
+context/

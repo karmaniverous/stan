@@ -19,6 +19,7 @@
     // Existing settings retained to satisfy [req-3] and [req-4].
     "allowJs": true,
     "checkJs": true,
+    "declaration": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,

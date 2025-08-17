@@ -16,7 +16,7 @@ describe('script execution', () => {
     const config: ContextConfig = {
       outputPath: 'out',
       scripts: {
-        hello: `node -e "process.stdout.write('hi')"`,
+        hello: 'echo hi', // portable across sh/cmd
       },
     };
 

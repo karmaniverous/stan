@@ -4,8 +4,6 @@
  * - Auto-discover CLI entries in src/cli/* (now includes "ctx"). [req-cli-discovery]
  * - Keep imports sorted and remove unused artifacts per ESLint config. [req-lint]
  */
-import { createRequire } from 'node:module';
-
 import aliasPlugin, { type Alias } from '@rollup/plugin-alias';
 import commonjsPlugin from '@rollup/plugin-commonjs';
 import jsonPlugin from '@rollup/plugin-json';
@@ -16,8 +14,6 @@ import fs from 'fs-extra';
 import type { InputOptions, OutputOptions, RollupOptions } from 'rollup';
 import dtsPlugin from 'rollup-plugin-dts';
 
-const require = createRequire(import.meta.url);
-const pkg = require('./package.json') as Record<string, unknown>;
 
 const outputPath = 'dist';
 
@@ -28,8 +24,6 @@ const commonPlugins = [alias, jsonPlugin(), nodeResolve({ preferBuiltins: true }
 
 const typescript = typescriptPlugin({
   tsconfig: './tsconfig.json',
-  declaration: true,
-  declarationDir: outputPath,
 });
 
 const commonInputOptions: InputOptions = {

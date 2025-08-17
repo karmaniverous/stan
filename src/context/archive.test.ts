@@ -12,7 +12,7 @@ vi.mock('tar', async () => {
   return {
     create: async (opts: { file: string }, files: string[]) => {
       createdFiles.splice(0, createdFiles.length, ...files);
-      await fs.writeFile(opts.file, 'TAR'); // create a tiny placeholder file
+      await fs.writeFile(opts.file, 'TAR'); // tiny placeholder file
     },
   };
 });
@@ -28,17 +28,15 @@ describe('createArchive', () => {
     await writeFile(path.join(cwd, 'context/ignore-me.txt'), 'X');
 
     const fakeList = ['a.txt', 'context/ignore-me.txt', 'b.js'];
+
     const { archivePath, fileCount } = await createArchive({
       cwd,
       outputPath: 'context',
-      listFilesFn: async () => fakeList, // injection seam
+      listFilesFn: () => Promise.resolve(fakeList), // not `async` (avoids require-await)
     });
 
-    // Check tar.create received the right set (no file under context/).
     expect(createdFiles.sort()).toEqual(['a.txt', 'b.js']);
     expect(fileCount).toBe(2);
-
-    // Check file path.
     expect(archivePath).toBe(path.join(cwd, 'context/archive.tar'));
   });
 });

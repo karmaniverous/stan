@@ -73,7 +73,7 @@ export type CreateArchiveOptions = {
 export const createArchive = async ({
   cwd = process.cwd(),
   outputPath,
-  listFilesFn = gitListFiles, // [req-test-injection]
+  listFilesFn = gitListFiles,
 }: CreateArchiveOptions): Promise<{ archivePath: string; fileCount: number }> => {
   const outAbs = await ensureOutputDir(cwd, outputPath);
 
@@ -95,7 +95,6 @@ export const createArchive = async ({
 
   await rename(tmpAbs, archiveAbs);
 
-   
   console.log(
     `context: wrote ${path.relative(cwd, archiveAbs)} (${String(filesRel.length)} files)`,
   );

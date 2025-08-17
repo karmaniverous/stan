@@ -1,6 +1,6 @@
 {
   "entry": ["src/**/index.ts"],
-  "ignoreDependencies": ["auto-changelog"],
+  "ignoreDependencies": ["@types/eslint__js","@types/eslint-config-prettier","auto-changelog"],
   "project": ["*/**", "!docs/**"],
   "rules": {
     "exports": "off",

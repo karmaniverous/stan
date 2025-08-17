@@ -4,15 +4,15 @@ import path from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-// Mock tar to avoid producing a real archive; capture args.
-const createdFiles: string[] = [];
+// Capture which files were passed to tar.create()
+let createdFiles: string[] = [];
 
 vi.mock('tar', async () => {
   const fs = await import('node:fs/promises');
   return {
     create: async (opts: { file: string }, files: string[]) => {
-      createdFiles.splice(0, createdFiles.length, ...files);
-      await fs.writeFile(opts.file, 'TAR'); // tiny placeholder file
+      createdFiles = [...files];
+      await fs.writeFile(opts.file, 'TAR');
     },
   };
 });
@@ -32,7 +32,8 @@ describe('createArchive', () => {
     const { archivePath, fileCount } = await createArchive({
       cwd,
       outputPath: 'context',
-      listFilesFn: () => Promise.resolve(fakeList), // not `async` (avoids require-await)
+      // not async -> avoids require-await lint
+      listFilesFn: () => Promise.resolve(fakeList),
     });
 
     expect(createdFiles.sort()).toEqual(['a.txt', 'b.js']);

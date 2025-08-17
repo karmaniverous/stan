@@ -1,8 +1,8 @@
 /**
  * REQUIREMENTS
- * - Run all artifacts concurrently when no key is provided (archive + every script). [req-concurrent-all]
+ * - If no key is provided: run archive + every configured script concurrently. [req-concurrent-all]
  * - For each key under `scripts`, run the command and write output to `<outputPath>/<key>.txt`. [req-run-scripts]
- * - Use the same agent that runs NPM scripts (i.e., the system shell). [req-use-shell]
+ * - Use the same agent that runs NPM scripts (system shell). [req-use-shell]
  * - `ctx [key]` should generate only that file (including `archive`). [req-key-only]
  * - Always create the output directory if needed. [req-output-dir]
  * - Print a console message when each task begins and ends (with duration). [req-logging]
@@ -14,7 +14,14 @@ import path from 'node:path';
 import { createArchive } from './archive';
 import { ensureOutputDir, type ContextConfig } from './config';
 
-/** Execute a shell command and return combined stdout+stderr. [req-use-shell] */
+/**
+ * Execute a shell command using the platform's default shell.
+ *
+ * - Windows: `cmd /d /s /c "<cmd> 2>&1"`
+ * - POSIX: `sh -c "<cmd> 2>&1"`
+ *
+ * Returns the combined stdout+stderr string and exit code.
+ */
 export const runShell = async (
   command: string,
   cwd: string,
@@ -38,7 +45,9 @@ export const runShell = async (
     });
   });
 
-/** Internal: run one script key, write its output file, and log start/end. */
+/**
+ * Run one configured script key, write its output file, and log start/end.
+ */
 const runOneScript = async (
   k: string,
   cmd: string,
@@ -47,21 +56,23 @@ const runOneScript = async (
 ): Promise<string> => {
   const dest = path.join(outAbs, `${k}.txt`);
   const started = Date.now();
-  console.log(`ctx: start "${k}" (${cmd})`); // [req-logging]
+  console.log(`ctx: start "${k}" (${cmd})`);
 
   const { output } = await runShell(cmd, cwd);
   await writeFile(dest, output, 'utf8');
 
   const elapsed = Date.now() - started;
-  console.log(`ctx: done "${k}" in ${String(elapsed)}ms -> ${path.relative(cwd, dest)}`); // [req-logging]
+  console.log(`ctx: done "${k}" in ${String(elapsed)}ms -> ${path.relative(cwd, dest)}`);
 
   return dest;
 };
 
-/** Internal: run archive task, and log start/end. */
-const runArchive = async (cwd: string, outputPath: string, outAbs: string): Promise<string> => {
+/**
+ * Create the archive and log start/end.
+ */
+const runArchive = async (cwd: string, outputPath: string): Promise<string> => {
   const started = Date.now();
-  console.log('ctx: start "archive"'); // [req-logging]
+  console.log('ctx: start "archive"');
 
   const { archivePath, fileCount } = await createArchive({ cwd, outputPath });
 
@@ -70,12 +81,17 @@ const runArchive = async (cwd: string, outputPath: string, outAbs: string): Prom
     `ctx: done "archive" in ${String(elapsed)}ms -> ${path.relative(cwd, archivePath)} (${String(
       fileCount,
     )} files)`,
-  ); // [req-logging]
+  );
 
   return archivePath;
 };
 
-/** Generate outputs for a supplied config (used by CLI and tests). */
+/**
+ * Generate outputs for a supplied config.
+ *
+ * - Single key: run that script (or archive) only.
+ * - No key: run archive + all scripts concurrently; return paths that completed successfully.
+ */
 export const generateWithConfig = async (
   config: ContextConfig,
   {
@@ -88,10 +104,9 @@ export const generateWithConfig = async (
 ): Promise<string[]> => {
   const outAbs = await ensureOutputDir(cwd, config.outputPath);
 
-  // Single-key mode: just one task (script or archive). [req-key-only]
   if (key) {
     if (key === 'archive') {
-      const a = await runArchive(cwd, config.outputPath, outAbs);
+      const a = await runArchive(cwd, config.outputPath);
       return [a];
     }
     const cmd = config.scripts[key];
@@ -106,11 +121,11 @@ export const generateWithConfig = async (
     return [f];
   }
 
-  // No key: run archive + *all* scripts concurrently. [req-concurrent-all]
+  // Run archive + all scripts concurrently
   const tasks: Array<Promise<string>> = [];
 
   tasks.push(
-    runArchive(cwd, config.outputPath, outAbs).catch((e) => {
+    runArchive(cwd, config.outputPath).catch((e: unknown) => {
       console.error(`ctx: failed "archive": ${e instanceof Error ? e.message : String(e)}`);
       process.exitCode = 1;
       throw e;
@@ -119,7 +134,7 @@ export const generateWithConfig = async (
 
   for (const [k, cmd] of Object.entries(config.scripts)) {
     tasks.push(
-      runOneScript(k, cmd, cwd, outAbs).catch((e) => {
+      runOneScript(k, cmd, cwd, outAbs).catch((e: unknown) => {
         console.error(`ctx: failed "${k}": ${e instanceof Error ? e.message : String(e)}`);
         process.exitCode = 1;
         throw e;
@@ -127,13 +142,10 @@ export const generateWithConfig = async (
     );
   }
 
-  // Wait for all tasks to settle; return only fulfilled paths. [req-concurrent-all]
   const settled = await Promise.allSettled(tasks);
   const created: string[] = [];
   for (const s of settled) {
-    if (s.status === 'fulfilled') {
-      created.push(s.value);
-    }
+    if (s.status === 'fulfilled') created.push(s.value);
   }
   return created;
 };

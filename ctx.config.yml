@@ -1,0 +1,10 @@
+outputPath: ctx
+scripts:
+  build: npm run build
+  context: npm run context
+  docs: npm run docs
+  knip: npm run knip
+  lint: npm run lint
+  release: npm run release
+  test: npm run test
+  typecheck: npm run typecheck

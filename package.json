@@ -10,7 +10,7 @@
     "commander": "^14.0.0",
     "yaml": "^2.8.1"
   },
-  "description": "A feature-rich NPM package template for TypeScript projects.",
+  "description": "Generate a snapshot of your project state for AI-assisted development.",
   "devDependencies": {
     "@commander-js/extra-typings": "^14.0.0",
     "@dotenvx/dotenvx": "^1.48.4",
@@ -140,5 +140,5 @@
   },
   "type": "module",
   "types": "dist/index.d.ts",
-  "version": "0.6.13"
+  "version": "0.0.0"
 }

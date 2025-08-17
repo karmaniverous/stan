@@ -95,9 +95,5 @@ export const createArchive = async ({
 
   await rename(tmpAbs, archiveAbs);
 
-  console.log(
-    `context: wrote ${path.relative(cwd, archiveAbs)} (${String(filesRel.length)} files)`,
-  );
-
   return { archivePath: archiveAbs, fileCount: filesRel.length };
 };

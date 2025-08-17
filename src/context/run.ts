@@ -2,8 +2,8 @@
  * REQUIREMENTS
  * - For each key under `scripts`, run the command and write output to `<outputPath>/<key>.txt`. [req-run-scripts]
  * - Use the same agent that runs NPM scripts (i.e., the system shell). [req-use-shell]
- * - `context [key]` should generate only that file (including `archive`). [req-key-only]
- * - `context` with no key should generate all files. [req-generate-all]
+ * - `ctx [key]` should generate only that file (including `archive`). [req-key-only]
+ * - `ctx` with no key should generate all files. [req-generate-all]
  * - Always create the output directory if needed. [req-output-dir]
  */
 import { spawn } from 'node:child_process';
@@ -11,7 +11,7 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { createArchive } from './archive';
-import { ensureOutputDir, type ContextConfig } from './config';
+import { type ContextConfig,ensureOutputDir } from './config';
 
 /** Execute a shell command and return combined stdout+stderr. [req-use-shell] */
 export const runShell = async (

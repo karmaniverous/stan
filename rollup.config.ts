@@ -29,7 +29,7 @@ const commonPlugins = [alias, jsonPlugin(), nodeResolve({ preferBuiltins: true }
 const typescript = typescriptPlugin({
   tsconfig: './tsconfig.json',
   declaration: true,
-  declarationDir: `${outputPath}`,
+  declarationDir: outputPath,
 });
 
 const commonInputOptions: InputOptions = {

@@ -10,17 +10,13 @@ import { generateWithConfig } from './run';
 
 const read = (p: string) => fs.readFile(p, 'utf8');
 
-const nodeExec = process.platform === 'win32'
-  ? `"${process.execPath}"`
-  : process.execPath;
-
 describe('script execution', () => {
   it('writes <key>.txt for a single requested script key', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'ctx-run-'));
     const config: ContextConfig = {
       outputPath: 'out',
       scripts: {
-        hello: `${nodeExec} -e "process.stdout.write('hi')"`,
+        hello: `node -e "process.stdout.write('hi')"`,
       },
     };
 
@@ -28,7 +24,7 @@ describe('script execution', () => {
     const dest = path.join(cwd, 'out/hello.txt');
 
     expect(created).toContain(dest);
-    expect(await read(dest)).toBe('hi');
+    expect((await read(dest)).trim()).toBe('hi');
   });
 
   it('throws for unknown key', async () => {

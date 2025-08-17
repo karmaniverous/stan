@@ -37,8 +37,8 @@ describe('config loading', () => {
     const yml = [
       'outputPath: context',
       'scripts:',
-      "  test: npm run test",
-      "  typecheck: npm run typecheck",
+      '  test: npm run test',
+      '  typecheck: npm run typecheck',
     ].join('\n');
     await write(path.join(cwd, 'context.config.yml'), yml);
 
@@ -49,7 +49,7 @@ describe('config loading', () => {
 
   it('rejects "archive" key in scripts', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'ctx-bad-'));
-    const yml = ['outputPath: context', 'scripts:', "  archive: nope"].join('\n');
+    const yml = ['outputPath: context', 'scripts:', '  archive: nope'].join('\n');
     await write(path.join(cwd, 'context.config.yml'), yml);
 
     await expect(loadConfig(cwd)).rejects.toThrow(/archive.*not allowed/i);

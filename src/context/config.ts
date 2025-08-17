@@ -1,10 +1,9 @@
 /**
  * REQUIREMENTS
- * - Load configuration for the `context` CLI from either `context.config.json` or
- *   `context.config.yml|yaml` at the repository root. [req-config-load]
- * - Validate shape: \{ outputPath: string, scripts: Record<string,string> \}. [req-validate]
+ * - Load configuration from `context.config.json` or `context.config.yml|yaml` at repo root. [req-config-load]
+ * - Validate shape: `{ outputPath: string, scripts: Record<string,string> }`. [req-validate]
  * - Disallow `archive` as a key under `scripts`. [req-no-archive-in-scripts]
- * - Expose helpers to ensure the output directory exists. [req-output-dir]
+ * - Ensure the output directory exists. [req-output-dir]
  */
 import { existsSync } from 'node:fs';
 import { access, mkdir, readFile } from 'node:fs/promises';
@@ -17,7 +16,7 @@ export type ScriptMap = Record<string, string>;
 export type ContextConfig = {
   /** Destination directory for generated files (relative to repo root). */
   outputPath: string;
-  /** Map of script keys to shell commands (e.g., { test: "npm run test" }). */
+  /** Map of script keys to shell commands (e.g., `{ test: "npm run test" }`). */
   scripts: ScriptMap;
 };
 
@@ -43,14 +42,12 @@ export const findConfigPath = async (cwd: string): Promise<string> => {
   );
 };
 
-/** Parse the config file and validate according to requirements. */
+/** Parse and validate config. */
 export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
   const configPath = await findConfigPath(cwd);
   const raw = await readFile(configPath, 'utf8');
 
-  const parsed: unknown = configPath.endsWith('.json')
-    ? JSON.parse(raw) // returns `unknown` here to avoid `any`
-    : YAML.parse(raw);
+  const parsed: unknown = configPath.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
 
   if (
     typeof parsed !== 'object' ||
@@ -63,10 +60,7 @@ export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
     );
   }
 
-  const { outputPath, scripts } = parsed as {
-    outputPath: unknown;
-    scripts: unknown;
-  };
+  const { outputPath, scripts } = parsed as { outputPath: unknown; scripts: unknown };
 
   if (typeof outputPath !== 'string' || outputPath.trim().length === 0) {
     throw new Error('context: `outputPath` must be a non-empty string.');

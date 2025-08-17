@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
  * REQUIREMENTS
- * - Implement a `context` CLI using Commander. [req-cli]
- * - `context` with no args generates: `archive.tar` + all configured script outputs. [req-generate-all]
- * - `context [key]` generates only the specified output; `archive` is allowed. [req-key-only]
+ * - Implement a `ctx` CLI using Commander. [req-cli]
+ * - `ctx` with no args generates: `archive.tar` + all configured script outputs. [req-generate-all]
+ * - `ctx [key]` generates only the specified output; `archive` is allowed. [req-key-only]
  * - The tool must create the output directory automatically. [req-output-dir]
  */
 import { Command } from '@commander-js/extra-typings';
@@ -13,7 +13,7 @@ import { loadConfig } from '../../context/config';
 import { generateWithConfig } from '../../context/run';
 
 const cli = new Command()
-  .name('context')
+  .name('ctx')
   .description('Generate a complete snapshot of your project state for AI-assisted development.')
   .argument('[key]', 'Generate only this file (script key or "archive").')
   .action(async (key: string | undefined) => {
@@ -30,6 +30,7 @@ const cli = new Command()
         await generateWithConfig(config, { cwd });
       }
     } catch (e) {
+       
       console.error(e instanceof Error ? e.message : String(e));
       process.exitCode = 1;
     }

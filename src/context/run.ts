@@ -12,7 +12,7 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { createArchive } from './archive';
-import { ensureOutputDir, type ContextConfig } from './config';
+import { type ContextConfig,ensureOutputDir } from './config';
 
 /**
  * Execute a shell command using the platform's default shell.

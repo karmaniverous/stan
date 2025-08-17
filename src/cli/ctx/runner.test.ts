@@ -1,8 +1,8 @@
-import path from 'node:path';
 import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 import { Command } from '@commander-js/extra-typings';
-import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, describe, expect, it, type Mock,vi } from 'vitest';
 
 import { runCtx } from './runner';
 

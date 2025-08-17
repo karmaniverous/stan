@@ -6,7 +6,7 @@
  *   - With a key: run only that item; `archive` is allowed. [req-key-only]
  * - Keep logs, shell execution, and error semantics unchanged. [req-stability]
  */
-import { Command } from '@commander-js/extra-typings';
+import type { Command } from '@commander-js/extra-typings';
 
 import { createArchive } from '../../context/archive';
 import { findConfigPathSync, loadConfig } from '../../context/config';

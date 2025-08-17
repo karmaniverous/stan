@@ -13,11 +13,11 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createInterface } from 'node:readline/promises';
 
-import YAML from 'yaml';
 import type { Command } from '@commander-js/extra-typings';
+import YAML from 'yaml';
 
-import { ensureOutputDir, findConfigPathSync } from '../../context/config';
 import type { ContextConfig, ScriptMap } from '../../context/config';
+import { ensureOutputDir, findConfigPathSync } from '../../context/config';
 
 const TOKEN = /^\w+/;
 
@@ -145,7 +145,7 @@ export const performInit = async <
           const a = await i.question(q);
           return /^y(es)?$/i.test(a.trim());
         },
-        close: () => i.close(),
+        close: () => { i.close(); },
       };
       return wrapper;
     })());

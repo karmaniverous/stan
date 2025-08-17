@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+/**
+ * REQUIREMENTS (applies to this file)
+ * - Implement a `context` CLI using Commander. [req-cli]
+ * - `context` with no args generates: `archive.tar` + all configured script outputs. [req-generate-all]
+ * - `context [key]` generates only the specified output; `archive` is allowed. [req-key-only]
+ * - The tool must create the output directory automatically. [req-output-dir]
+ */
+import { Command } from '@commander-js/extra-typings';
+
+import { createArchive } from '../../context/archive';
+import { loadConfig } from '../../context/config';
+import { generateWithConfig } from '../../context/run';
+
+const cli = new Command()
+  .name('context')
+  .description('Generate a complete snapshot of your project state for AI-assisted development.')
+  .argument('[key]', 'Generate only this file (script key or "archive").')
+  .action(async (key: string | undefined) => {
+    try {
+      const cwd = process.cwd();
+      const config = await loadConfig(cwd);
+      if (key) {
+        if (key === 'archive') {
+          await createArchive({ cwd, outputPath: config.outputPath });
+        } else {
+          await generateWithConfig(config, { cwd, key });
+        }
+      } else {
+        await generateWithConfig(config, { cwd });
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e instanceof Error ? e.message : String(e));
+      process.exitCode = 1;
+    }
+  });
+
+cli.parse();

@@ -2,6 +2,8 @@
  * This is the main entry point for the library.
  *
  * @packageDocumentation
+ *
+ * REQUIREMENTS (applies to this file)
+ * - Expose the `context` programmatic API for external consumers. [req-export-api]
  */
-
-export { foo, type FooTarget } from './foo';
+export * from './context';

@@ -1,0 +1,67 @@
+
+> @karmaniverous/project-context@0.0.0 test
+> vitest --run --coverage
+
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Code/karmaniverous/project-context[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+Usage: ctx [options]
+
+Options:
+  -h, --help  display help for command
+[90mstdout[2m | src/cli/ctx/init.test.ts[2m > [22m[2minit helpers[2m > [22m[2mperformInit --force writes ctx.config.yml with outputPath=ctx, adds to .gitignore
+[22m[39mctx: wrote ctx.config.yml
+
+Usage: ctx [options]
+
+Options:
+  -h, --help  display help for command
+[90mstdout[2m | src/cli/ctx/init.test.ts[2m > [22m[2minit helpers[2m > [22m[2minteractive flow closes the readline IO so the process can exit
+[22m[39mctx: wrote ctx.config.json
+
+ [32m✓[39m src/context/archive.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 92[2mms[22m[39m
+[90mstdout[2m | src/context/run.test.ts[2m > [22m[2mscript execution[2m > [22m[2mwrites <key>.txt for a single requested script key
+[22m[39mctx: start "hello" (echo hi)
+
+ [32m✓[39m src/context/help.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 137[2mms[22m[39m
+[90mstdout[2m | src/context/run.test.ts[2m > [22m[2mscript execution[2m > [22m[2mwrites <key>.txt for a single requested script key
+[22m[39mctx: done "hello" in 377ms -> out\hello.txt
+
+ [32m✓[39m src/cli/ctx/init.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 267[2mms[22m[39m
+ [32m✓[39m src/context/config.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 373[2mms[22m[39m
+ [32m✓[39m src/cli/ctx/runner.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m src/context/run.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 461[2mms[22m[39m
+   [33m[2m✓[22m[39m script execution[2m > [22mwrites <key>.txt for a single requested script key [33m 405[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 00:07:58
+[2m   Duration [22m 14.32s[2m (transform 2.65s, setup 0ms, collect 8.45s, tests 1.38s, environment 31.23s, prepare 11.65s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+[31;1mAll files         [0m | [31;1m  49.18[0m | [33;1m   62.62[0m | [33;1m  66.66[0m | [31;1m  49.18[0m | [31;1m                 [0m 
+[31;1m project-context  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  archive.ts      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-89             [0m 
+[31;1m ...xt/docs/assets[0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  hierarchy.js    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1                [0m 
+[31;1m  icons.js        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-18             [0m 
+[31;1m  main.js         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-60             [0m 
+[31;1m  navigation.js   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1                [0m 
+[31;1m  search.js       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1                [0m 
+[31;1m ...ct-context/src[0m | [31;1m      0[0m | [32;1m     100[0m | [32;1m    100[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  index.ts        [0m | [31;1m      0[0m | [32;1m     100[0m | [32;1m    100[0m | [31;1m      0[0m | [31;1m7                [0m 
+[33;1m ...xt/src/cli/ctx[0m | [33;1m  68.39[0m | [33;1m   65.11[0m | [32;1m   87.5[0m | [33;1m  68.39[0m | [31;1m                 [0m 
+[31;1m  index.ts        [0m | [31;1m      0[0m | [32;1m     100[0m | [32;1m    100[0m | [31;1m      0[0m | [31;1m10-32            [0m 
+[33;1m  init.ts         [0m | [33;1m  76.66[0m | [33;1m   63.15[0m | [32;1m  83.33[0m | [33;1m  76.66[0m | [31;1m...67,189,198-207[0m 
+[33;1m  runner.ts       [0m | [33;1m  70.83[0m | [33;1m      75[0m | [32;1m    100[0m | [33;1m  70.83[0m | [31;1m37-43            [0m 
+[33;1m ...xt/src/context[0m | [33;1m  64.52[0m | [33;1m   67.34[0m | [32;1m     80[0m | [33;1m  64.52[0m | [31;1m                 [0m 
+[31;1m  archive.ts      [0m | [31;1m  47.45[0m | [33;1m      75[0m | [31;1m  33.33[0m | [31;1m  47.45[0m | [31;1m22-42,46-55,88-89[0m 
+[32;1m  config.ts       [0m | [32;1m  85.91[0m | [33;1m      75[0m | [32;1m    100[0m | [32;1m  85.91[0m | [31;1m...81,84-85,93-94[0m 
+[33;1m  help.ts         [0m | [33;1m  64.51[0m | [31;1m      25[0m | [32;1m    100[0m | [33;1m  64.51[0m | [31;1m15-16,19-25,38-39[0m 
+[31;1m  index.ts        [0m | [31;1m      0[0m | [32;1m     100[0m | [32;1m    100[0m | [31;1m      0[0m | [31;1m5-9              [0m 
+[33;1m  run.ts          [0m | [33;1m     62[0m | [33;1m   58.33[0m | [33;1m     75[0m | [33;1m     62[0m | [31;1m...09-111,125-151[0m 
+-------------------|---------|----------|---------|---------|-------------------

@@ -1,0 +1,42 @@
+
+> @karmaniverous/project-context@0.0.0 lint
+> eslint .
+
+[0m[0m
+[0m[4mC:\Code\karmaniverous\project-context\src\cli\ctx\init.test.ts[24m[0m
+[0m  [2m69:7[22m  [31merror[39m  Async method 'ask' has no 'await' expression      [2m@typescript-eslint/require-await[22m[0m
+[0m  [2m70:7[22m  [31merror[39m  Async method 'confirm' has no 'await' expression  [2m@typescript-eslint/require-await[22m[0m
+[0m[0m
+[0m[4mC:\Code\karmaniverous\project-context\src\cli\ctx\init.ts[24m[0m
+[0m   [2m11:1[22m   [31merror[39m  Run autofix to sort these imports!                                                                                  [2msimple-import-sort/imports[22m[0m
+[0m  [2m148:22[22m  [31merror[39m  Returning a void expression from an arrow function shorthand is forbidden. Please add braces to the arrow function  [2m@typescript-eslint/no-confusing-void-expression[22m[0m
+[0m[0m
+[0m[4mC:\Code\karmaniverous\project-context\src\cli\ctx\runner.test.ts[24m[0m
+[0m   [2m1:1[22m   [31merror[39m  Run autofix to sort these imports!                                 [2msimple-import-sort/imports[22m[0m
+[0m  [2m11:46[22m  [31merror[39m  `import()` type annotations are forbidden                          [2m@typescript-eslint/consistent-type-imports[22m[0m
+[0m  [2m20:46[22m  [31merror[39m  `import()` type annotations are forbidden                          [2m@typescript-eslint/consistent-type-imports[22m[0m
+[0m  [2m28:46[22m  [31merror[39m  `import()` type annotations are forbidden                          [2m@typescript-eslint/consistent-type-imports[22m[0m
+[0m  [2m36:46[22m  [31merror[39m  `import()` type annotations are forbidden                          [2m@typescript-eslint/consistent-type-imports[22m[0m
+[0m  [2m53:5[22m   [31merror[39m  Unsafe call of a(n) `error` type typed value                       [2m@typescript-eslint/no-unsafe-call[22m[0m
+[0m  [2m53:48[22m  [31merror[39m  Unsafe member access .mockReturnValue on an `error` typed value    [2m@typescript-eslint/no-unsafe-member-access[22m[0m
+[0m  [2m65:5[22m   [31merror[39m  Unsafe call of a(n) `error` type typed value                       [2m@typescript-eslint/no-unsafe-call[22m[0m
+[0m  [2m65:48[22m  [31merror[39m  Unsafe member access .mockReturnValue on an `error` typed value    [2m@typescript-eslint/no-unsafe-member-access[22m[0m
+[0m  [2m66:5[22m   [31merror[39m  Unsafe call of a(n) `error` type typed value                       [2m@typescript-eslint/no-unsafe-call[22m[0m
+[0m  [2m66:40[22m  [31merror[39m  Unsafe member access .mockResolvedValue on an `error` typed value  [2m@typescript-eslint/no-unsafe-member-access[22m[0m
+[0m[0m
+[0m[4mC:\Code\karmaniverous\project-context\src\cli\ctx\runner.ts[24m[0m
+[0m  [2m9:1[22m  [31merror[39m  All imports in the declaration are only used as types. Use `import type`  [2m@typescript-eslint/consistent-type-imports[22m[0m
+[0m[0m
+[0m[4mC:\Code\karmaniverous\project-context\src\context\config.ts[24m[0m
+[0m  [2m28:15[22m  [33mwarning[39m  tsdoc-malformed-inline-tag: Expecting a TSDoc tag starting with "{@"                                                        [2mtsdoc/syntax[22m[0m
+[0m  [2m28:38[22m  [33mwarning[39m  tsdoc-escape-right-brace: The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag  [2mtsdoc/syntax[22m[0m
+[0m[0m
+[0m[4mC:\Code\karmaniverous\project-context\src\context\index.ts[24m[0m
+[0m  [2m5:1[22m  [31merror[39m  Run autofix to sort these exports!  [2msimple-import-sort/exports[22m[0m
+[0m[0m
+[0m[4mC:\Code\karmaniverous\project-context\src\context\run.ts[24m[0m
+[0m  [2m10:1[22m  [31merror[39m  Run autofix to sort these imports!  [2msimple-import-sort/imports[22m[0m
+[0m[0m
+[0m[31m[1m✖ 20 problems (18 errors, 2 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[31m[1m  6 errors and 0 warnings potentially fixable with the `--fix` option.[22m[39m[0m
+[0m[31m[1m[22m[39m[0m

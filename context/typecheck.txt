@@ -1,0 +1,7 @@
+
+> @karmaniverous/project-context@0.0.0 typecheck
+> tsc
+
+src/cli/ctx/runner.test.ts(53,39): error TS2503: Cannot find namespace 'vi'.
+src/cli/ctx/runner.test.ts(65,39): error TS2503: Cannot find namespace 'vi'.
+src/cli/ctx/runner.test.ts(66,31): error TS2503: Cannot find namespace 'vi'.

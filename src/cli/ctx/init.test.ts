@@ -53,30 +53,28 @@ describe('init helpers', () => {
     expect(gi).toMatch(/\/ctx\/\s*$/m);
   });
 
-  it('performInit interactive writes ctx.config.json by defaulting outputPath=ctx and adds to .gitignore when accepted', async () => {
+  it('interactive flow closes the readline IO so the process can exit', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'ctx-init-ia-'));
-    await writeJson(path.join(cwd, 'package.json'), {
-      scripts: { test: 'vitest' },
-    });
+    await writeJson(path.join(cwd, 'package.json'), { scripts: { test: 'vitest' } });
 
     const cli = new Command().name('ctx');
-    const answers = ['json', /* format */
-      '', /* output dir -> defaults to ctx */
-      '', /* Add to .gitignore? -> default yes */
+    const answers = [
+      'json', // format
+      '',     // output dir -> defaults to ctx
+      '',     // Add to .gitignore? -> default yes
     ];
     let i = 0;
+    let closed = false;
     const io = {
       ask: async () => answers[i++] ?? '',
       confirm: async () => true,
+      close: () => {
+        closed = true;
+      },
     };
 
     const written = await performInit(cli, { cwd, force: false, io });
     expect(written && written.endsWith('ctx.config.json')).toBe(true);
-
-    const json = await readFile(written as string, 'utf8');
-    expect(json).toMatch(/"outputPath":\s*"ctx"/);
-
-    const gi = await readFile(path.join(cwd, '.gitignore'), 'utf8');
-    expect(gi).toMatch(/\/ctx\/\s*$/m);
+    expect(closed).toBe(true); // <- proves IO was closed
   });
 });

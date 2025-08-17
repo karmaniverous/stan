@@ -2,30 +2,25 @@
  * REQUIREMENTS
  * - `ctx init` scaffolds `ctx.config.json|yml` if none exists. [req-init]
  * - Default output directory is "ctx". [req-default-out]
- * - Interactive: ask JSON vs YML; ask output directory; offer to add to `.gitignore` and create it if missing. [req-init-interactive, req-gitignore]
- * - Non-interactive: `ctx init -f` chooses YML, uses outputPath=ctx, adds to `.gitignore`, no prompts. [req-init-force, req-gitignore]
- * - Scripts: derive first `\w+` token from package.json script titles; on duplicates, keep the shortest title; map to `npm run <title>`. [req-derive-scripts]
- * - Disallow `archive` and `init` keys. [req-no-archive-init-in-scripts]
- * - After writing, show help. [req-init-show-help]
+ * - Interactive: asks JSON vs YML; asks output dir; offers to add to `.gitignore`. [req-init-interactive, req-gitignore]
+ * - Non-interactive: `-f/--force` chooses YML, uses outputPath=ctx, adds to `.gitignore`, no prompts. [req-init-force, req-gitignore]
+ * - Derive script keys from package.json titles using first \\w+ token; on duplicates keep shortest title; map to `npm run <title>`. [req-derive-scripts]
+ * - Disallow `archive` and `init` keys in config.scripts. [req-no-archive-init-in-scripts]
+ * - After writing config, show help. [req-init-show-help]
  */
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createInterface } from 'node:readline/promises';
 
-import { Command } from '@commander-js/extra-typings';
 import YAML from 'yaml';
+import type { Command } from '@commander-js/extra-typings';
 
 import { ensureOutputDir, findConfigPathSync } from '../../context/config';
 import type { ContextConfig, ScriptMap } from '../../context/config';
 
 const TOKEN = /^\w+/;
 
-/**
- * Read the project's package.json and return a validated scripts map.
- *
- * Returns an empty object if the file doesn't exist or is malformed.
- */
 const readPackageJsonScripts = async (cwd: string): Promise<Record<string, string>> => {
   try {
     const raw = await readFile(path.join(cwd, 'package.json'), 'utf8');
@@ -42,14 +37,6 @@ const readPackageJsonScripts = async (cwd: string): Promise<Record<string, strin
   }
 };
 
-/**
- * Derive `config.scripts` from package.json titles (keys).
- *
- * - Take the first word token from each title.
- * - If multiple titles map to the same token, keep the shortest title.
- * - Exclude reserved tokens "archive" and "init".
- * - Value is `npm run <title>`.
- */
 export const deriveScriptsFromPackage = async (cwd: string): Promise<ScriptMap> => {
   const scripts = await readPackageJsonScripts(cwd);
   const chosen: Record<string, string> = {};
@@ -72,9 +59,6 @@ export const deriveScriptsFromPackage = async (cwd: string): Promise<ScriptMap> 
 
 type Format = 'json' | 'yml';
 
-/**
- * Serialize and write `ctx.config.json|yml` with the provided config.
- */
 export const writeConfigFile = async (
   cwd: string,
   format: Format,
@@ -87,15 +71,6 @@ export const writeConfigFile = async (
   return dest;
 };
 
-/**
- * Ensure `.gitignore` contains a rule to ignore the provided directory.
- *
- * - Creates `.gitignore` if it does not exist.
- * - Accepts variants like "ctx", "/ctx", "ctx/", "/ctx/" as equivalent.
- * - Appends a normalized `/<dir>/` line if not present.
- *
- * @returns absolute path of `.gitignore`.
- */
 export const ensureGitignoreRule = async (cwd: string, dir: string): Promise<string> => {
   const gi = path.join(cwd, '.gitignore');
   let content = '';
@@ -119,19 +94,20 @@ export const ensureGitignoreRule = async (cwd: string, dir: string): Promise<str
 type InitIO = {
   ask: (q: string) => Promise<string>;
   confirm: (q: string) => Promise<boolean>;
+  close?: () => void;
 };
 
 /**
- * Perform the init flow.
- *
- * - If a config already exists, prints help and exits.
- * - Interactive: asks for format, output dir, and whether to add to `.gitignore`.
- * - Force: skips prompts, picks yml + outputPath=ctx, ensures `.gitignore` includes it.
+ * Run the init flow (interactive by default; `force` for non-interactive).
  *
  * @returns absolute path to the written config, or null if aborted/no-op.
  */
-export const performInit = async (
-  cli: Command<unknown[], Record<string, unknown>, Record<string, unknown>>,
+export const performInit = async <
+  A extends unknown[],
+  O extends Record<string, unknown>,
+  P extends Record<string, unknown>
+>(
+  cli: Command<A, O, P>,
   {
     cwd = process.cwd(),
     force = false,
@@ -158,57 +134,62 @@ export const performInit = async (
     return written;
   }
 
-  // Interactive prompts
+  // Interactive: ensure readline is always closed so the process can exit.
   const rl =
     io ??
     ((() => {
       const i = createInterface({ input: process.stdin, output: process.stdout });
-      return {
+      const wrapper: InitIO = {
         ask: (q: string) => i.question(q),
         confirm: async (q: string) => {
           const a = await i.question(q);
           return /^y(es)?$/i.test(a.trim());
         },
+        close: () => i.close(),
       };
+      return wrapper;
     })());
 
-  const fmtRaw = (await rl.ask('Config format (json/yml)? [yml]: ')).trim().toLowerCase();
-  const format: Format = fmtRaw === 'json' ? 'json' : 'yml';
+  try {
+    const fmtRaw = (await rl.ask('Config format (json/yml)? [yml]: ')).trim().toLowerCase();
+    const format: Format = fmtRaw === 'json' ? 'json' : 'yml';
 
-  const outRaw = (await rl.ask('Output directory [ctx]: ')).trim();
-  const outputPath = outRaw.length ? outRaw : 'ctx';
+    const outRaw = (await rl.ask('Output directory [ctx]: ')).trim();
+    const outputPath = outRaw.length ? outRaw : 'ctx';
 
-  const outAbs = path.join(cwd, outputPath);
-  if (existsSync(outAbs)) {
-    const ok = await rl.confirm(`Directory "${outputPath}" already exists. Continue? (y/N): `);
-    if (!ok) {
-      console.log('ctx: init aborted.');
-      return null;
+    const outAbs = path.join(cwd, outputPath);
+    if (existsSync(outAbs)) {
+      const ok = await rl.confirm(`Directory "${outputPath}" already exists. Continue? (y/N): `);
+      if (!ok) {
+        console.log('ctx: init aborted.');
+        return null;
+      }
+    }
+
+    await mkdir(outAbs, { recursive: true });
+
+    // Offer to add output dir to .gitignore (default yes)
+    const giRaw = (await rl.ask(`Add "${outputPath}" to .gitignore? (Y/n): `)).trim();
+    const addGi = giRaw.length === 0 || /^y(es)?$/i.test(giRaw);
+    if (addGi) {
+      await ensureGitignoreRule(cwd, outputPath);
+    }
+
+    const config: ContextConfig = { outputPath, scripts };
+    const written = await writeConfigFile(cwd, format, config);
+    console.log(`ctx: wrote ${path.relative(cwd, written)}`);
+    cli.outputHelp();
+
+    return written;
+  } finally {
+    try {
+      rl.close?.();
+    } catch {
+      /* no-op */
     }
   }
-
-  await mkdir(outAbs, { recursive: true });
-
-  // Ask about .gitignore (default: yes if user presses Enter)
-  const giRaw = (await rl.ask(`Add "${outputPath}" to .gitignore? (Y/n): `)).trim();
-  const addGi = giRaw.length === 0 || /^y(es)?$/i.test(giRaw);
-  if (addGi) {
-    await ensureGitignoreRule(cwd, outputPath);
-  }
-
-  const config: ContextConfig = { outputPath, scripts };
-  const written = await writeConfigFile(cwd, format, config);
-  console.log(`ctx: wrote ${path.relative(cwd, written)}`);
-  cli.outputHelp();
-
-  return written;
 };
 
-/**
- * Register the `init` subcommand on the root CLI.
- *
- * Accepts the root Commander instance with any argument tuple type.
- */
 export const registerInit = <
   A extends unknown[],
   O extends Record<string, unknown>,
@@ -221,9 +202,6 @@ export const registerInit = <
     .description('Create a ctx.config.json|yml by scanning package.json scripts.')
     .option('-f, --force', 'Create ctx.config.yml with outputPath=ctx and add it to .gitignore.')
     .action(async (opts: { force?: boolean }) => {
-      await performInit(
-        cli as unknown as Command<unknown[], Record<string, unknown>, Record<string, unknown>>,
-        { force: Boolean(opts.force) },
-      );
+      await performInit(cli, { force: Boolean(opts.force) });
     });
 };

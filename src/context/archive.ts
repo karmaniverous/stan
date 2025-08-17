@@ -1,8 +1,8 @@
 /**
- * REQUIREMENTS (applies to this file)
+ * REQUIREMENTS
  * - Always generate an `archive.tar` and place it at `outputPath`. [req-archive-always]
- * - The archive should contain the repository working set using `git ls-files`
- *   (`--cached --others --exclude-standard`) and exclude anything inside `outputPath`. [req-git-ls]
+ * - Archive repository working set using `git ls-files` (`--cached --others --exclude-standard`)
+ *   and exclude anything inside `outputPath`. [req-git-ls]
  * - Create the output directory if it does not exist. [req-output-dir]
  */
 import { spawn } from 'node:child_process';
@@ -48,7 +48,7 @@ export const gitListFiles = async (cwd: string): Promise<string[]> => {
     cwd,
   );
   if (code !== 0) {
-    throw new Error(`context: git ls-files failed (${code}). ${stderr}`);
+    throw new Error(`context: git ls-files failed (${String(code)}). ${stderr}`);
   }
   return stdout.split('\u0000').filter((f) => f.length > 0);
 };
@@ -68,44 +68,35 @@ export const createArchive = async ({
   cwd = process.cwd(),
   outputPath,
 }: CreateArchiveOptions): Promise<{ archivePath: string; fileCount: number }> => {
-  // Ensure destination. [req-output-dir]
   const outAbs = await ensureOutputDir(cwd, outputPath);
 
-  // Resolve files and exclude anything under outputPath. [req-git-ls]
   const allRel = await gitListFiles(cwd);
   const filesRel = allRel.filter(
     (p) => !p.startsWith(`${outputPath}/`) && existsSync(path.join(cwd, p)),
   );
 
-  // Write to a tmp file to avoid partial archives.
   const archiveAbs = path.join(outAbs, 'archive.tar');
   const tmpAbs = `${archiveAbs}.tmp`;
   if (existsSync(tmpAbs)) {
     await unlink(tmpAbs);
   }
 
-  try {
-    await tarCreate(
-      {
-        cwd,
-        file: tmpAbs,
-        gzip: false,
-        portable: false,
-        preservePaths: false,
-      },
-      filesRel,
-    );
-    await rename(tmpAbs, archiveAbs);
+  await tarCreate(
+    {
+      cwd,
+      file: tmpAbs,
+      gzip: false,
+      portable: false,
+      preservePaths: false,
+    },
+    filesRel,
+  );
 
-    // Log a terse summary for users (non-essential).
-    // eslint-disable-next-line no-console
-    console.log(
-      `context: wrote ${path.relative(cwd, archiveAbs)} (${filesRel.length.toString()} files)`,
-    );
-    return { archivePath: archiveAbs, fileCount: filesRel.length };
-  } catch (e) {
-    // If tar fails, set process exit code for CLI user feedback.
-    process.exitCode = 1;
-    throw e;
-  }
+  await rename(tmpAbs, archiveAbs);
+
+  console.log(
+    `context: wrote ${path.relative(cwd, archiveAbs)} (${String(filesRel.length)} files)`,
+  );
+
+  return { archivePath: archiveAbs, fileCount: filesRel.length };
 };

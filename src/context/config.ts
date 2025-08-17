@@ -1,13 +1,13 @@
 /**
- * REQUIREMENTS (applies to this file)
+ * REQUIREMENTS
  * - Load configuration for the `context` CLI from either `context.config.json` or
  *   `context.config.yml|yaml` at the repository root. [req-config-load]
- * - Validate shape: `{ outputPath: string, scripts: Record<string,string> }`. [req-validate]
+ * - Validate shape: \{ outputPath: string, scripts: Record<string,string> \}. [req-validate]
  * - Disallow `archive` as a key under `scripts`. [req-no-archive-in-scripts]
- * - Expose helpers to resolve the config path and to ensure the output directory exists. [req-output-dir]
+ * - Expose helpers to ensure the output directory exists. [req-output-dir]
  */
-import { access, mkdir, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { access, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import YAML from 'yaml';
@@ -27,10 +27,7 @@ const CONFIG_CANDIDATES = [
   'context.config.yaml',
 ] as const;
 
-/**
- * Resolve the absolute path to the config file in the provided cwd.
- * @throws if no supported config file is found.
- */
+/** Resolve the absolute path to the config file in the provided cwd. */
 export const findConfigPath = async (cwd: string): Promise<string> => {
   for (const name of CONFIG_CANDIDATES) {
     const abs = path.join(cwd, name);
@@ -38,7 +35,7 @@ export const findConfigPath = async (cwd: string): Promise<string> => {
       await access(abs);
       return abs;
     } catch {
-      // continue
+      /* continue */
     }
   }
   throw new Error(
@@ -46,30 +43,27 @@ export const findConfigPath = async (cwd: string): Promise<string> => {
   );
 };
 
-/**
- * Parse the config file and validate according to requirements.
- * @throws if the file is malformed or violates validation rules.
- */
+/** Parse the config file and validate according to requirements. */
 export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
   const configPath = await findConfigPath(cwd);
   const raw = await readFile(configPath, 'utf8');
 
-  const data =
-    configPath.endsWith('.json') ? (JSON.parse(raw) as unknown) : YAML.parse(raw);
+  const parsed: unknown = configPath.endsWith('.json')
+    ? JSON.parse(raw) // returns `unknown` here to avoid `any`
+    : YAML.parse(raw);
 
-  // --- basic shape checks [req-validate] ---
   if (
-    typeof data !== 'object' ||
-    data === null ||
-    !('outputPath' in (data as Record<string, unknown>)) ||
-    !('scripts' in (data as Record<string, unknown>))
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !('outputPath' in parsed) ||
+    !('scripts' in parsed)
   ) {
     throw new Error(
       'context: config must define both `outputPath` (string) and `scripts` (object).',
     );
   }
 
-  const { outputPath, scripts } = data as {
+  const { outputPath, scripts } = parsed as {
     outputPath: unknown;
     scripts: unknown;
   };
@@ -84,14 +78,11 @@ export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
 
   const validated: ScriptMap = {};
   for (const [k, v] of Object.entries(scripts as Record<string, unknown>)) {
-    // Disallow "archive" under scripts [req-no-archive-in-scripts].
     if (k === 'archive') {
       throw new Error('context: `archive` is not allowed under `scripts`.');
     }
     if (typeof v !== 'string' || v.trim().length === 0) {
-      throw new Error(
-        `context: scripts.${k} must be a non-empty string command.`,
-      );
+      throw new Error(`context: scripts.${k} must be a non-empty string command.`);
     }
     validated[k] = v;
   }

@@ -1,7 +1,7 @@
 {
   "author": "Jason Williscroft",
   "bin": {
-    "mycli": "./dist/cli/mycli/index.js"
+    "ctx": "./dist/cli/ctx/index.js"
   },
   "bugs": {
     "url": "https://github.com/karmaniverous/project-context/issues"

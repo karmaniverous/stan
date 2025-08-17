@@ -1,6 +1,6 @@
 /**
- * REQUIREMENTS (applies to this file)
- * - Provide a stable public surface for programmatic use of the `context` features. [req-export-api]
+ * REQUIREMENTS
+ * - Public surface for programmatic `context` features. [req-export-api]
  */
 export type { ContextConfig, ScriptMap } from './config';
 export { ensureOutputDir, loadConfig } from './config';

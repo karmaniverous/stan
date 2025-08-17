@@ -1,9 +1,9 @@
 /**
- * REQUIREMENTS (applies to this file)
+ * REQUIREMENTS
  * - For each key under `scripts`, run the command and write output to `<outputPath>/<key>.txt`. [req-run-scripts]
  * - Use the same agent that runs NPM scripts (i.e., the system shell). [req-use-shell]
- * - Running `context [key]` should generate only that file (including `archive`). [req-key-only]
- * - Running `context` with no key should generate all files. [req-generate-all]
+ * - `context [key]` should generate only that file (including `archive`). [req-key-only]
+ * - `context` with no key should generate all files. [req-generate-all]
  * - Always create the output directory if needed. [req-output-dir]
  */
 import { spawn } from 'node:child_process';
@@ -19,7 +19,6 @@ export const runShell = async (
   cwd: string,
 ): Promise<{ code: number; output: string }> =>
   new Promise((resolve) => {
-    // Wrap in platform shell and redirect stderr to stdout to preserve ordering.
     const isWin = process.platform === 'win32';
     const shell = isWin ? 'cmd' : 'sh';
     const args = isWin ? ['/d', '/s', '/c', `${command} 2>&1`] : ['-c', `${command} 2>&1`];
@@ -38,19 +37,14 @@ export const runShell = async (
     });
   });
 
-/**
- * Generate outputs for a supplied config (no disk config read).
- * This is the core orchestrator used by both the CLI and tests.
- */
+/** Generate outputs for a supplied config (used by CLI and tests). */
 export const generateWithConfig = async (
   config: ContextConfig,
   {
     cwd = process.cwd(),
     key,
   }: {
-    /** Project root. */
     cwd?: string;
-    /** If provided, generate only this key ("archive" allowed). */
     key?: string | undefined;
   } = {},
 ): Promise<string[]> => {
@@ -58,15 +52,14 @@ export const generateWithConfig = async (
 
   const created: string[] = [];
 
-  // Archive generation. [req-archive-always] + [req-key-only] + [req-generate-all]
+  // Archive (always when key is undefined or "archive") [req-archive-always]
   if (!key || key === 'archive') {
     await createArchive({ cwd, outputPath: config.outputPath });
     created.push(path.join(outAbs, 'archive.tar'));
-    // If a specific non-archive key was requested, skip scripts entirely.
     if (key === 'archive') return created;
   }
 
-  // Determine which scripts to run. [req-key-only] + [req-generate-all]
+  // Determine which scripts to run. [req-generate-all] / [req-key-only]
   const entries = key
     ? (config.scripts[key] ? ([([key, config.scripts[key]] as const)]) : [])
     : (Object.entries(config.scripts) as ReadonlyArray<readonly [string, string]>);
@@ -77,11 +70,10 @@ export const generateWithConfig = async (
     );
   }
 
-  // Sequential execution to keep output deterministic.
   for (const [k, cmd] of entries) {
     const { output } = await runShell(cmd, cwd);
     const dest = path.join(outAbs, `${k}.txt`);
-    await writeFile(dest, output, 'utf8'); // [req-run-scripts]
+    await writeFile(dest, output, 'utf8');
     created.push(dest);
   }
 

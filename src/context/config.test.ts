@@ -29,7 +29,7 @@ describe('config loading', () => {
     expect(Object.keys(cfg.scripts)).toEqual(['test', 'lint']);
 
     const out = await ensureOutputDir(cwd, cfg.outputPath);
-    await mkdir(out, { recursive: true }); // idempotency
+    await mkdir(out, { recursive: true }); // idempotent
   });
 
   it('loads valid YAML config', async () => {

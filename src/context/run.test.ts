@@ -1,6 +1,6 @@
+import fs from 'node:fs/promises';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -10,13 +10,17 @@ import { generateWithConfig } from './run';
 
 const read = (p: string) => fs.readFile(p, 'utf8');
 
+const nodeExec = process.platform === 'win32'
+  ? `"${process.execPath}"`
+  : process.execPath;
+
 describe('script execution', () => {
   it('writes <key>.txt for a single requested script key', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'ctx-run-'));
     const config: ContextConfig = {
       outputPath: 'out',
       scripts: {
-        hello: `${process.execPath} -e "process.stdout.write('hi')"`,
+        hello: `${nodeExec} -e "process.stdout.write('hi')"`,
       },
     };
 

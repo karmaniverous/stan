@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * REQUIREMENTS (applies to this file)
+ * REQUIREMENTS
  * - Implement a `context` CLI using Commander. [req-cli]
  * - `context` with no args generates: `archive.tar` + all configured script outputs. [req-generate-all]
  * - `context [key]` generates only the specified output; `archive` is allowed. [req-key-only]
@@ -30,7 +30,6 @@ const cli = new Command()
         await generateWithConfig(config, { cwd });
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.error(e instanceof Error ? e.message : String(e));
       process.exitCode = 1;
     }

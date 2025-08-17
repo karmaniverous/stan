@@ -1,98 +1,69 @@
+/**
+ * REQUIREMENTS (for this file)
+ * - Build library as ESM + CJS + .d.ts (no IIFE). [req-rollup-outputs]
+ * - Auto-discover CLI entries in src/cli/* (now includes "ctx"). [req-cli-discovery]
+ * - Keep imports sorted and remove unused artifacts per ESLint config. [req-lint]
+ */
 import { createRequire } from 'node:module';
 
 import aliasPlugin, { type Alias } from '@rollup/plugin-alias';
 import commonjsPlugin from '@rollup/plugin-commonjs';
 import jsonPlugin from '@rollup/plugin-json';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
+import terserPlugin from '@rollup/plugin-terser';
 import typescriptPlugin from '@rollup/plugin-typescript';
 import fs from 'fs-extra';
 import type { InputOptions, OutputOptions, RollupOptions } from 'rollup';
 import dtsPlugin from 'rollup-plugin-dts';
 
 const require = createRequire(import.meta.url);
-type Package = Record<string, Record<string, string> | undefined>;
-const pkg = require('./package.json') as Package;
+const pkg = require('./package.json') as Record<string, unknown>;
 
-import { packageName } from './src/util/packageName';
+const outputPath = 'dist';
 
-const outputPath = `dist`;
+const aliases: Alias[] = [];
+const alias = aliasPlugin({ entries: aliases });
 
-const commonPlugins = [
-  commonjsPlugin(),
-  jsonPlugin(),
-  nodeResolve(),
-  typescriptPlugin(),
-];
+const commonPlugins = [alias, jsonPlugin(), nodeResolve({ preferBuiltins: true }), commonjsPlugin()];
 
-const commonAliases: Alias[] = [];
+const typescript = typescriptPlugin({
+  tsconfig: './tsconfig.json',
+  declaration: true,
+  declarationDir: `${outputPath}`,
+});
 
 const commonInputOptions: InputOptions = {
-  input: 'src/index.ts',
-  external: [
-    ...Object.keys((pkg as unknown as Package).dependencies ?? {}),
-    ...Object.keys((pkg as unknown as Package).peerDependencies ?? {}),
-    'tslib',
-  ],
-  plugins: [aliasPlugin({ entries: commonAliases }), ...commonPlugins],
+  plugins: [...commonPlugins, typescript],
+  treeshake: true,
 };
 
-const iifeCommonOutputOptions: OutputOptions = {
-  name: packageName ?? 'unknown',
-};
+const commonLibraryOutputs: OutputOptions[] = [
+  { dir: `${outputPath}/mjs`, format: 'esm', sourcemap: false, exports: 'named' },
+  { dir: `${outputPath}/cjs`, format: 'cjs', sourcemap: false, exports: 'named' },
+];
 
-const cliCommands = await fs.readdir('src/cli');
+const cliCommands = fs
+  .readdirSync('src/cli', { withFileTypes: true })
+  .filter((d) => d.isDirectory())
+  .map((d) => d.name);
 
 const config: RollupOptions[] = [
-  // ESM output.
+  // Library (ESM + CJS)
+  { ...commonInputOptions, input: 'src/index.ts', output: commonLibraryOutputs },
+
+  // Type declarations
   {
-    ...commonInputOptions,
-    output: [
-      {
-        dir: `${outputPath}/mjs`,
-        extend: true,
-        format: 'esm',
-        preserveModules: true,
-      },
-    ],
+    input: 'src/index.ts',
+    plugins: [alias, dtsPlugin()],
+    output: [{ file: `${outputPath}/index.d.ts`, format: 'es' }],
   },
 
-  // CommonJS output.
-  {
-    ...commonInputOptions,
-    output: [
-      {
-        dir: `${outputPath}/cjs`,
-        extend: true,
-        format: 'cjs',
-        preserveModules: true,
-      },
-    ],
-  },
-
-  // Type definitions output.
-  {
-    ...commonInputOptions,
-    plugins: [commonInputOptions.plugins, dtsPlugin()],
-    output: [
-      {
-        extend: true,
-        file: `${outputPath}/index.d.ts`,
-        format: 'esm',
-      },
-    ],
-  },
-
-  // CLI output.
+  // CLI commands (individual directories under src/cli)
   ...cliCommands.map<RollupOptions>((c) => ({
     ...commonInputOptions,
     input: `src/cli/${c}/index.ts`,
-    output: [
-      {
-        dir: `${outputPath}/cli/${c}`,
-        extend: true,
-        format: 'esm',
-      },
-    ],
+    output: [{ dir: `${outputPath}/cli/${c}`, extend: true, format: 'esm' }],
+    plugins: [...commonPlugins, typescript, terserPlugin()],
   })),
 ];
 

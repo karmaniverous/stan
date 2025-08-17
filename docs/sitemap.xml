@@ -1,31 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url>
-		<loc>https://docs.karmanivero.us/npm-package-template-ts/index.html</loc>
-		<lastmod>2025-08-17T10:37:32.242Z</lastmod>
+		<loc>https://docs.karmanivero.us/project-context/index.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
 	</url>
 	<url>
-		<loc>https://docs.karmanivero.us/npm-package-template-ts/modules.html</loc>
-		<lastmod>2025-08-17T10:37:32.242Z</lastmod>
+		<loc>https://docs.karmanivero.us/project-context/modules.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
 	</url>
 	<url>
-		<loc>https://docs.karmanivero.us/npm-package-template-ts/hierarchy.html</loc>
-		<lastmod>2025-08-17T10:37:32.242Z</lastmod>
+		<loc>https://docs.karmanivero.us/project-context/hierarchy.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
 	</url>
 	<url>
-		<loc>https://docs.karmanivero.us/npm-package-template-ts/documents/CHANGELOG.html</loc>
-		<lastmod>2025-08-17T10:37:32.242Z</lastmod>
+		<loc>https://docs.karmanivero.us/project-context/documents/CHANGELOG.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
 	</url>
 	<url>
-		<loc>https://docs.karmanivero.us/npm-package-template-ts/modules/index.html</loc>
-		<lastmod>2025-08-17T10:37:32.242Z</lastmod>
+		<loc>https://docs.karmanivero.us/project-context/modules/index.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
 	</url>
 	<url>
-		<loc>https://docs.karmanivero.us/npm-package-template-ts/types/index.FooTarget.html</loc>
-		<lastmod>2025-08-17T10:37:32.242Z</lastmod>
+		<loc>https://docs.karmanivero.us/project-context/types/index.ContextConfig.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
 	</url>
 	<url>
-		<loc>https://docs.karmanivero.us/npm-package-template-ts/functions/index.foo.html</loc>
-		<lastmod>2025-08-17T10:37:32.242Z</lastmod>
+		<loc>https://docs.karmanivero.us/project-context/types/index.ScriptMap.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
+	</url>
+	<url>
+		<loc>https://docs.karmanivero.us/project-context/functions/index.createArchive.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
+	</url>
+	<url>
+		<loc>https://docs.karmanivero.us/project-context/functions/index.ensureOutputDir.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
+	</url>
+	<url>
+		<loc>https://docs.karmanivero.us/project-context/functions/index.generateWithConfig.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
+	</url>
+	<url>
+		<loc>https://docs.karmanivero.us/project-context/functions/index.loadConfig.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
+	</url>
+	<url>
+		<loc>https://docs.karmanivero.us/project-context/functions/index.loadConfigSync.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
+	</url>
+	<url>
+		<loc>https://docs.karmanivero.us/project-context/functions/index.renderAvailableScriptsHelp.html</loc>
+		<lastmod>2025-08-17T15:49:10.493Z</lastmod>
 	</url>
 </urlset>

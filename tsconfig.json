@@ -1,18 +1,21 @@
 {
-  // Global requirements moved to /requirements.md
+  // See /requirements.md for global requirements.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
-    "skipLibCheck": true,
-    "incremental": true,
-    "isolatedModules": true,
+    "noEmit": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "noEmit": true,
     "resolveJsonModule": true,
     "strict": true,
+    "isolatedModules": true,
+    "incremental": true,
     "tsBuildInfoFile": "./.tsbuildinfo",
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "exclude": ["coverage", "dist", "docs", "node_modules"],
   "include": ["**/*"]

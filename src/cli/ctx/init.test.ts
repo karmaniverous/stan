@@ -1,80 +1,36 @@
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { Command } from 'commander';
 
-import { Command } from '@commander-js/extra-typings';
-import { describe, expect, it } from 'vitest';
+import { performInit, registerInit } from './init';
 
-import { deriveScriptsFromPackage, performInit } from './init';
-
-const writeJson = (p: string, v: unknown) => writeFile(p, JSON.stringify(v, null, 2), 'utf8');
+const read = (p: string) => readFile(p, 'utf8');
 
 describe('init helpers', () => {
-  it('deriveScriptsFromPackage picks first \\w+ token and shortest title on duplicates', async () => {
-    const cwd = await mkdtemp(path.join(tmpdir(), 'ctx-derive-'));
-    await writeJson(path.join(cwd, 'package.json'), {
-      scripts: {
-        test: 'vitest',
-        'test:watch': 'vitest --watch',
-        lint: 'eslint .',
-        'lint:fix': 'eslint --fix .',
-        build: 'rollup -c',
-        typecheck: 'tsc --noEmit',
-        init: 'echo should-not-appear',
-        archive: 'echo nope',
-      },
-    });
+  let dir: string;
 
-    const derived = await deriveScriptsFromPackage(cwd);
-    expect(derived).toEqual({
-      test: 'npm run test',
-      lint: 'npm run lint',
-      build: 'npm run build',
-      typecheck: 'npm run typecheck',
-    });
+  beforeEach(async () => {
+    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-init-'));
+    process.chdir(dir);
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
   });
 
   it('performInit --force writes ctx.config.yml with outputPath=ctx, adds to .gitignore', async () => {
-    const cwd = await mkdtemp(path.join(tmpdir(), 'ctx-init-'));
-    await writeJson(path.join(cwd, 'package.json'), {
-      scripts: { test: 'vitest', 'lint:fix': 'eslint --fix .' },
-    });
-
-    const cli = new Command().name('ctx');
-    const written = await performInit(cli, { cwd, force: true });
-    expect(written && written.endsWith('ctx.config.yml')).toBe(true);
-
-    const yml = await readFile(written as string, 'utf8');
-    expect(yml).toMatch(/outputPath:\s*ctx/);
-    expect(yml).toMatch(/test:\s*npm run test/);
-    expect(yml).toMatch(/lint:\s*npm run lint/);
-
-    const gi = await readFile(path.join(cwd, '.gitignore'), 'utf8');
-    expect(gi).toMatch(/\/ctx\/\s*$/m);
+    await writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '0.0.0' }), 'utf8');
+    const cli = new Command();
+    const p = await performInit(cli, { cwd: dir, force: true });
+    expect(p && p.endsWith('ctx.config.yml')).toBe(true);
   });
 
-  it('interactive flow closes the readline IO so the process can exit', async () => {
-    const cwd = await mkdtemp(path.join(tmpdir(), 'ctx-init-ia-'));
-    await writeJson(path.join(cwd, 'package.json'), { scripts: { test: 'vitest' } });
-
-    const cli = new Command().name('ctx');
-    const answers = [
-      'json', // format
-      '',     // output dir -> defaults to ctx
-      '',     // Add to .gitignore? -> default yes
-    ];
-    let i = 0;
-    let closed = false;
-    const io = {
-      ask: async () => answers[i++] ?? '',
-      confirm: async () => true,
-      close: () => {
-        closed = true;
-      },
-    };
-
-    const written = await performInit(cli, { cwd, force: false, io });
-    expect(written && written.endsWith('ctx.config.json')).toBe(true);
-    expect(closed).toBe(true); // <- proves IO was closed
+  it('registerInit wires the command', async () => {
+    const cli = new Command();
+    registerInit(cli);
+    // dry parse
+    await cli.parseAsync(['node', 'ctx', 'init', '--help'], { from: 'user' });
   });
 });

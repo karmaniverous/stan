@@ -1,60 +1,48 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+const runSelectedSpy = vi.fn().mockResolvedValue<string[]>([]);
 
-// Mock config discovery and load.
-vi.mock('../../context/config', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../context/config')>();
+vi.mock('@/context/config', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/context/config')>();
   return {
     ...actual,
     findConfigPathSync: vi.fn().mockReturnValue('ctx.config.yml'),
-    loadConfig: vi.fn().mockResolvedValue({ outputPath: 'ctx', scripts: { test: 'echo test', lint: 'echo lint' } }),
+    loadConfig: vi.fn().mockResolvedValue({
+      outputPath: 'ctx',
+      scripts: { test: 'echo test', lint: 'echo lint' }
+    })
   };
 });
 
-const runSelectedSpy = vi.fn<(...args: unknown[]) => Promise<string[]>>().mockResolvedValue([]);
-vi.mock('../../context/run', async () => {
-  return {
-    runSelected: (...args: unknown[]) => runSelectedSpy(...args),
-  };
-});
+vi.mock('@/context/run', async () => ({
+  runSelected: (...args: unknown[]) => runSelectedSpy(...args)
+}));
 
-describe('CLI -c/--combine and -k/--keep', () => {
-  let tmp: string;
+import { makeCli } from './index';
+
+describe('runner CLI combine flags', () => {
+  let dir: string;
 
   beforeEach(async () => {
-    tmp = await mkdtemp(path.join(os.tmpdir(), 'ctx-cli-combine-'));
-    await writeFile(path.join(tmp, 'package.json'), JSON.stringify({ name: 'x', version: '0.0.0' }), 'utf8');
+    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-cli-combine-'));
+    await writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '0.0.0' }), 'utf8');
+    process.chdir(dir);
+    runSelectedSpy.mockClear();
   });
 
   afterEach(async () => {
-    runSelectedSpy.mockReset();
-    await rm(tmp, { recursive: true, force: true });
+    await rm(dir, { recursive: true, force: true });
   });
 
-  it('passes combine and keep flags to the runner (no enumeration)', async () => {
-    const { buildCli } = await import('./index');
-    const cli = await buildCli();
-    await cli.parseAsync(['node', 'ctx', '-c', '-k'], { from: 'user' });
+  it('maps -c and --combined-file-name', async () => {
+    const cli = makeCli();
+    await cli.parseAsync(['node', 'ctx', '-c', '--combined-file-name', 'bundle', 'lint'], { from: 'user' });
 
-    expect(runSelectedSpy).toHaveBeenCalledTimes(1);
-    const [, , selection, mode, behavior] = runSelectedSpy.mock.calls[0] as [unknown, unknown, unknown, unknown, { combine?: boolean; keep?: boolean }];
-    expect(selection).toBeUndefined();
-    expect(mode).toBe('concurrent');
-    expect(behavior?.combine).toBe(true);
-    expect(behavior?.keep).toBe(true);
-  });
-
-  it('passes -s -c with enumerated keys and except=false', async () => {
-    const { buildCli } = await import('./index');
-    const cli = await buildCli();
-    await cli.parseAsync(['node', 'ctx', '-s', '-c', 'lint', 'test'], { from: 'user' });
-
-    const [, , selection, mode, behavior] = runSelectedSpy.mock.calls[0] as [unknown, unknown, unknown, unknown, { combine?: boolean; keep?: boolean }];
-    expect(selection).toEqual({ include: ['lint', 'test'] });
-    expect(mode).toBe('sequential');
-    expect(behavior?.combine).toBe(true);
+    const [, , enumerated, behavior] = runSelectedSpy.mock.calls[0];
+    expect(enumerated).toEqual(['lint']);
+    expect(behavior).toMatchObject({ combine: true, combinedFileName: 'bundle' });
   });
 });

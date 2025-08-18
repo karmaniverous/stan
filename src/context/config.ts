@@ -1,104 +1,110 @@
-/**
- * @file src/context/config.ts
- * Configuration discovery and validation.
- *
- * NOTE: Global requirements live in /requirements.md.
- */
-import { existsSync, readFileSync } from 'node:fs';
-import { access, mkdir, readFile } from 'node:fs/promises';
-import path from 'node:path';
+/** See /requirements.md for global requirements. */
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import path, { join, resolve } from 'node:path';
 import YAML from 'yaml';
+import { packageDirectory, packageDirectorySync } from 'package-directory';
 
 export type ScriptMap = Record<string, string>;
 
 export type ContextConfig = {
-  /** Relative path where outputs are written. Example: "ctx" */
   outputPath: string;
-  /** Mapping from script key to shell command. Example: { test: "npm run test" } */
   scripts: ScriptMap;
+  includes?: string[];
+  excludes?: string[];
 };
-// Compatibility alias used by tests
-export type CtxConfig = ContextConfig;
 
-const CONFIG_CANDIDATES = ['ctx.config.json', 'ctx.config.yml', 'ctx.config.yaml'] as const;
+const isNonEmptyStringArray = (v: unknown): v is string[] =>
+  Array.isArray(v) && v.every((x) => typeof x === 'string' && x.trim().length > 0);
 
-/** Resolve the absolute path to the config file (async). Throws if not found. */
-export const findConfigPath = async (cwd: string): Promise<string> => {
-  for (const name of CONFIG_CANDIDATES) {
-    const abs = path.join(cwd, name);
-    try {
-      await access(abs);
-      return abs;
-    } catch { /* continue */ }
+const validateConfig = (raw: unknown): ContextConfig => {
+  if (typeof raw !== 'object' || !raw) throw new Error('ctx: config must be an object');
+  const { outputPath, scripts, includes, excludes } = raw as Record<string, unknown>;
+
+  if (typeof outputPath !== 'string' || !outputPath.trim()) throw new Error('ctx: outputPath required');
+  if (typeof scripts !== 'object' || !scripts) throw new Error('ctx: scripts required');
+  const entries = Object.entries(scripts as Record<string, unknown>).filter(
+    ([, v]) => typeof v === 'string'
+  ) as [string, string][];
+
+  const map: ScriptMap = {};
+  for (const [k, v] of entries) {
+    if (k === 'archive' || k === 'init') {
+      throw new Error('ctx: "archive" and "init" keys are not allowed in scripts');
+    }
+    map[k] = v;
   }
-  throw new Error(`ctx: no config found. Create one of: ${CONFIG_CANDIDATES.join(', ')}`);
+
+  const normalized: ContextConfig = { outputPath, scripts: map };
+  if (isNonEmptyStringArray(includes)) normalized.includes = includes.slice();
+  if (isNonEmptyStringArray(excludes)) normalized.excludes = excludes.slice();
+  return normalized;
 };
 
-/** Resolve the absolute path to the config file (sync). Returns null if not found. */
-export const findConfigPathSync = (cwd: string): string | null => {
-  for (const name of CONFIG_CANDIDATES) {
-    const abs = path.join(cwd, name);
+export const getPackageRoot = async (cwd: string): Promise<string> =>
+  (await packageDirectory({ cwd })) ?? cwd;
+
+export const getPackageRootSync = (cwd: string): string =>
+  packageDirectorySync({ cwd }) ?? cwd;
+
+const CONFIG_FILES = ['ctx.config.json', 'ctx.config.yml', 'ctx.config.yaml'] as const;
+
+export const findConfigPath = async (cwd: string): Promise<string | null> => {
+  const root = await getPackageRoot(cwd);
+  for (const name of CONFIG_FILES) {
+    const abs = path.join(root, name);
     if (existsSync(abs)) return abs;
   }
   return null;
 };
 
-/** Validate and normalize a parsed config object. */
-const validateConfig = (parsed: unknown): ContextConfig => {
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('outputPath' in parsed) ||
-    !('scripts' in parsed)
-  ) {
-    throw new Error('ctx: config must define both `outputPath` (string) and `scripts` (object).');
+export const findConfigPathSync = (cwd: string): string | null => {
+  const root = getPackageRootSync(cwd);
+  for (const name of CONFIG_FILES) {
+    const abs = path.join(root, name);
+    if (existsSync(abs)) return abs;
   }
-  const { outputPath, scripts } = parsed as { outputPath: unknown; scripts: unknown };
-
-  if (typeof outputPath !== 'string' || outputPath.trim().length === 0) {
-    throw new Error('ctx: `outputPath` must be a non-empty string.');
-  }
-
-  if (typeof scripts !== 'object' || scripts === null || Array.isArray(scripts)) {
-    throw new Error('ctx: `scripts` must be an object map of string commands.');
-  }
-
-  const validated: ScriptMap = {};
-  for (const [k, v] of Object.entries(scripts as Record<string, unknown>)) {
-    if (k === 'archive' || k === 'init') {
-      throw new Error('ctx: `archive` and `init` are not allowed under `scripts`.');
-    }
-    if (typeof v !== 'string' || v.trim().length === 0) {
-      throw new Error(`ctx: scripts.${k} must be a non-empty string command.`);
-    }
-    validated[k] = v;
-  }
-
-  return { outputPath, scripts: validated };
+  return null;
 };
 
-/** Parse and validate the configuration file (async). */
 export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
-  const configPath = await findConfigPath(cwd);
-  const raw = await readFile(configPath, 'utf8');
-  const parsed: unknown = configPath.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
-  return validateConfig(parsed);
+  const p = (await findConfigPath(cwd)) ?? join(cwd, 'ctx.config.yml');
+  const raw = await readFile(p, 'utf8');
+  const obj = p.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
+  return validateConfig(obj);
 };
 
-/** Parse and validate the configuration file (sync). Used for rendering help text without async. */
-export const loadConfigSync = (cwd: string): ContextConfig | null => {
-  const configPath = findConfigPathSync(cwd);
-  if (!configPath) return null;
-  const raw = readFileSync(configPath, 'utf8');
-  const parsed: unknown = configPath.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
-  return validateConfig(parsed);
+export const loadConfigSync = (cwd: string): ContextConfig => {
+  const p = findConfigPathSync(cwd) ?? join(cwd, 'ctx.config.yml');
+  const raw = require('node:fs').readFileSync(p, 'utf8');
+  const obj = p.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
+  return validateConfig(obj);
 };
 
-/** Ensure the destination directory exists and return its absolute path. */
-export const ensureOutputDir = async (cwd: string, outputPath: string) => {
-  const abs = path.join(cwd, outputPath);
-  if (!existsSync(abs)) {
-    await mkdir(abs, { recursive: true });
-  }
+export const ensureOutputDir = async (cwd: string, outputPath: string): Promise<string> => {
+  const root = await getPackageRoot(cwd);
+  const abs = resolve(root, outputPath);
+  await require('node:fs/promises').mkdir(abs, { recursive: true });
   return abs;
+};
+
+export const ensureOutputDirSync = (cwd: string, outputPath: string): string => {
+  const root = getPackageRootSync(cwd);
+  const abs = resolve(root, outputPath);
+  if (!existsSync(abs)) require('node:fs').mkdirSync(abs, { recursive: true });
+  return abs;
+};
+
+export const renderAvailableScriptsHelp = (cwd: string): string => {
+  const { scripts } = loadConfigSync(cwd);
+  const keys = Object.keys(scripts);
+  if (!keys.length) return 'No scripts configured.';
+  return [
+    'Available script keys:',
+    ...keys.map((k) => `  - ${k}`),
+    '',
+    'Examples:',
+    '  ctx lint test',
+    '  ctx -s -e test'
+  ].join('\n');
 };

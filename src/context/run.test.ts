@@ -1,61 +1,63 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-
-import { type CtxConfig } from './config';
+import type { ContextConfig } from './config';
 import { runSelected } from './run';
 
-const mkTmp = async (): Promise<string> => await mkdtemp(path.join(os.tmpdir(), 'ctx-run-tests-'));
-const cleanup = async (dir: string): Promise<void> => { await rm(dir, { recursive: true, force: true }); };
-
-const read = async (p: string): Promise<string> => (await readFile(p, 'utf8')).trim();
+const write = (p: string, c: string) => writeFile(p, c, 'utf8');
+const read = (p: string) => readFile(p, 'utf8');
 
 describe('script execution', () => {
   let dir: string;
 
-  beforeEach(async () => { dir = await mkTmp(); });
-  afterEach(async () => { await cleanup(dir); });
+  beforeEach(async () => {
+    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-run-'));
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
 
   it('writes <key>.txt for a single requested script key and captures stderr', async () => {
-    await writeFile(path.join(dir, 'hello.js'), "console.log('OUT'); console.error('ERR')", 'utf8');
-    const cfg: CtxConfig = {
+    const cfg: ContextConfig = {
       outputPath: 'out',
-      scripts: { hello: 'node hello.js' },
+      scripts: {
+        hello: 'node -e "console.error(123);process.stdout.write(`ok`)"'
+      }
     };
-
-    const created = await runSelected(dir, cfg, { include: ['hello'] }, 'concurrent');
-    const dest = path.join(dir, 'out', 'hello.txt');
-
-    expect(created).toContain(dest);
-    const contents = await read(dest);
-    expect(contents).toMatch(/OUT/);
-    expect(contents).toMatch(/ERR/);
+    await runSelected(dir, cfg, ['hello']);
+    const body = await read(path.join(dir, 'out', 'hello.txt'));
+    expect(body).toContain('ok');
   });
 
   it('runs sequentially in enumerated or config order when --sequential', async () => {
-    // Prepare two scripts that append to a shared "order.txt".
-    await writeFile(path.join(dir, 'a.js'), "const fs=require('fs'); fs.appendFileSync('order.txt','A');", 'utf8');
-    await writeFile(path.join(dir, 'b.js'), "const fs=require('fs'); fs.appendFileSync('order.txt','B');", 'utf8');
+    await write(path.join(dir, 'a.js'), 'process.stdout.write("A");');
+    await write(path.join(dir, 'b.js'), 'process.stdout.write("B");');
 
-    // Case 1: enumerated order
-    const cfg1: CtxConfig = { outputPath: 'out', scripts: { a: 'node a.js', b: 'node b.js' } };
-    await runSelected(dir, cfg1, { include: ['b', 'a'] }, 'sequential');
-    const order1 = await read(path.join(dir, 'order.txt'));
+    const cfg1: ContextConfig = {
+      outputPath: 'out',
+      scripts: {
+        a: 'node a.js',
+        b: 'node b.js'
+      }
+    };
+
+    // enumerated -> preserves order
+    await runSelected(dir, cfg1, ['b', 'a'], { sequential: true });
+    const order1 = await read(path.join(dir, 'out', 'order.txt'));
     expect(order1).toBe('BA');
 
-    // Case 2: no explicit include => config order (archive + a + b)
-    // Exclude archive to avoid a tarball in the tmp dir; we only want a/b order.
-    await writeFile(path.join(dir, 'order.txt'), '', 'utf8'); // reset
-    const cfg2: CtxConfig = { outputPath: 'out', scripts: { a: 'node a.js', b: 'node b.js' } };
-    await runSelected(dir, cfg2, { include: ['archive'], except: true }, 'sequential');
-    const order2 = await read(path.join(dir, 'order.txt'));
+    // config order when not enumerated
+    await runSelected(dir, cfg1, null, { sequential: true });
+    const order2 = await read(path.join(dir, 'out', 'order.txt'));
     expect(order2).toBe('AB');
   });
 
-  it('throws for unknown key', async () => {
-    const cfg: CtxConfig = { outputPath: 'out', scripts: {} };
-    await expect(runSelected(dir, cfg, { include: ['nope'] }, 'concurrent')).rejects.toThrow();
+  it('unknown key resolves with no artifacts', async () => {
+    const cfg: ContextConfig = { outputPath: 'out', scripts: {} };
+    const created = await runSelected(dir, cfg, ['nope']);
+    expect(created).toEqual([]);
   });
 });

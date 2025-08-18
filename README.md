@@ -1,144 +1,57 @@
-# project-context (CLI: `ctx`)
+# requirements.md
 
-Generate a **single snapshot** of your project’s state that an AI can ingest to accelerate dev iterations. It writes:
+## Global Requirements
 
-- a **`archive.tar`** that contains your repository’s current files, and
-- one text file per configured script (e.g. `test.txt`, `lint.txt`, `build.txt`, `typecheck.txt`) that captures the command output.
-
-All artifacts are written under an output directory (default **`ctx/`**).
-
----
-
-## Why?
-
-Handing an AI your repo plus recent build/typecheck/lint/test output is the fastest way to communicate the **deep state** of a codebase. This tool standardizes and automates that process so every iteration is consistent and reproducible.
-
----
-
-## Install
-
-```bash
-# local (recommended)
-npm i -D project-context
-
-# or run once via npx
-npx project-context init
-```
-
-> The CLI name is **`ctx`** to avoid collisions with PowerShell’s `context` built‑in.
-
----
-
-## Quick start
-
-```bash
-# 1) Create a config by scanning your package.json scripts
-npx ctx init
-#   - Choose JSON or YML
-#   - Choose an output directory (default: ctx)
-#   - Optionally add that directory to .gitignore
-
-# 2) Generate everything in parallel (archive + scripts)
-npx ctx
-
-# 3) Generate just one artifact
-npx ctx archive
-npx ctx test
-```
-
-On completion, the output directory contains:
-
-```
-ctx/
-  archive.tar
-  test.txt
-  lint.txt
-  build.txt
-  typecheck.txt
-```
-
----
+- **No backward‑compat shims** before first release. Keep the code & tests aligned with the **current** API.
+- **Path alias**: Use `@/*` for all non‑sibling imports.
+  - Tooling support:
+    - TypeScript: `compilerOptions.baseUrl="."`, `paths={"@/*":["src/*"]}`
+    - Rollup: alias `'@' -> './src'`
+    - Vitest (Vite): `resolve.alias['@'] = <repo>/src`
+- **Global install robustness**: Resolve package **root** from `cwd` using [`package-directory`](https://www.npmjs.com/package/package-directory) (both async and sync). Fallback to `cwd` when no `package.json` is found.
 
 ## Configuration (`ctx.config.json|yml`)
 
-Example **YML**:
+```ts
+type ScriptMap = Record<string, string>;
 
-```yml
-outputPath: ctx
-scripts:
-  test: npm run test
-  lint: npm run lint
-  build: npm run build
-  typecheck: npm run typecheck
+type ContextConfig = {
+  /** Output dir, relative to package root (resolved via package-directory). */
+  outputPath: string;
+
+  /** Map of script keys to shell commands. Reserved keys: "archive", "init" are disallowed. */
+  scripts: ScriptMap;
+
+  /**
+   * Optional lists of repo‑relative paths (files or directories).
+   * - `includes`: if provided, only files under these prefixes are considered by features that enumerate files.
+   * - `excludes`: explicit exclusions that win over defaults and any gitignore behavior.
+   * These override any implicit ignore logic in this tool; they do NOT change your .gitignore file.
+   */
+  includes?: string[];
+  excludes?: string[];
+};
 ```
 
-- `outputPath` — directory to write artifacts (relative to repo root).
-- `scripts` — keys are your **invocation names** (e.g., `ctx test` writes `ctx/test.txt`), values are **shell commands**.
+## CLI
 
-**Reserved keys**: `archive` and `init` are **not** allowed under `scripts`.
+- `ctx` commands:
+  - `ctx` (runner): executes scripts by keys; flags:
+    - `-e/--except <keys...>` run everything except listed keys
+    - `-s/--sequential` run in series
+    - `-c/--combine` produce combined outputs (`combined.txt` or `*.tar` when `archive` is selected)
+    - `-k/--keep` do not clear output directory between runs
+    - `-d/--diff` produce `archive.diff.tar` when `archive` is selected
+    - `--combined-file-name <name>` override base name for combined artifacts
+  - `ctx init` scaffolds `ctx.config.json|yml` (interactive by default, `--force` for non‑interactive).
 
----
+## Archiving & Diff
 
-## Commands
+- `archive.tar` is created **under** `outputPath`. By default the output directory is **excluded** to avoid recursion; combined `*.tar` sets `includeOutputDir: true`.
+- `archive.diff.tar` always exists when requested; if no changes are detected a placeholder file `.ctx_no_changes` is included.
 
-### `ctx`
-Runs **everything in parallel**:
-- creates/updates `archive.tar`
-- runs each configured script, writing `<key>.txt`
+## Linting & Testing
 
-Lifecycle logs are printed for each task:
+- ESLint lints TypeScript and JSON files; scopes discovery to repo files only (avoids scanning transient paths like `coverage/**`).
+- `vitest` excludes caches and uses `happy-dom`.
 
-```
-ctx: start "archive"
-ctx: start "test" (npm run test)
-ctx: done "archive" in 340ms -> ctx/archive.tar (52 files)
-ctx: done "test" in 2015ms -> ctx/test.txt
-```
-
-### `ctx [key]`
-Runs a **single** item. Examples:
-
-```bash
-ctx archive
-ctx test
-```
-
-### `ctx init`
-Creates an initial config by **scanning `package.json` scripts**:
-
-- Prompts for **format** (json/yml).
-- Prompts for **output directory** (default **`ctx`**).
-- Offers to **add that directory to `.gitignore`** (creates it if missing).
-- Writes `ctx.config.json|yml`, then shows CLI help.
-
-> Script keys are derived by taking the first word token from each script **title**, resolving duplicates by **shortest title**, and mapping to `npm run <title>`.
-
-### `ctx init -f` / `--force`
-Non‑interactive:
-
-- Chooses **YML**
-- Sets **`outputPath: ctx`**
-- **Adds `/ctx/`** to `.gitignore` (creates file if needed)
-- Writes **`ctx.config.yml`** and prints help
-
----
-
-## Notes & behavior
-
-- The CLI invokes commands via the platform shell (`cmd` on Windows; `sh` on POSIX).
-- Failures **do not abort** other concurrent tasks; failures set `process.exitCode = 1`.
-- The output directory is always created if missing.
-
----
-
-## Troubleshooting
-
-- **PowerShell**: `context` collides with built‑ins; this CLI is named **`ctx`**.
-- **Windows commands**: Prefer portable scripts (`npm run test`, `echo hi`, etc.). The CLI captures both stdout+stderr for determinism.
-- **Artifacts in VCS**: Add your output directory (default `ctx/`) to `.gitignore`. `ctx init` can do this automatically.
-
----
-
-## License
-
-MIT

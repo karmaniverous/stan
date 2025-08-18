@@ -1,9 +1,4 @@
-/**
- * REQUIREMENTS (for this file)
- * - Build library as ESM + CJS + .d.ts (no IIFE). [req-rollup-outputs]
- * - Auto-discover CLI entries in src/cli/* (now includes "ctx"). [req-cli-discovery]
- * - Keep imports sorted and remove unused artifacts per ESLint config. [req-lint]
- */
+/** See /requirements.md for global requirements. */
 import aliasPlugin, { type Alias } from '@rollup/plugin-alias';
 import commonjsPlugin from '@rollup/plugin-commonjs';
 import jsonPlugin from '@rollup/plugin-json';
@@ -14,51 +9,52 @@ import fs from 'fs-extra';
 import type { InputOptions, OutputOptions, RollupOptions } from 'rollup';
 import dtsPlugin from 'rollup-plugin-dts';
 
-
 const outputPath = 'dist';
 
-const aliases: Alias[] = [];
+// Path alias @ -> ./src
+const aliases: Alias[] = [{ find: '@', replacement: './src' }];
 const alias = aliasPlugin({ entries: aliases });
 
 const commonPlugins = [alias, jsonPlugin(), nodeResolve({ preferBuiltins: true }), commonjsPlugin()];
+const typescript = typescriptPlugin({ tsconfig: './tsconfig.json' });
 
-const typescript = typescriptPlugin({
-  tsconfig: './tsconfig.json',
-});
-
-const commonInputOptions: InputOptions = {
-  plugins: [...commonPlugins, typescript],
-  treeshake: true,
-};
+const commonInputOptions: InputOptions = { plugins: [...commonPlugins, typescript], treeshake: true };
 
 const commonLibraryOutputs: OutputOptions[] = [
   { dir: `${outputPath}/mjs`, format: 'esm', sourcemap: false, exports: 'named' },
-  { dir: `${outputPath}/cjs`, format: 'cjs', sourcemap: false, exports: 'named' },
+  { dir: `${outputPath}/cjs`, format: 'cjs', sourcemap: false, exports: 'named' }
 ];
 
-const cliCommands = fs
-  .readdirSync('src/cli', { withFileTypes: true })
-  .filter((d) => d.isDirectory())
-  .map((d) => d.name);
+const buildLibrary = (): RollupOptions => ({
+  input: 'src/index.ts',
+  output: commonLibraryOutputs,
+  ...commonInputOptions
+});
 
-const config: RollupOptions[] = [
-  // Library (ESM + CJS)
-  { ...commonInputOptions, input: 'src/index.ts', output: commonLibraryOutputs },
+const discoverCliEntries = (): Record<string, string> => {
+  const entries: Record<string, string> = {};
+  const cliRoot = 'src/cli';
+  if (!fs.pathExistsSync(cliRoot)) return entries;
+  const names = fs.readdirSync(cliRoot);
+  for (const name of names) {
+    const sub = `${cliRoot}/${name}/index.ts`;
+    if (fs.pathExistsSync(sub)) {
+      entries[`cli/${name}`] = sub;
+    }
+  }
+  return entries;
+};
 
-  // Type declarations
-  {
-    input: 'src/index.ts',
-    plugins: [alias, dtsPlugin()],
-    output: [{ file: `${outputPath}/index.d.ts`, format: 'es' }],
-  },
+const buildCli = (): RollupOptions => ({
+  input: discoverCliEntries(),
+  output: [{ dir: `${outputPath}/cli`, format: 'esm', sourcemap: false, banner: '#!/usr/bin/env node' }],
+  ...commonInputOptions
+});
 
-  // CLI commands (individual directories under src/cli)
-  ...cliCommands.map<RollupOptions>((c) => ({
-    ...commonInputOptions,
-    input: `src/cli/${c}/index.ts`,
-    output: [{ dir: `${outputPath}/cli/${c}`, extend: true, format: 'esm' }],
-    plugins: [...commonPlugins, typescript, terserPlugin()],
-  })),
-];
+const buildTypes = (): RollupOptions => ({
+  input: 'src/index.ts',
+  output: [{ dir: `${outputPath}/types`, format: 'esm' }],
+  plugins: [dtsPlugin()]
+});
 
-export default config;
+export default [buildLibrary(), buildCli(), buildTypes()];

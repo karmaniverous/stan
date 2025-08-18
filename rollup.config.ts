@@ -47,14 +47,14 @@ const commonInputOptions = (minify: boolean): InputOptions => ({
   },
 });
 
-const outCommon: OutputOptions[] = [
+const outCommon = (outputPath: string): OutputOptions[] => [
   { dir: `${outputPath}/mjs`, format: 'esm', sourcemap: false },
   { dir: `${outputPath}/cjs`, format: 'cjs', sourcemap: false },
 ];
 
-const buildLibrary = (): RollupOptions => ({
+export const buildLibrary = (outputPath: string): RollupOptions => ({
   input: 'src/index.ts',
-  output: outCommon,
+  output: outCommon(outputPath),
   ...commonInputOptions(true), // minify library
 });
 
@@ -64,7 +64,7 @@ const discoverCliEntries = (): string[] => {
   return candidates.filter((p) => fs.existsSync(p));
 };
 
-const buildCli = (): RollupOptions => ({
+export const buildCli = (outputPath: string): RollupOptions => ({
   input: discoverCliEntries(),
   output: [
     {
@@ -77,10 +77,14 @@ const buildCli = (): RollupOptions => ({
   ...commonInputOptions(false), // do not minify CLI
 });
 
-const buildTypes = (): RollupOptions => ({
+export const buildTypes = (outputPath: string): RollupOptions => ({
   input: 'src/index.ts',
   output: [{ dir: `${outputPath}/types`, format: 'esm' }],
   plugins: [dtsPlugin()],
 });
 
-export default [buildLibrary(), buildCli(), buildTypes()];
+export default [
+  buildLibrary(outputPath),
+  buildCli(outputPath),
+  buildTypes(outputPath),
+];

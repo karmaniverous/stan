@@ -4,7 +4,7 @@ excludes:
   - docs
 outputPath: stan
 scripts:
-  build: npm run build
+  build: npm run stan:build
   docs: npm run docs
   knip: npm run knip
   lint: npm run lint

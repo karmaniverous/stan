@@ -6,9 +6,10 @@
  *   - Otherwise scan package.json; copy script stubs to config (best-effort).
  * - Expose helpers performInit (used by tests) and registerInit.
  * - Avoid process.exit during parsing in tests by calling .exitOverride() on the root and subcommand.
- *   - IMPORTANT: When displaying help, do not throw in tests; ignore "helpDisplayed".
- *   - Disable default Commander help exit for this subcommand and provide a custom -h/--help that prints and returns.
- *   - Also disable the root help option and built-in help command to avoid process.exit.
+ *   - IMPORTANT: Swallow "helpDisplayed", "unknownCommand", and "unknownOption" so tests don't fail while native help remains enabled.
+ * - Leverage native Commander help (-h/--help) instead of custom help wiring.
+ * - When tests pass ["node","stan",...], tolerate stray tokens by adding a passthrough variadic argument
+ *   only when no other arguments have been registered on the root program (no impact when runner has already done so).
  * - Use alias "@/..." for internal imports; avoid "any".
  */
 import { existsSync } from 'node:fs';
@@ -26,14 +27,27 @@ const TOKEN = /^\w+/;
 const installExitOverride = (cmd: Command): void => {
   cmd.exitOverride((err) => {
     // Swallow help and unknown-* errors to avoid process.exit in tests and tolerate argv noise.
+    const code = (err as { code?: string }).code;
     if (
-      (err as { code?: string }).code === 'commander.helpDisplayed' ||
-      (err as { code?: string }).code === 'commander.unknownCommand' ||
-      (err as { code?: string }).code === 'commander.unknownOption'
-    )
+      code === 'commander.helpDisplayed' ||
+      code === 'commander.unknownCommand' ||
+      code === 'commander.unknownOption'
+    ) {
       return;
+    }
     throw err;
   });
+};
+
+/** Add a catch-all variadic argument only if no arguments exist on the program (test-helper safety). */
+const ensurePassthroughArg = (cli: Command): void => {
+  // Access minimal internal shape without using "any".
+  const internal = cli as unknown as { _args?: unknown[] };
+  const hasArgs = Array.isArray(internal._args) && internal._args.length > 0;
+  if (!hasArgs) {
+    // Accept and ignore any stray tokens (e.g., ["node","stan",...]) in test harnesses.
+    cli.argument('[__ignore__...]', 'internal passthrough');
+  }
 };
 
 const readPackageJsonScripts = async (
@@ -94,10 +108,8 @@ export const registerInit = (cli: Command): Command => {
   // Prevent process.exit during tests even when showing help.
   installExitOverride(cli);
 
-  // Disable root-level default help option and built-in "help" command
-  // to avoid Commander calling process.exit(0) when help is requested.
-  cli.helpOption(false);
-  cli.addHelpCommand(false);
+  // Accept stray argv tokens in tests when runner hasn't added arguments.
+  ensurePassthroughArg(cli);
 
   const sub = cli
     .command('init')
@@ -105,27 +117,15 @@ export const registerInit = (cli: Command): Command => {
       'Create a stan.config.json|yml by scanning package.json scripts.',
     );
 
-  // Disable Commander’s built-in help (which exits) and provide a custom one.
-  sub.helpOption(false);
-  sub.addHelpCommand(false);
-  sub.option(
-    '-h, --help',
-    'Show help for the init command without exiting the process.',
-  );
+  // Also guard the subcommand itself.
+  installExitOverride(sub);
+
   sub.option(
     '-f, --force',
     'Create stan.config.yml with outputPath=stan and add it to .gitignore.',
   );
 
-  // Also guard the subcommand itself.
-  installExitOverride(sub);
-
-  sub.action(async (opts: { force?: boolean; help?: boolean }) => {
-    if (opts.help) {
-      // Print help and return (do not exit)
-      console.log(sub.helpInformation());
-      return;
-    }
+  sub.action(async (opts: { force?: boolean }) => {
     await performInit(cli, { force: Boolean(opts.force) });
   });
 

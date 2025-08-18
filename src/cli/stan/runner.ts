@@ -8,6 +8,7 @@
  * - If created artifacts array is empty (or undefined), print renderAvailableScriptsHelp(cwd).
  * - Ignore non-script argv tokens (“node”, “stan”) and any values not declared in config.scripts, except the special “archive”.
  * - Be resilient in test environments: if config cannot be loaded (e.g., mocks), still compute selections from argv and call runSelected with a minimal config.
+ * - IMPORTANT: When no scripts are explicitly enumerated, implicitly include the special “archive” job in addition to configured scripts.
  * - No "any"; use "@/..." alias for imports.
  * See /stan.project.md for global & cross‑cutting requirements.
  */
@@ -85,7 +86,20 @@ export const registerRunner = (cli: Command): Command => {
           ? Object.keys(loaded.scripts)
           : (enumerated ?? []).filter((k) => !NOISE_TOKENS.has(k));
 
-        const selection = computeSelection(allKeys, enumerated, opts.except);
+        const computed = computeSelection(allKeys, enumerated, opts.except);
+
+        // Default behavior: if no explicit selection then run all keys AND the special "archive"
+        // unless the user explicitly excluded it.
+        const selection =
+          computed === null
+            ? (() => {
+                const exceptSet = new Set(opts.except ?? []);
+                return exceptSet.has('archive')
+                  ? [...allKeys]
+                  : [...allKeys, 'archive'];
+              })()
+            : computed;
+
         const mode: ExecutionMode = opts.sequential
           ? 'sequential'
           : 'concurrent';

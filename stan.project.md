@@ -1,3 +1,5 @@
+// stan.project.md
+
 # Global & Cross‑Cutting Requirements
 
 This document is the single source of truth for project‑wide requirements. Individual files should not duplicate these; instead they include a short header like:
@@ -53,6 +55,8 @@ This document is the single source of truth for project‑wide requirements. Ind
 - Export a **`makeCli()`** factory; no compatibility exports for earlier names.
 - Avoid `process.exit()` in library/CLI code so tests can run in‑process.
 - When executed as a script, run `await makeCli().parseAsync(process.argv)`.
+- Help: native `-h/--help` is enabled for the root and subcommands. During tests, `exitOverride` swallows `helpDisplayed` so the process does not exit.
+- Default selection: when invoked without explicit script keys, the CLI runs all configured scripts and implicitly adds the special `"archive"` job (unless explicitly excluded via `-e archive`).
 
 ## Configuration Resolution
 
@@ -75,7 +79,7 @@ type ContextConfig = {
 ```
 
 - `includes` and `excludes` are **path prefixes** (non‑glob) relative to the package root.
-- They **override** default ignore behavior. If `includes` is set, only those subpaths are considered. Then `excludes` removes any of those.
+- Precedence: **includes override excludes**. When `includes` is defined, it acts as an allow‑list (only included prefixes are considered).
 - The output directory is excluded from archives **unless** `--combine` is used (in which case it is included).
 
 ## UX / Help
@@ -88,6 +92,10 @@ type ContextConfig = {
 - Log concise progress lines during runs, for example:
   - `stan: start "test" (node -e "...")`
   - `stan: done "test" in 1.2s -> out/test.txt`
+
+## Artifacts
+
+- The `order.txt` file is a test harness artifact used to assert execution order. It is written only when `NODE_ENV==='test'` or when explicitly enabled by `STAN_WRITE_ORDER=1`. It is not produced during normal CLI runs.
 
 ## Misc
 

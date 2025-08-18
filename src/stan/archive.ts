@@ -1,3 +1,4 @@
+// src/stan/archive.ts
 /* src/stan/archive.ts
  * Create a project archive under the output directory.
  * NOTE: Global and cross‑cutting requirements live in /stan.project.md.
@@ -7,6 +8,9 @@
  * - Options:
  *   - includeOutputDir?: when true, do include the outputPath directory.
  *   - fileName?: override base name (must end with .tar).
+ * - Honor includes/excludes from config:
+ *   - Non-globbing, path-prefix semantics.
+ *   - Includes override excludes (explicit includes win).
  * - Return the absolute path to the created tarball.
  * - Zero "any" usage.
  */
@@ -67,28 +71,34 @@ export const createArchive = async (
   if (!existsSync(outDir)) await mkdir(outDir, { recursive: true });
 
   const all = await listFiles(root);
+  const outRelNorm = outputPath.replace(/\\/g, '/');
+
+  const matchesPrefix = (f: string, p: string): boolean => {
+    const norm = p.replace(/\\/g, '/');
+    return f === norm || f.startsWith(norm + '/');
+  };
+
   const files = all.filter((f) => {
+    // Always exclude these
     if (f.startsWith('node_modules/') || f.startsWith('.git/')) return false;
-    if (!includeOutputDir && f.startsWith(outputPath.replace(/\\/g, '/') + '/'))
-      return false;
-    const allowByInclude =
-      includes && includes.length
-        ? includes.some(
-            (p) =>
-              f === p.replace(/\\/g, '/') ||
-              f.startsWith(p.replace(/\\/g, '/') + '/'),
-          )
-        : true;
-    if (!allowByInclude) return false;
-    const blockedByExclude =
-      excludes && excludes.length
-        ? excludes.some(
-            (p) =>
-              f === p.replace(/\\/g, '/') ||
-              f.startsWith(p.replace(/\\/g, '/') + '/'),
-          )
-        : false;
-    if (blockedByExclude) return false;
+    // Exclude the output directory unless explicitly included via includeOutputDir
+    if (!includeOutputDir && f.startsWith(outRelNorm + '/')) return false;
+
+    const hasIncludes = includes.length > 0;
+
+    if (hasIncludes) {
+      // Allow only files under explicit include prefixes
+      const included = includes.some((p) => matchesPrefix(f, p));
+      if (!included) return false;
+      // Includes override excludes: once explicitly included, do not filter it out.
+      return true;
+    }
+
+    // No includes configured: apply excludes as a denylist
+    const isExcluded =
+      excludes.length > 0 && excludes.some((p) => matchesPrefix(f, p));
+    if (isExcluded) return false;
+
     return true;
   });
 

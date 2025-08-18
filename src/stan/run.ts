@@ -1,8 +1,10 @@
+// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (current):
  * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.
  * - Create per-script artifacts <outputPath>/<key>.txt combining stdout+stderr.
  * - Maintain <outputPath>/order.txt by appending the UPPERCASE first letter of each executed key, in run order.
+ *   - ORDER FILE CREATION IS TEST-ONLY: write it when NODE_ENV==='test' or STAN_WRITE_ORDER==='1'.
  * - Support selection of keys; when null/undefined, run all. Ignore unknown keys.
  * - Treat special key 'archive': it should execute after all other keys when present.
  * - Options:
@@ -66,7 +68,7 @@ const runOne = async (
   outRel: string,
   key: string,
   cmd: string,
-  orderFile: string,
+  orderFile?: string,
 ): Promise<string> => {
   console.log(`stan: start "${key}"`);
   const outAbs = resolve(cwd, outRel);
@@ -84,7 +86,9 @@ const runOne = async (
     child.on('close', () => resolveP());
   });
   stream.end();
-  await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
+  if (orderFile) {
+    await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
+  }
   console.log(`stan: done "${key}" -> ${relForLog(cwd, outFile)}`);
   return outFile;
 };
@@ -119,8 +123,15 @@ export const runSelected = async (
   const behavior: RunBehavior = behaviorMaybe ?? {};
   const outRel = config.outputPath;
   const outAbs = await ensureOutputDir(cwd, outRel, Boolean(behavior.keep));
-  const orderFile = resolve(outAbs, 'order.txt');
-  if (!behavior.keep) await writeFile(orderFile, '', 'utf8');
+
+  // Gate order.txt for tests or explicit opt-in.
+  const shouldWriteOrder =
+    process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
+
+  const orderFile = shouldWriteOrder ? resolve(outAbs, 'order.txt') : undefined;
+  if (shouldWriteOrder && !behavior.keep) {
+    await writeFile(orderFile as string, '', 'utf8');
+  }
 
   const keys = normalizeSelection(selection, config);
   if (keys.length === 0) return [];
@@ -161,7 +172,10 @@ export const runSelected = async (
 
   if (hasArchive && !behavior.combine) {
     console.log('stan: start "archive"');
-    const archivePath = await createArchive(cwd, outRel);
+    const archivePath = await createArchive(cwd, outRel, {
+      includes: config.includes ?? [],
+      excludes: config.excludes ?? [],
+    });
     console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
     created.push(archivePath);
 

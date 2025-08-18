@@ -41,7 +41,7 @@ const main = async (): Promise<void> => {
   );
   const repoRoot = root.code === 0 ? root.stdout.trim() : process.cwd();
 
-  const outDirRel = 'context';
+  const outDirRel = 'ctx';
   const outDirAbs = path.join(repoRoot, outDirRel);
   await mkdir(outDirAbs, { recursive: true });
 
@@ -58,10 +58,10 @@ const main = async (): Promise<void> => {
 
   const allRel = list.stdout.split('\u0000').filter((f) => f.length > 0);
   const filesRel = allRel.filter(
-    (p) => !p.startsWith('context/') && existsSync(path.join(repoRoot, p)),
+    (p) => !p.startsWith('ctx/') && existsSync(path.join(repoRoot, p)),
   );
 
-  const archiveRel = 'context/archive.tar';
+  const archiveRel = 'ctx/archive.tar';
   const archiveAbs = path.join(repoRoot, archiveRel);
   const tmpAbs = `${archiveAbs}.tmp`;
   if (existsSync(tmpAbs)) await unlink(tmpAbs);

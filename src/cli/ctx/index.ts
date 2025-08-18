@@ -1,32 +1,24 @@
 #!/usr/bin/env node
 /**
- * REQUIREMENTS
- * - Implement a `ctx` CLI using Commander. [req-cli]
- * - If no config exists, running `ctx` should start `init` automatically. [req-auto-init]
- * - With no args: generate archive + all configured scripts concurrently. [req-generate-all]
- * - With a key: generate only that item; `archive` is allowed. [req-key-only]
- * - Show dynamic help listing available script keys. [req-help-scripts]
+ * @file src/cli/ctx/index.ts
+ * @description Entry point for the `ctx` CLI.
  */
-import { Command } from '@commander-js/extra-typings';
 
-import { renderAvailableScriptsHelp } from '../../context/help';
+import { Command } from 'commander';
+
 import { registerInit } from './init';
-import { runCtx } from './runner';
+import { registerRunner } from './runner';
 
-const cli = new Command()
-  .name('ctx')
-  .description('Generate a snapshot of your project state for AI-assisted development.')
-  .argument('[key]', 'Generate only this file (script key or "archive").')
-  .addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()))
-  .action(async (key: string | undefined) => {
-    try {
-      await runCtx(cli, key);
-    } catch (e: unknown) {
-      console.error(e instanceof Error ? e.message : String(e));
-      process.exitCode = 1;
-    }
-  });
+export const makeCli = (): Command => {
+  const cli = new Command();
+  cli.name('ctx').description('Generate project context artifacts (archive, logs, combined outputs).');
 
-registerInit(cli);
+  registerRunner(cli);
+  registerInit(cli);
 
-cli.parse();
+  return cli;
+};
+
+if (require.main === module) {
+  void makeCli().parseAsync(process.argv);
+}

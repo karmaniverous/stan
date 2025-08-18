@@ -1,9 +1,10 @@
 /**
- * REQUIREMENTS
- * - Public surface for programmatic `context` features. [req-export-api]
+ * @file src/context/index.ts
+ * @description Barrel exports for context engine.
  */
-export { createArchive } from './archive';
-export type { ContextConfig, ScriptMap } from './config';
-export { ensureOutputDir, loadConfig, loadConfigSync } from './config';
-export { renderAvailableScriptsHelp } from './help';
-export { generateWithConfig } from './run';
+
+export * from './archive';
+export * from './config';
+export * from './diff';
+export * from './help';
+export * from './run';

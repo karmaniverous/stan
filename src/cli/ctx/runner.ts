@@ -1,46 +1,40 @@
 /**
- * REQUIREMENTS
- * - If the user runs `ctx` with no config file, automatically run the init wizard. [req-auto-init]
- * - Otherwise, preserve existing behavior:
- *   - With no args: run archive + all configured scripts concurrently. [req-concurrent-all]
- *   - With a key: run only that item; `archive` is allowed. [req-key-only]
- * - Keep logs, shell execution, and error semantics unchanged. [req-stability]
+ * @file src/cli/ctx/runner.ts
+ * @description Registers the default (root) `ctx` command that runs scripts and manages artifacts.
  */
-import type { Command } from '@commander-js/extra-typings';
+import type { Command } from 'commander';
 
-import { createArchive } from '../../context/archive';
-import { findConfigPathSync, loadConfig } from '../../context/config';
-import { generateWithConfig } from '../../context/run';
-import { performInit } from './init';
+import { loadConfig } from '../../context/config';
+import { renderAvailableScriptsHelp } from '../../context/help';
+import { type RunBehavior,runSelected } from '../../context/run';
 
-/**
- * Entrypoint used by the CLI action. If no config exists, run init; else proceed.
- */
-export const runCtx = async <
-  A extends unknown[],
-  O extends Record<string, unknown>,
-  P extends Record<string, unknown>
->(
-  cli: Command<A, O, P>,
-  key?: string,
-  cwd: string = process.cwd(),
-): Promise<void> => {
-  // If there is no ctx.config file, jump straight to init and then exit.
-  if (!findConfigPathSync(cwd)) {
-    await performInit(cli, { cwd, force: false });
-    return;
-  }
+export const registerRunner = (cli: Command): Command => {
+  return cli
+    .argument('[scripts...]', 'script keys to run')
+    .option('-e, --except <keys...>', 'run all except these')
+    .option('-s, --sequential', 'run scripts sequentially')
+    .option('-c, --combine', 'combine outputs')
+    .option('-k, --keep', 'keep the output directory (do not clear)')
+    .option('-d, --diff', 'also compute an archive diff (when `archive` is included)')
+    .option('--combined-file-name <name>', 'override the combined output base name (default: "combined")')
+    .action(async (scripts: string[] | undefined, opts: Record<string, unknown>) => {
+      const cwd = process.cwd();
+      const config = await loadConfig(cwd, { autoInitIfMissing: true });
 
-  const config = await loadConfig(cwd);
+      const behavior: RunBehavior = {
+        except: (opts.except as string[] | undefined) ?? undefined,
+        sequential: Boolean(opts.sequential),
+        combine: Boolean(opts.combine),
+        keep: Boolean(opts.keep),
+        diff: Boolean(opts.diff),
+        combinedFileName: (opts.combinedFileName as string | undefined) ?? undefined,
+      };
 
-  if (key) {
-    if (key === 'archive') {
-      await createArchive({ cwd, outputPath: config.outputPath });
-      return;
-    }
-    await generateWithConfig(config, { cwd, key });
-    return;
-  }
+      const created = await runSelected(cwd, config, scripts ?? null, behavior);
 
-  await generateWithConfig(config, { cwd });
+      if (created.length === 0) {
+         
+        console.log(renderAvailableScriptsHelp(config));
+      }
+    });
 };

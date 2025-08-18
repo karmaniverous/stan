@@ -1,3 +1,4 @@
+// vitest.config.ts
 /** See /stan.project.md for global requirements. */
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
@@ -16,5 +17,6 @@ export default defineConfig({
     environment: 'happy-dom',
     exclude: ['node_modules/**', 'dist/**', '.rollup.cache/**'],
     coverage: { provider: 'v8', reporter: ['text', 'lcov'] },
+    setupFiles: [resolve(rootDir, 'src/test/setup.ts')],
   },
 });

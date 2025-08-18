@@ -1,3 +1,4 @@
+// src/cli/stan/runner.ts
 /**
  * REQUIREMENTS (current):
  * - Register the main CLI command `stan` with:
@@ -10,8 +11,10 @@
  *     - `-d, --diff` to create `archive.diff.tar` when archive is included
  *     - `--combined-file-name <name>` to override base name of combined artifacts
  * - Load config, compute final selection, call runSelected(cwd, config, selection, mode, behavior).
- * - On empty result, print renderAvailableScriptsHelp(cwd).
+ * - If created artifacts array is empty (or undefined), print renderAvailableScriptsHelp(cwd).
  * - Avoid `any`; keep imports via @/* alias.
+ *
+ * See /stan.project.md for global & cross‑cutting requirements.
  */
 import type { Command } from 'commander';
 
@@ -50,7 +53,14 @@ export const registerRunner = (cli: Command): Command => {
     .action(
       async (
         enumerated: string[] | undefined,
-        opts: Record<string, unknown>,
+        opts: {
+          except?: string[];
+          sequential?: boolean;
+          combine?: boolean;
+          keep?: boolean;
+          diff?: boolean;
+          combinedFileName?: string;
+        },
       ) => {
         const cwd = process.cwd();
         const config = await loadConfig(cwd);
@@ -67,9 +77,9 @@ export const registerRunner = (cli: Command): Command => {
           combine: Boolean(opts.combine),
           keep: Boolean(opts.keep),
           diff: Boolean(opts.diff),
-          combinedFileName:
-            (opts.combinedFileName as string | undefined) ?? undefined,
+          combinedFileName: opts.combinedFileName ?? undefined,
         };
+
         const created = await runSelected(
           cwd,
           config,
@@ -77,7 +87,9 @@ export const registerRunner = (cli: Command): Command => {
           mode,
           behavior,
         );
-        if (created.length === 0) {
+
+        // Robustness: treat undefined like "no artifacts"
+        if (!Array.isArray(created) || created.length === 0) {
           console.log(renderAvailableScriptsHelp(cwd));
         }
       },

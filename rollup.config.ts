@@ -1,3 +1,4 @@
+// rollup.config.ts
 /** See /stan.project.md for global requirements. */
 import aliasPlugin, { type Alias } from '@rollup/plugin-alias';
 import commonjsPlugin from '@rollup/plugin-commonjs';
@@ -8,7 +9,12 @@ import typescriptPlugin from '@rollup/plugin-typescript';
 import fs from 'fs-extra';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { InputOptions, OutputOptions, RollupOptions } from 'rollup';
+import type {
+  InputOptions,
+  OutputOptions,
+  Plugin,
+  RollupOptions,
+} from 'rollup';
 import dtsPlugin from 'rollup-plugin-dts';
 
 const outputPath = 'dist';
@@ -20,20 +26,26 @@ const srcAbs = path.resolve(__dirname, 'src');
 const aliases: Alias[] = [{ find: '@', replacement: srcAbs }];
 const alias = aliasPlugin({ entries: aliases });
 
-const commonInputOptions: InputOptions = {
-  plugins: [
+const makePlugins = (minify: boolean): Plugin[] => {
+  const base: Plugin[] = [
     alias,
     nodeResolve({ exportConditions: ['node', 'module', 'default'] }),
     commonjsPlugin(),
     jsonPlugin(),
     typescriptPlugin(),
-    terserPlugin({ format: { comments: false } }),
-  ],
+  ];
+  return minify
+    ? [...base, terserPlugin({ format: { comments: false } })]
+    : base;
+};
+
+const commonInputOptions = (minify: boolean): InputOptions => ({
+  plugins: makePlugins(minify),
   onwarn(warning, defaultHandler) {
-    // noise from type-only imports in tests
+    // Delegate default handling for now
     defaultHandler(warning);
   },
-};
+});
 
 const outCommon: OutputOptions[] = [
   { dir: `${outputPath}/mjs`, format: 'esm', sourcemap: false },
@@ -43,7 +55,7 @@ const outCommon: OutputOptions[] = [
 const buildLibrary = (): RollupOptions => ({
   input: 'src/index.ts',
   output: outCommon,
-  ...commonInputOptions,
+  ...commonInputOptions(true), // minify library
 });
 
 const discoverCliEntries = (): string[] => {
@@ -62,7 +74,7 @@ const buildCli = (): RollupOptions => ({
       banner: '#!/usr/bin/env node',
     },
   ],
-  ...commonInputOptions,
+  ...commonInputOptions(false), // do not minify CLI
 });
 
 const buildTypes = (): RollupOptions => ({

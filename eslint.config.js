@@ -1,3 +1,4 @@
+// eslint.config.js
 /** See /stan.project.md for global & cross‑cutting requirements. */
 /* eslint-env node */
 import eslint from '@eslint/js';
@@ -15,6 +16,19 @@ const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
+  // Ignore generated/build/cache outputs
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'esm/**',
+      'coverage/**',
+      'docs/**',
+      'stan/**',
+      '.rollup.cache/**',
+    ],
+  },
+
   // Base JS
   eslint.configs.recommended,
 
@@ -60,6 +74,11 @@ export default [
     plugins: { vitest },
     languageOptions: {
       globals: vitest.environments.env.globals,
+    },
+    rules: {
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
 

@@ -1,3 +1,4 @@
+// src/stan/run.ts
 /**
  * REQUIREMENTS (current):
  * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.
@@ -12,6 +13,8 @@
  *   - combinedFileName?: custom base name for combined artifacts (default 'combined').
  * - Log `stan: start "<key>"` and `stan: done "<key>" -> <relative path>` for each artifact including archive variants.
  * - Zero `any` usage; path alias @/* is used for intra-project imports.
+ *
+ * See /stan.project.md for global & cross‑cutting requirements.
  */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
@@ -38,15 +41,25 @@ const relForLog = (cwd: string, absPath: string): string =>
 const configOrder = (config: ContextConfig): string[] =>
   Object.keys(config.scripts);
 
+/**
+ * Normalize selection to config order, preserving special key 'archive' if explicitly requested.
+ * - When selection is null/undefined, return all config keys (no 'archive' unless present in config).
+ * - When selection exists, order by config order and append 'archive' if present in the selection.
+ */
 const normalizeSelection = (
   selection: Selection | undefined | null,
   config: ContextConfig,
 ): string[] => {
   const all = configOrder(config);
   if (!selection || selection.length === 0) return all;
-  // Filter to known keys only
-  const set = new Set(all);
-  return selection.filter((k) => set.has(k));
+
+  const requested = new Set(selection);
+  const ordered = all.filter((k) => requested.has(k));
+
+  // Preserve explicit request for special 'archive' even though it is not in config.scripts.
+  if (requested.has('archive')) ordered.push('archive');
+
+  return ordered;
 };
 
 const runOne = async (
@@ -122,6 +135,7 @@ export const runSelected = async (
   };
 
   if (mode === 'sequential') {
+    // Always preserve config order (normalizeSelection returns config-ordered keys).
     for (const k of toRun) {
       await runner(k);
     }
@@ -164,7 +178,7 @@ export const runSelected = async (
       created.push(diffPath);
     }
   }
-  // When combining with archive, still honor --diff after scripts & combined tar are created.
+
   if (hasArchive && behavior.combine && behavior.diff) {
     console.log('stan: start "archive (diff)"');
     const { diffPath } = await createArchiveDiff({

@@ -1,5 +1,5 @@
+// tsconfig.json
 {
-  // See /stan.project.md for global requirements.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],

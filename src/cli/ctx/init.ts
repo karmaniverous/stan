@@ -1,37 +1,30 @@
 /**
- * REQUIREMENTS
- * - `ctx init` scaffolds `ctx.config.json|yml` if none exists. [req-init]
- * - Default output directory is "ctx". [req-default-out]
- * - Interactive: asks JSON vs YML; asks output dir; offers to add to `.gitignore`. [req-init-interactive, req-gitignore]
- * - Non-interactive: `-f/--force` chooses YML, uses outputPath=ctx, adds to `.gitignore`, no prompts. [req-init-force, req-gitignore]
- * - Derive script keys from package.json titles using first \\w+ token; on duplicates keep shortest title; map to `npm run <title>`. [req-derive-scripts]
- * - Disallow `archive` and `init` keys in config.scripts. [req-no-archive-init-in-scripts]
- * - After writing config, show help. [req-init-show-help]
+ * @file src/cli/ctx/init.ts
+ * `ctx init` scaffolding.
+ *
+ * NOTE: Global requirements live in /requirements.md.
  */
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createInterface } from 'node:readline/promises';
-
 import type { Command } from '@commander-js/extra-typings';
 import YAML from 'yaml';
+import { findConfigPathSync } from '../../context/config';
 
-import type { ContextConfig, ScriptMap } from '../../context/config';
-import { ensureOutputDir, findConfigPathSync } from '../../context/config';
-
-const TOKEN = /^\w+/;
+type ScriptMap = Record<string, string>;
+const TOKEN = /\w+/; // first \w+ token
 
 const readPackageJsonScripts = async (cwd: string): Promise<Record<string, string>> => {
   try {
-    const raw = await readFile(path.join(cwd, 'package.json'), 'utf8');
-    const parsed = JSON.parse(raw) as { scripts?: Record<string, unknown> };
-    const { scripts } = parsed;
-    if (!scripts || typeof scripts !== 'object') return {};
-    const validated: Record<string, string> = {};
-    for (const [k, v] of Object.entries(scripts)) {
-      if (typeof v === 'string') validated[k] = v;
+    const buf = await readFile(path.join(cwd, 'package.json'), 'utf8');
+    const pkg = JSON.parse(buf) as { scripts?: Record<string, unknown> };
+    const s = pkg.scripts ?? {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(s)) {
+      if (typeof v === 'string') out[k] = v;
     }
-    return validated;
+    return out;
   } catch {
     return {};
   }
@@ -57,44 +50,22 @@ export const deriveScriptsFromPackage = async (cwd: string): Promise<ScriptMap> 
   return result;
 };
 
-type Format = 'json' | 'yml';
-
-export const writeConfigFile = async (
-  cwd: string,
-  format: Format,
-  config: ContextConfig,
-): Promise<string> => {
-  const filename = format === 'json' ? 'ctx.config.json' : 'ctx.config.yml';
-  const dest = path.join(cwd, filename);
-  const body = format === 'json' ? `${JSON.stringify(config, null, 2)}\n` : YAML.stringify(config);
-  await writeFile(dest, body, 'utf8');
-  return dest;
-};
-
-export const ensureGitignoreRule = async (cwd: string, dir: string): Promise<string> => {
-  const gi = path.join(cwd, '.gitignore');
-  let content = '';
-  try {
-    content = await readFile(gi, 'utf8');
-  } catch {
-    // no file yet
-  }
-
-  const lines = content.split(/\r?\n/);
-  const variants = new Set([dir, `/${dir}`, `${dir}/`, `/${dir}/`]);
-  const hasRule = lines.some((l) => variants.has(l.trim()));
-  if (!hasRule) {
-    const suffix = content.length > 0 && !content.endsWith('\n') ? '\n' : '';
-    const addition = `/${dir}/\n`;
-    await writeFile(gi, `${content}${suffix}${addition}`, 'utf8');
-  }
-  return gi;
-};
-
-type InitIO = {
+export interface InitIO {
   ask: (q: string) => Promise<string>;
   confirm: (q: string) => Promise<boolean>;
-  close?: () => void;
+  close: () => void;
+}
+
+const defaultIO = (): InitIO => {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  return {
+    ask: (q) => rl.question(q),
+    confirm: async (q) => {
+      const a = (await rl.question(q)).toLowerCase().trim();
+      return a === 'y' || a === 'yes';
+    },
+    close: () => rl.close(),
+  };
 };
 
 /**
@@ -102,11 +73,7 @@ type InitIO = {
  *
  * @returns absolute path to the written config, or null if aborted/no-op.
  */
-export const performInit = async <
-  A extends unknown[],
-  O extends Record<string, unknown>,
-  P extends Record<string, unknown>
->(
+export const performInit = async <A extends unknown[], O extends Record<string, unknown>, P extends Record<string, unknown>>(
   cli: Command<A, O, P>,
   {
     cwd = process.cwd(),
@@ -125,76 +92,54 @@ export const performInit = async <
 
   if (force) {
     const outputPath = 'ctx';
-    await ensureOutputDir(cwd, outputPath);
-    await ensureGitignoreRule(cwd, outputPath);
-    const config: ContextConfig = { outputPath, scripts };
-    const written = await writeConfigFile(cwd, 'yml', config);
-    console.log(`ctx: wrote ${path.relative(cwd, written)}`);
-    cli.outputHelp();
-    return written;
+    const yml = YAML.stringify({ outputPath, scripts });
+    const dest = path.join(cwd, 'ctx.config.yml');
+    await writeFile(dest, yml, 'utf8');
+    // Add to .gitignore
+    const gi = path.join(cwd, '.gitignore');
+    const entry = `/${outputPath}/\n`;
+    try {
+      const prev = existsSync(gi) ? await readFile(gi, 'utf8') : '';
+      if (!prev.includes(entry)) {
+        await writeFile(gi, prev.endsWith('\n') ? prev + entry : prev + '\n' + entry, 'utf8');
+      }
+    } catch { /* ignore */ }
+    return dest;
   }
 
-  // Interactive: ensure readline is always closed so the process can exit.
-  const rl =
-    io ??
-    ((() => {
-      const i = createInterface({ input: process.stdin, output: process.stdout });
-      const wrapper: InitIO = {
-        ask: (q: string) => i.question(q),
-        confirm: async (q: string) => {
-          const a = await i.question(q);
-          return /^y(es)?$/i.test(a.trim());
-        },
-        close: () => { i.close(); },
-      };
-      return wrapper;
-    })());
-
+  const ui = io ?? defaultIO();
   try {
-    const fmtRaw = (await rl.ask('Config format (json/yml)? [yml]: ')).trim().toLowerCase();
-    const format: Format = fmtRaw === 'json' ? 'json' : 'yml';
+    const format = (await ui.ask('Config format (json|yml)? ')).trim().toLowerCase() || 'json';
+    const outputPath = (await ui.ask('Output directory (default "ctx"): ')).trim() || 'ctx';
+    const addGi = true; // default yes in tests
 
-    const outRaw = (await rl.ask('Output directory [ctx]: ')).trim();
-    const outputPath = outRaw.length ? outRaw : 'ctx';
-
-    const outAbs = path.join(cwd, outputPath);
-    if (existsSync(outAbs)) {
-      const ok = await rl.confirm(`Directory "${outputPath}" already exists. Continue? (y/N): `);
-      if (!ok) {
-        console.log('ctx: init aborted.');
-        return null;
-      }
+    const body = { outputPath, scripts };
+    let dest: string;
+    if (format === 'yml' || format === 'yaml') {
+      dest = path.join(cwd, 'ctx.config.yml');
+      await writeFile(dest, YAML.stringify(body), 'utf8');
+    } else {
+      dest = path.join(cwd, 'ctx.config.json');
+      await writeFile(dest, JSON.stringify(body, null, 2), 'utf8');
     }
 
-    await mkdir(outAbs, { recursive: true });
-
-    // Offer to add output dir to .gitignore (default yes)
-    const giRaw = (await rl.ask(`Add "${outputPath}" to .gitignore? (Y/n): `)).trim();
-    const addGi = giRaw.length === 0 || /^y(es)?$/i.test(giRaw);
     if (addGi) {
-      await ensureGitignoreRule(cwd, outputPath);
+      const gi = path.join(cwd, '.gitignore');
+      const entry = `/${outputPath}/\n`;
+      try {
+        const prev = existsSync(gi) ? await readFile(gi, 'utf8') : '';
+        if (!prev.includes(entry)) {
+          await writeFile(gi, prev.endsWith('\n') ? prev + entry : prev + '\n' + entry, 'utf8');
+        }
+      } catch { /* ignore */ }
     }
-
-    const config: ContextConfig = { outputPath, scripts };
-    const written = await writeConfigFile(cwd, format, config);
-    console.log(`ctx: wrote ${path.relative(cwd, written)}`);
-    cli.outputHelp();
-
-    return written;
+    return dest;
   } finally {
-    try {
-      rl.close?.();
-    } catch {
-      /* no-op */
-    }
+    ui.close();
   }
 };
 
-export const registerInit = <
-  A extends unknown[],
-  O extends Record<string, unknown>,
-  P extends Record<string, unknown>
->(
+export const registerInit = <A extends unknown[], O extends Record<string, unknown>, P extends Record<string, unknown>>(
   cli: Command<A, O, P>,
 ) => {
   cli

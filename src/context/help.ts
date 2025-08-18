@@ -1,6 +1,8 @@
 /**
- * REQUIREMENTS
- * - Provide a help-text generator listing available script keys from config. [req-help-scripts]
+ * @file src/context/help.ts
+ * Small helper to render a footer listing available script keys.
+ *
+ * NOTE: Global requirements live in /requirements.md.
  */
 import { loadConfigSync } from './config';
 
@@ -15,14 +17,7 @@ export const renderAvailableScriptsHelp = (cwd: string): string => {
       return ['', 'No ctx.config.json|yml found.', 'Run `ctx init` to create one.', ''].join('\n');
     }
     const keys = Object.keys(cfg.scripts);
-    if (keys.length === 0) {
-      return [
-        '',
-        'No script keys found in config.',
-        'Run `ctx init` to scaffold a config from package.json.',
-        '',
-      ].join('\n');
-    }
+    if (keys.length === 0) return '';
     return [
       '',
       'Available script keys:',

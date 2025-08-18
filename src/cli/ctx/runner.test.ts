@@ -14,19 +14,18 @@ vi.mock('../../context/config', async (importOriginal) => {
   };
 });
 
-const runSelectedSpy = vi.fn<[] , Promise<string[]>>().mockResolvedValue([]);
+const runSelectedSpy = vi.fn<(...args: unknown[]) => Promise<string[]>>().mockResolvedValue([]);
 vi.mock('../../context/run', async () => {
   return {
-    runSelected: (...args: unknown[]) => runSelectedSpy(...args as []),
+    runSelected: (...args: unknown[]) => runSelectedSpy(...args),
   };
 });
 
-describe('CLI argument parsing', () => {
+describe('CLI root command', () => {
   let tmp: string;
 
   beforeEach(async () => {
-    tmp = await mkdtemp(path.join(os.tmpdir(), 'ctx-cli-tests-'));
-    // Provide a minimal package.json so Commander name & description aren't important.
+    tmp = await mkdtemp(path.join(os.tmpdir(), 'ctx-cli-'));
     await writeFile(path.join(tmp, 'package.json'), JSON.stringify({ name: 'x', version: '0.0.0' }), 'utf8');
   });
 
@@ -35,10 +34,11 @@ describe('CLI argument parsing', () => {
     await rm(tmp, { recursive: true, force: true });
   });
 
-  it('passes -e selection with provided keys to runSelected', async () => {
+  it('passes -e to exclude and treats args as exclusion set', async () => {
     const { buildCli } = await import('./index');
     const cli = await buildCli();
     await cli.parseAsync(['node', 'ctx', '-e', 'archive', 'test'], { from: 'user' });
+
     expect(runSelectedSpy).toHaveBeenCalledTimes(1);
     const [, , selection, mode] = runSelectedSpy.mock.calls[0] as [unknown, unknown, unknown, unknown];
     expect(selection).toEqual({ include: ['archive', 'test'], except: true });

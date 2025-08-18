@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "commander": "^14.0.0",
+    "package-directory": "^8.1.0",
     "yaml": "^2.8.1"
   },
   "description": "Generate a snapshot of your project state for AI-assisted development.",

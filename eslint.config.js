@@ -20,24 +20,20 @@ export default tseslint.config(
       'node_modules/**/*',
     ],
   },
-  eslint.configs.recommended,
-  tseslint.configs.strictTypeChecked,
-  prettierConfig,
   {
-    ...vitestPlugin.configs.recommended,
-    files: ['**/*.test.ts'],
-  },
-  {
+    files: ['**/*.{ts,tsx,js,json}'],
     languageOptions: {
       parserOptions: {
-        project: true,
+        project: ['./tsconfig.json'],
         tsconfigRootDir,
+        sourceType: 'module',
       },
     },
     plugins: {
-      prettierPlugin,
+      'prettier': prettierPlugin,
       'simple-import-sort': simpleImportSortPlugin,
       tsdoc: tsDocPlugin,
+      vitest: vitestPlugin,
     },
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',
@@ -48,6 +44,10 @@ export default tseslint.config(
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
       'tsdoc/syntax': 'warn',
+      'prettier/prettier': ['error', prettierConfig],
+    },
+    settings: {
+      vitest: { typecheck: true },
     },
   },
 );

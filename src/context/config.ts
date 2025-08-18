@@ -1,58 +1,40 @@
 /**
- * REQUIREMENTS
- * - Load configuration from `ctx.config.json` or `ctx.config.yml|yaml` at repo root. [req-config-load]
- * - Validate shape: has `outputPath` (string) and `scripts` (map). [req-validate]
- * - Disallow `archive` and `init` keys in scripts. [req-no-archive-init-in-scripts]
- * - Ensure the output directory exists. [req-output-dir]
- * - Provide synchronous and asynchronous loaders (help rendering needs sync). [req-sync-load]
+ * @file src/context/config.ts
+ * Configuration discovery and validation.
+ *
+ * NOTE: Global requirements live in /requirements.md.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { access, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-
 import YAML from 'yaml';
 
 export type ScriptMap = Record<string, string>;
 
-/**
- * Parsed configuration model for the CLI.
- */
 export type ContextConfig = {
-  /**
-   * Destination directory for generated files, relative to the repository root.
-   * Example: "ctx"
-   */
+  /** Relative path where outputs are written. Example: "ctx" */
   outputPath: string;
-  /**
-   * Mapping from script key to shell command.
-   * Example: { test: "npm run test" }
-   */
+  /** Mapping from script key to shell command. Example: { test: "npm run test" } */
   scripts: ScriptMap;
 };
+// Compatibility alias used by tests
+export type CtxConfig = ContextConfig;
 
 const CONFIG_CANDIDATES = ['ctx.config.json', 'ctx.config.yml', 'ctx.config.yaml'] as const;
 
-/**
- * Resolve the absolute path to the config file (async).
- * Throws if not found.
- */
+/** Resolve the absolute path to the config file (async). Throws if not found. */
 export const findConfigPath = async (cwd: string): Promise<string> => {
   for (const name of CONFIG_CANDIDATES) {
     const abs = path.join(cwd, name);
     try {
       await access(abs);
       return abs;
-    } catch {
-      /* continue */
-    }
+    } catch { /* continue */ }
   }
   throw new Error(`ctx: no config found. Create one of: ${CONFIG_CANDIDATES.join(', ')}`);
 };
 
-/**
- * Resolve the absolute path to the config file (sync).
- * Returns null if not found.
- */
+/** Resolve the absolute path to the config file (sync). Returns null if not found. */
 export const findConfigPathSync = (cwd: string): string | null => {
   for (const name of CONFIG_CANDIDATES) {
     const abs = path.join(cwd, name);
@@ -61,9 +43,7 @@ export const findConfigPathSync = (cwd: string): string | null => {
   return null;
 };
 
-/**
- * Validate and normalize a parsed config object.
- */
+/** Validate and normalize a parsed config object. */
 const validateConfig = (parsed: unknown): ContextConfig => {
   if (
     typeof parsed !== 'object' ||
@@ -73,7 +53,6 @@ const validateConfig = (parsed: unknown): ContextConfig => {
   ) {
     throw new Error('ctx: config must define both `outputPath` (string) and `scripts` (object).');
   }
-
   const { outputPath, scripts } = parsed as { outputPath: unknown; scripts: unknown };
 
   if (typeof outputPath !== 'string' || outputPath.trim().length === 0) {
@@ -98,9 +77,7 @@ const validateConfig = (parsed: unknown): ContextConfig => {
   return { outputPath, scripts: validated };
 };
 
-/**
- * Parse and validate the configuration file (async).
- */
+/** Parse and validate the configuration file (async). */
 export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
   const configPath = await findConfigPath(cwd);
   const raw = await readFile(configPath, 'utf8');
@@ -108,10 +85,7 @@ export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
   return validateConfig(parsed);
 };
 
-/**
- * Parse and validate the configuration file (sync).
- * Used for rendering help text without async.
- */
+/** Parse and validate the configuration file (sync). Used for rendering help text without async. */
 export const loadConfigSync = (cwd: string): ContextConfig | null => {
   const configPath = findConfigPathSync(cwd);
   if (!configPath) return null;
@@ -120,9 +94,7 @@ export const loadConfigSync = (cwd: string): ContextConfig | null => {
   return validateConfig(parsed);
 };
 
-/**
- * Ensure the destination directory exists and return its absolute path.
- */
+/** Ensure the destination directory exists and return its absolute path. */
 export const ensureOutputDir = async (cwd: string, outputPath: string) => {
   const abs = path.join(cwd, outputPath);
   if (!existsSync(abs)) {

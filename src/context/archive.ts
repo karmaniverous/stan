@@ -1,64 +1,90 @@
-import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 /**
  * @fileoverview Create a project archive under the output directory.
- *
- * @requirements
- * - Default name: `${outputPath}/archive.tar`. [req-archive-name]
- * - Create the output directory if it does not exist. [req-output-dir]
- * - Support including the output directory itself when requested (for "combine"). [req-combine-tar]
+ * NOTE: Global and cross‑cutting requirements live in /requirements.md.
  */
 
+type TarLike = { create: (opts: { file: string }, files: string[]) => Promise<void> };
+
 export type CreateArchiveOptions = {
-  /**
-   * When true, include the output directory in the tarball even if it is normally excluded. [req-combine-tar]
-   */
+  /** When true, include the output directory in the tarball even if it is normally excluded. */
   includeOutputDir?: boolean;
-  /**
-   * Override the output filename. Must end with ".tar". Defaults to "archive.tar". [req-archive-name]
-   */
+  /** Override the output filename. Must end with ".tar". Defaults to "archive.tar". */
   fileName?: string;
 };
 
+export type CreateArchiveArgs = {
+  cwd: string;
+  outputPath: string;
+  includeOutputDir?: boolean;
+  fileName?: string;
+  /** Testing seam: return list of repo‑relative file paths to pack. */
+  listFilesFn?: (cwd: string) => Promise<string[]>;
+};
+
+const defaultListFiles = async (cwd: string): Promise<string[]> => {
+  // Minimal, portable file walker to avoid extra deps.
+  const { readdir } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const out: string[] = [];
+  const stack: string[] = ['.'];
+  while (stack.length) {
+    const rel = stack.pop() as string;
+    const abs = join(cwd, rel);
+    const entries = await readdir(abs, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.name === 'node_modules' || e.name === '.git') continue;
+      const childRel = rel === '.' ? e.name : join(rel, e.name);
+      if (e.isDirectory()) stack.push(childRel);
+      else out.push(childRel);
+    }
+  }
+  out.sort();
+  return out;
+};
+
 /**
- * Create `${outputPath}/archive.tar` (or a custom fileName) using the system tar.
- * Returns the absolute path to the created tar.
+ * Overload: old style API used by some tests and call sites.
  */
-export const createArchive = async (
-  cwd: string,
-  outputPath: string,
-  options: CreateArchiveOptions = {},
-): Promise<string> => {
-  const { includeOutputDir = false, fileName = 'archive.tar' } = options;
+export async function createArchive(cwd: string, outputPath: string, options?: CreateArchiveOptions): Promise<string>;
+/**
+ * Overload: new object‑style API used by archive.test.ts.
+ */
+export async function createArchive(args: CreateArchiveArgs): Promise<{ archivePath: string; fileCount: number }>;
+export async function createArchive(
+  ...all: [string, string, CreateArchiveOptions?] | [CreateArchiveArgs]
+): Promise<string | { archivePath: string; fileCount: number }> {
+  const isObjectStyle = typeof all[0] === 'object';
+  const { cwd, outputPath, includeOutputDir, fileName, listFilesFn } = isObjectStyle
+    ? (all[0] as CreateArchiveArgs)
+    : { cwd: all[0] as string, outputPath: all[1] as string, ...(all[2] ?? {}) };
+
+  const baseName = fileName && fileName.endsWith('.tar') ? fileName : (fileName ? `${fileName}.tar` : 'archive.tar');
 
   const outDir = path.join(cwd, outputPath);
   if (!existsSync(outDir)) await mkdir(outDir, { recursive: true });
+  const archivePath = path.join(outDir, baseName);
 
-  const dest = path.join(outDir, fileName);
+  // Gather files
+  const list = (listFilesFn ?? defaultListFiles);
+  let files = await list(cwd);
 
-  // Build a tar command that includes repo root (.) and excludes node_modules and (optionally) outputPath.
-  // NOTE: We rely on the system 'tar' command; this mirrors npm's agent behavior in CI/dev shells. [req-shell]
-  // Cross-platform tar is commonly available on macOS/Linux and Windows (bsdtar). Tests can mock this if needed.
-  const args = ['-cf', dest];
-
-  // Exclusions to keep tar size reasonable; tweak as needed for your template.
-  args.push('--exclude', 'node_modules');
-
+  // Exclude output directory unless explicitly requested.
   if (!includeOutputDir) {
-    // Exclude the output directory in the default case to avoid recursion.
-    args.push('--exclude', path.join(outputPath, '*'));
+    const prefix = outputPath.replace(/\\/g, '/').replace(/\\+/g, '/');
+    files = files.filter((f) => !f.startsWith(prefix + '/'));
   }
 
-  // Archive the entire working directory.
-  args.push('.');
+  // Create the tarball using (mockable) `tar` package.
+  const tar = (await import('tar')) as unknown as TarLike;
+  await tar.create({ file: archivePath }, files);
 
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn('tar', args, { cwd, shell: true, windowsHide: true });
-    child.on('close', (code) => { code === 0 ? resolve() : reject(new Error(`tar exited with code ${code ?? -1}`)); });
-  });
-
-  return dest;
-};
+  // Return style depends on input style for backward‑compat.
+  if (isObjectStyle) {
+    return { archivePath, fileCount: files.length };
+  }
+  return archivePath;
+}

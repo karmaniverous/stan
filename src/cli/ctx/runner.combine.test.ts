@@ -14,10 +14,10 @@ vi.mock('../../context/config', async (importOriginal) => {
   };
 });
 
-const runSelectedSpy = vi.fn<[], Promise<string[]>>().mockResolvedValue([]);
+const runSelectedSpy = vi.fn<(...args: unknown[]) => Promise<string[]>>().mockResolvedValue([]);
 vi.mock('../../context/run', async () => {
   return {
-    runSelected: (...args: unknown[]) => runSelectedSpy(...args as []),
+    runSelected: (...args: unknown[]) => runSelectedSpy(...args),
   };
 });
 

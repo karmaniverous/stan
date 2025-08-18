@@ -15,8 +15,8 @@ import { createInterface } from 'node:readline/promises';
 import type { Command } from 'commander';
 import YAML from 'yaml';
 
-import type { ContextConfig, ScriptMap } from '@/context/config';
-import { ensureOutputDir, findConfigPathSync } from '@/context/config';
+import type { ContextConfig, ScriptMap } from '@/stan/config';
+import { ensureOutputDir, findConfigPathSync } from '@/stan/config';
 
 const TOKEN = /^\\w+/;
 

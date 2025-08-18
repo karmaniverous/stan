@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const runSelectedSpy = vi.fn().mockResolvedValue([]);
 
 vi.mock('@/context/run', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/context/run')>();
+  const actual = await importOriginal<typeof import('@/stan/run')>();
   return {
     ...actual,
     runSelected: (...args: unknown[]) => runSelectedSpy(...args),
@@ -15,7 +15,7 @@ vi.mock('@/context/run', async (importOriginal) => {
 });
 
 vi.mock('@/context/config', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/context/config')>();
+  const actual = await importOriginal<typeof import('@/stan/config')>();
   return {
     ...actual,
     findConfigPathSync: vi.fn().mockReturnValue('stan.config.yml'),

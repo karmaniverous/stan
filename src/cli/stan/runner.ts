@@ -15,13 +15,9 @@
  */
 import type { Command } from 'commander';
 
-import { loadConfig } from '@/context/config';
-import { renderAvailableScriptsHelp } from '@/context/help';
-import {
-  type ExecutionMode,
-  type RunBehavior,
-  runSelected,
-} from '@/context/run';
+import { loadConfig } from '@/stan/config';
+import { renderAvailableScriptsHelp } from '@/stan/help';
+import { type ExecutionMode, type RunBehavior, runSelected } from '@/stan/run';
 
 /** Helper to compute final selection from positional args and -e/--except. */
 const computeSelection = (

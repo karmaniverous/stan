@@ -1,122 +1,84 @@
-// src/cli/stan/runner.ts
-/* src/cli/stan/runner.ts
+/**
  * REQUIREMENTS (current):
  * - Register the main CLI command `stan` with:
- *   - positional [scripts...] (string[])
- *   - options: -e/--except, -s/--sequential, -c/--combine, -k/--keep, -d/--diff
+ *   - positional `[scripts...]` (string[])
+ *   - options:
+ *     - `-e, --except <keys...>` to exclude keys
+ *     - `-s, --sequential` to run sequentially
+ *     - `-c, --combine` to create a combined artifact
+ *     - `-k, --keep` to keep (not clear) the output directory
+ *     - `-d, --diff` to create `archive.diff.tar` when archive is included
+ *     - `--combined-file-name <name>` to override base name of combined artifacts
  * - Load config, compute final selection, call runSelected(cwd, config, selection, mode, behavior).
- * - If created artifacts array is empty (or undefined), print renderAvailableScriptsHelp(cwd).
- * - Ignore non-script argv tokens (“node”, “stan”) and any values not declared in config.scripts, except the special “archive”.
- * - Be resilient in test environments: if config cannot be loaded (e.g., mocks), still compute selections from argv and call runSelected with a minimal config.
- * - Default/implicit behavior is handled in the runner: when no scripts are explicitly enumerated the runner adds the special "archive".
- * - No "any"; use "@/..." alias for imports.
- * See /stan.project.md for global & cross‑cutting requirements.
+ * - On empty result, print renderAvailableScriptsHelp(cwd).
+ * - Avoid `any`; keep imports via `@/*` alias.
  */
 import type { Command } from 'commander';
 
-import type { ContextConfig } from '@/stan/config';
 import { loadConfig } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { type ExecutionMode, type RunBehavior, runSelected } from '@/stan/run';
 
-// Tokens to ignore from user-provided argv when using { from: 'user' } in Commander.
-const NOISE_TOKENS = new Set(['node', 'stan']);
-
-/** Helper to compute final selection from positional args and -e/--except. */
+/** Compute the final selection list based on enumeration and --except. */
 const computeSelection = (
   allKeys: string[],
-  enumerated: string[] | undefined,
-  except: string[] | undefined,
+  enumerated?: string[] | undefined,
+  except?: string[] | undefined,
 ): string[] | null => {
-  const isAllowed = (k: string): boolean =>
-    (k === 'archive' || allKeys.includes(k)) && !NOISE_TOKENS.has(k);
-
-  // Sanitize enumerated list: drop argv noise like "node"/"stan" and unknown keys.
-  const enumeratedClean = (enumerated ?? []).filter(isAllowed);
-
-  if (enumeratedClean.length > 0) {
-    // When both enumerated and except are present, respect order of enumerated keys and remove excepted.
-    const exceptSet = new Set(except ?? []);
-    return enumeratedClean.filter((k) => !exceptSet.has(k));
+  if (enumerated && enumerated.length) {
+    return except && except.length
+      ? allKeys.filter((k) => !enumerated.includes(k))
+      : enumerated;
   }
-
-  if (except && except.length) {
+  if (except && except.length)
     return allKeys.filter((k) => !except.includes(k));
-  }
-
   return null;
 };
 
 export const registerRunner = (cli: Command): Command => {
-  // Footer help listing available scripts (includes special "archive")
-  cli.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
-
   cli
     .argument('[scripts...]', 'script keys to run')
     .option('-e, --except <keys...>', 'script keys to exclude')
-    .option('-s, --sequential', 'run sequentially')
-    .option('-c, --combine', 'combine outputs into a single artifact')
-    .option('-k, --keep', 'keep (do not clear) output directory')
-    .option('-d, --diff', 'when running archive, also create archive.diff.tar')
+    .option('-s, --sequential', 'run sequentially in config order')
+    .option('-c, --combine', 'create a combined artifact')
+    .option('-k, --keep', 'keep (do not clear) the output directory')
+    .option('-d, --diff', 'create archive.diff.tar when archive is included')
+    .option(
+      '--combined-file-name <name>',
+      'override base name of combined artifacts',
+    )
     .action(
       async (
         enumerated: string[] | undefined,
-        opts: {
-          except?: string[];
-          sequential?: boolean;
-          combine?: boolean;
-          keep?: boolean;
-          diff?: boolean;
-        },
+        opts: Record<string, unknown>,
       ) => {
         const cwd = process.cwd();
-
-        // Try to load config; be resilient if unavailable (e.g., in tests).
-        let loaded: ContextConfig | undefined;
-        try {
-          loaded = await loadConfig(cwd);
-        } catch {
-          // swallow; we will fall back to a minimal config below
-        }
-
-        // Available keys come from config when present; otherwise from the enumerated argv.
-        const allKeys = loaded
-          ? Object.keys(loaded.scripts)
-          : (enumerated ?? []).filter((k) => !NOISE_TOKENS.has(k));
-
-        const selection = computeSelection(allKeys, enumerated, opts.except);
-
-        const mode: ExecutionMode = opts.sequential
+        const config = await loadConfig(cwd);
+        const keys = Object.keys(config.scripts);
+        const selection = computeSelection(
+          keys,
+          enumerated,
+          opts.except as string[] | undefined,
+        );
+        const mode: ExecutionMode = (opts as { sequential?: boolean })
+          .sequential
           ? 'sequential'
           : 'concurrent';
-
         const behavior: RunBehavior = {
-          combine: Boolean(opts.combine),
-          keep: Boolean(opts.keep),
-          diff: Boolean(opts.diff),
-          // Now sourced from config (defaults handled by loader)
-          combinedFileName: loaded?.combinedFileName,
+          combine: Boolean((opts as { combine?: boolean }).combine),
+          keep: Boolean((opts as { keep?: boolean }).keep),
+          diff: Boolean((opts as { diff?: boolean }).diff),
+          combinedFileName: (opts as { combinedFileName?: string })
+            .combinedFileName,
         };
-
-        // Minimal ephemeral config if none loaded (safe for tests where runSelected is mocked)
-        const effectiveConfig: ContextConfig = loaded ?? {
-          outputPath: 'stan',
-          scripts: Object.fromEntries(
-            (enumerated ?? [])
-              .filter((k) => k !== 'archive' && !NOISE_TOKENS.has(k))
-              .map((k) => [k, '']),
-          ),
-          combinedFileName: 'combined',
-        };
-
         const created = await runSelected(
           cwd,
-          effectiveConfig,
+          config,
           selection,
           mode,
           behavior,
         );
-
+        // Avoid throwing if a test double returned undefined; print help only when nothing created.
         if (!Array.isArray(created) || created.length === 0) {
           console.log(renderAvailableScriptsHelp(cwd));
         }

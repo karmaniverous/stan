@@ -1,4 +1,3 @@
-// eslint.config.js
 /** See /stan.project.md for global & cross‑cutting requirements. */
 /* eslint-env node */
 import eslint from '@eslint/js';
@@ -16,17 +15,9 @@ const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
-  // Ignore generated/build/cache outputs
+  // Ignore generated and third‑party artifacts
   {
-    ignores: [
-      'node_modules/**',
-      'dist/**',
-      'esm/**',
-      'coverage/**',
-      'docs/**',
-      'stan/**',
-      '.rollup.cache/**',
-    ],
+    ignores: ['dist/**', '.rollup.cache/**', 'coverage/**', 'node_modules/**'],
   },
 
   // Base JS
@@ -39,34 +30,30 @@ export default [
     languageOptions: {
       ...c.languageOptions,
       parserOptions: {
-        ...c.languageOptions?.parserOptions,
+        ...(c.languageOptions?.parserOptions ?? {}),
         project: ['./tsconfig.json'],
         tsconfigRootDir,
       },
     },
-  })),
-
-  // Project-specific rules for TS
-  {
-    files: ['src/**/*.ts', 'src/**/*.tsx'],
     plugins: {
-      'simple-import-sort': simpleImportSort,
+      ...(c.plugins ?? {}),
       prettier: prettierPlugin,
+      'simple-import-sort': simpleImportSort,
       tsdoc,
-      vitest,
     },
     rules: {
-      // Style & quality
-      'prettier/prettier': 'error',
+      ...(c.rules ?? {}),
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
-      'tsdoc/syntax': 'warn',
 
       // Our TS preferences
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+      // Quieter tsdoc syntax checks (we fix the worst offenders in-source)
+      'tsdoc/syntax': 'warn',
     },
-  },
+  })),
 
   // Tests
   {
@@ -76,9 +63,9 @@ export default [
       globals: vitest.environments.env.globals,
     },
     rules: {
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
 

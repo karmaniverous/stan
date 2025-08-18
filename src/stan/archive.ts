@@ -1,22 +1,20 @@
-// src/stan/archive.ts
-/* src/stan/archive.ts
+import { existsSync } from 'node:fs';
+import { mkdir, readdir } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+
+/**
  * Create a project archive under the output directory.
- * NOTE: Global and cross‑cutting requirements live in /stan.project.md.
  *
  * REQUIREMENTS (current):
  * - Create <outputPath>/archive.tar from project root, excluding node_modules/.git and (by default) the outputPath.
  * - Options:
  *   - includeOutputDir?: when true, do include the outputPath directory.
  *   - fileName?: override base name (must end with .tar).
- * - Honor includes/excludes from config:
- *   - Non-globbing, path-prefix semantics.
- *   - Includes override excludes (explicit includes win).
+ *   - includes?: additional include prefixes (POSIX-style), applied after defaults.
+ *   - excludes?: additional exclude prefixes.
  * - Return the absolute path to the created tarball.
- * - Zero "any" usage.
+ * - Zero `any` usage.
  */
-import { existsSync } from 'node:fs';
-import { mkdir, readdir } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
 
 type TarLike = {
   create: (
@@ -26,9 +24,8 @@ type TarLike = {
 };
 
 export type CreateArchiveOptions = {
-  /** When true, include the output directory in the tarball even if it is normally excluded. */
   includeOutputDir?: boolean;
-  /** Override the output filename. Must end with ".tar". Defaults to "archive.tar". */
+  /** Name of the tarball (must end with ".tar"). Defaults to "archive.tar". */
   fileName?: string;
   /** Additional includes/excludes - reserved for future filtering (non‑globbing for now). */
   includes?: string[];
@@ -56,14 +53,10 @@ export const createArchive = async (
   outputPath: string,
   options: CreateArchiveOptions = {},
 ): Promise<string> => {
-  const {
-    includeOutputDir = false,
-    fileName: rawFileName,
-    includes = [],
-    excludes = [],
-  } = options;
-
-  let fileName = rawFileName ?? 'archive.tar';
+  const includeOutputDir = options.includeOutputDir ?? false;
+  const includes = options.includes ?? [];
+  const excludes = options.excludes ?? [];
+  let fileName = options.fileName ?? 'archive.tar';
   if (!fileName.endsWith('.tar')) fileName += '.tar';
 
   const root = cwd;
@@ -71,34 +64,25 @@ export const createArchive = async (
   if (!existsSync(outDir)) await mkdir(outDir, { recursive: true });
 
   const all = await listFiles(root);
-  const outRelNorm = outputPath.replace(/\\/g, '/');
-
-  const matchesPrefix = (f: string, p: string): boolean => {
-    const norm = p.replace(/\\/g, '/');
-    return f === norm || f.startsWith(norm + '/');
-  };
-
   const files = all.filter((f) => {
-    // Always exclude these
-    if (f.startsWith('node_modules/') || f.startsWith('.git/')) return false;
-    // Exclude the output directory unless explicitly included via includeOutputDir
-    if (!includeOutputDir && f.startsWith(outRelNorm + '/')) return false;
+    const isUnder = (prefix: string) =>
+      f === prefix ||
+      f.startsWith(prefix.endsWith('/') ? prefix : `${prefix}/`);
 
-    const hasIncludes = includes.length > 0;
+    // Exclude node_modules and .git always
+    if (isUnder('node_modules') || isUnder('.git')) return false;
 
-    if (hasIncludes) {
-      // Allow only files under explicit include prefixes
-      const included = includes.some((p) => matchesPrefix(f, p));
-      if (!included) return false;
-      // Includes override excludes: once explicitly included, do not filter it out.
-      return true;
+    // Exclude outputPath by default
+    if (!includeOutputDir && isUnder(outputPath.replace(/\\/g, '/')))
+      return false;
+
+    // Apply caller-provided excludes
+    if (excludes.some((p) => isUnder(p.replace(/\\/g, '/')))) return false;
+
+    // If includes set, require at least one include to match
+    if (includes.length > 0) {
+      return includes.some((p) => isUnder(p.replace(/\\/g, '/')));
     }
-
-    // No includes configured: apply excludes as a denylist
-    const isExcluded =
-      excludes.length > 0 && excludes.some((p) => matchesPrefix(f, p));
-    if (isExcluded) return false;
-
     return true;
   });
 

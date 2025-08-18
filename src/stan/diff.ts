@@ -1,11 +1,9 @@
-/* src/stan/diff.ts
+/**
  * Diff helpers for the stan tool.
  *
- * NOTE: Global requirements live in /stan.project.md.
- *
  * REQUIREMENTS (current):
- * - createArchiveDiff({ cwd, outputPath, baseName }) writes a sentinel ".stan_no_changes" into the
- *   output directory and creates "<baseName>.diff.tar" containing just that sentinel. Return { diffPath }.
+ * - `createArchiveDiff({ cwd, outputPath, baseName })` writes a sentinel file `.stan_no_changes` into the
+ *   output directory and creates `<baseName>.diff.tar` containing just that sentinel. Return `{ diffPath }`.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -20,11 +18,11 @@ type TarLike = {
 export const createArchiveDiff = async ({
   cwd,
   outputPath,
-  baseName = 'archive',
+  baseName,
 }: {
   cwd: string;
   outputPath: string;
-  baseName?: string;
+  baseName: string;
 }): Promise<{ diffPath: string }> => {
   const outDir = resolve(cwd, outputPath);
   await mkdir(outDir, { recursive: true });

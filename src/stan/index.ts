@@ -1,6 +1,5 @@
-/* src/stan/index.ts
- * Library entry point.
- * See /stan.project.md for global and cross‑cutting requirements.
+/**
+ * Barrel exports for the stan engine.
  */
 export * from './archive';
 export * from './config';

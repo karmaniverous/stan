@@ -1,3 +1,5 @@
+excludes:
+  - assets
 outputPath: stan
 scripts:
   build: npm run build

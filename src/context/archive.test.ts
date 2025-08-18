@@ -1,15 +1,16 @@
-import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('tar', () => ({
   default: undefined,
   create: async ({ file }: { file: string }, _files: string[]) => {
     // Simulate a tarball by writing a recognizable body
     await writeFile(file, 'TAR', 'utf8');
-  }
+  },
 }));
 
 import { createArchive } from './archive';

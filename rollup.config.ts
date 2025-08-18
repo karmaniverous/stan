@@ -1,4 +1,4 @@
-/** See /requirements.md for global requirements. */
+/** See /project.stan.md for global requirements. */
 import aliasPlugin, { type Alias } from '@rollup/plugin-alias';
 import commonjsPlugin from '@rollup/plugin-commonjs';
 import jsonPlugin from '@rollup/plugin-json';
@@ -6,55 +6,69 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import terserPlugin from '@rollup/plugin-terser';
 import typescriptPlugin from '@rollup/plugin-typescript';
 import fs from 'fs-extra';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { InputOptions, OutputOptions, RollupOptions } from 'rollup';
 import dtsPlugin from 'rollup-plugin-dts';
 
 const outputPath = 'dist';
 
-// Path alias @ -> ./src
-const aliases: Alias[] = [{ find: '@', replacement: './src' }];
+// Path alias @ -> <abs>/src (absolute to avoid module duplication warnings in Rollup)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const srcAbs = path.resolve(__dirname, 'src');
+const aliases: Alias[] = [{ find: '@', replacement: srcAbs }];
 const alias = aliasPlugin({ entries: aliases });
 
-const commonPlugins = [alias, jsonPlugin(), nodeResolve({ preferBuiltins: true }), commonjsPlugin()];
-const typescript = typescriptPlugin({ tsconfig: './tsconfig.json' });
+const commonInputOptions: InputOptions = {
+  plugins: [
+    alias,
+    nodeResolve({ exportConditions: ['node', 'module', 'default'] }),
+    commonjsPlugin(),
+    jsonPlugin(),
+    typescriptPlugin(),
+    terserPlugin({ format: { comments: false } }),
+  ],
+  onwarn(warning, defaultHandler) {
+    // noise from type-only imports in tests
+    defaultHandler(warning);
+  },
+};
 
-const commonInputOptions: InputOptions = { plugins: [...commonPlugins, typescript], treeshake: true };
-
-const commonLibraryOutputs: OutputOptions[] = [
-  { dir: `${outputPath}/mjs`, format: 'esm', sourcemap: false, exports: 'named' },
-  { dir: `${outputPath}/cjs`, format: 'cjs', sourcemap: false, exports: 'named' }
+const outCommon: OutputOptions[] = [
+  { dir: `${outputPath}/mjs`, format: 'esm', sourcemap: false },
+  { dir: `${outputPath}/cjs`, format: 'cjs', sourcemap: false },
 ];
 
 const buildLibrary = (): RollupOptions => ({
   input: 'src/index.ts',
-  output: commonLibraryOutputs,
-  ...commonInputOptions
+  output: outCommon,
+  ...commonInputOptions,
 });
 
-const discoverCliEntries = (): Record<string, string> => {
-  const entries: Record<string, string> = {};
-  const cliRoot = 'src/cli';
-  if (!fs.pathExistsSync(cliRoot)) return entries;
-  const names = fs.readdirSync(cliRoot);
-  for (const name of names) {
-    const sub = `${cliRoot}/${name}/index.ts`;
-    if (fs.pathExistsSync(sub)) {
-      entries[`cli/${name}`] = sub;
-    }
-  }
-  return entries;
+const discoverCliEntries = (): string[] => {
+  // Only include CLI entry points, not tests.
+  const candidates = ['src/cli/stan/index.ts'];
+  return candidates.filter((p) => fs.existsSync(p));
 };
 
 const buildCli = (): RollupOptions => ({
   input: discoverCliEntries(),
-  output: [{ dir: `${outputPath}/cli`, format: 'esm', sourcemap: false, banner: '#!/usr/bin/env node' }],
-  ...commonInputOptions
+  output: [
+    {
+      dir: `${outputPath}/cli`,
+      format: 'esm',
+      sourcemap: false,
+      banner: '#!/usr/bin/env node',
+    },
+  ],
+  ...commonInputOptions,
 });
 
 const buildTypes = (): RollupOptions => ({
   input: 'src/index.ts',
   output: [{ dir: `${outputPath}/types`, format: 'esm' }],
-  plugins: [dtsPlugin()]
+  plugins: [dtsPlugin()],
 });
 
 export default [buildLibrary(), buildCli(), buildTypes()];

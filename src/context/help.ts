@@ -1,26 +1,18 @@
 /**
- * @file src/context/help.ts
- * Small helper to render a footer listing available script keys.
- *
- * NOTE: Global requirements live in /requirements.md.
+ * REQUIREMENTS (current):
+ * - Render a help footer listing available script keys from the discovered config.
+ * - If config cannot be loaded, return an empty string.
+ * - The output should include:
+ *   - A heading 'Available script keys:' then a comma-separated list of keys.
+ *   - An 'Examples:' block with 'stan', 'stan test', 'stan -s -e archive' lines.
  */
 import { loadConfigSync } from './config';
 
-/**
- * Return a help footer block listing available script keys, or onboarding guidance
- * if the config is missing or has no scripts.
- */
 export const renderAvailableScriptsHelp = (cwd: string): string => {
   try {
     const cfg = loadConfigSync(cwd);
     const keys = Object.keys(cfg.scripts);
-    if (!keys.length) {
-      return [
-        'No stan scripts are configured yet.',
-        'Create a stan.config.json|yml at your project root to get started.',
-        '',
-      ].join('\n');
-    }
+    if (!keys.length) return '';
     return [
       '',
       'Available script keys:',

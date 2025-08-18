@@ -1,13 +1,17 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const runSelectedSpy = vi.fn().mockResolvedValue([]);
 
 vi.mock('@/context/run', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/context/run')>();
-  return { ...actual, runSelected: (...args: unknown[]) => runSelectedSpy(...(args as unknown[])) };
+  return {
+    ...actual,
+    runSelected: (...args: unknown[]) => runSelectedSpy(...args),
+  };
 });
 
 vi.mock('@/context/config', async (importOriginal) => {
@@ -17,8 +21,8 @@ vi.mock('@/context/config', async (importOriginal) => {
     findConfigPathSync: vi.fn().mockReturnValue('stan.config.yml'),
     loadConfig: vi.fn().mockResolvedValue({
       outputPath: 'stan',
-      scripts: { test: 'echo test', lint: 'echo lint' }
-    })
+      scripts: { test: 'echo test', lint: 'echo lint' },
+    }),
   };
 });
 
@@ -50,10 +54,16 @@ describe('CLI -c/--combine and -k/--keep', () => {
 
   it('maps -c and --combined-file-name', async () => {
     const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', '-c', '--combined-file-name', 'bundle', 'lint'], { from: 'user' });
+    await cli.parseAsync(
+      ['node', 'stan', '-c', '--combined-file-name', 'bundle', 'lint'],
+      { from: 'user' },
+    );
 
     const [, , selection, , behavior] = runSelectedSpy.mock.calls[0];
     expect(selection).toEqual(['lint']);
-    expect(behavior).toMatchObject({ combine: true, combinedFileName: 'bundle' });
+    expect(behavior).toMatchObject({
+      combine: true,
+      combinedFileName: 'bundle',
+    });
   });
 });

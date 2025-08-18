@@ -4,10 +4,23 @@ import { join, resolve } from 'node:path';
 
 /**
  * @fileoverview Create a project archive under the output directory.
- * NOTE: Global and cross‑cutting requirements live in /requirements.md.
+ * NOTE: Global and cross‑cutting requirements live in /project.stan.md.
+ *
+ * REQUIREMENTS (current):
+ * - Create <outputPath>/archive.tar from project root, excluding node_modules/.git and (by default) the outputPath.
+ * - Options:
+ *   - includeOutputDir?: when true, do include the outputPath directory.
+ *   - fileName?: override base name (must end with .tar).
+ * - Return the absolute path to the created tarball.
+ * - Zero `any` usage.
  */
 
-type TarLike = { create: (opts: { file: string; cwd?: string }, files: string[]) => Promise<void> };
+type TarLike = {
+  create: (
+    opts: { file: string; cwd?: string },
+    files: string[],
+  ) => Promise<void>;
+};
 
 export type CreateArchiveOptions = {
   /** When true, include the output directory in the tarball even if it is normally excluded. */
@@ -32,24 +45,22 @@ const listFiles = async (root: string): Promise<string[]> => {
       else out.push(childRel.replace(/\\/g, '/'));
     }
   }
-  return out.sort();
+  return out;
 };
 
-/**
- * Create a tarball of the project tree rooted at `cwd` into `<cwd>/<outputPath>/<fileName>`.
- * Excludes `node_modules`, `.git`, and the output directory unless `includeOutputDir` is true.
- */
 export const createArchive = async (
   cwd: string,
   outputPath: string,
-  options: CreateArchiveOptions = {}
+  options: CreateArchiveOptions = {},
 ): Promise<string> => {
-  const {
+  let {
     includeOutputDir = false,
     fileName = 'archive.tar',
     includes = [],
-    excludes = []
+    excludes = [],
   } = options;
+
+  if (!fileName.endsWith('.tar')) fileName += '.tar';
 
   const root = cwd;
   const outDir = resolve(root, outputPath);
@@ -58,14 +69,25 @@ export const createArchive = async (
   const all = await listFiles(root);
   const files = all.filter((f) => {
     if (f.startsWith('node_modules/') || f.startsWith('.git/')) return false;
-    if (!includeOutputDir && f.startsWith(outputPath.replace(/\\/g, '/') + '/')) return false;
-    const allowByInclude = includes && includes.length
-      ? includes.some((p) => f === p.replace(/\\/g, '/') || f.startsWith(p.replace(/\\/g, '/') + '/'))
-      : true;
+    if (!includeOutputDir && f.startsWith(outputPath.replace(/\\/g, '/') + '/'))
+      return false;
+    const allowByInclude =
+      includes && includes.length
+        ? includes.some(
+            (p) =>
+              f === p.replace(/\\/g, '/') ||
+              f.startsWith(p.replace(/\\/g, '/') + '/'),
+          )
+        : true;
     if (!allowByInclude) return false;
-    const blockedByExclude = excludes && excludes.length
-      ? excludes.some((p) => f === p.replace(/\\/g, '/') || f.startsWith(p.replace(/\\/g, '/') + '/'))
-      : false;
+    const blockedByExclude =
+      excludes && excludes.length
+        ? excludes.some(
+            (p) =>
+              f === p.replace(/\\/g, '/') ||
+              f.startsWith(p.replace(/\\/g, '/') + '/'),
+          )
+        : false;
     if (blockedByExclude) return false;
     return true;
   });

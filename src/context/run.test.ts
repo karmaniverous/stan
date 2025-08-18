@@ -1,8 +1,9 @@
-import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { ContextConfig } from './config';
 import { runSelected } from './run';
@@ -23,7 +24,9 @@ describe('script execution', () => {
   it('writes <key>.txt for a single requested script key and captures stderr', async () => {
     const cfg: ContextConfig = {
       outputPath: 'out',
-      scripts: { hello: 'node -e "console.error(123);process.stdout.write(`ok`)"' }
+      scripts: {
+        hello: 'node -e "console.error(123);process.stdout.write(`ok`)"',
+      },
     };
     await runSelected(dir, cfg, ['hello']);
     const out = path.join(dir, 'out', 'hello.txt');
@@ -34,12 +37,20 @@ describe('script execution', () => {
   });
 
   it('sequential mode runs in config order regardless of enumeration', async () => {
-    await writeFile(path.join(dir, 'a.js'), 'process.stdout.write("A")', 'utf8');
-    await writeFile(path.join(dir, 'b.js'), 'process.stdout.write("B")', 'utf8');
+    await writeFile(
+      path.join(dir, 'a.js'),
+      'process.stdout.write("A")',
+      'utf8',
+    );
+    await writeFile(
+      path.join(dir, 'b.js'),
+      'process.stdout.write("B")',
+      'utf8',
+    );
 
     const cfg1: ContextConfig = {
       outputPath: 'out',
-      scripts: { a: 'node a.js', b: 'node b.js' }
+      scripts: { a: 'node a.js', b: 'node b.js' },
     };
 
     await runSelected(dir, cfg1, ['b', 'a'], 'sequential');

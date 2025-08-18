@@ -2,7 +2,7 @@
 
 This document is the single source of truth for project‑wide requirements. Individual files should not duplicate these; instead they include a short header like:
 
-> `/** See /requirements.md for global requirements. */`
+> `/** See /project.stan.md for global requirements. */`
 
 ## TypeScript
 
@@ -24,7 +24,7 @@ This document is the single source of truth for project‑wide requirements. Ind
 
 - ESLint 9 flat config with:
   - Base JS rules (`@eslint/js`).
-  - TypeScript via `typescript-eslint` (*type‑aware rules only under `src/**`*).
+  - TypeScript via `typescript-eslint` (_type‑aware rules only under `src/**`_).
   - Import sorting via `eslint-plugin-simple-import-sort`.
   - Prettier enforced via `eslint-plugin-prettier`.
   - Vitest plugin enabled for `*.test.*` files.

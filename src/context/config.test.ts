@@ -49,8 +49,15 @@ describe('config loading', () => {
 
   it('rejects "archive" and "init" keys in scripts', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'stan-bad-'));
-    const yml = ['outputPath: context', 'scripts:', '  archive: nope', '  init: nope2'].join('\n');
+    const yml = [
+      'outputPath: context',
+      'scripts:',
+      '  archive: nope',
+      '  init: nope2',
+    ].join('\n');
     await write(path.join(cwd, 'stan.config.yml'), yml);
-    await expect(loadConfig(cwd)).rejects.toThrow(/archive.*init.*not allowed/i);
+    await expect(loadConfig(cwd)).rejects.toThrow(
+      /archive.*init.*not allowed/i,
+    );
   });
 });

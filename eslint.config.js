@@ -1,4 +1,4 @@
-/** See /requirements.md for global & cross‑cutting requirements. */
+/** See /project.stan.md for global & cross‑cutting requirements. */
 /* eslint-env node */
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
@@ -15,67 +15,52 @@ const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
-  // Ignore common generated/third‑party areas.
-  {
-    ignores: [
-      '**/dist/**',
-      '**/coverage/**',
-      '**/.rollup.cache/**',
-      '**/node_modules/**',
-      '**/docs/**'
-    ]
-  },
-
-  // Base JS rules
+  // Base JS
   eslint.configs.recommended,
 
-  // Base TS (non type‑aware) rules + house rules
-  ...tseslint.configs.recommended.map((c) => ({
-    ...c,
-    files: ['**/*.{ts,tsx,cts,mts}'],
-    languageOptions: {
-      ...c.languageOptions,
-      parserOptions: { ...(c.languageOptions?.parserOptions ?? {}), tsconfigRootDir }
-    },
-    plugins: { ...(c.plugins ?? {}), prettier: prettierPlugin, 'simple-import-sort': simpleImportSort, tsdoc }
-  })),
-  {
-    files: ['**/*.{ts,tsx,cts,mts,js,cjs,mjs}'],
-    rules: {
-      'prettier/prettier': 'error',
-      'tsdoc/syntax': 'off',
-      'simple-import-sort/imports': 'error',
-      'simple-import-sort/exports': 'error'
-    }
-  },
-
-  // Type‑aware TS rules only inside src/ (so root utility scripts like archive.ts don't need project service)
+  // TypeScript (type-aware under src/**)
   ...tseslint.configs.recommendedTypeChecked.map((c) => ({
     ...c,
-    files: ['src/**/*.{ts,tsx,cts,mts}'],
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
     languageOptions: {
       ...c.languageOptions,
       parserOptions: {
-        ...(c.languageOptions?.parserOptions ?? {}),
+        ...c.languageOptions?.parserOptions,
+        project: ['./tsconfig.json'],
         tsconfigRootDir,
-        projectService: true
-      }
+      },
     },
-    rules: {
-      ...(c.rules ?? {}),
-      // Relax a common false positive in tests without full type contexts
-      '@typescript-eslint/await-thenable': 'off'
-    }
   })),
 
-  // Vitest for tests
+  // Project-specific rules for TS
   {
-    files: ['**/*.{test,spec}.{ts,tsx,js}'],
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    plugins: {
+      'simple-import-sort': simpleImportSort,
+      prettier: prettierPlugin,
+      tsdoc,
+      vitest,
+    },
+    rules: {
+      // Style & quality
+      'prettier/prettier': 'error',
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
+      'tsdoc/syntax': 'warn',
+
+      // Our TS preferences
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+    },
+  },
+
+  // Tests
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx'],
     plugins: { vitest },
-    rules: { ...(vitest.configs.recommended.rules ?? {}) },
     languageOptions: {
-      globals: vitest.environments.env.globals
-    }
+      globals: vitest.environments.env.globals,
+    },
   },
 
   // JSON (no nested extends)
@@ -84,7 +69,7 @@ export default [
     languageOptions: { parser: jsoncParser },
     plugins: { jsonc },
     rules: {
-      ...(jsonc.configs['recommended-with-json'].rules ?? {})
-    }
-  }
+      ...(jsonc.configs['recommended-with-json'].rules ?? {}),
+    },
+  },
 ];

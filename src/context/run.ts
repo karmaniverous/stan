@@ -1,125 +1,180 @@
 /**
- * @file src/context/run.ts
- * Execution engine for stan. Runs configured scripts, manages archive/combined artifacts,
- * and supports `--diff` for archive diffs.
- *
- * NOTE: Global requirements live in /requirements.md.
+ * REQUIREMENTS (current):
+ * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.
+ * - Create per-script artifacts <outputPath>/<key>.txt combining stdout+stderr.
+ * - Maintain <outputPath>/order.txt by appending the UPPERCASE first letter of each executed key, in run order.
+ * - Support selection of keys; when null/undefined, run all. Ignore unknown keys.
+ * - Treat special key 'archive': it should execute *after* all other keys when present.
+ * - Options:
+ *   - combine=false|true: if true, produce either combined.txt (when 'archive' not included) or combined.tar (when 'archive' included).
+ *   - keep=false|true: when false (default) clear output dir before running; when true, keep prior artifacts.
+ *   - diff=false|true: when true and 'archive' is included, also create archive.diff.tar in output dir.
+ *   - combinedFileName?: custom base name for combined artifacts (default 'combined').
+ * - Log `stan: start "<key>"` and `stan: done "<key>" -> <relative path>` for each artifact including archive variants.
+ * - Zero `any` usage; path alias @/* is used for intra-project imports.
  */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { appendFile, readFile, writeFile } from 'node:fs/promises';
+import { relative, resolve } from 'node:path';
 
 import { createArchive } from './archive';
 import type { ContextConfig } from './config';
+import { ensureOutputDir } from './config';
 import { createArchiveDiff } from './diff';
 
-// [snip: unchanged helpers — configOrder, relForLog, normalizeSelection, runOne, ensureOutDir, combineTextOutputs]
+export type Selection = string[] | null;
+export type ExecutionMode = 'concurrent' | 'sequential';
+export type RunBehavior = {
+  combine?: boolean;
+  keep?: boolean;
+  diff?: boolean;
+  combinedFileName?: string;
+};
 
-/**
- * Overload: mode provided separately from behavior.
- */
-export async function runSelected(
-  cwd: string,
+const relForLog = (cwd: string, absPath: string): string =>
+  relative(cwd, absPath).replace(/\\/g, '/');
+
+const configOrder = (config: ContextConfig): string[] =>
+  Object.keys(config.scripts);
+
+const normalizeSelection = (
+  selection: Selection | undefined | null,
   config: ContextConfig,
-  selection?: Selection,
-  mode?: ExecutionMode,
-  behavior?: RunBehavior
-): Promise<string[]>;
+): string[] => {
+  const all = configOrder(config);
+  if (!selection || selection.length === 0) return all;
+  // Filter to known keys only
+  const set = new Set(all);
+  return selection.filter((k) => set.has(k));
+};
 
-/**
- * Overload: mode omitted (behavior at 4th position).
- */
-export async function runSelected(
+const runOne = async (
   cwd: string,
-  config: ContextConfig,
-  selection?: Selection,
-  behavior?: RunBehavior
-): Promise<string[]>;
+  outRel: string,
+  key: string,
+  cmd: string,
+  orderFile: string,
+): Promise<string> => {
+  console.log(`stan: start "${key}"`);
+  const outAbs = resolve(cwd, outRel);
+  const outFile = resolve(outAbs, `${key}.txt`);
+  const child = spawn(cmd, { cwd, shell: true, windowsHide: true });
+  const stream = createWriteStream(outFile, { encoding: 'utf8' });
+  child.stdout.on('data', (d: Buffer) => {
+    stream.write(d);
+  });
+  child.stderr.on('data', (d: Buffer) => {
+    stream.write(d);
+  });
+  await new Promise<void>((resolveP, rejectP) => {
+    child.on('error', rejectP);
+    child.on('close', () => resolveP());
+  });
+  stream.end();
+  await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
+  console.log(`stan: done "${key}" -> ${relForLog(cwd, outFile)}`);
+  return outFile;
+};
 
-/** Implementation. */
-export async function runSelected(
+const combineTextOutputs = async (
   cwd: string,
-  config: ContextConfig,
-  selection?: Selection,
-  modeOrBehavior?: ExecutionMode | RunBehavior,
-  behaviorMaybe?: RunBehavior
-): Promise<string[]> {
-  let mode: ExecutionMode = 'concurrent';
-  let behavior: RunBehavior = {};
-
-  if (typeof modeOrBehavior === 'string') {
-    mode = modeOrBehavior;
-    behavior = behaviorMaybe ?? {};
-  } else {
-    behavior = (modeOrBehavior as RunBehavior) ?? {};
+  outRel: string,
+  keys: string[],
+  baseName: string,
+): Promise<string> => {
+  const outAbs = resolve(cwd, outRel);
+  const combinedPath = resolve(outAbs, `${baseName}.txt`);
+  const sections: string[] = [];
+  for (const k of keys) {
+    const p = resolve(outAbs, `${k}.txt`);
+    const body = await readFile(p, 'utf8').catch(() => '');
+    sections.push(`BEGIN [${k}]`);
+    sections.push(body);
+    sections.push(`END [${k}]`);
   }
+  await writeFile(combinedPath, sections.join('\n'), 'utf8');
+  return combinedPath;
+};
 
+export const runSelected = async (
+  cwd: string,
+  config: ContextConfig,
+  selection: Selection = null,
+  mode: ExecutionMode = 'concurrent',
+  behaviorMaybe?: RunBehavior,
+): Promise<string[]> => {
+  const behavior: RunBehavior = behaviorMaybe ?? {};
   const outRel = config.outputPath;
-  const outAbs = await ensureOutDir(cwd, outRel, Boolean(behavior.keep));
+  const outAbs = await ensureOutputDir(cwd, outRel, Boolean(behavior.keep));
   const orderFile = resolve(outAbs, 'order.txt');
-  await writeFile(orderFile, '', 'utf8');
+  if (!behavior.keep) await writeFile(orderFile, '', 'utf8');
 
-  const keysAll = configOrder(config);
   const keys = normalizeSelection(selection, config);
+  if (keys.length === 0) return [];
+  const hasArchive = keys.includes('archive');
+  const toRun = keys.filter((k) => k !== 'archive');
 
   const created: string[] = [];
-
-  // Run non-archive scripts
-  const toRun = keys.filter((k) => k !== 'archive');
-  const runInConfigOrder = (list: string[]) =>
-    list.sort((a, b) => keysAll.indexOf(a) - keysAll.indexOf(b));
-
-  const runner = async (key: string) => runOne(cwd, outRel, key, config.scripts[key], orderFile);
+  const runner = async (k: string): Promise<void> => {
+    const p = await runOne(cwd, outRel, k, config.scripts[k], orderFile);
+    created.push(p);
+  };
 
   if (mode === 'sequential') {
-    // Always respect *config* order in sequential mode, even if enumerated.
-    for (const key of runInConfigOrder(toRun)) {
-      await runner(key);
+    for (const k of toRun) {
+      await runner(k);
     }
   } else {
     await Promise.all(toRun.map((k) => runner(k)));
   }
 
-  const hasArchive = keys.includes('archive');
-
-  // Combine artifacts if requested.
   if (behavior.combine) {
+    const base = behavior.combinedFileName ?? 'combined';
     if (hasArchive) {
-      // With archive selected: produce only a combined tar (do not also create archive.tar).
-      const name = behavior.combinedFileName ?? 'combined';
-      const tarPath = await createArchive(cwd, outRel, {
-        includeOutputDir: true,
-        includes: config.includes,
-        excludes: config.excludes,
-        fileName: `${name}.tar`
-      });
+      const tarPath = resolve(outAbs, `${base}.tar`);
+      const tar = (await import('tar')) as unknown as {
+        create: (
+          opts: { file: string; cwd?: string },
+          files: string[],
+        ) => Promise<void>;
+      };
+      await tar.create({ file: tarPath, cwd }, [outRel]);
       created.push(tarPath);
     } else {
-      const name = behavior.combinedFileName ?? 'combined';
-      const combined = await combineTextOutputs(cwd, outRel, toRun, name);
-      created.push(combined);
+      const p = await combineTextOutputs(cwd, outRel, toRun, base);
+      created.push(p);
     }
   }
 
-  // Archive when selected (and not already combined above).
   if (hasArchive && !behavior.combine) {
-    const archivePath = await createArchive(cwd, outRel, {
-      includeOutputDir: false,
-      includes: config.includes,
-      excludes: config.excludes,
-      fileName: `archive.tar`
-    });
+    console.log('stan: start "archive"');
+    const archivePath = await createArchive(cwd, outRel);
+    console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
     created.push(archivePath);
-  }
 
-  // Create archive diff whenever requested and `archive` is included (with or without --combine).
-  if (behavior.diff && hasArchive) {
+    if (behavior.diff) {
+      console.log('stan: start "archive (diff)"');
+      const { diffPath } = await createArchiveDiff({
+        cwd,
+        outputPath: outRel,
+        baseName: 'archive',
+      });
+      console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
+      created.push(diffPath);
+    }
+  }
+  // When combining with archive, still honor --diff after scripts & combined tar are created.
+  if (hasArchive && behavior.combine && behavior.diff) {
     console.log('stan: start "archive (diff)"');
-    const { diffPath } = await createArchiveDiff({ cwd, outputPath: outRel, baseName: 'archive' });
+    const { diffPath } = await createArchiveDiff({
+      cwd,
+      outputPath: outRel,
+      baseName: 'archive',
+    });
     console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
     created.push(diffPath);
   }
 
   return created;
-}
+};

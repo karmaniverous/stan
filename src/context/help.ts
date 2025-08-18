@@ -13,20 +13,23 @@ import { loadConfigSync } from './config';
 export const renderAvailableScriptsHelp = (cwd: string): string => {
   try {
     const cfg = loadConfigSync(cwd);
-    if (!cfg) {
-      return ['', 'No ctx.config.json|yml found.', 'Run `ctx init` to create one.', ''].join('\n');
-    }
     const keys = Object.keys(cfg.scripts);
-    if (keys.length === 0) return '';
+    if (!keys.length) {
+      return [
+        'No ctx scripts are configured yet.',
+        'Create a ctx.config.json|yml at your project root to get started.',
+        '',
+      ].join('\n');
+    }
     return [
       '',
       'Available script keys:',
       `  ${keys.join(', ')}`,
       '',
       'Examples:',
-      '  ctx <runs all scripts concurrently>',
+      '  ctx',
       '  ctx test',
-      '  ctx archive',
+      '  ctx -s -e archive',
       '',
     ].join('\n');
   } catch {

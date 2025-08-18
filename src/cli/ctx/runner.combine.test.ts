@@ -1,9 +1,14 @@
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 
-const runSelectedSpy = vi.fn().mockResolvedValue<string[]>([]);
+const runSelectedSpy = vi.fn().mockResolvedValue([]);
+
+vi.mock('@/context/run', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/context/run')>();
+  return { ...actual, runSelected: (...args: unknown[]) => runSelectedSpy(...(args as unknown[])) };
+});
 
 vi.mock('@/context/config', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/context/config')>();
@@ -17,32 +22,38 @@ vi.mock('@/context/config', async (importOriginal) => {
   };
 });
 
-vi.mock('@/context/run', async () => ({
-  runSelected: (...args: unknown[]) => runSelectedSpy(...args)
-}));
-
 import { makeCli } from './index';
 
-describe('runner CLI combine flags', () => {
+describe('CLI -c/--combine and -k/--keep', () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-cli-combine-'));
-    await writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '0.0.0' }), 'utf8');
+    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-cli-2-'));
     process.chdir(dir);
-    runSelectedSpy.mockClear();
+    runSelectedSpy.mockReset();
   });
 
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it('passes combine and keep flags to the runner (no enumeration)', async () => {
+    const cli = makeCli();
+    await cli.parseAsync(['node', 'ctx', '-c', '-k'], { from: 'user' });
+
+    const [, , selection, mode, behavior] = runSelectedSpy.mock.calls[0];
+    expect(selection).toBeNull(); // run all
+    expect(mode).toBe('concurrent');
+    expect(behavior).toMatchObject({ combine: true, keep: true });
   });
 
   it('maps -c and --combined-file-name', async () => {
     const cli = makeCli();
     await cli.parseAsync(['node', 'ctx', '-c', '--combined-file-name', 'bundle', 'lint'], { from: 'user' });
 
-    const [, , enumerated, behavior] = runSelectedSpy.mock.calls[0];
-    expect(enumerated).toEqual(['lint']);
+    const [, , selection, , behavior] = runSelectedSpy.mock.calls[0];
+    expect(selection).toEqual(['lint']);
     expect(behavior).toMatchObject({ combine: true, combinedFileName: 'bundle' });
   });
 });

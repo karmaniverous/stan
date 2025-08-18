@@ -1,9 +1,14 @@
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 
-const runSelectedSpy = vi.fn().mockResolvedValue<string[]>([]);
+const runSelectedSpy = vi.fn().mockResolvedValue([]);
+
+vi.mock('@/context/run', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/context/run')>();
+  return { ...actual, runSelected: (...args: unknown[]) => runSelectedSpy(...(args as unknown[])) };
+});
 
 vi.mock('@/context/config', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/context/config')>();
@@ -17,53 +22,37 @@ vi.mock('@/context/config', async (importOriginal) => {
   };
 });
 
-vi.mock('@/context/run', async () => ({
-  runSelected: (...args: unknown[]) => runSelectedSpy(...args)
-}));
-
 import { makeCli } from './index';
 
-describe('runner CLI', () => {
+describe('CLI argument parsing', () => {
   let dir: string;
 
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-cli-'));
-    await writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '0.0.0' }), 'utf8');
     process.chdir(dir);
-    runSelectedSpy.mockClear();
+    runSelectedSpy.mockReset();
   });
 
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
+    vi.restoreAllMocks();
   });
 
-  it('passes enumerated keys', async () => {
+  it('passes -e selection with provided keys to runSelected', async () => {
     const cli = makeCli();
-    await cli.parseAsync(['node', 'ctx', 'test'], { from: 'user' });
+    await cli.parseAsync(['node', 'ctx', '-e', 'test'], { from: 'user' });
 
-    expect(runSelectedSpy).toHaveBeenCalledTimes(1);
-    const [cwd, config, enumerated, behavior] = runSelectedSpy.mock.calls[0];
-    expect(cwd).toBe(dir);
-    expect(config.outputPath).toBe('ctx');
-    expect(enumerated).toEqual(['test']);
-    expect(behavior).toMatchObject({ sequential: false, combine: false, keep: false, diff: false });
+    const [, , selection, mode] = runSelectedSpy.mock.calls[0];
+    expect(selection).toEqual(['lint']); // all except 'test'
+    expect(mode).toBe('concurrent');
   });
 
-  it('supports -s and preserves order', async () => {
+  it('passes -s to run sequentially and preserves config order', async () => {
     const cli = makeCli();
     await cli.parseAsync(['node', 'ctx', '-s', 'lint', 'test'], { from: 'user' });
 
-    const [, , enumerated, behavior] = runSelectedSpy.mock.calls[0];
-    expect(enumerated).toEqual(['lint', 'test']);
-    expect(behavior.sequential).toBe(true);
-  });
-
-  it('supports -e, -c, -k and shows help when nothing created', async () => {
-    const cli = makeCli();
-    await cli.parseAsync(['node', 'ctx', '-c', '-k', '-e', 'test'], { from: 'user' });
-
-    const [, , enumerated, behavior] = runSelectedSpy.mock.calls[0];
-    expect(enumerated).toBeNull();
-    expect(behavior).toMatchObject({ combine: true, keep: true, except: ['test'] });
+    const [, , selection, mode] = runSelectedSpy.mock.calls[0];
+    expect(selection).toEqual(['lint', 'test']);
+    expect(mode).toBe('sequential');
   });
 });

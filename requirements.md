@@ -1,70 +1,95 @@
-# Global Requirements
+# Global & Cross‑Cutting Requirements
 
-This document consolidates all **global & cross‑cutting requirements** for the project. Individual source files now contain a short pointer back to this document instead of duplicating the full lists.
+This document is the single source of truth for project‑wide requirements. Individual files should not duplicate these; instead they include a short header like:
 
----
+> `/** See /requirements.md for global requirements. */`
 
-## CLI (`ctx`)
+## TypeScript
 
-- **Root command** runs configured scripts and manages artifacts.
-- **Arguments & options**
-  - Positional: `[scripts...]` — enumerated script keys.
-  - `-e, --except` — treat enumerated keys as an *exclusion* set.
-  - `-s, --sequential` — run in sequence; otherwise **concurrent** by default.
-  - `-c, --combine` —
-    - If **`archive` is included**, create **`<name>.tar`** that *includes the output directory* and do **not** also create `archive.tar`.
-    - If **`archive` is not included**, combine per‑script text outputs into **`<name>.txt`** with `BEGIN [key]` / `END [key]` sections.
-  - `-k, --keep` — keep existing output directory contents (no clear).
-  - `-d, --diff` — when `archive` is included (with or without `--combine`), produce **`archive.diff.tar`**; implies `--keep`.
-  - `-n, --name <base>` — base name for combined artifacts (default `combined`).
-- **Reserved key:** `archive` triggers archive creation even if not present under `config.scripts`.
-- **Sequential ordering:** when not explicitly enumerated, `archive` runs **last**.
+- **No `any`.** Prefer precise types and `unknown` + narrowing when needed.
+- **No type parameter defaults** that hide inference.
+- **Arrow functions** for all functions.
+- **Consistent naming** for variables/types/params.
+- **Use path alias** `@/*` for all non‑sibling imports. The alias is defined in `tsconfig.json`:
+  ```json
+  {
+    "compilerOptions": {
+      "baseUrl": ".",
+      "paths": { "@/*": ["src/*"] }
+    }
+  }
+  ```
 
-## Config
+## Linting & Formatting
 
-- Look for `ctx.config.json`, `ctx.config.yml`, or `ctx.config.yaml` at repo root.
-- Validate shape:
-  - `outputPath: string` (non‑empty)
-  - `scripts: Record<string,string>`
-- Disallow `archive` and `init` under `scripts`.
-- Provide both `loadConfig()` (async) and `loadConfigSync()` (sync helper for help text).
-- `ensureOutputDir(cwd, outputPath)` creates the destination directory if needed.
-
-## Init (`ctx init`)
-
-- Scaffolds `ctx.config.json` or `ctx.config.yml` if none exists.
-- **Default output path**: `ctx`.
-- **Interactive mode**: ask for format (json/yml) and output dir; offer to add to `.gitignore`.
-- **Non‑interactive (`--force`)**: choose **YML**, use `outputPath=ctx`, add `"/ctx/"` to `.gitignore`, no prompts.
-- Derive script keys from `package.json` script titles using the **first `\w+` token**; for duplicates pick the **shortest title**; map to `npm run <title>`.
-
-## Archive
-
-- Default file name: **`archive.tar`** under the configured `outputPath`.
-- Create the output directory if missing.
-- Exclude the `outputPath` contents from the tarball by default; **include** it when `includeOutputDir: true` (for `--combine`).
-- Expose a **testing seam**: `listFilesFn(cwd)` to supply the file list.
-- Back‑compat API surface:
-  - Old style: `createArchive(cwd, outputPath, { fileName?, includeOutputDir? }) -> string`.
-  - New style: `createArchive({ cwd, outputPath, fileName?, includeOutputDir?, listFilesFn? }) -> { archivePath, fileCount }`.
-
-## Diff
-
-- Keep a workspace **snapshot** at `<outputPath>/.archive.snapshot.json` (map of relative POSIX paths to SHA‑256 hex digests).
-- On each run with `--diff` and `archive` selected:
-  1) Copy `archive.tar` to `archive.prev.tar` if present.
-  2) Write `archive.diff.tar` (test sentinel content is `"diff"`).
-  3) Save the current snapshot.
-- Exclude `node_modules`, `.git`, and the output directory from snapshots and diffs.
-
-## TypeScript / Tooling
-
-- TS config must support modern features used in this repo (ES2022 target/lib) and provide Node + Vitest globals during type‑checks; **no emit**.
-- Skip library type checking (`skipLibCheck`).
-- ESLint should respect the project style (import sorting, TSDoc hints, Prettier integration) and **ignore** `coverage`, `dist`, `docs`, and `node_modules`.
+- ESLint 9 flat config with:
+  - Base JS rules (`@eslint/js`).
+  - TypeScript via `typescript-eslint` (*type‑aware rules only under `src/**`*).
+  - Import sorting via `eslint-plugin-simple-import-sort`.
+  - Prettier enforced via `eslint-plugin-prettier`.
+  - Vitest plugin enabled for `*.test.*` files.
+  - JSON linting via `eslint-plugin-jsonc`.
+- Target **zero lint errors/warnings**.
+- Keep **typed rules** scoped to `src/**` to avoid requiring a TS project for root scripts (e.g., `archive.ts`).
 
 ## Testing
 
-- Tests should couple with the code they cover.
-- Extend coverage by adding tests, not by mutating existing cases unless a case is incorrect or ambiguous.
-- When a test fails, first confirm intent from the fixtures and requirements above **before** changing implementation.
+- Use **Vitest** with the config in `vitest.config.ts`.
+- **Do not change existing test cases** unless necessary to reflect the current design; you may add new cases.
+- Only **mock non‑local** dependencies (e.g., `tar`, child processes).
+- Tests should assert behavior, not implementation details.
+
+## Build
+
+- Rollup builds:
+  - `dist/mjs` + `dist/cjs` (library),
+  - `dist/cli` (executables, with shebang),
+  - `dist/types` (d.ts bundle).
+- Use the `@` alias at build time via Rollup alias config.
+
+## CLI
+
+- Use **`@commander-js/extra-typings`** for typed CLI definitions.
+- Export a **`makeCli()`** factory; no compatibility exports for earlier names.
+- Avoid `process.exit()` in library/CLI code so tests can run in‑process.
+- When executed as a script, run `await makeCli().parseAsync(process.argv)`.
+
+## Configuration Resolution
+
+- The tool may be installed **globally**; be robust to arbitrary **cwd**:
+  - Resolve the package root using [`package-directory`](https://www.npmjs.com/package/package-directory).
+  - Look for `ctx.config.json|yml` **at the package root**.
+
+## Context Config Shape
+
+`ContextConfig` (see `src/context/config.ts`) supports:
+
+```ts
+type ContextConfig = {
+  outputPath: string;
+  scripts: Record<string, string>;
+  /** Override .gitignore behavior for archiving (prefix paths, non‑globbing). */
+  includes?: string[];
+  excludes?: string[];
+};
+```
+
+- `includes` and `excludes` are **path prefixes** (non‑glob) relative to the package root.
+- They **override** default ignore behavior. If `includes` is set, only those subpaths are considered. Then `excludes` removes any of those.
+- The output directory is excluded from archives **unless** `--combine` is used (in which case it is included).
+
+## UX / Help
+
+- If no scripts are selected **or created artifacts array is empty**, print the available keys:
+  `renderAvailableScriptsHelp(cwd)`.
+
+## Logging
+
+- Log concise progress lines during runs, for example:
+  - `ctx: start "test" (node -e "...")`
+  - `ctx: done "test" in 1.2s -> out/test.txt`
+
+## Misc
+
+- Use Node ESM (`"type": "module"`).
+- Use `radash` only when it improves clarity & brevity.

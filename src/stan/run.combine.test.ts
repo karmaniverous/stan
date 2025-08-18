@@ -1,3 +1,4 @@
+// src/stan/run.combine.test.ts
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -68,10 +69,6 @@ describe('runSelected combine / sequencing / keep', () => {
 
   it('combine without archive: produces combined.txt; clears output by default but keeps with --keep', async () => {
     const cwd = dir;
-    const out = path.join(cwd, 'stan');
-    await writeFile(path.join(out, 'old.txt'), 'OLD', 'utf8').catch(
-      () => void 0,
-    );
 
     const cfg: ContextConfig = {
       outputPath: 'stan',
@@ -80,10 +77,14 @@ describe('runSelected combine / sequencing / keep', () => {
         b: 'node -e "process.stdout.write(`B`)"',
       },
     };
+    // First run clears output directory
     const created1 = await runSelected(cwd, cfg, ['a', 'b'], 'concurrent', {
       combine: true,
     });
     expect(created1).toContain(path.join(cwd, 'stan', 'combined.txt'));
+
+    // Create a pre-existing artifact that should be preserved when --keep is used
+    await writeFile(path.join(cwd, 'stan', 'old.txt'), 'OLD', 'utf8');
 
     const created2 = await runSelected(cwd, cfg, ['a'], 'concurrent', {
       combine: true,

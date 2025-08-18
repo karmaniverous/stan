@@ -1,3 +1,4 @@
+// src/cli/stan/runner.combine.test.ts
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -38,6 +39,12 @@ describe('CLI -c/--combine and -k/--keep', () => {
   });
 
   afterEach(async () => {
+    // Avoid EBUSY on Windows: change cwd before rm.
+    try {
+      process.chdir(os.tmpdir());
+    } catch {
+      // ignore
+    }
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });

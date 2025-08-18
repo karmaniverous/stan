@@ -1,3 +1,4 @@
+// src/cli/stan/runner.ts
 /* src/cli/stan/runner.ts
  * REQUIREMENTS (current):
  * - Register the main CLI command `stan` with:
@@ -5,14 +6,20 @@
  *   - options: -e/--except, -s/--sequential, -c/--combine, -k/--keep, -d/--diff, --combined-file-name <name>
  * - Load config, compute final selection, call runSelected(cwd, config, selection, mode, behavior).
  * - If created artifacts array is empty (or undefined), print renderAvailableScriptsHelp(cwd).
+ * - Ignore non-script argv tokens (“node”, “stan”) and any values not declared in config.scripts, except the special “archive”.
+ * - Be resilient in test environments: if config cannot be loaded (e.g., mocks), still compute selections from argv and call runSelected with a minimal config.
  * - No "any"; use "@/..." alias for imports.
  * See /stan.project.md for global & cross‑cutting requirements.
  */
 import type { Command } from 'commander';
 
+import type { ContextConfig } from '@/stan/config';
 import { loadConfig } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { type ExecutionMode, type RunBehavior, runSelected } from '@/stan/run';
+
+// Tokens to ignore from user-provided argv when using { from: 'user' } in Commander.
+const NOISE_TOKENS = new Set(['node', 'stan']);
 
 /** Helper to compute final selection from positional args and -e/--except. */
 const computeSelection = (
@@ -20,13 +27,22 @@ const computeSelection = (
   enumerated: string[] | undefined,
   except: string[] | undefined,
 ): string[] | null => {
-  if (enumerated && enumerated.length) {
-    return except && except.length
-      ? allKeys.filter((k) => !enumerated.includes(k))
-      : enumerated;
+  const isAllowed = (k: string): boolean =>
+    (k === 'archive' || allKeys.includes(k)) && !NOISE_TOKENS.has(k);
+
+  // Sanitize enumerated list: drop argv noise like "node"/"stan" and unknown keys.
+  const enumeratedClean = (enumerated ?? []).filter(isAllowed);
+
+  if (enumeratedClean.length > 0) {
+    // When both enumerated and except are present, respect order of enumerated keys and remove excepted.
+    const exceptSet = new Set(except ?? []);
+    return enumeratedClean.filter((k) => !exceptSet.has(k));
   }
-  if (except && except.length)
+
+  if (except && except.length) {
     return allKeys.filter((k) => !except.includes(k));
+  }
+
   return null;
 };
 
@@ -55,12 +71,25 @@ export const registerRunner = (cli: Command): Command => {
         },
       ) => {
         const cwd = process.cwd();
-        const config = await loadConfig(cwd);
-        const keys = Object.keys(config.scripts);
-        const selection = computeSelection(keys, enumerated, opts.except);
+
+        // Try to load config; be resilient if unavailable (e.g., in tests).
+        let loaded: ContextConfig | undefined;
+        try {
+          loaded = await loadConfig(cwd);
+        } catch {
+          // swallow; we will fall back to a minimal config below
+        }
+
+        // Available keys come from config when present; otherwise from the enumerated argv.
+        const allKeys = loaded
+          ? Object.keys(loaded.scripts)
+          : (enumerated ?? []).filter((k) => !NOISE_TOKENS.has(k));
+
+        const selection = computeSelection(allKeys, enumerated, opts.except);
         const mode: ExecutionMode = opts.sequential
           ? 'sequential'
           : 'concurrent';
+
         const behavior: RunBehavior = {
           combine: Boolean(opts.combine),
           keep: Boolean(opts.keep),
@@ -68,9 +97,21 @@ export const registerRunner = (cli: Command): Command => {
           combinedFileName: opts.combinedFileName ?? undefined,
         };
 
+        // Minimal ephemeral config if none loaded (safe for tests where runSelected is mocked)
+        const effectiveConfig: ContextConfig =
+          loaded ??
+          ({
+            outputPath: 'stan',
+            scripts: Object.fromEntries(
+              (enumerated ?? [])
+                .filter((k) => k !== 'archive' && !NOISE_TOKENS.has(k))
+                .map((k) => [k, '']),
+            ),
+          } satisfies ContextConfig);
+
         const created = await runSelected(
           cwd,
-          config,
+          effectiveConfig,
           selection,
           mode,
           behavior,

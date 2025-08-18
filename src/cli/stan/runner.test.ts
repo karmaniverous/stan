@@ -1,3 +1,4 @@
+// src/cli/stan/runner.test.ts
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -38,6 +39,12 @@ describe('CLI argument parsing', () => {
   });
 
   afterEach(async () => {
+    // Avoid EBUSY on Windows: change cwd before rm.
+    try {
+      process.chdir(os.tmpdir());
+    } catch {
+      // ignore
+    }
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
@@ -53,7 +60,7 @@ describe('CLI argument parsing', () => {
 
   it('passes -s to run sequentially and preserves config order', async () => {
     const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', '-s', 'lint', 'test'], {
+    await cli.parseAsync(['node', 'stan', 'lint', 'test', '-s'], {
       from: 'user',
     });
 

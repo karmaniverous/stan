@@ -1,3 +1,4 @@
+// src/cli/stan/init.test.ts
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -18,6 +19,12 @@ describe('init helpers', () => {
   });
 
   afterEach(async () => {
+    // Avoid EBUSY on Windows: do not rm the current working directory.
+    try {
+      process.chdir(os.tmpdir());
+    } catch {
+      // ignore
+    }
     await rm(dir, { recursive: true, force: true });
   });
 

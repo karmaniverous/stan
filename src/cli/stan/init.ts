@@ -8,7 +8,7 @@
  *   - IMPORTANT: Swallow "helpDisplayed", "unknownCommand", and "unknownOption" so tests don't fail while native help remains enabled.
  * - Leverage native Commander help (-h/--help) instead of custom help wiring.
  * - When tests pass ["node","stan",...], tolerate stray tokens by adding a passthrough variadic argument
- *   only when no other arguments have been registered on the root program (no impact when runner has already done so).
+ *   only when the program has no arguments AND no subcommands (so we don't shadow real commands).
  * - Use alias "@/..." for internal imports; avoid "any".
  */
 import { existsSync } from 'node:fs';
@@ -38,12 +38,18 @@ const installExitOverride = (cmd: Command): void => {
   });
 };
 
-/** Add a catch-all variadic argument only if no arguments exist on the program (test-helper safety). */
+/** Add a catch-all variadic argument only if no arguments AND no subcommands exist (test-helper safety). */
 const ensurePassthroughArg = (cli: Command): void => {
   // Access minimal internal shape without using "any".
-  const internal = cli as unknown as { _args?: unknown[] };
+  const internal = cli as unknown as {
+    _args?: unknown[];
+    commands?: unknown[];
+  };
   const hasArgs = Array.isArray(internal._args) && internal._args.length > 0;
-  if (!hasArgs) {
+  const hasSubcommands =
+    Array.isArray(internal.commands) && internal.commands.length > 0;
+
+  if (!hasArgs && !hasSubcommands) {
     // Accept and ignore any stray tokens (e.g., ["node","stan",...]) in test harnesses.
     cli.argument('[__ignore__...]', 'internal passthrough');
   }
@@ -107,9 +113,6 @@ export const registerInit = (cli: Command): Command => {
   // Prevent process.exit during tests even when showing help.
   installExitOverride(cli);
 
-  // Accept stray argv tokens in tests when runner hasn't added arguments.
-  ensurePassthroughArg(cli);
-
   const sub = cli
     .command('init')
     .description(
@@ -127,6 +130,9 @@ export const registerInit = (cli: Command): Command => {
   sub.action(async (opts: { force?: boolean }) => {
     await performInit(cli, { force: Boolean(opts.force) });
   });
+
+  // Only add passthrough if we have no args and no subcommands (avoid swallowing "init")
+  ensurePassthroughArg(cli);
 
   return cli;
 };

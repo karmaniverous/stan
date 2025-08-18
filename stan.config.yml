@@ -1,3 +1,4 @@
+combinedFileName: combined
 excludes:
   - assets
   - docs

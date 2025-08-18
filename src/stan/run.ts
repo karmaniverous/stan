@@ -1,3 +1,4 @@
+// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (current):
  * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.
@@ -5,7 +6,10 @@
  * - Maintain <outputPath>/order.txt by appending the UPPERCASE first letter of each executed key, in run order.
  *   - ORDER FILE CREATION IS TEST-ONLY: write it when NODE_ENV==='test' or STAN_WRITE_ORDER==='1'.
  * - Support selection of keys; when null/undefined, run all. Ignore unknown keys.
- * - Treat special key 'archive': it should execute after all other keys when present.
+ * - Treat special key 'archive':
+ *   - When selection is null (default run), include 'archive' implicitly even if not present in config.scripts.
+ *   - Run archive in PARALLEL with other scripts when mode === 'concurrent'.
+ *   - Run archive LAST when mode === 'sequential'.
  * - Options:
  *   - combine=false|true: if true, produce either combined.txt (when 'archive' not included) or combined.tar (when 'archive' included).
  *   - keep=false|true: when false (default) clear output dir before running; when true, keep prior artifacts.
@@ -132,10 +136,15 @@ export const runSelected = async (
     await writeFile(orderFile as string, '', 'utf8');
   }
 
-  const keys = normalizeSelection(selection, config);
-  if (keys.length === 0) return [];
-  const hasArchive = keys.includes('archive');
-  const toRun = keys.filter((k) => k !== 'archive');
+  const baseKeys = normalizeSelection(selection, config);
+  if (baseKeys.length === 0) return [];
+
+  // Default include archive when no explicit selection is provided.
+  const includeArchiveByDefault = selection == null || selection.length === 0;
+  const hasArchive = includeArchiveByDefault || baseKeys.includes('archive');
+
+  // Exclude 'archive' from normal script execution; it is handled separately below.
+  const toRun = baseKeys.filter((k) => k !== 'archive');
 
   const created: string[] = [];
   const runner = async (k: string): Promise<void> => {
@@ -144,13 +153,69 @@ export const runSelected = async (
   };
 
   if (mode === 'sequential') {
+    // In sequential mode, run scripts in order and then archive.
     for (const k of toRun) {
       await runner(k);
     }
+
+    if (hasArchive && !behavior.combine) {
+      console.log('stan: start "archive"');
+      const archivePath = await createArchive(cwd, outRel, {
+        includes: config.includes ?? [],
+        excludes: config.excludes ?? [],
+      });
+      console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
+      created.push(archivePath);
+
+      if (behavior.diff) {
+        console.log('stan: start "archive (diff)"');
+        const { diffPath } = await createArchiveDiff({
+          cwd,
+          outputPath: outRel,
+          baseName: 'archive',
+        });
+        console.log(
+          `stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`,
+        );
+        created.push(diffPath);
+      }
+    }
   } else {
-    await Promise.all(toRun.map((k) => runner(k)));
+    // Concurrent mode: run scripts and archive in parallel (when applicable).
+    const tasks: Array<Promise<void>> = toRun.map((k) =>
+      runner(k).then(() => void 0),
+    );
+
+    if (hasArchive && !behavior.combine) {
+      const archiveTask = (async (): Promise<void> => {
+        console.log('stan: start "archive"');
+        const archivePath = await createArchive(cwd, outRel, {
+          includes: config.includes ?? [],
+          excludes: config.excludes ?? [],
+        });
+        console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
+        created.push(archivePath);
+
+        if (behavior.diff) {
+          console.log('stan: start "archive (diff)"');
+          const { diffPath } = await createArchiveDiff({
+            cwd,
+            outputPath: outRel,
+            baseName: 'archive',
+          });
+          console.log(
+            `stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`,
+          );
+          created.push(diffPath);
+        }
+      })();
+      tasks.push(archiveTask);
+    }
+
+    await Promise.all(tasks);
   }
 
+  // Combine handling: always last, include output dir when hasArchive.
   if (behavior.combine) {
     const base = behavior.combinedFileName ?? 'combined';
     if (hasArchive) {
@@ -167,18 +232,9 @@ export const runSelected = async (
       const p = await combineTextOutputs(cwd, outRel, toRun, base);
       created.push(p);
     }
-  }
 
-  if (hasArchive && !behavior.combine) {
-    console.log('stan: start "archive"');
-    const archivePath = await createArchive(cwd, outRel, {
-      includes: config.includes ?? [],
-      excludes: config.excludes ?? [],
-    });
-    console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
-    created.push(archivePath);
-
-    if (behavior.diff) {
+    if (hasArchive && behavior.diff) {
+      // In combine mode, we still write a diff tar (no full archive tar in this flow).
       console.log('stan: start "archive (diff)"');
       const { diffPath } = await createArchiveDiff({
         cwd,
@@ -188,17 +244,6 @@ export const runSelected = async (
       console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
       created.push(diffPath);
     }
-  }
-
-  if (hasArchive && behavior.combine && behavior.diff) {
-    console.log('stan: start "archive (diff)"');
-    const { diffPath } = await createArchiveDiff({
-      cwd,
-      outputPath: outRel,
-      baseName: 'archive',
-    });
-    console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
-    created.push(diffPath);
   }
 
   return created;

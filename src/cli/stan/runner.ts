@@ -1,3 +1,4 @@
+// src/cli/stan/runner.ts
 /* src/cli/stan/runner.ts
  * REQUIREMENTS (current):
  * - Register the main CLI command `stan` with:
@@ -7,7 +8,7 @@
  * - If created artifacts array is empty (or undefined), print renderAvailableScriptsHelp(cwd).
  * - Ignore non-script argv tokens (“node”, “stan”) and any values not declared in config.scripts, except the special “archive”.
  * - Be resilient in test environments: if config cannot be loaded (e.g., mocks), still compute selections from argv and call runSelected with a minimal config.
- * - IMPORTANT: When no scripts are explicitly enumerated, implicitly include the special “archive” job in addition to configured scripts.
+ * - Default/implicit behavior is handled in the runner: when no scripts are explicitly enumerated the runner adds the special "archive".
  * - No "any"; use "@/..." alias for imports.
  * See /stan.project.md for global & cross‑cutting requirements.
  */
@@ -85,19 +86,7 @@ export const registerRunner = (cli: Command): Command => {
           ? Object.keys(loaded.scripts)
           : (enumerated ?? []).filter((k) => !NOISE_TOKENS.has(k));
 
-        const computed = computeSelection(allKeys, enumerated, opts.except);
-
-        // Default behavior: if no explicit selection then run all keys AND the special "archive"
-        // unless the user explicitly excluded it.
-        const selection =
-          computed === null
-            ? (() => {
-                const exceptSet = new Set(opts.except ?? []);
-                return exceptSet.has('archive')
-                  ? [...allKeys]
-                  : [...allKeys, 'archive'];
-              })()
-            : computed;
+        const selection = computeSelection(allKeys, enumerated, opts.except);
 
         const mode: ExecutionMode = opts.sequential
           ? 'sequential'
@@ -111,16 +100,14 @@ export const registerRunner = (cli: Command): Command => {
         };
 
         // Minimal ephemeral config if none loaded (safe for tests where runSelected is mocked)
-        const effectiveConfig: ContextConfig =
-          loaded ??
-          ({
-            outputPath: 'stan',
-            scripts: Object.fromEntries(
-              (enumerated ?? [])
-                .filter((k) => k !== 'archive' && !NOISE_TOKENS.has(k))
-                .map((k) => [k, '']),
-            ),
-          } satisfies ContextConfig);
+        const effectiveConfig: ContextConfig = loaded ?? {
+          outputPath: 'stan',
+          scripts: Object.fromEntries(
+            (enumerated ?? [])
+              .filter((k) => k !== 'archive' && !NOISE_TOKENS.has(k))
+              .map((k) => [k, '']),
+          ),
+        };
 
         const created = await runSelected(
           cwd,

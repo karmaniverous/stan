@@ -217,7 +217,8 @@ export const runSelected = async (
 
   // Combine handling: always last, include output dir when hasArchive.
   if (behavior.combine) {
-    const base = behavior.combinedFileName ?? 'combined';
+    const base =
+      behavior.combinedFileName ?? config.combinedFileName ?? 'combined';
     if (hasArchive) {
       const tarPath = resolve(outAbs, `${base}.tar`);
       const tar = (await import('tar')) as unknown as {

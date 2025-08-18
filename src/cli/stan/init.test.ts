@@ -42,7 +42,7 @@ describe('init helpers', () => {
   it('registerInit wires the command', async () => {
     const cli = new Command();
     registerInit(cli);
-    // dry parse
-    await cli.parseAsync(['node', 'stan', 'init', '--help'], { from: 'user' });
+    // Dry parse without invoking built-in help to avoid process.exit
+    await cli.parseAsync(['node', 'stan', 'init', '--force'], { from: 'user' });
   });
 });

@@ -1,3 +1,5 @@
+// README.md
+
 # STAN — STAN Tames Architectural Nonsense
 
 > 🎲 **A tip of the hat to Stanisław Ulam.**  
@@ -5,7 +7,7 @@
 > **STAN** brings a bit of that spirit to software: **S**ample your project, **T**ar it up, let your AI **A**nalyze, and have it **N**arrate with confidence.  
 > Also, yes: **STAN Tames Architectural Nonsense.** Because your repo shouldn’t gaslight your AI.
 
-**STAN** produces a *single source of truth* for AI‑assisted development: a tarball of your repo plus deterministic outputs from your build/test/lint/typecheck scripts.  
+**STAN** produces a _single source of truth_ for AI‑assisted development: a tarball of your repo plus deterministic outputs from your build/test/lint/typecheck scripts.  
 You get **portable, auditable, reproducible** context—locally and in CI.
 
 ---
@@ -41,7 +43,7 @@ yarn add -D @karmaniverous/stan
 
 ## Quickstart
 
-1) **Initialize config**
+1. **Initialize config**
 
 ```bash
 npx stan init
@@ -49,12 +51,13 @@ npx stan init
 
 This scaffolds `stan.config.yml` (or JSON) with an output path (default `stan/`) and a script map.
 
-2) **Check the config**
+2. **Check the config**
 
 Example `stan.config.yml`:
 
 ```yaml
 outputPath: stan
+combinedFileName: combined
 scripts:
   build: npm run build
   knip: npm run knip
@@ -63,7 +66,7 @@ scripts:
   typecheck: npm run typecheck
 ```
 
-3) **Generate artifacts**
+3. **Generate artifacts**
 
 ```bash
 # runs all configured scripts concurrently; creates stan/archive.tar
@@ -90,35 +93,40 @@ npx stan -d
 stan [scripts...] [options]
 ```
 
+When you run `stan --help`, the footer includes the available script keys discovered from your config, and always lists the special `archive` task.
+
 **Selection**
+
 - `[scripts...]`: run only these keys in order (when paired with `-s`).
 - `-e, --except <keys...>`: run all scripts **except** these.
 
 **Execution mode**
+
 - Default is **concurrent**.
 - `-s, --sequential`: run scripts sequentially, preserving the enumerated order.
 
 **Artifacts**
+
 - **Default**: Clears the output directory, creates `stan/archive.tar`, and writes one text file per script (e.g., `stan/test.txt`).
 - `-k, --keep`: Do **not** clear the output directory before running.
 
 **Combine**
+
 - `-c, --combine`:
   - If `archive` is present among jobs, STAN runs non‑archive jobs first, then creates a **single combined tar** (including the output directory). It **does not** also create `archive.tar`.
-  - If `archive` is **not** present, STAN combines produced **text outputs** into a single `<name>.txt` (default: `combined.txt`).
-- `--combined-file-name <name>`: set the base name for the combined artifact.
+  - If `archive` is **not** present, STAN combines produced **text outputs** into a single `<name>.txt`.
+  - The base name `<name>` is controlled by the `combinedFileName` config key (default: `combined`).
 
 **Diff**
+
 - `-d, --diff`:
   - When `archive` is included, creates `archive.diff.tar` containing **only changed files** since the last run (added/modified; deletions are tracked in the snapshot but not included in the tarball).
   - Maintains `<outputPath>/.archive.snapshot.json` (path → SHA‑256 hex digest).
   - Copies the previous full tar to `archive.prev.tar` before new archive creation.
 
 **Reserved keys**
-- `archive` and `init` are **reserved** and disallowed as script keys in config.
 
-**Help**
-- Running `stan` with no explicit scripts prints a help footer that lists the script keys discovered from your config.
+- `archive` and `init` are **reserved** and disallowed as script keys in config.
 
 ---
 
@@ -135,7 +143,8 @@ stan/
 ├─ build.txt
 ├─ lint.txt
 ├─ test.txt
-└─ typecheck.txt
+├─ typecheck.txt
+└─ combined.txt              # when --combine without archive
 ```
 
 > Use `-k/--keep` to preserve an existing `stan/` directory between runs.
@@ -149,7 +158,7 @@ name: STAN snapshots
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   stan:
@@ -174,6 +183,7 @@ jobs:
 
 - Prefer portable script entries in your config (e.g., `npm run test`). STAN captures **stdout + stderr** for deterministic logs.
 - Add the output directory (default `stan/`) to your `.gitignore`.
+- Help shows available script keys (including `archive`) at the bottom.
 - **Not that Stan.** This tool isn’t the Stan probabilistic programming language; it’s a snapshot CLI named for Ulam. We do love both.
 
 ---

@@ -1,3 +1,4 @@
+// src/stan/help.ts
 /**
  * REQUIREMENTS (current):
  * - Render a help footer listing available script keys from the discovered config.
@@ -12,6 +13,8 @@ export const renderAvailableScriptsHelp = (cwd: string): string => {
   try {
     const cfg = loadConfigSync(cwd);
     const keys = Object.keys(cfg.scripts);
+    // Ensure special "archive" is listed
+    if (!keys.includes('archive')) keys.push('archive');
     if (!keys.length) return '';
     return [
       '',

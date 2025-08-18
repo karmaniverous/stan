@@ -3,7 +3,7 @@
  * REQUIREMENTS (current):
  * - Register the main CLI command `stan` with:
  *   - positional [scripts...] (string[])
- *   - options: -e/--except, -s/--sequential, -c/--combine, -k/--keep, -d/--diff, --combined-file-name <name>
+ *   - options: -e/--except, -s/--sequential, -c/--combine, -k/--keep, -d/--diff
  * - Load config, compute final selection, call runSelected(cwd, config, selection, mode, behavior).
  * - If created artifacts array is empty (or undefined), print renderAvailableScriptsHelp(cwd).
  * - Ignore non-script argv tokens (“node”, “stan”) and any values not declared in config.scripts, except the special “archive”.
@@ -48,6 +48,9 @@ const computeSelection = (
 };
 
 export const registerRunner = (cli: Command): Command => {
+  // Footer help listing available scripts (includes special "archive")
+  cli.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
+
   cli
     .argument('[scripts...]', 'script keys to run')
     .option('-e, --except <keys...>', 'script keys to exclude')
@@ -55,10 +58,6 @@ export const registerRunner = (cli: Command): Command => {
     .option('-c, --combine', 'combine outputs into a single artifact')
     .option('-k, --keep', 'keep (do not clear) output directory')
     .option('-d, --diff', 'when running archive, also create archive.diff.tar')
-    .option(
-      '--combined-file-name <name>',
-      'base name for combined artifacts (default: "combined")',
-    )
     .action(
       async (
         enumerated: string[] | undefined,
@@ -68,7 +67,6 @@ export const registerRunner = (cli: Command): Command => {
           combine?: boolean;
           keep?: boolean;
           diff?: boolean;
-          combinedFileName?: string;
         },
       ) => {
         const cwd = process.cwd();
@@ -96,7 +94,8 @@ export const registerRunner = (cli: Command): Command => {
           combine: Boolean(opts.combine),
           keep: Boolean(opts.keep),
           diff: Boolean(opts.diff),
-          combinedFileName: opts.combinedFileName ?? undefined,
+          // Now sourced from config (defaults handled by loader)
+          combinedFileName: loaded?.combinedFileName,
         };
 
         // Minimal ephemeral config if none loaded (safe for tests where runSelected is mocked)
@@ -107,6 +106,7 @@ export const registerRunner = (cli: Command): Command => {
               .filter((k) => k !== 'archive' && !NOISE_TOKENS.has(k))
               .map((k) => [k, '']),
           ),
+          combinedFileName: 'combined',
         };
 
         const created = await runSelected(

@@ -22,6 +22,7 @@ vi.mock('@/stan/config', async (importOriginal) => {
     findConfigPathSync: vi.fn().mockReturnValue('stan.config.yml'),
     loadConfig: vi.fn().mockResolvedValue({
       outputPath: 'stan',
+      combinedFileName: 'bundle',
       scripts: { test: 'echo test', lint: 'echo lint' },
     }),
   };
@@ -59,12 +60,9 @@ describe('CLI -c/--combine and -k/--keep', () => {
     expect(behavior).toMatchObject({ combine: true, keep: true });
   });
 
-  it('maps -c and --combined-file-name', async () => {
+  it('honors combinedFileName from config when combining', async () => {
     const cli = makeCli();
-    await cli.parseAsync(
-      ['node', 'stan', '-c', '--combined-file-name', 'bundle', 'lint'],
-      { from: 'user' },
-    );
+    await cli.parseAsync(['node', 'stan', '-c', 'lint'], { from: 'user' });
 
     const [, , selection, , behavior] = runSelectedSpy.mock.calls[0];
     expect(selection).toEqual(['lint']);

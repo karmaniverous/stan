@@ -1,7 +1,8 @@
+// src/stan/config.ts
 /* src/stan/config.ts
  * REQUIREMENTS (current):
  * - Load stan configuration from YAML or JSON (stan.config.yml|yaml|json) discovered from `cwd`.
- * - Validate shape: { outputPath: string; scripts: Record<string,string>; includes?: string[]; excludes?: string[] }.
+ * - Validate shape: { outputPath: string; scripts: Record<string,string>; includes?: string[]; excludes?: string[]; combinedFileName?: string }.
  * - Forbid reserved script keys "archive" and "init" (error must match /archive.*init.*not allowed/i).
  * - Provide sync helpers used by CLI and help: findConfigPathSync, loadConfigSync.
  * - Provide async loadConfig passthrough for convenience.
@@ -24,7 +25,12 @@ export type ContextConfig = {
   includes?: string[];
   /** Paths to exclude in archiving logic (globs not yet supported). */
   excludes?: string[];
+  /** Base name for combined artifacts; defaults to "combined" when not configured. */
+  combinedFileName?: string;
 };
+
+const normalizeCombinedName = (v: unknown): string =>
+  typeof v === 'string' && v.trim().length > 0 ? v.trim() : 'combined';
 
 const parseFile = async (abs: string): Promise<ContextConfig> => {
   const raw = await readFile(abs, 'utf8');
@@ -35,6 +41,9 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
+  const combinedFileName = (cfg as { combinedFileName?: unknown })
+    .combinedFileName;
+
   if (typeof outputPath !== 'string' || outputPath.length === 0) {
     throw new Error('Invalid config: "outputPath" must be a non-empty string');
   }
@@ -51,6 +60,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
+    combinedFileName: normalizeCombinedName(combinedFileName),
   };
 };
 
@@ -87,6 +97,9 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
+  const combinedFileName = (cfg as { combinedFileName?: unknown })
+    .combinedFileName;
+
   if (typeof outputPath !== 'string' || outputPath.length === 0) {
     throw new Error('Invalid config: "outputPath" must be a non-empty string');
   }
@@ -102,6 +115,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
+    combinedFileName: normalizeCombinedName(combinedFileName),
   };
 };
 

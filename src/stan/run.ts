@@ -1,4 +1,3 @@
-// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (current):
  * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.

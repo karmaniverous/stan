@@ -1,4 +1,3 @@
-// src/cli/stan/runner.ts
 /* src/cli/stan/runner.ts
  * REQUIREMENTS (current):
  * - Register the main CLI command `stan` with:

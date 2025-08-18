@@ -1,4 +1,3 @@
-// src/cli/stan/init.ts
 /* src/cli/stan/init.ts
  * REQUIREMENTS (current):
  * - Add "stan init" subcommand:

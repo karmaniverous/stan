@@ -1,53 +1,50 @@
+/** See /requirements.md for global requirements. */
 import eslint from '@eslint/js';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import tseslint from 'typescript-eslint';
 import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
-import simpleImportSortPlugin from 'eslint-plugin-simple-import-sort';
-import tsDocPlugin from 'eslint-plugin-tsdoc';
-import vitestPlugin from 'eslint-plugin-vitest';
-import { dirname } from 'path';
-import tseslint from 'typescript-eslint';
-import { fileURLToPath } from 'url';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import tsdoc from 'eslint-plugin-tsdoc';
+import vitest from 'eslint-plugin-vitest';
 
 const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config(
+  // Global ignores
   {
-    ignores: [
-      '.rollup.cache/**/*',
-      'coverage/**/*',
-      'dist/**/*',
-      'docs/**/*',
-      'node_modules/**/*',
-    ],
+    ignores: ['.rollup.cache/**', 'dist/**', 'docs/**', 'node_modules/**', 'coverage/**'],
   },
+
+  eslint.configs.recommended,
+  tseslint.configs.strictTypeChecked,
+  prettierConfig,
+
+  // Project rules
   {
-    files: ['**/*.{ts,tsx,js,json}'],
+    files: [
+      'src/**/*.{ts,tsx,js,cjs,mjs}',
+      'rollup.config.ts',
+      'vitest.config.ts',
+      'eslint.config.js',
+      'tsconfig.json',
+      'package.json'
+    ],
     languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.json'],
-        tsconfigRootDir,
-        sourceType: 'module',
-      },
+      parserOptions: { project: './tsconfig.json', tsconfigRootDir }
     },
     plugins: {
-      'prettier': prettierPlugin,
-      'simple-import-sort': simpleImportSortPlugin,
-      tsdoc: tsDocPlugin,
-      vitest: vitestPlugin,
+      prettier: prettierPlugin,
+      'simple-import-sort': simpleImportSort,
+      tsdoc,
+      vitest
     },
     rules: {
-      '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-unused-expressions': 'off',
-      '@typescript-eslint/no-unused-vars': 'error',
-      'no-unused-vars': 'off',
+      'prettier/prettier': 'error',
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
-      'tsdoc/syntax': 'warn',
-      'prettier/prettier': ['error', prettierConfig],
-    },
-    settings: {
-      vitest: { typecheck: true },
-    },
-  },
+      'tsdoc/syntax': 'warn'
+    }
+  }
 );

@@ -51,7 +51,7 @@ const main = async (): Promise<void> => {
     repoRoot,
   );
   if (list.code !== 0) {
-    console.log('archive: no file list; left context directory in place');
+    console.log('archive: no file list; left stan directory in place');
     process.exitCode = 1;
     return;
   }

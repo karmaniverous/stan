@@ -1,6 +1,6 @@
 /**
- * @file src/context/index.ts
- * @description Barrel exports for context engine.
+ * @file src/stan/index.ts
+ * @description Barrel exports for stan engine.
  */
 
 export * from './archive';

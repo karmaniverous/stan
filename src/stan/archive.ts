@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 
 /**
  * @fileoverview Create a project archive under the output directory.
- * NOTE: Global and cross‑cutting requirements live in /project.stan.md.
+ * NOTE: Global and cross‑cutting requirements live in /stan.project.md.
  *
  * REQUIREMENTS (current):
  * - Create <outputPath>/archive.tar from project root, excluding node_modules/.git and (by default) the outputPath.

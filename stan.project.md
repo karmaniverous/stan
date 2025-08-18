@@ -2,7 +2,7 @@
 
 This document is the single source of truth for project‑wide requirements. Individual files should not duplicate these; instead they include a short header like:
 
-> `/** See /project.stan.md for global requirements. */`
+> `/** See /stan.project.md for global requirements. */`
 
 ## TypeScript
 
@@ -62,7 +62,7 @@ This document is the single source of truth for project‑wide requirements. Ind
 
 ## Context Config Shape
 
-`ContextConfig` (see `src/context/config.ts`) supports:
+`ContextConfig` (see `src/stan/config.ts`) supports:
 
 ```ts
 type ContextConfig = {

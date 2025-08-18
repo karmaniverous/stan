@@ -1,5 +1,5 @@
 {
-  // See /project.stan.md for global requirements.
+  // See /stan.project.md for global requirements.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],

@@ -1,8 +1,8 @@
 /**
- * @file src/context/diff.ts
+ * @file src/stan/diff.ts
  * Diff helpers for the stan tool.
  *
- * NOTE: Global requirements live in /project.stan.md.
+ * NOTE: Global requirements live in /stan.project.md.
  *
  * REQUIREMENTS (current):
  * - `createArchiveDiff({ cwd, outputPath, baseName })` writes a sentinel file `.stan_no_changes` into the

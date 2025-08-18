@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const runSelectedSpy = vi.fn().mockResolvedValue([]);
 
-vi.mock('@/context/run', async (importOriginal) => {
+vi.mock('@/stan/run', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/stan/run')>();
   return {
     ...actual,
@@ -14,7 +14,7 @@ vi.mock('@/context/run', async (importOriginal) => {
   };
 });
 
-vi.mock('@/context/config', async (importOriginal) => {
+vi.mock('@/stan/config', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/stan/config')>();
   return {
     ...actual,

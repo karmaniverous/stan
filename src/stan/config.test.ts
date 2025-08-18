@@ -13,7 +13,7 @@ describe('config loading', () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'stan-json-'));
     const json = JSON.stringify(
       {
-        outputPath: 'context',
+        outputPath: 'stan',
         scripts: {
           test: 'npm run test',
           lint: 'npm run lint',
@@ -25,7 +25,7 @@ describe('config loading', () => {
     await write(path.join(cwd, 'stan.config.json'), json);
 
     const cfg = await loadConfig(cwd);
-    expect(cfg.outputPath).toBe('context');
+    expect(cfg.outputPath).toBe('stan');
     expect(Object.keys(cfg.scripts)).toEqual(['test', 'lint']);
 
     const out = await ensureOutputDir(cwd, cfg.outputPath);
@@ -35,7 +35,7 @@ describe('config loading', () => {
   it('loads valid YAML config (stan.config.yml)', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'stan-yml-'));
     const yml = [
-      'outputPath: context',
+      'outputPath: stan',
       'scripts:',
       '  test: npm run test',
       '  typecheck: npm run typecheck',
@@ -43,14 +43,14 @@ describe('config loading', () => {
     await write(path.join(cwd, 'stan.config.yml'), yml);
 
     const cfg = await loadConfig(cwd);
-    expect(cfg.outputPath).toBe('context');
+    expect(cfg.outputPath).toBe('stan');
     expect(Object.keys(cfg.scripts)).toEqual(['test', 'typecheck']);
   });
 
   it('rejects "archive" and "init" keys in scripts', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'stan-bad-'));
     const yml = [
-      'outputPath: context',
+      'outputPath: stan',
       'scripts:',
       '  archive: nope',
       '  init: nope2',

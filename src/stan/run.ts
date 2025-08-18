@@ -1,4 +1,3 @@
-// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (current):
  * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.
@@ -66,6 +65,12 @@ const normalizeSelection = (
   return ordered;
 };
 
+const waitForStreamClose = (stream: NodeJS.WritableStream): Promise<void> =>
+  new Promise<void>((resolveP, rejectP) => {
+    stream.on('close', () => resolveP());
+    stream.on('error', (e) => rejectP(e));
+  });
+
 const runOne = async (
   cwd: string,
   outRel: string,
@@ -89,6 +94,9 @@ const runOne = async (
     child.on('close', () => resolveP());
   });
   stream.end();
+  // Ensure OS file handle is released before proceeding (prevents EBUSY on Windows).
+  await waitForStreamClose(stream);
+
   if (orderFile) {
     await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
   }

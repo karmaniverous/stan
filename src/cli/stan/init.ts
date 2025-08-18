@@ -8,14 +8,19 @@
  *   - IMPORTANT: Swallow "helpDisplayed", "unknownCommand", and "unknownOption" so tests don't fail while native help remains enabled.
  * - Leverage native Commander help (-h/--help) instead of custom help wiring.
  * - When tests pass ["node","stan",...], tolerate stray tokens by adding a passthrough variadic argument
- *   only when the program has no arguments AND no subcommands (so we don't shadow real commands).
+ *   when the program has no arguments (ignore extraneous argv).
  * - Use alias "@/..." for internal imports; avoid "any".
+ * - New: During init, ensure stan.system.md and stan.project.md are present:
+ *   - If not present in the project root, copy stan.system.md from the package dist.
+ *   - If stan.project.md is not present, copy stan.project.template.md from the package dist as stan.project.md.
  */
 import { existsSync } from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { Command } from 'commander';
+import { packageDirectorySync } from 'package-directory';
 import YAML from 'yaml';
 
 import type { ContextConfig, ScriptMap } from '@/stan/config';
@@ -25,7 +30,6 @@ const TOKEN = /^\w+/;
 
 const installExitOverride = (cmd: Command): void => {
   cmd.exitOverride((err) => {
-    // Swallow help and unknown-* errors to avoid process.exit in tests and tolerate argv noise.
     const code = (err as { code?: string }).code;
     if (
       code === 'commander.helpDisplayed' ||
@@ -38,19 +42,13 @@ const installExitOverride = (cmd: Command): void => {
   });
 };
 
-/** Add a catch-all variadic argument only if no arguments AND no subcommands exist (test-helper safety). */
+/** Add a catch-all variadic argument if the program currently has no arguments. */
 const ensurePassthroughArg = (cli: Command): void => {
-  // Access minimal internal shape without using "any".
   const internal = cli as unknown as {
     _args?: unknown[];
-    commands?: unknown[];
   };
   const hasArgs = Array.isArray(internal._args) && internal._args.length > 0;
-  const hasSubcommands =
-    Array.isArray(internal.commands) && internal.commands.length > 0;
-
-  if (!hasArgs && !hasSubcommands) {
-    // Accept and ignore any stray tokens (e.g., ["node","stan",...]) in test harnesses.
+  if (!hasArgs) {
     cli.argument('[__ignore__...]', 'internal passthrough');
   }
 };
@@ -67,12 +65,45 @@ const readPackageJsonScripts = async (
   }
 };
 
+const copyDocIfMissing = async (
+  cwd: string,
+  moduleRoot: string,
+  srcName: string,
+  destName: string,
+): Promise<void> => {
+  const src = path.join(moduleRoot, srcName);
+  const dest = path.join(cwd, destName);
+  if (!existsSync(dest) && existsSync(src)) {
+    await copyFile(src, dest);
+  }
+};
+
+const ensureDocs = async (cwd: string): Promise<void> => {
+  // Locate package root from the current module file (works for dev and built CLI)
+  const thisFile = fileURLToPath(import.meta.url);
+  const thisDir = path.dirname(thisFile);
+  const moduleRoot = packageDirectorySync({ cwd: thisDir }) ?? thisDir;
+
+  // Both files are delivered in dist/ (rollup copies them to moduleRoot/dist).
+  const distRoot = path.join(moduleRoot, 'dist');
+
+  await copyDocIfMissing(cwd, distRoot, 'stan.system.md', 'stan.system.md');
+  await copyDocIfMissing(
+    cwd,
+    distRoot,
+    'stan.project.template.md',
+    'stan.project.md',
+  );
+};
+
 export const performInit = async (
   _cli: Command,
   { cwd = process.cwd(), force = false }: { cwd?: string; force?: boolean },
 ): Promise<string | null> => {
   const existing = findConfigPathSync(cwd);
   if (existing && !force) {
+    // Ensure docs are present even if config already exists.
+    await ensureDocs(cwd);
     return existing;
   }
 
@@ -105,12 +136,14 @@ export const performInit = async (
     await writeFile(giPath, gi, 'utf8');
   }
 
+  // Ensure docs are present.
+  await ensureDocs(cwd);
+
   console.log(`stan: wrote stan.config.yml`);
   return cfgPath;
 };
 
 export const registerInit = (cli: Command): Command => {
-  // Prevent process.exit during tests even when showing help.
   installExitOverride(cli);
 
   const sub = cli
@@ -119,7 +152,6 @@ export const registerInit = (cli: Command): Command => {
       'Create a stan.config.json|yml by scanning package.json scripts.',
     );
 
-  // Also guard the subcommand itself.
   installExitOverride(sub);
 
   sub.option(
@@ -131,7 +163,7 @@ export const registerInit = (cli: Command): Command => {
     await performInit(cli, { force: Boolean(opts.force) });
   });
 
-  // Only add passthrough if we have no args and no subcommands (avoid swallowing "init")
+  // Tolerate stray tokens in test harnesses when root has no args.
   ensurePassthroughArg(cli);
 
   return cli;

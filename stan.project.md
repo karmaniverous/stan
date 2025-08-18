@@ -1,10 +1,10 @@
-// stan.project.md
-
 # Global & Cross‑Cutting Requirements
 
 This document is the single source of truth for project‑wide requirements. Individual files should not duplicate these; instead they include a short header like:
 
 > `/** See /stan.project.md for global requirements. */`
+
+Important: when this file experiences significant structural changes, update /stan.project.template.md to match so `stan init` scaffolds remain current.
 
 ## TypeScript
 

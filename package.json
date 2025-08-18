@@ -125,9 +125,10 @@
   },
   "scripts": {
     "build": "rimraf dist && rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
-    "context": "concurrently -n archive,typecheck,lint,test,build -c auto \"npm:context:archive\" \"npm:context:typecheck\" \"npm:context:lint\" \"npm:context:test\" \"npm:context:build\"",
+    "context": "concurrently -n archive,typecheck,lint,test,build,docs -c auto \"npm:context:archive\" \"npm:context:typecheck\" \"npm:context:lint\" \"npm:context:test\" \"npm:context:build\" \"npm:context:docs\"",
     "context:archive": "tsx archive.ts",
     "context:build": "npm run build > stan/build.txt 2>&1",
+    "context:docs": "npm run docs > stan/docs.txt 2>&1",
     "context:lint": "npm run lint > stan/lint.txt 2>&1",
     "context:test": "npm run test > stan/test.txt 2>&1",
     "context:typecheck": "npm run typecheck > stan/typecheck.txt 2>&1",

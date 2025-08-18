@@ -1,9 +1,5 @@
-import { existsSync } from 'node:fs';
-import { mkdir, readdir } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
-
-/**
- * @fileoverview Create a project archive under the output directory.
+/* src/stan/archive.ts
+ * Create a project archive under the output directory.
  * NOTE: Global and cross‑cutting requirements live in /stan.project.md.
  *
  * REQUIREMENTS (current):
@@ -12,8 +8,11 @@ import { join, resolve } from 'node:path';
  *   - includeOutputDir?: when true, do include the outputPath directory.
  *   - fileName?: override base name (must end with .tar).
  * - Return the absolute path to the created tarball.
- * - Zero `any` usage.
+ * - Zero "any" usage.
  */
+import { existsSync } from 'node:fs';
+import { mkdir, readdir } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
 type TarLike = {
   create: (
@@ -53,13 +52,14 @@ export const createArchive = async (
   outputPath: string,
   options: CreateArchiveOptions = {},
 ): Promise<string> => {
-  let {
+  const {
     includeOutputDir = false,
-    fileName = 'archive.tar',
+    fileName: rawFileName,
     includes = [],
     excludes = [],
   } = options;
 
+  let fileName = rawFileName ?? 'archive.tar';
   if (!fileName.endsWith('.tar')) fileName += '.tar';
 
   const root = cwd;

@@ -1,18 +1,17 @@
-// src/stan/run.ts
-/**
+/* src/stan/run.ts
  * REQUIREMENTS (current):
  * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.
  * - Create per-script artifacts <outputPath>/<key>.txt combining stdout+stderr.
  * - Maintain <outputPath>/order.txt by appending the UPPERCASE first letter of each executed key, in run order.
  * - Support selection of keys; when null/undefined, run all. Ignore unknown keys.
- * - Treat special key 'archive': it should execute *after* all other keys when present.
+ * - Treat special key 'archive': it should execute after all other keys when present.
  * - Options:
  *   - combine=false|true: if true, produce either combined.txt (when 'archive' not included) or combined.tar (when 'archive' included).
  *   - keep=false|true: when false (default) clear output dir before running; when true, keep prior artifacts.
  *   - diff=false|true: when true and 'archive' is included, also create archive.diff.tar in output dir.
  *   - combinedFileName?: custom base name for combined artifacts (default 'combined').
  * - Log `stan: start "<key>"` and `stan: done "<key>" -> <relative path>` for each artifact including archive variants.
- * - Zero `any` usage; path alias @/* is used for intra-project imports.
+ * - Zero "any" usage; path alias "@/..." is used for intra-project imports.
  *
  * See /stan.project.md for global & cross‑cutting requirements.
  */
@@ -135,7 +134,6 @@ export const runSelected = async (
   };
 
   if (mode === 'sequential') {
-    // Always preserve config order (normalizeSelection returns config-ordered keys).
     for (const k of toRun) {
       await runner(k);
     }

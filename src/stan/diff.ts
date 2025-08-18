@@ -1,12 +1,11 @@
-/**
- * @file src/stan/diff.ts
+/* src/stan/diff.ts
  * Diff helpers for the stan tool.
  *
  * NOTE: Global requirements live in /stan.project.md.
  *
  * REQUIREMENTS (current):
- * - `createArchiveDiff({ cwd, outputPath, baseName })` writes a sentinel file `.stan_no_changes` into the
- *   output directory and creates `<baseName>.diff.tar` containing just that sentinel. Return `{ diffPath }`.
+ * - createArchiveDiff({ cwd, outputPath, baseName }) writes a sentinel ".stan_no_changes" into the
+ *   output directory and creates "<baseName>.diff.tar" containing just that sentinel. Return { diffPath }.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';

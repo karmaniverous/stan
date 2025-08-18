@@ -1,19 +1,11 @@
-// src/cli/stan/runner.ts
-/**
+/* src/cli/stan/runner.ts
  * REQUIREMENTS (current):
  * - Register the main CLI command `stan` with:
- *   - positional `[scripts...]` (string[])
- *   - options:
- *     - `-e, --except <keys...>` to exclude keys
- *     - `-s, --sequential` to run sequentially
- *     - `-c, --combine` to create a combined artifact
- *     - `-k, --keep` to keep (not clear) the output directory
- *     - `-d, --diff` to create `archive.diff.tar` when archive is included
- *     - `--combined-file-name <name>` to override base name of combined artifacts
+ *   - positional [scripts...] (string[])
+ *   - options: -e/--except, -s/--sequential, -c/--combine, -k/--keep, -d/--diff, --combined-file-name <name>
  * - Load config, compute final selection, call runSelected(cwd, config, selection, mode, behavior).
  * - If created artifacts array is empty (or undefined), print renderAvailableScriptsHelp(cwd).
- * - Avoid `any`; keep imports via @/* alias.
- *
+ * - No "any"; use "@/..." alias for imports.
  * See /stan.project.md for global & cross‑cutting requirements.
  */
 import type { Command } from 'commander';
@@ -65,11 +57,7 @@ export const registerRunner = (cli: Command): Command => {
         const cwd = process.cwd();
         const config = await loadConfig(cwd);
         const keys = Object.keys(config.scripts);
-        const selection = computeSelection(
-          keys,
-          enumerated,
-          opts.except as string[] | undefined,
-        );
+        const selection = computeSelection(keys, enumerated, opts.except);
         const mode: ExecutionMode = opts.sequential
           ? 'sequential'
           : 'concurrent';
@@ -88,7 +76,6 @@ export const registerRunner = (cli: Command): Command => {
           behavior,
         );
 
-        // Robustness: treat undefined like "no artifacts"
         if (!Array.isArray(created) || created.length === 0) {
           console.log(renderAvailableScriptsHelp(cwd));
         }

@@ -1,16 +1,15 @@
-/**
+/* src/cli/stan/init.ts
  * REQUIREMENTS (current):
- * - Add `stan init` subcommand:
- *   - `--force` creates a default `stan.config.yml` with `outputPath: stan` and adds `/stan` to `.gitignore`.
- *   - Otherwise, scan package.json to copy script stubs into a config file (best-effort; not covered by tests).
- * - Expose helpers `performInit` (used by tests) and `registerInit`.
- * - Avoid process.exit during parsing in tests by calling `.exitOverride()` on the subcommand.
- * - Use path alias @/*; avoid `any`.
+ * - Add "stan init" subcommand:
+ *   - "--force" creates default stan.config.yml with outputPath: stan and adds "/stan" to .gitignore.
+ *   - Otherwise scan package.json; copy script stubs to config (best-effort).
+ * - Expose helpers performInit (used by tests) and registerInit.
+ * - Avoid process.exit during parsing in tests by calling .exitOverride() on the root and subcommand.
+ * - Use alias "@/..." for internal imports; avoid "any".
  */
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { createInterface } from 'node:readline/promises';
 
 import type { Command } from 'commander';
 import YAML from 'yaml';
@@ -18,7 +17,7 @@ import YAML from 'yaml';
 import type { ContextConfig, ScriptMap } from '@/stan/config';
 import { ensureOutputDir, findConfigPathSync } from '@/stan/config';
 
-const TOKEN = /^\\w+/;
+const TOKEN = /^\w+/;
 
 const readPackageJsonScripts = async (
   cwd: string,
@@ -32,23 +31,12 @@ const readPackageJsonScripts = async (
   }
 };
 
-const promptYesNo = async (question: string): Promise<boolean> => {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const answered = await rl.question(`${question} (y/N) `);
-    return /^y(es)?$/i.test(answered.trim());
-  } finally {
-    rl.close();
-  }
-};
-
 export const performInit = async (
-  cli: Command,
+  _cli: Command,
   { cwd = process.cwd(), force = false }: { cwd?: string; force?: boolean },
 ): Promise<string | null> => {
   const existing = findConfigPathSync(cwd);
   if (existing && !force) {
-    // Nothing to do
     return existing;
   }
 
@@ -71,13 +59,13 @@ export const performInit = async (
   const yml = YAML.stringify(config);
   await writeFile(cfgPath, yml, 'utf8');
 
-  // Add output dir to .gitignore
+  // Add output dir to .gitignore if not already present.
   const giPath = path.join(cwd, '.gitignore');
   const marker = `/${outRel}`;
   let gi = existsSync(giPath) ? await readFile(giPath, 'utf8') : '';
-  if (!gi.split(/\\r?\\n/).some((line) => line.trim() === marker)) {
-    if (gi.length && !gi.endsWith('\\n')) gi += '\\n';
-    gi += `${marker}\\n`;
+  if (!gi.split(/\r?\n/).some((line) => line.trim() === marker)) {
+    if (gi.length && !gi.endsWith('\n')) gi += '\n';
+    gi += `${marker}\n`;
     await writeFile(giPath, gi, 'utf8');
   }
 
@@ -86,6 +74,9 @@ export const performInit = async (
 };
 
 export const registerInit = (cli: Command): Command => {
+  // Prevent process.exit during tests even when showing help.
+  cli.exitOverride();
+
   const sub = cli
     .command('init')
     .description(
@@ -96,7 +87,7 @@ export const registerInit = (cli: Command): Command => {
       'Create stan.config.yml with outputPath=stan and add it to .gitignore.',
     );
 
-  // Prevent process.exit during tests when showing --help etc.
+  // Also guard the subcommand itself.
   sub.exitOverride();
 
   sub.action(async (opts: { force?: boolean }) => {

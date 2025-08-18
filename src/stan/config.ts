@@ -1,4 +1,4 @@
-/**
+/* src/stan/config.ts
  * REQUIREMENTS (current):
  * - Load stan configuration from YAML or JSON (stan.config.yml|yaml|json) discovered from `cwd`.
  * - Validate shape: { outputPath: string; scripts: Record<string,string>; includes?: string[]; excludes?: string[] }.
@@ -6,7 +6,7 @@
  * - Provide sync helpers used by CLI and help: findConfigPathSync, loadConfigSync.
  * - Provide async loadConfig passthrough for convenience.
  * - Provide ensureOutputDir(cwd, outputPath, keep) which creates or clears the output directory.
- * - Keep path alias semantics and zero `any` usage.
+ * - Keep path alias semantics and zero "any" usage.
  */
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';

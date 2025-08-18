@@ -25,7 +25,7 @@ export const resolvePackageRoot = async (cwd: string): Promise<string> =>
   (await packageDirectory({ cwd })) ?? resolve(cwd);
 
 /** Candidate config file names at repo root. */
-const CONFIG_NAMES = ['ctx.config.json', 'ctx.config.yml', 'ctx.config.yaml'] as const;
+const CONFIG_NAMES = ['stan.config.json', 'stan.config.yml', 'stan.config.yaml'] as const;
 
 export const findConfigPathSync = (cwd: string): string | null => {
   const root = resolvePackageRootSync(cwd);
@@ -38,12 +38,12 @@ export const findConfigPathSync = (cwd: string): string | null => {
 
 export const loadConfigSync = (cwd: string): ContextConfig => {
   const p = findConfigPathSync(cwd);
-  if (!p) return { outputPath: 'ctx', scripts: {} };
+  if (!p) return { outputPath: 'stan', scripts: {} };
   const raw = readFileSync(p, 'utf8');
   const data = p.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
   const cfg = data as Partial<ContextConfig> | null | undefined;
   const outputPath =
-    typeof cfg?.outputPath === 'string' && cfg.outputPath.trim() ? cfg.outputPath.trim() : 'ctx';
+    typeof cfg?.outputPath === 'string' && cfg.outputPath.trim() ? cfg.outputPath.trim() : 'stan';
   const scripts = (cfg?.scripts ?? {}) as ScriptMap;
   if (typeof scripts !== 'object') throw new Error('Invalid config: "scripts" must be an object');
   if ('archive' in scripts || 'init' in scripts)

@@ -1,10 +1,10 @@
 {
   "author": "Jason Williscroft",
   "bin": {
-    "ctx": "./dist/cli/ctx/index.js"
+    "stan": "./dist/cli/stan/index.js"
   },
   "bugs": {
-    "url": "https://github.com/karmaniverous/project-context/issues"
+    "url": "https://github.com/karmaniverous/stan/issues"
   },
   "dependencies": {
     "commander": "^14.0.0",
@@ -70,7 +70,7 @@
   "files": [
     "dist"
   ],
-  "homepage": "https://github.com/karmaniverous/project-context#readme",
+  "homepage": "https://github.com/karmaniverous/stan#readme",
   "keywords": [
     "eslint",
     "lefthook",
@@ -84,7 +84,7 @@
   "license": "BSD-3-Clause",
   "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",
-  "name": "@karmaniverous/project-context",
+  "name": "@karmaniverous/stan",
   "publishConfig": {
     "access": "public"
   },
@@ -121,16 +121,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/karmaniverous/project-context.git"
+    "url": "git+https://github.com/karmaniverous/stan.git"
   },
   "scripts": {
     "build": "rimraf dist && rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
     "context": "concurrently -n archive,typecheck,lint,test,build -c auto \"npm:context:archive\" \"npm:context:typecheck\" \"npm:context:lint\" \"npm:context:test\" \"npm:context:build\"",
     "context:archive": "tsx archive.ts",
-    "context:build": "npm run build > ctx/build.txt 2>&1",
-    "context:lint": "npm run lint > ctx/lint.txt 2>&1",
-    "context:test": "npm run test > ctx/test.txt 2>&1",
-    "context:typecheck": "npm run typecheck > ctx/typecheck.txt 2>&1",
+    "context:build": "npm run build > stan/build.txt 2>&1",
+    "context:lint": "npm run lint > stan/lint.txt 2>&1",
+    "context:test": "npm run test > stan/test.txt 2>&1",
+    "context:typecheck": "npm run typecheck > stan/typecheck.txt 2>&1",
     "docs": "typedoc",
     "knip": "knip",
     "lint": "eslint .",

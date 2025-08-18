@@ -7,5 +7,5 @@ coverage/
 dist/
 esm/
 node_modules/
-/ctx/
+/stan/
 /docs/

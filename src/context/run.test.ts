@@ -13,7 +13,7 @@ describe('script execution', () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-run-'));
+    dir = await mkdtemp(path.join(os.tmpdir(), 'stan-run-'));
   });
 
   afterEach(async () => {

@@ -56,8 +56,8 @@ export const performInit = async (cli: Command, { cwd = process.cwd(), force = f
   const pkgScripts = readPackageJsonScripts(cwd);
   const scripts = Object.keys(await pkgScripts).length ? await pkgScripts : await promptScripts();
 
-  const cfg: ContextConfig = { outputPath: 'ctx', scripts };
-  const cfgPath = path.join(cwd, 'ctx.config.yml');
+  const cfg: ContextConfig = { outputPath: 'stan', scripts };
+  const cfgPath = path.join(cwd, 'stan.config.yml');
 
   await mkdir(cwd, { recursive: true });
   await writeFile(cfgPath, YAML.stringify(cfg), 'utf8');
@@ -65,18 +65,18 @@ export const performInit = async (cli: Command, { cwd = process.cwd(), force = f
   // Ensure .gitignore contains the output dir
   const giPath = path.join(cwd, '.gitignore');
   const gi = existsSync(giPath) ? await readFile(giPath, 'utf8') : '';
-  const line = '\n# ctx output\nctx\n';
-  if (!gi.includes('\nctx\n')) await writeFile(giPath, `${gi}${line}`, 'utf8');
+  const line = '\n# stan output\nstan\n';
+  if (!gi.includes('\nstan\n')) await writeFile(giPath, `${gi}${line}`, 'utf8');
 
-  console.log(`ctx: wrote ctx.config.yml`);
+  console.log(`stan: wrote stan.config.yml`);
   return cfgPath;
 };
 
 export const registerInit = (cli: Command) => {
   cli
     .command('init')
-    .description('Create a ctx.config.json|yml by scanning package.json scripts.')
-    .option('-f, --force', 'Create ctx.config.yml with outputPath=ctx and add it to .gitignore.')
+    .description('Create a stan.config.json|yml by scanning package.json scripts.')
+    .option('-f, --force', 'Create stan.config.yml with outputPath=stan and add it to .gitignore.')
     .action(async (opts: { force?: boolean }) => {
       await performInit(cli, { force: Boolean(opts.force) });
     });

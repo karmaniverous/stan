@@ -18,7 +18,7 @@ describe('createArchive', () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-arch-'));
+    dir = await mkdtemp(path.join(os.tmpdir(), 'stan-arch-'));
     await writeFile(path.join(dir, 'a.txt'), 'A', 'utf8');
   });
 
@@ -28,10 +28,10 @@ describe('createArchive', () => {
   });
 
   it('writes archive.tar and excludes files under outputPath', async () => {
-    const out = await createArchive(dir, 'ctx');
+    const out = await createArchive(dir, 'stan');
     expect(typeof out).toBe('string');
     expect(out.endsWith('archive.tar')).toBe(true);
-    expect(existsSync(path.join(dir, 'ctx'))).toBe(true);
+    expect(existsSync(path.join(dir, 'stan'))).toBe(true);
     expect(await readFile(out, 'utf8')).toBe('TAR');
   });
 });

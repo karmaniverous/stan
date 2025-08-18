@@ -6,9 +6,9 @@ import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 vi.mock('tar', () => ({
   default: undefined,
   create: async ({ file }: { file: string }) => {
-    // The diff helper writes a sentinel `.ctx_no_changes` and then tar.create is called.
+    // The diff helper writes a sentinel `.stan_no_changes` and then tar.create is called.
     // We simulate a tar by embedding the sentinel name.
-    await writeFile(file, '.ctx_no_changes\n', 'utf8');
+    await writeFile(file, '.stan_no_changes\n', 'utf8');
   }
 }));
 
@@ -18,7 +18,7 @@ describe('diff mode', () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-diff-'));
+    dir = await mkdtemp(path.join(os.tmpdir(), 'stan-diff-'));
   });
 
   afterEach(async () => {
@@ -36,7 +36,7 @@ describe('diff mode', () => {
     const diffPath = created.find((p) => p.endsWith('archive.diff.tar'));
     expect(diffPath).toBeTruthy();
     const body = await readFile(diffPath as string, 'utf8');
-    expect(body.includes('.ctx_no_changes')).toBe(true);
+    expect(body.includes('.stan_no_changes')).toBe(true);
   });
 
   it('with --combine + --diff: writes combined tar and archive.diff.tar', async () => {
@@ -51,6 +51,6 @@ describe('diff mode', () => {
     expect(created.some((p) => p.endsWith('.tar'))).toBe(true);
     const diffPath = created.find((p) => p.endsWith('archive.diff.tar'));
     const body = await readFile(diffPath as string, 'utf8');
-    expect(body.includes('.ctx_no_changes')).toBe(true);
+    expect(body.includes('.stan_no_changes')).toBe(true);
   });
 });

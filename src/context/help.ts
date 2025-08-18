@@ -16,8 +16,8 @@ export const renderAvailableScriptsHelp = (cwd: string): string => {
     const keys = Object.keys(cfg.scripts);
     if (!keys.length) {
       return [
-        'No ctx scripts are configured yet.',
-        'Create a ctx.config.json|yml at your project root to get started.',
+        'No stan scripts are configured yet.',
+        'Create a stan.config.json|yml at your project root to get started.',
         '',
       ].join('\n');
     }
@@ -27,9 +27,9 @@ export const renderAvailableScriptsHelp = (cwd: string): string => {
       `  ${keys.join(', ')}`,
       '',
       'Examples:',
-      '  ctx',
-      '  ctx test',
-      '  ctx -s -e archive',
+      '  stan',
+      '  stan test',
+      '  stan -s -e archive',
       '',
     ].join('\n');
   } catch {

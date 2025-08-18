@@ -12,7 +12,7 @@ describe('init helpers', () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-init-'));
+    dir = await mkdtemp(path.join(os.tmpdir(), 'stan-init-'));
     process.chdir(dir);
   });
 
@@ -20,17 +20,17 @@ describe('init helpers', () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it('performInit --force writes ctx.config.yml with outputPath=ctx, adds to .gitignore', async () => {
+  it('performInit --force writes stan.config.yml with outputPath=stan, adds to .gitignore', async () => {
     await writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '0.0.0' }), 'utf8');
     const cli = new Command();
     const p = await performInit(cli, { cwd: dir, force: true });
-    expect(p && p.endsWith('ctx.config.yml')).toBe(true);
+    expect(p && p.endsWith('stan.config.yml')).toBe(true);
   });
 
   it('registerInit wires the command', async () => {
     const cli = new Command();
     registerInit(cli);
     // dry parse
-    await cli.parseAsync(['node', 'ctx', 'init', '--help'], { from: 'user' });
+    await cli.parseAsync(['node', 'stan', 'init', '--help'], { from: 'user' });
   });
 });

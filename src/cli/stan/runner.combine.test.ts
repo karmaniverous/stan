@@ -14,9 +14,9 @@ vi.mock('@/context/config', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/context/config')>();
   return {
     ...actual,
-    findConfigPathSync: vi.fn().mockReturnValue('ctx.config.yml'),
+    findConfigPathSync: vi.fn().mockReturnValue('stan.config.yml'),
     loadConfig: vi.fn().mockResolvedValue({
-      outputPath: 'ctx',
+      outputPath: 'stan',
       scripts: { test: 'echo test', lint: 'echo lint' }
     })
   };
@@ -24,11 +24,11 @@ vi.mock('@/context/config', async (importOriginal) => {
 
 import { makeCli } from './index';
 
-describe('CLI argument parsing', () => {
+describe('CLI -c/--combine and -k/--keep', () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'ctx-cli-'));
+    dir = await mkdtemp(path.join(os.tmpdir(), 'stan-cli-2-'));
     process.chdir(dir);
     runSelectedSpy.mockReset();
   });
@@ -38,21 +38,22 @@ describe('CLI argument parsing', () => {
     vi.restoreAllMocks();
   });
 
-  it('passes -e selection with provided keys to runSelected', async () => {
+  it('passes combine and keep flags to the runner (no enumeration)', async () => {
     const cli = makeCli();
-    await cli.parseAsync(['node', 'ctx', '-e', 'test'], { from: 'user' });
+    await cli.parseAsync(['node', 'stan', '-c', '-k'], { from: 'user' });
 
-    const [, , selection, mode] = runSelectedSpy.mock.calls[0];
-    expect(selection).toEqual(['lint']); // all except 'test'
+    const [, , selection, mode, behavior] = runSelectedSpy.mock.calls[0];
+    expect(selection).toBeNull(); // run all
     expect(mode).toBe('concurrent');
+    expect(behavior).toMatchObject({ combine: true, keep: true });
   });
 
-  it('passes -s to run sequentially and preserves config order', async () => {
+  it('maps -c and --combined-file-name', async () => {
     const cli = makeCli();
-    await cli.parseAsync(['node', 'ctx', '-s', 'lint', 'test'], { from: 'user' });
+    await cli.parseAsync(['node', 'stan', '-c', '--combined-file-name', 'bundle', 'lint'], { from: 'user' });
 
-    const [, , selection, mode] = runSelectedSpy.mock.calls[0];
-    expect(selection).toEqual(['lint', 'test']);
-    expect(mode).toBe('sequential');
+    const [, , selection, , behavior] = runSelectedSpy.mock.calls[0];
+    expect(selection).toEqual(['lint']);
+    expect(behavior).toMatchObject({ combine: true, combinedFileName: 'bundle' });
   });
 });

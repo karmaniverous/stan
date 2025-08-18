@@ -58,7 +58,7 @@ This document is the single source of truth for project‑wide requirements. Ind
 
 - The tool may be installed **globally**; be robust to arbitrary **cwd**:
   - Resolve the package root using [`package-directory`](https://www.npmjs.com/package/package-directory).
-  - Look for `ctx.config.json|yml` **at the package root**.
+  - Look for `stan.config.json|yml` **at the package root**.
 
 ## Context Config Shape
 
@@ -86,8 +86,8 @@ type ContextConfig = {
 ## Logging
 
 - Log concise progress lines during runs, for example:
-  - `ctx: start "test" (node -e "...")`
-  - `ctx: done "test" in 1.2s -> out/test.txt`
+  - `stan: start "test" (node -e "...")`
+  - `stan: done "test" in 1.2s -> out/test.txt`
 
 ## Misc
 

@@ -1,6 +1,6 @@
 /**
  * @file src/context/run.ts
- * Execution engine for ctx. Runs configured scripts, manages archive/combined artifacts,
+ * Execution engine for stan. Runs configured scripts, manages archive/combined artifacts,
  * and supports `--diff` for archive diffs.
  *
  * NOTE: Global requirements live in /requirements.md.
@@ -115,9 +115,9 @@ export async function runSelected(
 
   // Create archive diff whenever requested and `archive` is included (with or without --combine).
   if (behavior.diff && hasArchive) {
-    console.log('ctx: start "archive (diff)"');
+    console.log('stan: start "archive (diff)"');
     const { diffPath } = await createArchiveDiff({ cwd, outputPath: outRel, baseName: 'archive' });
-    console.log(`ctx: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
+    console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
     created.push(diffPath);
   }
 

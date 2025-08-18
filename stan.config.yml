@@ -1,4 +1,4 @@
-outputPath: ctx
+outputPath: stan
 scripts:
   build: npm run build
   knip: npm run knip

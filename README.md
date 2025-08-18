@@ -10,7 +10,7 @@
     - Vitest (Vite): `resolve.alias['@'] = <repo>/src`
 - **Global install robustness**: Resolve package **root** from `cwd` using [`package-directory`](https://www.npmjs.com/package/package-directory) (both async and sync). Fallback to `cwd` when no `package.json` is found.
 
-## Configuration (`ctx.config.json|yml`)
+## Configuration (`stan.config.json|yml`)
 
 ```ts
 type ScriptMap = Record<string, string>;
@@ -35,20 +35,20 @@ type ContextConfig = {
 
 ## CLI
 
-- `ctx` commands:
-  - `ctx` (runner): executes scripts by keys; flags:
+- `stan` commands:
+  - `stan` (runner): executes scripts by keys; flags:
     - `-e/--except <keys...>` run everything except listed keys
     - `-s/--sequential` run in series
     - `-c/--combine` produce combined outputs (`combined.txt` or `*.tar` when `archive` is selected)
     - `-k/--keep` do not clear output directory between runs
     - `-d/--diff` produce `archive.diff.tar` when `archive` is selected
     - `--combined-file-name <name>` override base name for combined artifacts
-  - `ctx init` scaffolds `ctx.config.json|yml` (interactive by default, `--force` for non‑interactive).
+  - `stan init` scaffolds `stan.config.json|yml` (interactive by default, `--force` for non‑interactive).
 
 ## Archiving & Diff
 
 - `archive.tar` is created **under** `outputPath`. By default the output directory is **excluded** to avoid recursion; combined `*.tar` sets `includeOutputDir: true`.
-- `archive.diff.tar` always exists when requested; if no changes are detected a placeholder file `.ctx_no_changes` is included.
+- `archive.diff.tar` always exists when requested; if no changes are detected a placeholder file `.stan_no_changes` is included.
 
 ## Linting & Testing
 

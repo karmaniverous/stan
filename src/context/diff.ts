@@ -1,6 +1,6 @@
 /**
  * @file src/context/diff.ts
- * Diff helpers for the ctx tool.
+ * Diff helpers for the stan tool.
  *
  * NOTE: Global requirements live in /requirements.md.
  */
@@ -21,13 +21,13 @@ export const createArchiveDiff = async ({
   const outDir = resolve(cwd, outputPath);
   await mkdir(outDir, { recursive: true });
 
-  // Always create a tar containing a sentinel file ".ctx_no_changes". Tests assert its presence.
-  const sentinel = join(outDir, '.ctx_no_changes');
+  // Always create a tar containing a sentinel file ".stan_no_changes". Tests assert its presence.
+  const sentinel = join(outDir, '.stan_no_changes');
   await writeFile(sentinel, 'no changes', 'utf8');
 
   const diffPath = join(outDir, `${baseName}.diff.tar`);
   const tar = (await import('tar')) as unknown as TarLike;
-  await tar.create({ file: diffPath, cwd: outDir }, ['.ctx_no_changes']);
+  await tar.create({ file: diffPath, cwd: outDir }, ['.stan_no_changes']);
 
   return { diffPath };
 };

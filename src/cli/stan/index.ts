@@ -8,7 +8,7 @@ import { registerRunner } from './runner';
 export const makeCli = (): Command => {
   // Cast to the extra-typings Command type to keep generics happy.
   const cli = new Commander() as unknown as Command;
-  cli.name('ctx').description('Generate context artifacts (archive, logs, combined outputs).');
+  cli.name('stan').description('Generate context artifacts (archive, logs, combined outputs).');
 
   registerRunner(cli);
   registerInit(cli);

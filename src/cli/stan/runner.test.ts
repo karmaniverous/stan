@@ -8,7 +8,6 @@ describe('CLI argument parsing', () => {
   const cfg: ContextConfig = {
     outputPath: 'stan',
     scripts: { test: 'echo test', lint: 'echo lint' },
-    combinedFileName: 'bundle',
   };
 
   it('passes -e selection with provided keys (all except <keys>)', () => {
@@ -18,7 +17,6 @@ describe('CLI argument parsing', () => {
       sequential: false,
       combine: false,
       keep: false,
-      diff: false,
       config: cfg,
     });
     expect(d.selection).toEqual(['lint']); // all except 'test'

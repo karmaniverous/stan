@@ -1,12 +1,10 @@
-// src/cli/stan/init.ts
 /* src/cli/stan/init.ts
  * REQUIREMENTS (current + updated):
  * - "stan init" subcommand.
  * - Interactive init when --force is not provided:
- *   - Prompt for outputPath, combinedFileName, includes, excludes, scripts selection.
+ *   - Prompt for outputPath, includes, excludes, scripts selection.
  * - Defaults in generated stan.config.yml should cover common needs:
  *   - outputPath: stan
- *   - combinedFileName: combined
  *   - excludes: []   <-- UPDATED: no default excludes
  * - Add "/stan" to .gitignore if missing.
  * - Ensure stan.system.md and stan.project.md exist (from dist templates).
@@ -51,7 +49,7 @@ const installExitOverride = (cmd: Command): void => {
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
 
-/** Normalize argv from unit tests like ["node","stan", ...] -\> [...] */
+/** Normalize argv from unit tests like ["node","stan", ...] -> [...] */
 const normalizeArgv = (
   argv?: readonly string[],
 ): readonly string[] | undefined => {
@@ -139,21 +137,29 @@ const parseCsv = (v: string): string[] =>
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
+/** Strongly typed prompt answers to avoid unsafe-any issues. */
+type InitAnswers = {
+  outputPath: string;
+  includes: string;
+  excludes: string;
+  selectedScripts?: string[];
+  resetDiff: boolean;
+};
+
 /** Prompt for interactive values when not forced. Supports defaults. */
 const promptForConfig = async (
   cwd: string,
   pkgScripts: Record<string, string>,
   defaults?: Partial<ContextConfig>,
 ): Promise<
-  Pick<
-    ContextConfig,
-    'outputPath' | 'combinedFileName' | 'includes' | 'excludes' | 'scripts'
-  > & { resetDiff: boolean }
+  Pick<ContextConfig, 'outputPath' | 'includes' | 'excludes' | 'scripts'> & {
+    resetDiff: boolean;
+  }
 > => {
   // Dynamic import to avoid hard dependency at type level.
   const { default: inquirer } = (await import('inquirer')) as {
     default: {
-      prompt: (qs: unknown[]) => Promise<Record<string, unknown>>;
+      prompt: (qs: unknown[]) => Promise<unknown>;
     };
   };
 
@@ -162,18 +168,12 @@ const promptForConfig = async (
     ? Object.keys(defaults.scripts).filter((k) => scriptKeys.includes(k))
     : [];
 
-  const answers = await inquirer.prompt([
+  const answers = (await inquirer.prompt([
     {
       type: 'input',
       name: 'outputPath',
       message: 'Output directory:',
       default: defaults?.outputPath ?? 'stan',
-    },
-    {
-      type: 'input',
-      name: 'combinedFileName',
-      message: 'Base name for combined artifacts:',
-      default: defaults?.combinedFileName ?? 'combined',
     },
     {
       type: 'input',
@@ -209,34 +209,28 @@ const promptForConfig = async (
       message: 'Reset diff snapshot now?',
       default: true,
     },
-  ]);
+  ])) as InitAnswers;
 
-  const pick = (n: string, def: string): string => {
-    const v = answers[n];
-    return typeof v === 'string' && v.trim().length > 0 ? v.trim() : def;
-  };
+  const out =
+    typeof answers.outputPath === 'string' && answers.outputPath
+      ? answers.outputPath.trim()
+      : (defaults?.outputPath ?? 'stan');
 
-  const out = pick('outputPath', defaults?.outputPath ?? 'stan');
-  const combined = pick(
-    'combinedFileName',
-    defaults?.combinedFileName ?? 'combined',
-  );
+  const includesCsv = answers.includes ?? '';
+  const excludesCsv = answers.excludes ?? '';
 
-  const includesCsv = (answers['includes'] as string) ?? '';
-  const excludesCsv = (answers['excludes'] as string) ?? '';
-
-  const selected = Array.isArray(answers.selectedScripts)
-    ? (answers.selectedScripts as unknown[]).filter(
-        (x): x is string => typeof x === 'string',
-      )
-    : [];
+  const selected =
+    Array.isArray(answers.selectedScripts) && answers.selectedScripts.length
+      ? answers.selectedScripts.filter(
+          (x): x is string => typeof x === 'string',
+        )
+      : [];
 
   const scripts: ScriptMap = {};
   for (const key of selected) scripts[key] = 'npm run ' + key;
 
   return {
     outputPath: out,
-    combinedFileName: combined,
     includes: includesCsv ? parseCsv(includesCsv) : [],
     excludes: excludesCsv ? parseCsv(excludesCsv) : [],
     scripts,
@@ -253,11 +247,10 @@ export const performInit = async (
   const outRelDefault = 'stan';
   await ensureOutputDir(cwd, outRelDefault, true);
 
-  // Base config defaults
+  // Base config defaults (no combined artifacts in current design)
   let config: ContextConfig = {
     outputPath: outRelDefault,
     scripts: {},
-    combinedFileName: 'combined',
     excludes: [], // UPDATED: no default excludes
     includes: [],
     defaultPatchFile: '/stan.patch',
@@ -281,7 +274,6 @@ export const performInit = async (
 
     config = {
       outputPath: picked.outputPath,
-      combinedFileName: picked.combinedFileName,
       includes: picked.includes,
       excludes: picked.excludes,
       scripts: picked.scripts,

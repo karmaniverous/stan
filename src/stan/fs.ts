@@ -6,6 +6,8 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
+import picomatch from 'picomatch';
+
 /** Recursively enumerate files under `root`, returning posix-style relative paths. */
 export const listFiles = async (root: string): Promise<string[]> => {
   const out: string[] = [];
@@ -35,7 +37,7 @@ export const readGitignorePrefixes = async (cwd: string): Promise<string[]> => {
     const line = lineRaw.trim();
     if (!line || line.startsWith('#')) continue;
     // Only support simple prefix paths (no wildcards, no negations)
-    if (/[!*?[\]]/.test(line)) continue;
+    if (/[!*?[\]]/.test(line) || line.includes('**')) continue;
     const noSlash = line.replace(/^\//, '').replace(/\/$/, '');
     if (noSlash.length > 0) prefixes.push(noSlash);
   }
@@ -43,8 +45,26 @@ export const readGitignorePrefixes = async (cwd: string): Promise<string[]> => {
 };
 
 const matchesPrefix = (f: string, p: string): boolean => {
-  const norm = p.replace(/\\/g, '/');
+  const norm = p.replace(/\\/g, '/').replace(/\/+$/, '');
   return f === norm || f.startsWith(norm + '/');
+};
+
+const hasGlob = (p: string): boolean =>
+  /[*?[\]{}()!]/.test(p) || p.includes('**');
+
+type Matcher = (f: string) => boolean;
+
+const toMatcher = (pattern: string): Matcher => {
+  const pat = pattern
+    .replace(/\\/g, '/')
+    .replace(/^\.\/+/, '')
+    .replace(/\/+$/, '');
+  if (!hasGlob(pat)) {
+    if (!pat) return () => false;
+    return (f) => matchesPrefix(f, pat);
+  }
+  const isMatch = picomatch(pat, { dot: true });
+  return (f) => isMatch(f);
 };
 
 export type FilterOptions = {
@@ -69,18 +89,28 @@ export const filterFiles = async (
   const outRelNorm = outputPath.replace(/\\/g, '/');
   const gitignorePrefixes = await readGitignorePrefixes(cwd);
 
-  const deny: string[] = [
-    'node_modules',
-    '.git',
-    ...gitignorePrefixes,
-    ...excludes,
-  ];
-  if (!includeOutputDir) deny.push(outRelNorm);
-
+  // Allow-list mode: includes override excludes and default denials.
   if (includes.length > 0) {
-    return files.filter((f) => includes.some((p) => matchesPrefix(f, p)));
+    const allow: Matcher[] = includes.map(toMatcher);
+    return files.filter((f) => allow.some((m) => m(f)));
   }
-  return files.filter((f) => !deny.some((p) => matchesPrefix(f, p)));
+
+  // Deny-list mode: default denials + excludes + (optionally) outputPath
+  const denyMatchers: Matcher[] = [
+    // default denials by prefix
+    (f) => matchesPrefix(f, 'node_modules'),
+    (f) => matchesPrefix(f, '.git'),
+    // .gitignore (prefix-only support)
+    ...gitignorePrefixes.map((p) => (f: string) => matchesPrefix(f, p)),
+    // user excludes (glob or prefix)
+    ...excludes.map(toMatcher),
+  ];
+
+  if (!includeOutputDir) {
+    denyMatchers.push((f) => matchesPrefix(f, outRelNorm));
+  }
+
+  return files.filter((f) => !denyMatchers.some((m) => m(f)));
 };
 
 /** Ensure <outputPath> and <outputPath>/.diff exist, returning their absolute paths. */

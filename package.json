@@ -10,6 +10,7 @@
     "commander": "^14.0.0",
     "inquirer": "^12.9.3",
     "package-directory": "^8.1.0",
+    "picomatch": "^4.0.3",
     "yaml": "^2.8.1"
   },
   "description": "Generate a snapshot of your project state for AI-assisted development.",
@@ -26,6 +27,7 @@
     "@types/eslint-config-prettier": "^6.11.3",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.3.0",
+    "@types/picomatch": "^4.0.2",
     "@vitest/coverage-v8": "^3.2.4",
     "auto-changelog": "^2.5.0",
     "concurrently": "^9.2.0",

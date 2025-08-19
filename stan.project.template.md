@@ -71,10 +71,13 @@ type ContextConfig = {
 };
 ```
 
-- `includes` and `excludes` are path prefixes (non‑glob) relative to the
-  package root.
-- Precedence: includes override excludes. When `includes` is defined, it acts
-  as an allow‑list (only included prefixes are considered).
+- `includes` and `excludes` support:
+  - Plain strings are treated as root‑anchored path prefixes (POSIX style).
+  - Patterns containing glob metacharacters (e.g., `*`, `?`, `[]`, `{}`, `!`, `**`)
+    are treated as picomatch globs, evaluated relative to the repo root using
+    forward slashes.
+- Precedence: `includes` acts as an allow‑list and overrides `excludes`
+  (when provided, only included files are considered).
 - The output directory is excluded from archives unless `--combine` is used
   (in which case it is included and script outputs are not kept on disk).
 
@@ -104,4 +107,12 @@ type ContextConfig = {
 - Per‑script artifacts: `<outputPath>/<key>.txt` combine stdout + stderr.
 - Archives (when `--archive` is enabled):
   - `<outputPath>/archive.tar`
-  -
+  - `<outputPath>/archive.diff.tar`
+- Combine behavior (`--combine`):
+  - Archives include `<outputPath>` (excluding `<outputPath>/.diff`) and
+    script outputs are removed from disk after archiving.
+
+## Notes & Pointers
+
+- This repository uses Node ESM (`"type": "module"`).
+- Use `radash` only when it improves clarity & brevity.

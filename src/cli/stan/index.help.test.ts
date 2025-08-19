@@ -1,4 +1,3 @@
-// src/cli/stan/index.help.test.ts
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock the help footer to a known marker before importing the CLI factory.
@@ -12,26 +11,19 @@ describe('CLI help footer and subcommand registration', () => {
   it('prints help with custom footer and registers subcommands', async () => {
     const cli = makeCli();
 
-    let out = '';
-    const writeSpy = vi
-      .spyOn(process.stdout, 'write')
-      // @ts-expect-error allow any chunk
-      .mockImplementation((chunk: unknown) => {
-        out += String(chunk);
-        return true;
-      });
+    let printed = '';
+    // outputHelp(cb) allows capturing the composed help (incl. addHelpText) without exiting.
+    cli.outputHelp((str) => {
+      printed += str;
+      return str;
+    });
 
-    // Trigger help output; exitOverride swallows process.exit
-    await cli.parseAsync(['node', 'stan', '--help'], { from: 'user' });
-
-    expect(out).toContain('MOCK HELP FOOTER');
+    expect(printed).toContain('MOCK HELP FOOTER');
 
     // Subcommands should include run, init, snap, patch
     const subNames = cli.commands.map((c) => c.name());
     expect(subNames).toEqual(
       expect.arrayContaining(['run', 'init', 'snap', 'patch']),
     );
-
-    writeSpy.mockRestore();
   });
 });

@@ -1,3 +1,4 @@
+// src/stan/patch.test.ts
 import { EventEmitter } from 'node:events';
 import path from 'node:path';
 
@@ -5,15 +6,15 @@ import { Command } from 'commander';
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock spawn to avoid running real git; return an EE that closes with code 0.
-vi.mock('node:child_process', () => {
-  return {
-    spawn: () => {
-      const ee = new EventEmitter();
-      setTimeout(() => ee.emit('close', 0), 0);
-      return ee as unknown;
-    },
-  };
-});
+vi.mock('node:child_process', () => ({
+  __esModule: true,
+  default: {},
+  spawn: () => {
+    const ee = new EventEmitter();
+    setTimeout(() => ee.emit('close', 0), 0);
+    return ee as unknown;
+  },
+}));
 
 import { registerPatch } from '@/stan/patch';
 

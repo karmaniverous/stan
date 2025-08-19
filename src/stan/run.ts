@@ -16,8 +16,10 @@
  * - Log `stan: start "<key>"` and `stan: done "<key>" -> <relative path>` for each artifact including archive variants.
  * - At the start of a run, print a one-line plan summary (see /stan.project.md).
  * - Zero "any" usage; path alias "@/..." is used for intra-project imports.
+ *
+ * NEW REQUIREMENT:
+ * - When building a combined tar that includes the output directory, exclude the <outputPath>/.diff directory.
  */
-
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { appendFile, readFile, writeFile } from 'node:fs/promises';
@@ -269,15 +271,27 @@ export const runSelected = async (
       behavior.combinedFileName ?? config.combinedFileName ?? 'combined';
     if (hasArchive) {
       const tarPath = resolve(outAbs, `${base}.tar`);
-      // Dynamic ESM import boundary; the tar module type is not inferred here,
-      // so we narrow to the subset we use (create). Cast justified and localized.
+      // Dynamic ESM import boundary; tar module is narrowed to the subset we use (create with filter).
       const tar = (await import('tar')) as unknown as {
         create: (
-          opts: { file: string; cwd?: string },
+          opts: {
+            file: string;
+            cwd?: string;
+            filter?: (path: string, stat: unknown) => boolean;
+          },
           files: string[],
         ) => Promise<void>;
       };
-      await tar.create({ file: tarPath, cwd }, [outRel]);
+      // Exclude <outputPath>/.diff from the combined tar contents.
+      await tar.create(
+        {
+          file: tarPath,
+          cwd,
+          filter: (p: string) =>
+            !(p === `${outRel}/.diff` || p.startsWith(`${outRel}/.diff/`)),
+        },
+        [outRel],
+      );
       created.push(tarPath);
     } else {
       const p = await combineTextOutputs(cwd, outRel, toRun, base);

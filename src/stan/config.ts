@@ -1,4 +1,3 @@
-// src/stan/config.ts
 /* src/stan/config.ts
  * REQUIREMENTS (current):
  * - Load stan configuration from YAML or JSON (stan.config.yml|yaml|json) discovered from `cwd`.
@@ -8,9 +7,19 @@
  * - Provide async loadConfig passthrough for convenience.
  * - Provide ensureOutputDir(cwd, outputPath, keep) which creates or clears the output directory.
  * - Keep path alias semantics and zero "any" usage.
+ *
+ * NEW REQUIREMENTS:
+ * - Diff support artifacts live under `<outputPath>/.diff`:
+ *   - `.diff/archive.prev.tar` (copy of previous full archive),
+ *   - `.diff/.archive.snapshot.json` (sha256 snapshot),
+ *   - `.diff/.stan_no_changes` (sentinel for no-change diff tar).
+ * - When keep===false, clear previously generated script artifacts but PRESERVE `<outputPath>/.diff`.
+ * - Before clearing (when keep===false), if `<outputPath>/archive.tar` exists, copy it to `.diff/archive.prev.tar`.
+ * - Migrate legacy `<outputPath>/.archive.snapshot.json` into `<outputPath>/.diff/`.
+ * - Zero "any" usage.
  */
 import { existsSync, readFileSync, rmSync } from 'node:fs';
-import { mkdir, readFile } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { packageDirectorySync } from 'package-directory';
@@ -125,17 +134,52 @@ export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
   return parseFile(p);
 };
 
-/** Ensure output directory exists and optionally clear it (when keep === false). */
+/** Ensure output directory exists and optionally clear it (when keep === false).
+ * NEW: preserve and maintain `<outputPath>/.diff` across clears; migrate legacy snapshot; copy `archive.tar` to `.diff/archive.prev.tar` before clearing.
+ */
 export const ensureOutputDir = async (
   cwd: string,
   outputPath: string,
   keep = false,
 ): Promise<string> => {
   const dest = resolve(cwd, outputPath);
-  if (!keep && existsSync(dest)) {
-    // Best effort clear
-    rmSync(dest, { recursive: true, force: true });
-  }
   await mkdir(dest, { recursive: true });
+
+  if (!keep && existsSync(dest)) {
+    const diffDir = resolve(dest, '.diff');
+    await mkdir(diffDir, { recursive: true });
+
+    // Migrate legacy snapshot if present at the root of outputPath.
+    const legacySnapshot = resolve(dest, '.archive.snapshot.json');
+    if (existsSync(legacySnapshot)) {
+      try {
+        await copyFile(
+          legacySnapshot,
+          resolve(diffDir, '.archive.snapshot.json'),
+        );
+        rmSync(legacySnapshot, { force: true });
+      } catch {
+        // ignore migration errors
+      }
+    }
+
+    // If a previous full archive exists, copy it to .diff/archive.prev.tar before clearing.
+    const archiveTar = resolve(dest, 'archive.tar');
+    if (existsSync(archiveTar)) {
+      try {
+        await copyFile(archiveTar, resolve(diffDir, 'archive.prev.tar'));
+      } catch {
+        // ignore copy errors
+      }
+    }
+
+    // Clear everything except .diff
+    const entries = await readdir(dest, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.name === '.diff') continue;
+      rmSync(resolve(dest, e.name), { recursive: true, force: true });
+    }
+  }
+
   return dest;
 };

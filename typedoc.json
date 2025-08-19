@@ -11,7 +11,8 @@
     "json5",
     "md",
     "tsx",
-    "typescript"
+    "typescript",
+    "yaml"
   ],
   "hostedBaseUrl": "https://docs.karmanivero.us/stan",
   "out": "./docs/",

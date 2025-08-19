@@ -37,8 +37,7 @@ const computeSelection = (
 /**
  * REQUIREMENT: robustly recover enumerated script keys from Commander.
  * - Prefer action parameter (enumerated).
- * - Else fall back to command.processedArgs if available (Commander internals).
- * - Else fall back to command.args.
+ * - Else fall back to command.args (filtering out option tokens).
  * - Filter to known script keys (plus "archive").
  */
 const recoverEnumerated = (
@@ -46,34 +45,25 @@ const recoverEnumerated = (
   enumerated: string[] | undefined,
   known: Set<string>,
 ): string[] | undefined => {
-  // 1) action parameter (preferred)
-  const argList1 = Array.isArray(enumerated) ? enumerated : [];
-  if (argList1.length > 0) {
-    return argList1.filter((k) => known.has(k));
+  const out: string[] = [];
+
+  if (Array.isArray(enumerated) && enumerated.length) {
+    out.push(...enumerated);
   }
 
-  // 2) processedArgs (Commander internal, but stable across versions)
-  const processed = (command as unknown as { processedArgs?: unknown[] })
-    .processedArgs;
-  if (Array.isArray(processed) && processed.length > 0) {
-    const argList2 = processed.filter(
-      (v): v is string => typeof v === 'string',
-    );
-    if (argList2.length > 0) {
-      const cleaned = argList2.filter((k) => known.has(k));
-      if (cleaned.length > 0) return cleaned;
+  // Fallback: command.args (Commander keeps any non-option operands here)
+  const args = (command as unknown as { args?: unknown[] }).args;
+  if (Array.isArray(args) && args.length) {
+    for (const v of args) {
+      if (typeof v === 'string' && !v.startsWith('-')) out.push(v);
     }
   }
 
-  // 3) args (traditional fallback)
-  const args = (command as unknown as { args?: unknown[] }).args;
-  if (Array.isArray(args) && args.length > 0) {
-    const argList3 = args.filter((v): v is string => typeof v === 'string');
-    const cleaned = argList3.filter((k) => known.has(k));
-    if (cleaned.length > 0) return cleaned;
-  }
+  // Deduplicate, filter to known keys
+  const cleaned = out.filter((k) => known.has(k));
+  const uniqueOrdered = cleaned.filter((k, i) => cleaned.indexOf(k) === i);
 
-  return undefined;
+  return uniqueOrdered.length ? uniqueOrdered : undefined;
 };
 
 export const registerRun = (cli: Command): Command => {
@@ -127,7 +117,7 @@ export const registerRun = (cli: Command): Command => {
 
       const keys = Object.keys(config.scripts);
 
-      // Determine operands robustly: prefer action parameter, then processedArgs, then args.
+      // Determine operands robustly: prefer action parameter, then args.
       const known = new Set([...keys, 'archive']);
       const enumeratedClean = recoverEnumerated(command, enumerated, known);
 

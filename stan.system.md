@@ -107,6 +107,25 @@ clarify before proceeding.
     can avoid complex workarounds imposed by the current toolchain. Prefer
     that path if accepted.
 
+## Refactor Log Entries (/refactors)
+
+To preserve context across chat threads, maintain a short, structured
+refactor log under `/refactors/`.
+
+- For any response that includes code changes, create one new Markdown file:
+  - File name: `refactors/YYYYMMDD-HHMMSS-short-slug.md`
+    - UTC time; `short-slug` ≤ 4 words, kebab‑case.
+- Content template (keep it brief; ≈ 10–20 lines):
+  - `# Refactor: <short title>`
+  - `When:` UTC timestamp
+  - `Why:` 1–2 sentences describing the problem/requirement
+  - `What changed:` bullet list of key files/decisions
+  - `Tests/Lint:` summary (pass/fail; notable warnings)
+  - `Links:` PR/commit refs, CI artifacts, or STAN artifact names if relevant
+  - `Next:` 1–2 follow‑ups (optional)
+- Keep entries human‑ and machine‑scannable; do not paste large diffs. Link
+  to artifacts instead of duplicating content.
+
 # Testing Guidelines (generic)
 
 - Read the tests and fixtures first; do not code solely to make tests pass.
@@ -140,7 +159,6 @@ clarify before proceeding.
 - Read the README for developer intent and obey toolchain expectations
   (build, test, CI).
 - `/stan.project.md` contains project‑specific requirements and conventions.
-  Read it for context & update it as needed.
 - Versioning policy (major version 0): DO NOT add backward‑compatibility
   hacks in an unreleased codebase. Prefer simplifying changes even if they
   break prior behavior.
@@ -164,17 +182,3 @@ Then, when you produce code changes:
 - full file listing in a 10‑backtick fence (no elisions)
   - Place the file path as an H2 markdown header line immediately above
     and outside the code block in the exact form:
-    `## path-from-repo-root`
-  - Do not insert the file path as a comment inside the code listing
-
-After all file listings, include the commit message:
-
-**Proposed Commit Message (copy/paste)**
-
-- Conventional Commit style recommended.
-- Subject line MUST be ≤ 50 characters.
-- Body lines MUST wrap at 72 characters or less.
-- IMPORTANT: Only commit messages inside the dedicated code block are
-  wrapped to 72 characters. All other prose in responses should flow
-  naturally without forced wrapping, except where code readability
-  requires it.

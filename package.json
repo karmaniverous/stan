@@ -13,7 +13,6 @@
   },
   "description": "Generate a snapshot of your project state for AI-assisted development.",
   "devDependencies": {
-    "@commander-js/extra-typings": "^14.0.0",
     "@dotenvx/dotenvx": "^1.48.4",
     "@eslint/js": "^9.33.0",
     "@rollup/plugin-alias": "^5.1.1",

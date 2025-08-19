@@ -18,8 +18,8 @@
  * - Robustly recover enumerated script keys:
  *   - Accept action parameter as string | string[].
  *   - Then use command.args (non-option operands).
- *   - Also consult parent tokens (args/rawArgs) to derive operands when other paths are empty.
- *     Safely collect nested strings and skip option values for -e/--except.
+ *   - Also consult parent tokens (args/rawArgs) to derive operands when earlier sources
+ *     yield no known keys (even if they were non-empty).
  *   - Filter to known script keys (plus "archive"), dedupe, preserve order.
  */
 import type { Command } from 'commander';
@@ -108,7 +108,7 @@ const enumeratedFromParentTokens = (command: Command): string[] => {
  * REQUIREMENT: robustly recover enumerated script keys from Commander.
  * - Prefer action parameter (string | string[]).
  * - Else fall back to command.args (filtering out option tokens).
- * - Else parse from parent tokens (args and rawArgs) skipping option values.
+ * - If no known keys found yet, also parse from parent tokens (args/rawArgs).
  * - Filter to known script keys (plus "archive").
  */
 const recoverEnumerated = (
@@ -132,8 +132,9 @@ const recoverEnumerated = (
     }
   }
 
-  // 3) Fallback: parse from parent tokens (args/rawArgs)
-  if (out.length === 0) {
+  // Check if we already have known keys; if not, use parent tokens
+  const cleanedFirst = out.filter((k) => known.has(k));
+  if (cleanedFirst.length === 0) {
     for (const s of enumeratedFromParentTokens(command)) out.push(s);
   }
 
@@ -195,7 +196,7 @@ export const registerRun = (cli: Command): Command => {
 
       const keys = Object.keys(config.scripts);
 
-      // Determine operands robustly: param, then args, then parent tokens.
+      // Determine operands robustly: param, then args, with parent-token fallback if needed.
       const known = new Set([...keys, 'archive']);
       const enumeratedClean = recoverEnumerated(command, enumerated, known);
 

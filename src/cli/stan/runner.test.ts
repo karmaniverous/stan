@@ -51,7 +51,9 @@ describe('CLI argument parsing', () => {
 
   it('passes -e selection with provided keys to runSelected', async () => {
     const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', '-e', 'test'], { from: 'user' });
+    await cli.parseAsync(['node', 'stan', 'run', '-e', 'test'], {
+      from: 'user',
+    });
 
     const [, , selection, mode] = runSelectedSpy.mock.calls[0];
     expect(selection).toEqual(['lint']); // all except 'test'
@@ -60,7 +62,7 @@ describe('CLI argument parsing', () => {
 
   it('passes -s to run sequentially and preserves config order', async () => {
     const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', 'lint', 'test', '-s'], {
+    await cli.parseAsync(['node', 'stan', 'run', 'lint', 'test', '-s'], {
       from: 'user',
     });
 

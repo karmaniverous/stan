@@ -52,7 +52,7 @@ describe('CLI -c/--combine and -k/--keep', () => {
 
   it('passes combine and keep flags to the runner (no enumeration)', async () => {
     const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', '-c', '-k'], { from: 'user' });
+    await cli.parseAsync(['node', 'stan', 'run', '-c', '-k'], { from: 'user' });
 
     const [, , selection, mode, behavior] = runSelectedSpy.mock.calls[0];
     expect(selection).toBeNull(); // run all
@@ -62,7 +62,9 @@ describe('CLI -c/--combine and -k/--keep', () => {
 
   it('honors combinedFileName from config when combining', async () => {
     const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', '-c', 'lint'], { from: 'user' });
+    await cli.parseAsync(['node', 'stan', 'run', '-c', 'lint'], {
+      from: 'user',
+    });
 
     const [, , selection, , behavior] = runSelectedSpy.mock.calls[0];
     expect(selection).toEqual(['lint']);

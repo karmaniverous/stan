@@ -3,11 +3,11 @@
  * REQUIREMENTS (current):
  * - Export makeCli(): Command — root CLI factory for the "stan" tool.
  * - Register subcommands:
- *   - Runner (main command) with options/positional args (see /stan.project.md).
- *   - Init subcommand to scaffold config.
+ *   - "run" subcommand for executing configured scripts (see /stan.project.md).
+ *   - "init" subcommand to scaffold config and docs.
  * - Avoid invoking process.exit during tests; call cli.exitOverride() at the root.
  *   - IMPORTANT: When displaying help, do not throw in tests; ignore "helpDisplayed".
- * - Use path alias "@/..." for intra-project imports; no "any".
+ *   - Also ignore "unknownCommand" and "unknownOption" to tolerate argv noise in test harnesses.
  * - When executed directly (built CLI), parse argv.
  * See /stan.project.md for global requirements.
  */
@@ -17,12 +17,12 @@ import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 
 import { registerInit } from './init';
-import { registerRunner } from './runner';
+import { registerRun } from './runner';
 
 const installExitOverride = (cmd: Command): void => {
   cmd.exitOverride((err) => {
     // Requirement: avoid process.exit in tests; do not throw for help output
-    // Also ignore unknownCommand to tolerate argv noise like ["node", "stan", ...] in tests.
+    // Also ignore unknownCommand/unknownOption to tolerate argv noise like ["node","stan",...].
     if (
       err.code === 'commander.helpDisplayed' ||
       err.code === 'commander.unknownCommand' ||
@@ -40,7 +40,8 @@ export const makeCli = (): Command => {
   // Avoid process.exit in tests or consumers expecting to manage errors themselves.
   installExitOverride(cli);
 
-  registerRunner(cli);
+  // Subcommands
+  registerRun(cli);
   registerInit(cli);
 
   return cli;

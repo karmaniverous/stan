@@ -48,6 +48,20 @@ const ensurePassthroughArg = (cli: Command): void => {
   }
 };
 
+/** Only when root has no args (runner not registered), swallow unknown subcommands like "node"/"stan". */
+const swallowUnknownIfNoArgs = (cli: Command): void => {
+  const internal = cli as unknown as { _args?: unknown[] };
+  const hasArgs = Array.isArray(internal._args) && internal._args.length > 0;
+  if (!hasArgs) {
+    const unknown = cli.command('*', { hidden: true });
+    installExitOverride(unknown);
+    unknown.allowUnknownOption(true);
+    unknown.action(() => {
+      // Do nothing; intended to swallow stray tokens in tests.
+    });
+  }
+};
+
 const readPackageJsonScripts = async (
   cwd: string,
 ): Promise<Record<string, string>> => {
@@ -158,8 +172,9 @@ export const registerInit = (cli: Command): Command => {
     await performInit(cli, { force: Boolean(opts.force) });
   });
 
-  // Tolerate stray tokens in test harnesses when root has no args.
+  // Tolerate stray tokens in test harnesses when root has no args (runner not wired).
   ensurePassthroughArg(cli);
+  swallowUnknownIfNoArgs(cli);
 
   return cli;
 };

@@ -5,7 +5,7 @@
  * - If config cannot be loaded, return an empty string.
  * - The output should include:
  *   - A heading 'Available script keys:' then a comma-separated list of keys.
- *   - An 'Examples:' block with 'stan', 'stan test', 'stan -s -e archive' lines.
+ *   - An 'Examples:' block with 'stan run', 'stan run test', 'stan run -s -e archive' lines.
  */
 import { loadConfigSync } from './config';
 
@@ -22,9 +22,9 @@ export const renderAvailableScriptsHelp = (cwd: string): string => {
       `  ${keys.join(', ')}`,
       '',
       'Examples:',
-      '  stan',
-      '  stan test',
-      '  stan -s -e archive',
+      '  stan run',
+      '  stan run test',
+      '  stan run -s -e archive',
       '',
     ].join('\n');
   } catch {

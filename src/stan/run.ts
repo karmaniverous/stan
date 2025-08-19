@@ -165,7 +165,6 @@ export const runSelected = async (
   };
 
   if (mode === 'sequential') {
-    // In sequential mode, run scripts in order and then archive.
     for (const k of toRun) {
       await runner(k);
     }
@@ -185,6 +184,8 @@ export const runSelected = async (
           cwd,
           outputPath: outRel,
           baseName: 'archive',
+          includes: config.includes ?? [],
+          excludes: config.excludes ?? [],
         });
         console.log(
           `stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`,
@@ -193,7 +194,6 @@ export const runSelected = async (
       }
     }
   } else {
-    // Concurrent mode: run scripts and archive in parallel (when applicable).
     const tasks: Array<Promise<void>> = toRun.map((k) =>
       runner(k).then(() => void 0),
     );
@@ -214,6 +214,8 @@ export const runSelected = async (
             cwd,
             outputPath: outRel,
             baseName: 'archive',
+            includes: config.includes ?? [],
+            excludes: config.excludes ?? [],
           });
           console.log(
             `stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`,
@@ -227,7 +229,6 @@ export const runSelected = async (
     await Promise.all(tasks);
   }
 
-  // Combine handling: always last, include output dir when hasArchive.
   if (behavior.combine) {
     const base =
       behavior.combinedFileName ?? config.combinedFileName ?? 'combined';
@@ -247,12 +248,13 @@ export const runSelected = async (
     }
 
     if (hasArchive && behavior.diff) {
-      // In combine mode, we still write a diff tar (no full archive tar in this flow).
       console.log('stan: start "archive (diff)"');
       const { diffPath } = await createArchiveDiff({
         cwd,
         outputPath: outRel,
         baseName: 'archive',
+        includes: config.includes ?? [],
+        excludes: config.excludes ?? [],
       });
       console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
       created.push(diffPath);

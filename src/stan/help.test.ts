@@ -1,3 +1,4 @@
+// src/stan/help.test.ts
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -20,6 +21,6 @@ describe('renderAvailableScriptsHelp', () => {
     const help = renderAvailableScriptsHelp(cwd);
     expect(help).toMatch(/Available script keys:/);
     expect(help).toMatch(/test, lint/);
-    expect(help).toMatch(/stan test/);
+    expect(help).toMatch(/stan run test/);
   });
 });

@@ -1,5 +1,4 @@
 outputPath: stan
-combinedFileName: combined
 includes: []
 excludes:
   - assets

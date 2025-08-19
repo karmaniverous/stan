@@ -1,14 +1,14 @@
 /* src/stan/config.ts
  * REQUIREMENTS (current):
  * - Load stan configuration from YAML or JSON (stan.config.yml|yaml|json) discovered from `cwd`.
- * - Validate shape: { outputPath: string; scripts: Record<string,string>; includes?: string[]; excludes?: string[]; combinedFileName?: string }.
+ * - Validate shape: { outputPath: string; scripts: Record<string,string>; includes?: string[]; excludes?: string[] }.
  * - Forbid reserved script keys "archive" and "init" (error must match /archive.*init.*not allowed/i).
  * - Provide sync helpers used by CLI and help: findConfigPathSync, loadConfigSync.
  * - Provide async loadConfig passthrough for convenience.
  * - Provide ensureOutputDir(cwd, outputPath, keep) which creates or clears the output directory.
  * - Keep path alias semantics and zero "any" usage.
  *
- * NEW REQUIREMENTS:
+ * NEW/UPDATED REQUIREMENTS:
  * - Diff support artifacts live under `<outputPath>/.diff`:
  *   - `.diff/archive.prev.tar` (copy of previous full archive),
  *   - `.diff/.archive.snapshot.json` (sha256 snapshot),
@@ -37,14 +37,9 @@ export type ContextConfig = {
   includes?: string[];
   /** Paths to exclude in archiving logic (globs not yet supported). */
   excludes?: string[];
-  /** Base name for combined artifacts; defaults to "combined" when not configured. */
-  combinedFileName?: string;
   /** Default patch filename for `stan patch`; default '/stan.patch' if unspecified. */
   defaultPatchFile?: string;
 };
-
-const normalizeCombinedName = (v: unknown): string =>
-  typeof v === 'string' && v.trim().length > 0 ? v.trim() : 'combined';
 
 const normalizeDefaultPatchFile = (v: unknown): string =>
   typeof v === 'string' && v.trim().length > 0 ? v.trim() : '/stan.patch';
@@ -58,8 +53,6 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
-  const combinedFileName = (cfg as { combinedFileName?: unknown })
-    .combinedFileName;
   const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
     .defaultPatchFile;
 
@@ -79,7 +72,6 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
-    combinedFileName: normalizeCombinedName(combinedFileName),
     defaultPatchFile: normalizeDefaultPatchFile(defaultPatchFile),
   };
 };
@@ -117,8 +109,6 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
-  const combinedFileName = (cfg as { combinedFileName?: unknown })
-    .combinedFileName;
   const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
     .defaultPatchFile;
 
@@ -137,7 +127,6 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
-    combinedFileName: normalizeCombinedName(combinedFileName),
     defaultPatchFile: normalizeDefaultPatchFile(defaultPatchFile),
   };
 };

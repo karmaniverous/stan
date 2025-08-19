@@ -1,9 +1,10 @@
+// src/cli/stan/runner.ts
 /* src/cli/stan/runner.ts
  * CLI adapter for "stan run".
  * Now delegates selection/mode/behavior derivation to a pure helper to make
  * tests deterministic and decouple from Commander internals.
  */
-import type { Command } from 'commander';
+import { Command, Option } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { runSelected } from '@/stan/run';
@@ -17,9 +18,19 @@ export const registerRun = (cli: Command): Command => {
     .argument('[scripts...]', 'script keys to run')
     .option('-e, --except <keys...>', 'script keys to exclude')
     .option('-s, --sequential', 'run sequentially in config order')
-    .option('-c, --combine', 'create a combined artifact')
+    .option('-a, --archive', 'create archive.tar and archive.diff.tar')
     .option('-k, --keep', 'keep (do not clear) the output directory')
-    .option('-d, --diff', 'create archive.diff.tar when archive is included');
+    .option('-d, --diff', 'create archive.diff.tar (requires --archive)');
+
+  // -c implies -a; -c conflicts -k
+  const combineOpt = new Option(
+    '-c, --combine',
+    'include script outputs inside archives and do not keep them on disk',
+  )
+    .implies({ archive: true })
+    .conflicts('keep');
+
+  cmd.addOption(combineOpt);
 
   // Help footer: list configured script keys
   cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
@@ -42,7 +53,6 @@ export const registerRun = (cli: Command): Command => {
     ): v is {
       outputPath: string;
       scripts: Record<string, string>;
-      combinedFileName?: string;
     } =>
       !!v &&
       typeof v === 'object' &&
@@ -61,6 +71,7 @@ export const registerRun = (cli: Command): Command => {
       combine: (opts as { combine?: unknown }).combine,
       keep: (opts as { keep?: unknown }).keep,
       diff: (opts as { diff?: unknown }).diff,
+      archive: (opts as { archive?: unknown }).archive,
       config,
     });
 

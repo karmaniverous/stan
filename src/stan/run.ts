@@ -1,18 +1,18 @@
 // src/stan/run.ts
 /* src/stan/run.ts
- * REQUIREMENTS (current + updated):
+ * REQUIREMENTS (updated):
  * - Execute configured scripts; create per-script artifacts.
- * - Always produce <outputPath>/archive.diff.tar whenever 'archive' is included.
+ * - Archives are OFF by default; enabled only with -a/--archive.
+ * - -c/--combine requires --archive and means:
+ *   - include the output directory (script results) inside the archives,
+ *   - and do not keep on-disk outputs (remove them after archiving).
+ * - Always write archive.diff.tar whenever --archive is enabled.
  * - Snapshot update occurs only if one does not exist (create) or via `stan snap`.
- * - NEW: pass updateSnapshot='createIfMissing' to createArchiveDiff.
- * - Combine mode remains; when archive is included, still write archive.diff.tar.
- * - UPDATED: The plan summary printed before the script log should be attractively
- *   formatted with newlines and clear labels, not a single line.
- * - UPDATED (combine mode): the diff archive should include the output directory populated with script outputs.
+ * - The plan summary printed before the script log is multi-line with clear labels.
  */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { appendFile, readFile, writeFile } from 'node:fs/promises';
+import { appendFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 
 import { createArchive } from './archive';
@@ -25,8 +25,8 @@ export type ExecutionMode = 'concurrent' | 'sequential';
 export type RunBehavior = {
   combine?: boolean;
   keep?: boolean;
-  diff?: boolean; // retained for plan logging; no longer gates diff creation
-  combinedFileName?: string;
+  diff?: boolean; // retained for plan logging only
+  archive?: boolean;
 };
 
 const relForLog = (cwd: string, absPath: string): string =>
@@ -36,9 +36,9 @@ const configOrder = (config: ContextConfig): string[] =>
   Object.keys(config.scripts);
 
 /**
- * Normalize selection to config order, preserving special key 'archive' if explicitly requested.
- * - When selection is null/undefined, return all config keys (no 'archive' unless present in config).
- * - When selection exists, order by config order and append 'archive' if present in the selection.
+ * Normalize selection to config order.
+ * - When selection is null/undefined, return all config keys.
+ * - When selection exists, order by config order.
  */
 const normalizeSelection = (
   selection: Selection | undefined | null,
@@ -48,10 +48,7 @@ const normalizeSelection = (
   if (!selection || selection.length === 0) return all;
 
   const requested = new Set(selection);
-  const ordered = all.filter((k) => requested.has(k));
-
-  if (requested.has('archive')) ordered.push('archive');
-  return ordered;
+  return all.filter((k) => requested.has(k));
 };
 
 const waitForStreamClose = (stream: NodeJS.WritableStream): Promise<void> =>
@@ -96,26 +93,6 @@ const runOne = async (
   return outFile;
 };
 
-const combineTextOutputs = async (
-  cwd: string,
-  outRel: string,
-  keys: string[],
-  baseName: string,
-): Promise<string> => {
-  const outAbs = resolve(cwd, outRel);
-  const combinedPath = resolve(outAbs, `${baseName}.txt`);
-  const sections: string[] = [];
-  for (const k of keys) {
-    const p = resolve(outAbs, `${k}.txt`);
-    const body = await readFile(p, 'utf8').catch(() => '');
-    sections.push(`BEGIN [${k}]`);
-    sections.push(body);
-    sections.push(`END [${k}]`);
-  }
-  await writeFile(combinedPath, sections.join('\n'), 'utf8');
-  return combinedPath;
-};
-
 /** Render a readable, multi-line summary of the run plan. */
 const renderRunPlan = (args: {
   selection: Selection;
@@ -125,26 +102,37 @@ const renderRunPlan = (args: {
 }): string => {
   const { selection, config, mode, behavior } = args;
 
-  const includeArchiveByDefault = selection == null || selection.length === 0;
-  const willArchive =
-    includeArchiveByDefault ||
-    (Array.isArray(selection) && selection.includes('archive'));
-
-  // Determine script list shown (exclude 'archive' to avoid confusion)
+  // Determine script list shown
   const keys = selection == null ? Object.keys(config.scripts) : selection;
-  const scripts = (keys ?? []).filter((k) => k !== 'archive');
+  const scripts = keys ?? [];
 
   const lines = [
     'STAN run plan',
     `mode: ${mode === 'sequential' ? 'sequential' : 'concurrent'}`,
     `output: ${config.outputPath}/`,
     `scripts: ${scripts.length ? scripts.join(', ') : 'none'}`,
-    `archive: ${willArchive ? 'yes' : 'no'}`,
+    `archive: ${behavior.archive ? 'yes' : 'no'}`,
     `combine: ${behavior.combine ? 'yes' : 'no'}`,
     `diff: ${behavior.diff ? 'yes' : 'no'}`, // retained for compatibility
     `keep output dir: ${behavior.keep ? 'yes' : 'no'}`,
   ];
   return `stan:\n  ${lines.join('\n  ')}`;
+};
+
+/** Remove on-disk outputs after archiving when combine=true (preserve .diff and archives). */
+const cleanupOutputsAfterCombine = async (
+  cwd: string,
+  outRel: string,
+): Promise<void> => {
+  const outAbs = resolve(cwd, outRel);
+  const entries = await readdir(outAbs, { withFileTypes: true });
+  const keepNames = new Set(['.diff', 'archive.tar', 'archive.diff.tar']);
+  await Promise.all(
+    entries.map(async (e) => {
+      if (keepNames.has(e.name)) return;
+      await rm(resolve(outAbs, e.name), { recursive: true, force: true });
+    }),
+  );
 };
 
 export const runSelected = async (
@@ -179,13 +167,8 @@ export const runSelected = async (
     }
   }
 
-  const baseKeys = normalizeSelection(selection, config);
-  if (baseKeys.length === 0) return [];
-
-  const includeArchiveByDefault = selection == null || selection.length === 0;
-  const hasArchive = includeArchiveByDefault || baseKeys.includes('archive');
-
-  const toRun = baseKeys.filter((k) => k !== 'archive');
+  const toRun = normalizeSelection(selection, config);
+  if (toRun.length === 0) return [];
 
   const created: string[] = [];
   const runner = async (k: string): Promise<void> => {
@@ -197,113 +180,45 @@ export const runSelected = async (
     for (const k of toRun) {
       await runner(k);
     }
-    // Archive after others
-    if (hasArchive && !behavior.combine) {
-      console.log('stan: start "archive"');
-      const archivePath = await createArchive(cwd, outRel, {
-        includes: config.includes ?? [],
-        excludes: config.excludes ?? [],
-      });
-      console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
-      created.push(archivePath);
-
-      // Always produce diff (snapshot only when missing)
-      console.log('stan: start "archive (diff)"');
-      const { diffPath } = await createArchiveDiff({
-        cwd,
-        outputPath: outRel,
-        baseName: 'archive',
-        includes: config.includes ?? [],
-        excludes: config.excludes ?? [],
-        updateSnapshot: 'createIfMissing',
-      });
-      console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
-      created.push(diffPath);
-    }
   } else {
     // Run non-archive tasks concurrently
     const tasks: Array<Promise<void>> = toRun.map((k) =>
       runner(k).then(() => void 0),
     );
     await Promise.all(tasks);
-
-    // Archive AFTER other tasks (avoid collisions)
-    if (hasArchive && !behavior.combine) {
-      console.log('stan: start "archive"');
-      const archivePath = await createArchive(cwd, outRel, {
-        includes: config.includes ?? [],
-        excludes: config.excludes ?? [],
-      });
-      console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
-      created.push(archivePath);
-
-      console.log('stan: start "archive (diff)"');
-      const { diffPath } = await createArchiveDiff({
-        cwd,
-        outputPath: outRel,
-        baseName: 'archive',
-        includes: config.includes ?? [],
-        excludes: config.excludes ?? [],
-        updateSnapshot: 'createIfMissing',
-      });
-      console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
-      created.push(diffPath);
-    }
   }
 
-  if (behavior.combine) {
-    const base =
-      behavior.combinedFileName ?? config.combinedFileName ?? 'combined';
-    if (hasArchive) {
-      const tarPath = resolve(outAbs, `${base}.tar`);
-      // Dynamic ESM import boundary; tar module is narrowed to the subset we use (create with filter).
-      const tar = (await import('tar')) as unknown as {
-        create: (
-          opts: {
-            file: string;
-            cwd?: string;
-            filter?: (path: string, stat: unknown) => boolean;
-          },
-          files: string[],
-        ) => Promise<void>;
-      };
-      // Exclude <outputPath>/.diff and the target tar itself to avoid self-inclusion.
-      await tar.create(
-        {
-          file: tarPath,
-          cwd,
-          filter: (p: string) => {
-            if (p === `${outRel}/.diff` || p.startsWith(`${outRel}/.diff/`)) {
-              return false;
-            }
-            if (p === `${outRel}/${base}.tar`) {
-              return false; // prevent combined.tar from including itself
-            }
-            return true;
-          },
-        },
-        [outRel],
-      );
-      created.push(tarPath);
+  // ARCHIVE PHASE (controlled by --archive flag)
+  if (behavior.archive) {
+    const includeOutputs = Boolean(behavior.combine);
 
-      // Always produce diff alongside archive-included runs (even in combine)
-      // NEW: include the output directory tree in the diff tar so it contains script outputs.
-      console.log('stan: start "archive (diff)"');
-      const { diffPath } = await createArchiveDiff({
-        cwd,
-        outputPath: outRel,
-        baseName: 'archive',
-        includes: config.includes ?? [],
-        excludes: config.excludes ?? [],
-        updateSnapshot: 'createIfMissing',
-        includeOutputDirInDiff: true,
-      });
-      console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
-      created.push(diffPath);
-    } else {
-      const p = await combineTextOutputs(cwd, outRel, toRun, base);
-      created.push(p);
+    // Regular archive
+    console.log('stan: start "archive"');
+    const archivePath = await createArchive(cwd, outRel, {
+      includeOutputDir: includeOutputs,
+      includes: config.includes ?? [],
+      excludes: config.excludes ?? [],
+    });
+    console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
+
+    // Diff archive (snapshot only when missing)
+    console.log('stan: start "archive (diff)"');
+    const { diffPath } = await createArchiveDiff({
+      cwd,
+      outputPath: outRel,
+      baseName: 'archive',
+      includes: config.includes ?? [],
+      excludes: config.excludes ?? [],
+      updateSnapshot: 'createIfMissing',
+      includeOutputDirInDiff: includeOutputs,
+    });
+    console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
+
+    if (includeOutputs) {
+      await cleanupOutputsAfterCombine(cwd, outRel);
     }
+
+    created.push(archivePath, diffPath);
   }
 
   return created;

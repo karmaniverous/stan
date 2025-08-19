@@ -1,3 +1,4 @@
+// src/stan/diff.test.ts
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -27,7 +28,7 @@ describe('diff mode (updated behavior)', () => {
     vi.restoreAllMocks();
   });
 
-  it('creates archive.diff.tar whenever archive is included', async () => {
+  it('creates archive.diff.tar whenever --archive is enabled', async () => {
     const cfg = {
       outputPath: 'out',
       scripts: {
@@ -35,33 +36,25 @@ describe('diff mode (updated behavior)', () => {
       },
     } as const;
 
-    const created = await runSelected(
-      dir,
-      cfg,
-      ['test', 'archive'], // archive included
-      'concurrent',
-    );
+    const created = await runSelected(dir, cfg, ['test'], 'concurrent', {
+      archive: true,
+    });
     const diffPath = created.find((p) => p.endsWith('archive.diff.tar'));
     expect(diffPath).toBeTruthy();
   });
 
-  it('with --combine: writes combined tar and archive.diff.tar', async () => {
+  it('with --archive and --combine: writes regular+diff archives including outputs', async () => {
     const cfg = {
       outputPath: 'out',
       scripts: {
         test: 'node -e "console.error(123);process.stdout.write(`ok`)"',
       },
     } as const;
-    const created = await runSelected(
-      dir,
-      cfg,
-      ['test', 'archive'],
-      'concurrent',
-      {
-        combine: true,
-      },
-    );
-    expect(created.some((p) => p.endsWith('.tar'))).toBe(true); // combined.tar and/or diff tar
+    const created = await runSelected(dir, cfg, ['test'], 'concurrent', {
+      archive: true,
+      combine: true,
+    });
+    expect(created.some((p) => p.endsWith('archive.tar'))).toBe(true);
     const diffPath = created.find((p) => p.endsWith('archive.diff.tar'));
     expect(diffPath).toBeTruthy();
   });

@@ -16,7 +16,12 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     exclude: ['node_modules/**', 'dist/**', '.rollup.cache/**'],
-    coverage: { provider: 'v8', reporter: ['text', 'lcov'] },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts', 'src/test/**', '**/*.d.ts'],
+    },
     setupFiles: [resolve(rootDir, 'src/test/setup.ts')],
   },
 });

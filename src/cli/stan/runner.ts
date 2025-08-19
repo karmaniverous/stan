@@ -34,6 +34,48 @@ const computeSelection = (
   return selected;
 };
 
+/**
+ * REQUIREMENT: robustly recover enumerated script keys from Commander.
+ * - Prefer action parameter (enumerated).
+ * - Else fall back to command.processedArgs if available (Commander internals).
+ * - Else fall back to command.args.
+ * - Filter to known script keys (plus "archive").
+ */
+const recoverEnumerated = (
+  command: Command,
+  enumerated: string[] | undefined,
+  known: Set<string>,
+): string[] | undefined => {
+  // 1) action parameter (preferred)
+  const argList1 = Array.isArray(enumerated) ? enumerated : [];
+  if (argList1.length > 0) {
+    return argList1.filter((k) => known.has(k));
+  }
+
+  // 2) processedArgs (Commander internal, but stable across versions)
+  const processed = (command as unknown as { processedArgs?: unknown[] })
+    .processedArgs;
+  if (Array.isArray(processed) && processed.length > 0) {
+    const argList2 = processed.filter(
+      (v): v is string => typeof v === 'string',
+    );
+    if (argList2.length > 0) {
+      const cleaned = argList2.filter((k) => known.has(k));
+      if (cleaned.length > 0) return cleaned;
+    }
+  }
+
+  // 3) args (traditional fallback)
+  const args = (command as unknown as { args?: unknown[] }).args;
+  if (Array.isArray(args) && args.length > 0) {
+    const argList3 = args.filter((v): v is string => typeof v === 'string');
+    const cleaned = argList3.filter((k) => known.has(k));
+    if (cleaned.length > 0) return cleaned;
+  }
+
+  return undefined;
+};
+
 export const registerRun = (cli: Command): Command => {
   const cmd = cli
     .command('run')
@@ -85,19 +127,9 @@ export const registerRun = (cli: Command): Command => {
 
       const keys = Object.keys(config.scripts);
 
-      // Determine operands robustly: prefer Commander-provided `enumerated`,
-      // but fall back to `command.args` when needed.
-      const rawArgs =
-        Array.isArray(enumerated) && enumerated.length > 0
-          ? enumerated
-          : (command?.args ?? []);
-
-      // Sanitize enumerated args: ignore stray tokens not matching known keys
+      // Determine operands robustly: prefer action parameter, then processedArgs, then args.
       const known = new Set([...keys, 'archive']);
-      const enumeratedClean =
-        Array.isArray(rawArgs) && rawArgs.length
-          ? rawArgs.filter((k) => known.has(k))
-          : undefined;
+      const enumeratedClean = recoverEnumerated(command, enumerated, known);
 
       const selection = computeSelection(
         keys,

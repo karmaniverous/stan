@@ -1,21 +1,21 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Mock tar.create to just write a recognizable body for any target file path.
 vi.mock('tar', () => ({
   default: undefined,
   create: async ({ file }: { file: string }) => {
-    // The diff helper writes a sentinel `.stan_no_changes` and then tar.create is called.
-    // We simulate a tar by embedding the sentinel name.
-    await writeFile(file, '.stan_no_changes\n', 'utf8');
+    const { writeFile } = await import('node:fs/promises');
+    await writeFile(file, 'DUMMY_TAR_CONTENT\n', 'utf8');
   },
 }));
 
 import { runSelected } from './run';
 
-describe('diff mode', () => {
+describe('diff mode (updated behavior)', () => {
   let dir: string;
 
   beforeEach(async () => {
@@ -27,7 +27,7 @@ describe('diff mode', () => {
     vi.restoreAllMocks();
   });
 
-  it('creates archive.diff.tar when --diff and archive is included', async () => {
+  it('creates archive.diff.tar whenever archive is included', async () => {
     const cfg = {
       outputPath: 'out',
       scripts: {
@@ -38,17 +38,14 @@ describe('diff mode', () => {
     const created = await runSelected(
       dir,
       cfg,
-      ['test', 'archive'],
+      ['test', 'archive'], // archive included
       'concurrent',
-      { diff: true },
     );
     const diffPath = created.find((p) => p.endsWith('archive.diff.tar'));
     expect(diffPath).toBeTruthy();
-    const body = await readFile(diffPath as string, 'utf8');
-    expect(body.includes('.stan_no_changes')).toBe(true);
   });
 
-  it('with --combine + --diff: writes combined tar and archive.diff.tar', async () => {
+  it('with --combine: writes combined tar and archive.diff.tar', async () => {
     const cfg = {
       outputPath: 'out',
       scripts: {
@@ -61,13 +58,11 @@ describe('diff mode', () => {
       ['test', 'archive'],
       'concurrent',
       {
-        diff: true,
         combine: true,
       },
     );
-    expect(created.some((p) => p.endsWith('.tar'))).toBe(true);
+    expect(created.some((p) => p.endsWith('.tar'))).toBe(true); // combined.tar and/or diff tar
     const diffPath = created.find((p) => p.endsWith('archive.diff.tar'));
-    const body = await readFile(diffPath as string, 'utf8');
-    expect(body.includes('.stan_no_changes')).toBe(true);
+    expect(diffPath).toBeTruthy();
   });
 });

@@ -1,20 +1,14 @@
 /**
  * Diff helpers for the stan tool.
  *
- * REQUIREMENTS (current):
- * - `createArchiveDiff({ cwd, outputPath, baseName, includes?, excludes? })`:
- *   - Maintain <outputPath>/.archive.snapshot.json (path → sha256 hex).
- *   - On first run or when no changes detected, write a sentinel `.stan_no_changes`
- *     into the output directory and create `<baseName>.diff.tar` containing just that sentinel.
- *   - When changes are detected, create `<baseName>.diff.tar` containing only changed files
- *     (added or modified). Deletions are tracked in the snapshot but not included in the tar.
- * - Honor includes/excludes and basic .gitignore prefix rules via shared helpers.
- *
- * NEW REQUIREMENTS:
- * - Diff support artifacts are stored under <outputPath>/.diff:
- *   - snapshot: <outputPath>/.diff/.archive.snapshot.json
- *   - sentinel: <outputPath>/.diff/.stan_no_changes
- * - The produced diff tar remains at <outputPath>/<baseName>.diff.tar.
+ * UPDATED REQUIREMENTS:
+ * - Always create <baseName>.diff.tar whenever the archive script runs.
+ * - Do NOT update an existing snapshot during normal runs.
+ * - Create or update the snapshot when:
+ *    - The archive script runs and a snapshot does NOT exist (create), or
+ *    - The user runs `stan snap` (replace).
+ * - If no snapshot exists when creating diff, write a diff tar equal to the full archive.
+ * - Snapshot and sentinel files live under <outputPath>/.diff/.
  */
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
@@ -30,24 +24,99 @@ type TarLike = {
   ) => Promise<void>;
 };
 
+export type SnapshotUpdateMode = 'never' | 'createIfMissing' | 'replace';
+
+const computeCurrentHashes = async (
+  cwd: string,
+  relFiles: string[],
+): Promise<Record<string, string>> => {
+  const current: Record<string, string> = {};
+  for (const rel of relFiles) {
+    const abs = resolve(cwd, rel);
+    const buf = await readFile(abs);
+    const h = createHash('sha256').update(buf).digest('hex');
+    current[rel] = h;
+  }
+  return current;
+};
+
+const snapshotPathFor = (outDir: string): string =>
+  join(outDir, '.diff', '.archive.snapshot.json');
+
+const sentinelPathFor = (outDir: string): string =>
+  join(outDir, '.diff', '.stan_no_changes');
+
+const ensureOutAndDiff = async (
+  cwd: string,
+  outputPath: string,
+): Promise<{
+  outDir: string;
+  diffDir: string;
+}> => {
+  const outDir = resolve(cwd, outputPath);
+  await mkdir(outDir, { recursive: true });
+  const diffDir = join(outDir, '.diff');
+  await mkdir(diffDir, { recursive: true });
+  return { outDir, diffDir };
+};
+
+/**
+ * Compute (and optionally update) the snapshot file in <outputPath>/.diff/.
+ * Returns the absolute snapshot path.
+ */
+export const writeArchiveSnapshot = async ({
+  cwd,
+  outputPath,
+  includes,
+  excludes,
+}: {
+  cwd: string;
+  outputPath: string;
+  includes?: string[];
+  excludes?: string[];
+}): Promise<string> => {
+  const { outDir } = await ensureOutAndDiff(cwd, outputPath);
+
+  const all = await listFiles(cwd);
+  const filtered = await filterFiles(all, {
+    cwd,
+    outputPath,
+    includeOutputDir: false,
+    includes: includes ?? [],
+    excludes: excludes ?? [],
+  });
+
+  const current = await computeCurrentHashes(cwd, filtered);
+  const snapPath = snapshotPathFor(outDir);
+  await writeFile(snapPath, JSON.stringify(current, null, 2), 'utf8');
+  return snapPath;
+};
+
+/**
+ * Create a diff tar at <outputPath>/<baseName>.diff.tar.
+ * - If snapshot exists: include only changed files.
+ * - If no snapshot exists: include full file list (diff equals full archive).
+ * - Snapshot update behavior is controlled by updateSnapshot:
+ *   - 'never': do not write snapshot.
+ *   - 'createIfMissing': write snapshot only if it does not exist.
+ *   - 'replace': always write snapshot (used by `stan snap`).
+ */
 export const createArchiveDiff = async ({
   cwd,
   outputPath,
   baseName,
   includes,
   excludes,
+  updateSnapshot = 'createIfMissing',
 }: {
   cwd: string;
   outputPath: string;
   baseName: string;
   includes?: string[];
   excludes?: string[];
+  updateSnapshot?: SnapshotUpdateMode;
 }): Promise<{ diffPath: string }> => {
-  const outDir = resolve(cwd, outputPath);
-  await mkdir(outDir, { recursive: true });
-
-  const diffDir = join(outDir, '.diff');
-  await mkdir(diffDir, { recursive: true });
+  const { outDir, diffDir } = await ensureOutAndDiff(cwd, outputPath);
 
   // Build filtered file list in repo root (cwd).
   const all = await listFiles(cwd);
@@ -59,45 +128,39 @@ export const createArchiveDiff = async ({
     excludes: excludes ?? [],
   });
 
-  // Compute sha256 for each file.
-  const current: Record<string, string> = {};
-  for (const rel of filtered) {
-    const abs = resolve(cwd, rel);
-    const buf = await readFile(abs);
-    const h = createHash('sha256').update(buf).digest('hex');
-    current[rel] = h;
-  }
+  // Compute current snapshot
+  const current = await computeCurrentHashes(cwd, filtered);
 
-  const snapshotPath = join(diffDir, '.archive.snapshot.json');
-  const prev: Record<string, string> = existsSync(snapshotPath)
-    ? (JSON.parse(await readFile(snapshotPath, 'utf8')) as Record<
-        string,
-        string
-      >)
+  const snapPath = snapshotPathFor(outDir);
+  const hasPrev = existsSync(snapPath);
+  const prev: Record<string, string> = hasPrev
+    ? (JSON.parse(await readFile(snapPath, 'utf8')) as Record<string, string>)
     : {};
 
-  const changed = new Set<string>();
-  for (const [rel, hash] of Object.entries(current)) {
-    if (!prev[rel] || prev[rel] !== hash) changed.add(rel);
-  }
-  // (We do not include deletions in the tar; they are reflected by missing keys in `current`.)
+  // Determine changed files when snapshot exists; else include full list.
+  const changed: string[] = hasPrev
+    ? filtered.filter((rel) => !prev[rel] || prev[rel] !== current[rel])
+    : [...filtered];
 
   const diffPath = join(outDir, `${baseName}.diff.tar`);
-  // Dynamic import across package boundary; local type TarLike narrows to the
-  // subset we use. Cast justified and localized at the boundary.
   const tar = (await import('tar')) as unknown as TarLike;
 
-  if (changed.size === 0 || !existsSync(snapshotPath)) {
-    // First run or no changes: write a sentinel to advertise no changes.
-    const sentinel = join(diffDir, '.stan_no_changes');
+  if (changed.length === 0) {
+    // Nothing changed; write a sentinel to avoid empty tar behavior.
+    const sentinel = sentinelPathFor(outDir);
     await writeFile(sentinel, 'no changes', 'utf8');
     await tar.create({ file: diffPath, cwd: diffDir }, ['.stan_no_changes']);
   } else {
-    await tar.create({ file: diffPath, cwd }, Array.from(changed));
+    await tar.create({ file: diffPath, cwd }, changed);
   }
 
-  // Persist current snapshot for next run.
-  await writeFile(snapshotPath, JSON.stringify(current, null, 2), 'utf8');
+  // Update snapshot per mode
+  if (updateSnapshot === 'replace') {
+    await writeFile(snapPath, JSON.stringify(current, null, 2), 'utf8');
+  } else if (updateSnapshot === 'createIfMissing' && !hasPrev) {
+    await writeFile(snapPath, JSON.stringify(current, null, 2), 'utf8');
+  }
+  // 'never' => leave snapshot untouched
 
   return { diffPath };
 };

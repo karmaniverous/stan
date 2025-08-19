@@ -1,16 +1,8 @@
 /* REQUIREMENTS (current):
  * - Export makeCli(): Command — root CLI factory for the "stan" tool.
- * - Register subcommands:
- *   - "run" subcommand for executing configured scripts (see /stan.project.md).
- *   - "init" subcommand to scaffold config and docs.
- * - Avoid invoking process.exit during tests; call cli.exitOverride() at the root.
- *   - IMPORTANT: When displaying help, do not throw in tests; ignore "helpDisplayed".
- *   - Also ignore "unknownCommand" and "unknownOption".
- * - When executed directly (built CLI), parse argv.
+ * - Register subcommands: run, init, and NEW: snap.
+ * - Avoid invoking process.exit during tests; call cli.exitOverride().
  * - Help for root should include available script keys from config.
- * - Be tolerant of unit-test argv like ["node","stan", ...] -\> \[...]
- *   by normalizing argv before parsing (without polluting help output).
- * See /stan.project.md for global requirements.
  */
 
 import { resolve } from 'node:path';
@@ -19,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
+import { registerSnap } from '@/stan/snap';
 
 import { registerInit } from './init';
 import { registerRun } from './runner';
@@ -41,7 +34,7 @@ const installExitOverride = (cmd: Command): void => {
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
 
-/** Normalize argv from unit tests like ["node","stan", ...] -\> \[...]. */
+/** Normalize argv from unit tests like ["node","stan", ...] -> [...] */
 const normalizeArgv = (
   argv?: readonly string[],
 ): readonly string[] | undefined => {
@@ -61,9 +54,6 @@ const patchParseMethods = (cli: Command): void => {
     opts?: FromOpt,
   ) => Promise<Command>;
 
-  // Commander doesn't expose a typed way to override parse methods. We narrow
-  // to the subset we need and return the same cli instance to keep typing safe.
-  // (Dynamic method patch across library boundary; cast justified.)
   const holder = cli as unknown as {
     parse: ParseFn;
     parseAsync: ParseAsyncFn;
@@ -104,6 +94,7 @@ export const makeCli = (): Command => {
   // Subcommands
   registerRun(cli);
   registerInit(cli);
+  registerSnap(cli);
 
   return cli;
 };
@@ -121,8 +112,6 @@ const isDirect = (() => {
 
 if (isDirect) {
   const cli = makeCli();
-  // Root override already installed inside makeCli()
-  // Parse process.argv (which will be normalized by our parse patch if needed)
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   cli.parseAsync();
 }

@@ -8,6 +8,4 @@ dist/
 esm/
 node_modules/
 /stan/
-/docs/
-/assets/
 /stan.dist/

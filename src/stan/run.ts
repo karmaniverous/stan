@@ -1,24 +1,10 @@
 /* src/stan/run.ts
- * REQUIREMENTS (current):
- * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.
- * - Create per-script artifacts <outputPath>/<key>.txt combining stdout+stderr.
- * - Maintain <outputPath>/order.txt by appending the UPPERCASE first letter of each executed key, in run order.
- *   - ORDER FILE CREATION IS TEST-ONLY: write it when NODE_ENV==='test' or STAN_WRITE_ORDER==='1'.
- * - Support selection of keys; when null/undefined, run all. Ignore unknown keys.
- * - Treat special key 'archive':
- *   - When selection is null (default run), include 'archive' implicitly even if not present in config.scripts.
- *   - Run archive LAST (after other scripts) to avoid file-handle collisions, regardless of mode.
- * - Options:
- *   - combine=false|true: if true, produce either combined.txt (when 'archive' not included) or combined.tar (when 'archive' included).
- *   - keep=false|true: when false (default) clear output dir before running; when true, keep prior artifacts.
- *   - diff=false|true: when true and 'archive' is included, also create archive.diff.tar in output dir.
- *   - combinedFileName?: custom base name for combined artifacts (default 'combined').
- * - Log `stan: start "<key>"` and `stan: done "<key>" -> <relative path>` for each artifact including archive variants.
- * - At the start of a run, print a one-line plan summary (see /stan.project.md).
- * - Zero "any" usage; path alias "@/..." is used for intra-project imports.
- *
- * NEW REQUIREMENT:
- * - When building a combined tar that includes the output directory, exclude the <outputPath>/.diff directory.
+ * REQUIREMENTS (current + updated):
+ * - Execute configured scripts; create per-script artifacts.
+ * - Always produce <outputPath>/archive.diff.tar whenever 'archive' is included.
+ * - Snapshot update occurs only if one does not exist (create) or via `stan snap`.
+ * - NEW: pass updateSnapshot='createIfMissing' to createArchiveDiff.
+ * - Combine mode remains; when archive is included, still write archive.diff.tar.
  */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
@@ -35,7 +21,7 @@ export type ExecutionMode = 'concurrent' | 'sequential';
 export type RunBehavior = {
   combine?: boolean;
   keep?: boolean;
-  diff?: boolean;
+  diff?: boolean; // retained for plan logging; no longer gates diff creation
   combinedFileName?: string;
 };
 
@@ -151,7 +137,7 @@ const renderRunPlan = (args: {
     `output: ${config.outputPath}/`,
     `archive: ${willArchive ? 'yes' : 'no'}`,
     `combine: ${behavior.combine ? 'yes' : 'no'}`,
-    `diff: ${behavior.diff ? 'yes' : 'no'}`,
+    `diff: ${behavior.diff ? 'yes' : 'no'}`, // retained for compatibility
     `keep output dir: ${behavior.keep ? 'yes' : 'no'}`,
   ];
   return `stan: ${parts.join('; ')}`;
@@ -217,20 +203,18 @@ export const runSelected = async (
       console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
       created.push(archivePath);
 
-      if (behavior.diff) {
-        console.log('stan: start "archive (diff)"');
-        const { diffPath } = await createArchiveDiff({
-          cwd,
-          outputPath: outRel,
-          baseName: 'archive',
-          includes: config.includes ?? [],
-          excludes: config.excludes ?? [],
-        });
-        console.log(
-          `stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`,
-        );
-        created.push(diffPath);
-      }
+      // Always produce diff (snapshot only when missing)
+      console.log('stan: start "archive (diff)"');
+      const { diffPath } = await createArchiveDiff({
+        cwd,
+        outputPath: outRel,
+        baseName: 'archive',
+        includes: config.includes ?? [],
+        excludes: config.excludes ?? [],
+        updateSnapshot: 'createIfMissing',
+      });
+      console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
+      created.push(diffPath);
     }
   } else {
     // Run non-archive tasks concurrently
@@ -249,20 +233,17 @@ export const runSelected = async (
       console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
       created.push(archivePath);
 
-      if (behavior.diff) {
-        console.log('stan: start "archive (diff)"');
-        const { diffPath } = await createArchiveDiff({
-          cwd,
-          outputPath: outRel,
-          baseName: 'archive',
-          includes: config.includes ?? [],
-          excludes: config.excludes ?? [],
-        });
-        console.log(
-          `stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`,
-        );
-        created.push(diffPath);
-      }
+      console.log('stan: start "archive (diff)"');
+      const { diffPath } = await createArchiveDiff({
+        cwd,
+        outputPath: outRel,
+        baseName: 'archive',
+        includes: config.includes ?? [],
+        excludes: config.excludes ?? [],
+        updateSnapshot: 'createIfMissing',
+      });
+      console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
+      created.push(diffPath);
     }
   }
 
@@ -293,12 +274,8 @@ export const runSelected = async (
         [outRel],
       );
       created.push(tarPath);
-    } else {
-      const p = await combineTextOutputs(cwd, outRel, toRun, base);
-      created.push(p);
-    }
 
-    if (hasArchive && behavior.diff) {
+      // Always produce diff alongside archive-included runs (even in combine)
       console.log('stan: start "archive (diff)"');
       const { diffPath } = await createArchiveDiff({
         cwd,
@@ -306,9 +283,13 @@ export const runSelected = async (
         baseName: 'archive',
         includes: config.includes ?? [],
         excludes: config.excludes ?? [],
+        updateSnapshot: 'createIfMissing',
       });
       console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
       created.push(diffPath);
+    } else {
+      const p = await combineTextOutputs(cwd, outRel, toRun, base);
+      created.push(p);
     }
   }
 

@@ -1,3 +1,4 @@
+// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (current):
  * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.
@@ -7,8 +8,7 @@
  * - Support selection of keys; when null/undefined, run all. Ignore unknown keys.
  * - Treat special key 'archive':
  *   - When selection is null (default run), include 'archive' implicitly even if not present in config.scripts.
- *   - Run archive in PARALLEL with other scripts when mode === 'concurrent'.
- *   - Run archive LAST when mode === 'sequential'.
+ *   - Run archive LAST (after other scripts) to avoid file-handle collisions, regardless of mode.
  * - Options:
  *   - combine=false|true: if true, produce either combined.txt (when 'archive' not included) or combined.tar (when 'archive' included).
  *   - keep=false|true: when false (default) clear output dir before running; when true, keep prior artifacts.
@@ -168,7 +168,7 @@ export const runSelected = async (
     for (const k of toRun) {
       await runner(k);
     }
-
+    // Archive after others (sequential).
     if (hasArchive && !behavior.combine) {
       console.log('stan: start "archive"');
       const archivePath = await createArchive(cwd, outRel, {
@@ -194,39 +194,38 @@ export const runSelected = async (
       }
     }
   } else {
+    // Concurrent for non-archive tasks
     const tasks: Array<Promise<void>> = toRun.map((k) =>
       runner(k).then(() => void 0),
     );
 
+    await Promise.all(tasks);
+
+    // Archive AFTER other tasks to avoid file-handle collisions.
     if (hasArchive && !behavior.combine) {
-      const archiveTask = (async (): Promise<void> => {
-        console.log('stan: start "archive"');
-        const archivePath = await createArchive(cwd, outRel, {
+      console.log('stan: start "archive"');
+      const archivePath = await createArchive(cwd, outRel, {
+        includes: config.includes ?? [],
+        excludes: config.excludes ?? [],
+      });
+      console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
+      created.push(archivePath);
+
+      if (behavior.diff) {
+        console.log('stan: start "archive (diff)"');
+        const { diffPath } = await createArchiveDiff({
+          cwd,
+          outputPath: outRel,
+          baseName: 'archive',
           includes: config.includes ?? [],
           excludes: config.excludes ?? [],
         });
-        console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
-        created.push(archivePath);
-
-        if (behavior.diff) {
-          console.log('stan: start "archive (diff)"');
-          const { diffPath } = await createArchiveDiff({
-            cwd,
-            outputPath: outRel,
-            baseName: 'archive',
-            includes: config.includes ?? [],
-            excludes: config.excludes ?? [],
-          });
-          console.log(
-            `stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`,
-          );
-          created.push(diffPath);
-        }
-      })();
-      tasks.push(archiveTask);
+        console.log(
+          `stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`,
+        );
+        created.push(diffPath);
+      }
     }
-
-    await Promise.all(tasks);
   }
 
   if (behavior.combine) {

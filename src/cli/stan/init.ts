@@ -1,3 +1,4 @@
+// src/cli/stan/init.ts
 /* src/cli/stan/init.ts
  * REQUIREMENTS (current):
  * - Add "stan init" subcommand:
@@ -7,10 +8,8 @@
  * - Avoid process.exit during parsing in tests by calling .exitOverride() on the root and subcommand.
  *   - IMPORTANT: Swallow "helpDisplayed", "unknownCommand", and "unknownOption" so tests don't fail while native help remains enabled.
  * - Leverage native Commander help (-h/--help) instead of custom help wiring.
- * - When tests pass ["node","stan",...], tolerate stray tokens by adding a passthrough variadic argument
- *   when the program has no arguments (ignore extraneous argv).
  * - Use alias "@/..." for internal imports; avoid "any".
- * - New: During init, ensure stan.system.md and stan.project.md are present:
+ * - During init, ensure stan.system.md and stan.project.md are present:
  *   - If not present in the project root, copy stan.system.md from the package dist.
  *   - If stan.project.md is not present, copy stan.project.template.md from the package dist as stan.project.md.
  */
@@ -30,36 +29,16 @@ const TOKEN = /^\w+/;
 
 /** Swallow Commander exits so tests never call process.exit. */
 const installExitOverride = (cmd: Command): void => {
-  cmd.exitOverride(() => {
-    // Intentionally swallow all Commander exits during tests so no process.exit occurs.
+  cmd.exitOverride((err) => {
+    if (
+      err.code === 'commander.helpDisplayed' ||
+      err.code === 'commander.unknownCommand' ||
+      err.code === 'commander.unknownOption'
+    )
+      return;
     // Commander has already printed any relevant message.
-    return;
+    throw err;
   });
-};
-
-/** Add a catch-all variadic argument if the program currently has no arguments. */
-const ensurePassthroughArg = (cli: Command): void => {
-  const internal = cli as unknown as {
-    _args?: unknown[];
-  };
-  const hasArgs = Array.isArray(internal._args) && internal._args.length > 0;
-  if (!hasArgs) {
-    cli.argument('[__ignore__...]', 'internal passthrough');
-  }
-};
-
-/** Only when root has no args (runner not registered), swallow unknown subcommands like "node"/"stan". */
-const swallowUnknownIfNoArgs = (cli: Command): void => {
-  const internal = cli as unknown as { _args?: unknown[] };
-  const hasArgs = Array.isArray(internal._args) && internal._args.length > 0;
-  if (!hasArgs) {
-    const unknown = cli.command('*', { hidden: true });
-    installExitOverride(unknown);
-    unknown.allowUnknownOption(true);
-    unknown.action(() => {
-      // Do nothing; intended to swallow stray tokens in tests.
-    });
-  }
 };
 
 const readPackageJsonScripts = async (
@@ -171,10 +150,6 @@ export const registerInit = (cli: Command): Command => {
   sub.action(async (opts: { force?: boolean }) => {
     await performInit(cli, { force: Boolean(opts.force) });
   });
-
-  // Tolerate stray tokens in test harnesses when root has no args (runner not wired).
-  ensurePassthroughArg(cli);
-  swallowUnknownIfNoArgs(cli);
 
   return cli;
 };

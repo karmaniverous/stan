@@ -1,3 +1,4 @@
+// src/cli/stan/runner.ts
 /**
  * REQUIREMENTS (current):
  * - Register subcommand `stan run` with:
@@ -45,6 +46,9 @@ export const registerRun = (cli: Command): Command => {
     .option('-k, --keep', 'keep (do not clear) the output directory')
     .option('-d, --diff', 'create archive.diff.tar when archive is included');
 
+  // Help footer: list configured script keys
+  cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
+
   cmd.action(
     async (enumerated: string[] | undefined, opts: Record<string, unknown>) => {
       const cwd = process.cwd();
@@ -62,7 +66,7 @@ export const registerRun = (cli: Command): Command => {
 
       const keys = Object.keys(config.scripts);
 
-      // Sanitize enumerated args: ignore stray tokens like "node", "stan", etc.
+      // Sanitize enumerated args: ignore stray tokens not matching known keys
       const known = new Set([...keys, 'archive']);
       const enumeratedClean =
         Array.isArray(enumerated) && enumerated.length

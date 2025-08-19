@@ -157,17 +157,21 @@ export const createArchiveDiff = async ({
   const diffPath = join(outDir, `${baseName}.diff.tar`);
   const tar = (await import('tar')) as unknown as TarLike;
 
-  // Compute files to tar and the working directory
   if (includeOutputDirInDiff) {
-    // Always include the output directory (exclude .diff contents via filter)
+    // Always include the output directory (exclude .diff and archive files created during this run)
     const files = Array.from(new Set([...changed, outputPath]));
+    const isUnder = (prefix: string, p: string): boolean =>
+      p === prefix || p.startsWith(`${prefix}/`);
+
     await tar.create(
       {
         file: diffPath,
         cwd,
         filter: (p: string) =>
           !(
-            p === `${outputPath}/.diff` || p.startsWith(`${outputPath}/.diff/`)
+            isUnder(`${outputPath}/.diff`, p) ||
+            p === `${outputPath}/archive.tar` ||
+            p === `${outputPath}/archive.diff.tar`
           ),
       },
       files,

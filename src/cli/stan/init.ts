@@ -33,9 +33,6 @@ import { writeArchiveSnapshot } from '@/stan/diff';
 
 import { applyCliSafety } from './cli-utils';
 
-const isStringArray = (v: unknown): v is readonly string[] =>
-  Array.isArray(v) && v.every((t) => typeof t === 'string');
-
 const readPackageJsonScripts = async (
   cwd: string,
 ): Promise<Record<string, string>> => {

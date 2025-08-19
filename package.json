@@ -140,7 +140,7 @@
     "release": "dotenvx run -f .env.local -- release-it",
     "release:pre": "dotenvx run -f .env.local -- release-it --no-git.requireBranch --github.prerelease --preRelease",
     "stan": "tsx src/cli/stan/index.ts",
-    "stan:build": "rimraf stan.dist && rollup --config stan.rollup.config.ts --configPlugin @rollup/plugin-typescript > stan/rollup.txt 2>&1 && rimraf stan.dist",
+    "stan:build": "rimraf stan.dist && rollup --config stan.rollup.config.ts --configPlugin @rollup/plugin-typescript > stan/build.txt 2>&1 && rimraf stan.dist",
     "stan:docs": "typedoc --emit none",
     "test": "vitest --run --coverage",
     "typecheck": "tsc"

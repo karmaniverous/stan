@@ -1,4 +1,3 @@
-// src/cli/stan/index.help.test.ts
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock the help footer to a known marker before importing the CLI factory.
@@ -12,8 +11,19 @@ describe('CLI help footer and subcommand registration', () => {
   it('prints help with custom footer and registers subcommands', () => {
     const cli = makeCli();
 
-    // Use helpInformation() to retrieve the full help text (incl. addHelpText)
-    const printed = cli.helpInformation();
+    let printed = '';
+    const writeSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: unknown): boolean => {
+        printed += String(chunk);
+        return true;
+      });
+
+    // outputHelp prints the help (incl. addHelpText('after')) to stdout
+    cli.outputHelp();
+
+    writeSpy.mockRestore();
+
     expect(printed).toContain('MOCK HELP FOOTER');
 
     // Subcommands should include run, init, snap, patch

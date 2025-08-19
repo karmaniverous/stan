@@ -1,8 +1,8 @@
-# STAN := STAN Tames Autoregressive Nonsense
+# STAN — STAN Tames Autoregressive Nonsense
 
-🎲 A tip of the hat to [Stanisław Ulam](https://en.wikipedia.org/wiki/Stanis%C5%82aw_Ulam).
+🎲 A tip of the hat to Stanisław Ulam.
 
-In 1946, while recovering from illness and noodling over card games, Ulam invented the [Monte Carlo method](https://en.wikipedia.org/wiki/Monte_Carlo_method): random sampling to tackle hard, deterministic problems.
+In 1946, while recovering from illness and noodling over card games, Ulam helped ignite the Monte Carlo method—random sampling to tackle hard, deterministic problems.
 
 STAN produces a single source of truth for AI‑assisted development: a tarball of your repo plus deterministic outputs from your build/test/lint/typecheck scripts.
 
@@ -64,19 +64,19 @@ defaultPatchFile: /stan.patch
 
 ```
 # Run all configured scripts (no archives by default)
-npx stan
+npx stan run
 
 # Run selected scripts only (preserves order with -s)
-npx stan test typecheck -s
+npx stan run test typecheck -s
 
 # Run all except <keys>
-npx stan -e knip lint
+npx stan run -e knip lint
 
 # Produce code archives (regular + diff) after running scripts
-npx stan -a
+npx stan run -a
 
 # Put script outputs INSIDE the archives (and do not keep them on disk)
-npx stan -a -c
+npx stan run -a -c
 ```
 
 ## Snapshot & Diff (the duo)
@@ -91,7 +91,7 @@ npx stan -a -c
 ## CLI
 
 ```
-stan [scripts...] [options]
+stan run [scripts...] [options]
 ```
 
 ### Options

@@ -1,4 +1,3 @@
-// src/cli/stan/init.ts
 /* src/cli/stan/init.ts
  * REQUIREMENTS (current):
  * - Add "stan init" subcommand:
@@ -39,6 +38,51 @@ const installExitOverride = (cmd: Command): void => {
     // Commander has already printed any relevant message.
     throw err;
   });
+};
+
+const isStringArray = (v: unknown): v is readonly string[] =>
+  Array.isArray(v) && v.every((t) => typeof t === 'string');
+
+/** Normalize argv from unit tests like ["node","stan", ...] -\> \[...]. */
+const normalizeArgv = (
+  argv?: readonly string[],
+): readonly string[] | undefined => {
+  if (!isStringArray(argv)) return undefined;
+  if (argv.length >= 2 && argv[0] === 'node' && argv[1] === 'stan') {
+    return argv.slice(2);
+  }
+  return argv;
+};
+
+/** Patch parse()/parseAsync() on an arbitrary Command instance (used in tests). */
+const patchParseMethods = (cli: Command): void => {
+  type FromOpt = { from?: 'user' | 'node' };
+  type ParseFn = (argv?: readonly string[], opts?: FromOpt) => Command;
+  type ParseAsyncFn = (
+    argv?: readonly string[],
+    opts?: FromOpt,
+  ) => Promise<Command>;
+
+  // Commander does not type expose these overrides; cast limited to the
+  // specific surface we patch and return the same cli instance. (Dynamic
+  // method patch across library boundary; cast justified.)
+  const holder = cli as unknown as {
+    parse: ParseFn;
+    parseAsync: ParseAsyncFn;
+  };
+
+  const origParse = holder.parse.bind(cli);
+  const origParseAsync = holder.parseAsync.bind(cli);
+
+  holder.parse = (argv?: readonly string[], opts?: FromOpt) => {
+    origParse(normalizeArgv(argv), opts);
+    return cli;
+  };
+
+  holder.parseAsync = async (argv?: readonly string[], opts?: FromOpt) => {
+    await origParseAsync(normalizeArgv(argv), opts);
+    return cli;
+  };
 };
 
 const readPackageJsonScripts = async (
@@ -133,6 +177,7 @@ export const performInit = async (
 
 export const registerInit = (cli: Command): Command => {
   installExitOverride(cli);
+  patchParseMethods(cli);
 
   const sub = cli
     .command('init')

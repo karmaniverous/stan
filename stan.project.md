@@ -1,7 +1,7 @@
 # Project‑Specific Requirements
 
 This file contains STAN (this repo) specific requirements and conventions.
-General coding and testing standards live in `/stan.system.md`.
+General, repo‑agnostic standards live in `/stan.system.md`.
 
 If this file experiences significant structural changes, update
 `/stan.project.template.md` to match so `stan init` scaffolds remain current.
@@ -41,8 +41,8 @@ If this file experiences significant structural changes, update
   - `-c/--combine`:
     - If `archive` is present, STAN writes a single `<combined>.tar` that
       includes the output directory (no separate `archive.tar`).
-    - If `archive` is not present, STAN writes `<combined>.txt` containing
-      per‑script outputs.
+    - If `archive` is not present, STAN combines produced **text outputs** into
+      a single `<combined>.txt`.
     - The base name is configured by `combinedFileName` (defaults to
       `"combined"`).
   - `-d/--diff`:
@@ -51,6 +51,15 @@ If this file experiences significant structural changes, update
       `<outputPath>/.archive.snapshot.json`.
     - Prior full tar is copied to `archive.prev.tar` before new archive
       creation.
+- Logging:
+  - At the start of `stan run`, print a concise, single‑line plan summary:
+    scripts to run, execution mode (concurrent/sequential), output path,
+    whether archive/combine/diff/keep are enabled.
+  - The plan summary should be structured to look good on a 72‑character‑wide
+    console (clear delimiters, concise labels). Do not hard‑wrap it; keep it a
+    single line.
+  - For each script/archive action, log `stan: start "<key>"` and
+    `stan: done "<key>" -> <relative path>"`.
 
 ## Configuration Resolution
 
@@ -84,11 +93,20 @@ type ContextConfig = {
 - If no scripts are selected or created artifacts array is empty, print the
   available keys: `renderAvailableScriptsHelp(cwd)`.
 
-## Logging
+## Testing (CLI / Commander specifics)
 
-- Log concise progress lines during runs, for example:
-  - `stan: start "test" (node -e "...")`
-  - `stan: done "test" in 1.2s -> out/test.txt`
+- Use `exitOverride()` on root and subcommands to prevent `process.exit()`
+  during tests and to swallow:
+  `commander.helpDisplayed`, `commander.unknownCommand`,
+  `commander.unknownOption`.
+- Prefer `parseAsync(argv, { from: 'user' })` in tests, passing only the user
+  tokens (not `node script`), or normalize argv accordingly.
+- Capture stdout/stderr to assert help and error messages; you may also
+  interrogate `command.helpInformation()` for static help text.
+- Use dynamic imports inside command actions so test doubles/mocks can be
+  applied before modules are loaded.
+- Avoid global `allowUnknownOption(true)` in production code; handle known
+  test harness noise with targeted normalization instead.
 
 ## Artifacts
 
@@ -107,7 +125,5 @@ type ContextConfig = {
 
 ## Notes & Pointers
 
-- General TypeScript, linting, and testing standards — including Commander
-  testing tips — are defined in `/stan.system.md` and apply here.
 - This repository uses Node ESM (`"type": "module"`).
 - Use `radash` only when it improves clarity & brevity.

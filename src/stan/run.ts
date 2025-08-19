@@ -14,19 +14,19 @@
  *   - diff=false|true: when true and 'archive' is included, also create archive.diff.tar in output dir.
  *   - combinedFileName?: custom base name for combined artifacts (default 'combined').
  * - Log `stan: start "<key>"` and `stan: done "<key>" -> <relative path>` for each artifact including archive variants.
+ * - At the start of a run, print a one-line plan summary (see /stan.project.md).
  * - Zero "any" usage; path alias "@/..." is used for intra-project imports.
- *
- * See /stan.project.md for global & cross‑cutting requirements.
  */
+
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { appendFile, readFile, writeFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 
-import { createArchive } from './archive';
-import type { ContextConfig } from './config';
-import { ensureOutputDir } from './config';
-import { createArchiveDiff } from './diff';
+import { createArchive } from '@/stan/archive';
+import type { ContextConfig } from '@/stan/config';
+import { ensureOutputDir } from '@/stan/config';
+import { createArchiveDiff } from '@/stan/diff';
 
 export type Selection = string[] | null;
 export type ExecutionMode = 'concurrent' | 'sequential';
@@ -124,6 +124,37 @@ const combineTextOutputs = async (
   return combinedPath;
 };
 
+/** Render a short, plain-language summary of the run plan. */
+const renderRunPlan = (args: {
+  selection: Selection;
+  config: ContextConfig;
+  mode: ExecutionMode;
+  behavior: RunBehavior;
+}): string => {
+  const { selection, config, mode, behavior } = args;
+
+  const includeArchiveByDefault = selection == null || selection.length === 0;
+  const willArchive =
+    includeArchiveByDefault ||
+    (Array.isArray(selection) && selection.includes('archive'));
+
+  // Determine script list shown (exclude 'archive' to avoid confusion)
+  const keys = selection == null ? Object.keys(config.scripts) : selection;
+  const scripts = (keys ?? []).filter((k) => k !== 'archive');
+
+  const parts = [
+    `STAN will run ${scripts.length.toString()} script(s) (${scripts.join(', ') || 'none'}) ${
+      mode === 'sequential' ? 'sequentially' : 'concurrently'
+    }`,
+    `output: ${config.outputPath}/`,
+    `archive: ${willArchive ? 'yes' : 'no'}`,
+    `combine: ${behavior.combine ? 'yes' : 'no'}`,
+    `diff: ${behavior.diff ? 'yes' : 'no'}`,
+    `keep output dir: ${behavior.keep ? 'yes' : 'no'}`,
+  ];
+  return `stan: ${parts.join('; ')}`;
+};
+
 export const runSelected = async (
   cwd: string,
   config: ContextConfig,
@@ -135,12 +166,25 @@ export const runSelected = async (
   const outRel = config.outputPath;
   const outAbs = await ensureOutputDir(cwd, outRel, Boolean(behavior.keep));
 
+  // One-line plan summary (project-level directive).
+  console.log(
+    renderRunPlan({
+      selection,
+      config,
+      mode,
+      behavior,
+    }),
+  );
+
   const shouldWriteOrder =
     process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
 
-  const orderFile = shouldWriteOrder ? resolve(outAbs, 'order.txt') : undefined;
-  if (shouldWriteOrder && !behavior.keep) {
-    await writeFile(orderFile as string, '', 'utf8');
+  let orderFile: string | undefined;
+  if (shouldWriteOrder) {
+    orderFile = resolve(outAbs, 'order.txt');
+    if (!behavior.keep) {
+      await writeFile(orderFile, '', 'utf8');
+    }
   }
 
   const baseKeys = normalizeSelection(selection, config);
@@ -225,6 +269,8 @@ export const runSelected = async (
       behavior.combinedFileName ?? config.combinedFileName ?? 'combined';
     if (hasArchive) {
       const tarPath = resolve(outAbs, `${base}.tar`);
+      // Dynamic ESM import boundary; the tar module type is not inferred here,
+      // so we narrow to the subset we use (create). Cast justified and localized.
       const tar = (await import('tar')) as unknown as {
         create: (
           opts: { file: string; cwd?: string },

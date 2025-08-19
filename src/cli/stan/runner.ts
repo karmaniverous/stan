@@ -1,4 +1,3 @@
-// src/cli/stan/runner.ts
 /**
  * REQUIREMENTS (current):
  * - Register subcommand `stan run` with:
@@ -54,15 +53,32 @@ export const registerRun = (cli: Command): Command => {
       const cwd = process.cwd();
 
       // Dynamic import to ensure Vitest mocks are respected in tests.
-      const { loadConfig } = await import('@/stan/config');
+      const cfgMod = await import('@/stan/config');
 
       // Guard loadConfig to avoid undefined in mocked/test scenarios.
-      let config: Awaited<ReturnType<typeof loadConfig>>;
+      let maybe: unknown;
       try {
-        config = await loadConfig(cwd);
+        // eslint-disable-next-line @typescript-eslint/await-thenable
+        maybe = await cfgMod.loadConfig(cwd);
       } catch {
-        config = { outputPath: 'stan', scripts: {} };
+        maybe = undefined;
       }
+
+      const isContextConfig = (
+        v: unknown,
+      ): v is {
+        outputPath: string;
+        scripts: Record<string, string>;
+        combinedFileName?: string;
+      } =>
+        !!v &&
+        typeof v === 'object' &&
+        typeof (v as { outputPath?: unknown }).outputPath === 'string' &&
+        typeof (v as { scripts?: unknown }).scripts === 'object';
+
+      const config = isContextConfig(maybe)
+        ? maybe
+        : { outputPath: 'stan', scripts: {} as Record<string, string> };
 
       const keys = Object.keys(config.scripts);
 

@@ -74,6 +74,8 @@ export const createArchiveDiff = async ({
   // (We do not include deletions in the tar; they are reflected by missing keys in `current`.)
 
   const diffPath = join(outDir, `${baseName}.diff.tar`);
+  // Dynamic import across package boundary; local type TarLike narrows to the
+  // subset we use. Cast justified and localized at the boundary.
   const tar = (await import('tar')) as unknown as TarLike;
 
   if (changed.size === 0 || !existsSync(snapshotPath)) {

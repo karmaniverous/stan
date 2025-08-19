@@ -1,4 +1,3 @@
-// src/cli/stan/index.ts
 /* REQUIREMENTS (current):
  * - Export makeCli(): Command — root CLI factory for the "stan" tool.
  * - Register subcommands:
@@ -9,8 +8,8 @@
  *   - Also ignore "unknownCommand" and "unknownOption".
  * - When executed directly (built CLI), parse argv.
  * - Help for root should include available script keys from config.
- * - Be tolerant of unit-test argv like ["node","stan", ...] by normalizing argv
- *   before parsing (without polluting help output).
+ * - Be tolerant of unit-test argv like ["node","stan", ...] -\> \[...]
+ *   by normalizing argv before parsing (without polluting help output).
  * See /stan.project.md for global requirements.
  */
 
@@ -39,11 +38,14 @@ const installExitOverride = (cmd: Command): void => {
   });
 };
 
-/** Normalize argv from unit tests like ["node","stan", ...] -> [...]. */
+const isStringArray = (v: unknown): v is readonly string[] =>
+  Array.isArray(v) && v.every((t) => typeof t === 'string');
+
+/** Normalize argv from unit tests like ["node","stan", ...] -\> \[...]. */
 const normalizeArgv = (
   argv?: readonly string[],
 ): readonly string[] | undefined => {
-  if (!Array.isArray(argv)) return argv;
+  if (!isStringArray(argv)) return undefined;
   if (argv.length >= 2 && argv[0] === 'node' && argv[1] === 'stan') {
     return argv.slice(2);
   }
@@ -52,19 +54,33 @@ const normalizeArgv = (
 
 /** Patch parse() and parseAsync() to normalize argv before Commander parses. */
 const patchParseMethods = (cli: Command): void => {
+  type FromOpt = { from?: 'user' | 'node' };
+  type ParseFn = (argv?: readonly string[], opts?: FromOpt) => Command;
+  type ParseAsyncFn = (
+    argv?: readonly string[],
+    opts?: FromOpt,
+  ) => Promise<Command>;
+
+  // Commander doesn't expose a typed way to override parse methods. We narrow
+  // to the subset we need and return the same cli instance to keep typing safe.
+  // (Dynamic method patch across library boundary; cast justified.)
   const holder = cli as unknown as {
-    parse: (argv?: readonly string[], opts?: unknown) => unknown;
-    parseAsync: (argv?: readonly string[], opts?: unknown) => Promise<unknown>;
+    parse: ParseFn;
+    parseAsync: ParseAsyncFn;
   };
 
   const origParse = holder.parse.bind(cli);
   const origParseAsync = holder.parseAsync.bind(cli);
 
-  holder.parse = (argv?: readonly string[], opts?: unknown) =>
+  holder.parse = (argv?: readonly string[], opts?: FromOpt) => {
     origParse(normalizeArgv(argv), opts);
+    return cli;
+  };
 
-  holder.parseAsync = (argv?: readonly string[], opts?: unknown) =>
-    origParseAsync(normalizeArgv(argv), opts);
+  holder.parseAsync = async (argv?: readonly string[], opts?: FromOpt) => {
+    await origParseAsync(normalizeArgv(argv), opts);
+    return cli;
+  };
 };
 
 /** Build the root CLI (no side effects; safe for tests). */

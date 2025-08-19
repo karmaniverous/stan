@@ -60,6 +60,8 @@ export const createArchive = async (
   });
 
   const archivePath = resolve(outDir, fileName);
+  // Dynamic import across package boundary; local type TarLike narrows to the
+  // subset we need. Cast justified and localized at the boundary.
   const tar = (await import('tar')) as unknown as TarLike;
   await tar.create({ file: archivePath, cwd }, files);
 

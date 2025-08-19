@@ -1,3 +1,5 @@
+<img src="/assets/logo-1280-640.jpg">STAN ≜ STAN Tames Autoregressive Nonsense</img>
+
 # STAN ≜ STAN Tames Autoregressive Nonsense
 
 🎲 A tip of the hat to [Stanisław Ulam](https://en.wikipedia.org/wiki/Stanis%C5%82aw_Ulam).

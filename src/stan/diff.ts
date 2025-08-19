@@ -9,6 +9,10 @@
  *    - The user runs `stan snap` (replace).
  * - If no snapshot exists when creating diff, write a diff tar equal to the full archive.
  * - Snapshot and sentinel files live under <outputPath>/.diff/.
+ *
+ * NEW (combine mode requirement):
+ * - When includeOutputDirInDiff === true, include the entire <outputPath> (excluding <outputPath>/.diff)
+ *   inside the diff tar, even if no source files changed.
  */
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
@@ -19,7 +23,11 @@ import { filterFiles, listFiles } from './fs';
 
 type TarLike = {
   create: (
-    opts: { file: string; cwd?: string },
+    opts: {
+      file: string;
+      cwd?: string;
+      filter?: (path: string, stat: unknown) => boolean;
+    },
     files: string[],
   ) => Promise<void>;
 };
@@ -100,6 +108,8 @@ export const writeArchiveSnapshot = async ({
  *   - 'never': do not write snapshot.
  *   - 'createIfMissing': write snapshot only if it does not exist.
  *   - 'replace': always write snapshot (used by `stan snap`).
+ * - When includeOutputDirInDiff === true, also include the entire <outputPath> tree
+ *   (excluding <outputPath>/.diff) regardless of change list length.
  */
 export const createArchiveDiff = async ({
   cwd,
@@ -108,6 +118,7 @@ export const createArchiveDiff = async ({
   includes,
   excludes,
   updateSnapshot = 'createIfMissing',
+  includeOutputDirInDiff = false,
 }: {
   cwd: string;
   outputPath: string;
@@ -115,6 +126,7 @@ export const createArchiveDiff = async ({
   includes?: string[];
   excludes?: string[];
   updateSnapshot?: SnapshotUpdateMode;
+  includeOutputDirInDiff?: boolean;
 }): Promise<{ diffPath: string }> => {
   const { outDir, diffDir } = await ensureOutAndDiff(cwd, outputPath);
 
@@ -123,7 +135,7 @@ export const createArchiveDiff = async ({
   const filtered = await filterFiles(all, {
     cwd,
     outputPath,
-    includeOutputDir: false,
+    includeOutputDir: false, // snapshot and change list are source-only
     includes: includes ?? [],
     excludes: excludes ?? [],
   });
@@ -145,7 +157,22 @@ export const createArchiveDiff = async ({
   const diffPath = join(outDir, `${baseName}.diff.tar`);
   const tar = (await import('tar')) as unknown as TarLike;
 
-  if (changed.length === 0) {
+  // Compute files to tar and the working directory
+  if (includeOutputDirInDiff) {
+    // Always include the output directory (exclude .diff contents via filter)
+    const files = Array.from(new Set([...changed, outputPath]));
+    await tar.create(
+      {
+        file: diffPath,
+        cwd,
+        filter: (p: string) =>
+          !(
+            p === `${outputPath}/.diff` || p.startsWith(`${outputPath}/.diff/`)
+          ),
+      },
+      files,
+    );
+  } else if (changed.length === 0) {
     // Nothing changed; write a sentinel to avoid empty tar behavior.
     const sentinel = sentinelPathFor(outDir);
     await writeFile(sentinel, 'no changes', 'utf8');

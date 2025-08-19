@@ -1,4 +1,3 @@
-// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (current + updated):
  * - Execute configured scripts; create per-script artifacts.
@@ -8,6 +7,7 @@
  * - Combine mode remains; when archive is included, still write archive.diff.tar.
  * - UPDATED: The plan summary printed before the script log should be attractively
  *   formatted with newlines and clear labels, not a single line.
+ * - UPDATED (combine mode): the diff archive should include the output directory populated with script outputs.
  */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
@@ -279,6 +279,7 @@ export const runSelected = async (
       created.push(tarPath);
 
       // Always produce diff alongside archive-included runs (even in combine)
+      // NEW: include the output directory tree in the diff tar so it contains script outputs.
       console.log('stan: start "archive (diff)"');
       const { diffPath } = await createArchiveDiff({
         cwd,
@@ -287,6 +288,7 @@ export const runSelected = async (
         includes: config.includes ?? [],
         excludes: config.excludes ?? [],
         updateSnapshot: 'createIfMissing',
+        includeOutputDirInDiff: true,
       });
       console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
       created.push(diffPath);

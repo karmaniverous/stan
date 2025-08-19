@@ -1,4 +1,3 @@
-// rollup.config.ts
 /** See /stan.project.md for global requirements. */
 import aliasPlugin, { type Alias } from '@rollup/plugin-alias';
 import commonjsPlugin from '@rollup/plugin-commonjs';
@@ -34,21 +33,45 @@ const nodeExternals = new Set([
   ...builtinModules.map((m) => `node:${m}`),
 ]);
 
-const makePlugins = (minify: boolean): Plugin[] => {
+const copyDocsPlugin = (dest: string): Plugin => {
+  return {
+    name: 'stan-copy-docs',
+    async writeBundle() {
+      const fromA = path.resolve(__dirname, 'stan.system.md');
+      const fromB = path.resolve(__dirname, 'stan.project.template.md');
+      const toDir = path.resolve(__dirname, dest);
+      const toA = path.join(toDir, 'stan.system.md');
+      const toB = path.join(toDir, 'stan.project.template.md');
+      try {
+        await fs.ensureDir(toDir);
+        if (await fs.pathExists(fromA)) await fs.copyFile(fromA, toA);
+        if (await fs.pathExists(fromB)) await fs.copyFile(fromB, toB);
+      } catch {
+        // Non-fatal: docs copy is best-effort
+      }
+    },
+  };
+};
+
+const makePlugins = (minify: boolean, extras: Plugin[] = []): Plugin[] => {
   const base: Plugin[] = [
     alias,
     nodeResolve({ exportConditions: ['node', 'module', 'default'] }),
     commonjsPlugin(),
     jsonPlugin(),
     typescriptPlugin(),
+    ...extras,
   ];
   return minify
     ? [...base, terserPlugin({ format: { comments: false } })]
     : base;
 };
 
-const commonInputOptions = (minify: boolean): InputOptions => ({
-  plugins: makePlugins(minify),
+const commonInputOptions = (
+  minify: boolean,
+  extras: Plugin[] = [],
+): InputOptions => ({
+  plugins: makePlugins(minify, extras),
   onwarn(warning, defaultHandler) {
     // Delegate default handling for now
     defaultHandler(warning);
@@ -64,7 +87,11 @@ const outCommon = (dest: string): OutputOptions[] => [
 export const buildLibrary = (dest: string): RollupOptions => ({
   input: 'src/index.ts',
   output: outCommon(dest),
-  ...commonInputOptions(true), // minify library
+  ...commonInputOptions(
+    true,
+    // Copy doc assets once from the library config
+    [copyDocsPlugin(dest)],
+  ),
 });
 
 const discoverCliEntries = (): string[] => {
@@ -83,7 +110,7 @@ export const buildCli = (dest: string): RollupOptions => ({
       banner: '#!/usr/bin/env node',
     },
   ],
-  ...commonInputOptions(false), // do not minify CLI
+  ...commonInputOptions(false),
 });
 
 export const buildTypes = (dest: string): RollupOptions => ({

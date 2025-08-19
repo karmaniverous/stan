@@ -124,8 +124,8 @@
     "url": "git+https://github.com/karmaniverous/stan.git"
   },
   "scripts": {
-    "bootstrap": "concurrently -n archive,typecheck,lint,test,build,docs -c auto \"npm:bootstrap:archive\" \"npm:bootstrap:typecheck\" \"npm:bootstrap:lint\" \"npm:bootstrap:test\" \"npm:bootstrap:build\" \"npm:bootstrap:docs\"",
-    "bootstrap:archive": "tsx archive.ts",
+    "bootstrap": "concurrently -n typecheck,lint,test,build,docs -c auto \"npm:bootstrap:typecheck\" \"npm:bootstrap:lint\" \"npm:bootstrap:test\" \"npm:bootstrap:build\" \"npm:bootstrap:docs\" && npm bootstrap:archive",
+    "bootstrap:archive": "tsx bootstrap-archive.ts",
     "bootstrap:build": "rimraf stan.dist && rollup --config stan.rollup.config.ts --configPlugin @rollup/plugin-typescript > stan/build.txt 2>&1 && rimraf stan.dist",
     "bootstrap:docs": "npm run docs > stan/docs.txt 2>&1",
     "bootstrap:lint": "npm run lint > stan/lint.txt 2>&1",

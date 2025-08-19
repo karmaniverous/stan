@@ -1,6 +1,7 @@
+// stan.rollup.config.ts
 /** See /stan.project.md for global requirements. */
 
-import { buildCli, buildLibrary, buildTypes } from 'rollup.config';
+import { buildCli, buildLibrary, buildTypes } from './rollup.config';
 
 const outputPath = 'stan.dist';
 

@@ -1,5 +1,5 @@
-/* src/cli/stan/index.ts
- * REQUIREMENTS (current):
+// src/cli/stan/index.ts
+/* REQUIREMENTS (current):
  * - Export makeCli(): Command — root CLI factory for the "stan" tool.
  * - Register subcommands:
  *   - "run" subcommand for executing configured scripts (see /stan.project.md).
@@ -13,23 +13,28 @@
  *   before parsing (without polluting help output).
  * See /stan.project.md for global requirements.
  */
+
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { Command } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
+
 import { registerInit } from './init';
 import { registerRun } from './runner';
 
+/** Install a Commander exit override that swallows benign exits during tests. */
 const installExitOverride = (cmd: Command): void => {
   cmd.exitOverride((err) => {
     if (
       err.code === 'commander.helpDisplayed' ||
       err.code === 'commander.unknownCommand' ||
       err.code === 'commander.unknownOption'
-    )
+    ) {
+      // Commander already printed any relevant message. Do not call process.exit.
       return;
+    }
     throw err;
   });
 };
@@ -47,8 +52,61 @@ const normalizeArgv = (
 
 /** Patch parse() and parseAsync() to normalize argv before Commander parses. */
 const patchParseMethods = (cli: Command): void => {
-  const self = cli as unknown as {
+  const holder = cli as unknown as {
     parse: (argv?: readonly string[], opts?: unknown) => unknown;
     parseAsync: (argv?: readonly string[], opts?: unknown) => Promise<unknown>;
   };
- 
+
+  const origParse = holder.parse.bind(cli);
+  const origParseAsync = holder.parseAsync.bind(cli);
+
+  holder.parse = (argv?: readonly string[], opts?: unknown) =>
+    origParse(normalizeArgv(argv), opts);
+
+  holder.parseAsync = (argv?: readonly string[], opts?: unknown) =>
+    origParseAsync(normalizeArgv(argv), opts);
+};
+
+/** Build the root CLI (no side effects; safe for tests). */
+export const makeCli = (): Command => {
+  const cli = new Command();
+  cli
+    .name('stan')
+    .description(
+      'Generate reproducible STAN artifacts for AI-assisted development',
+    );
+
+  // Root-level help footer: show available script keys (including "archive")
+  cli.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
+
+  // Ensure tests never call process.exit()
+  installExitOverride(cli);
+
+  // Normalize test argv like ["node","stan", ...]
+  patchParseMethods(cli);
+
+  // Subcommands
+  registerRun(cli);
+  registerInit(cli);
+
+  return cli;
+};
+
+// Execute when run directly (built CLI)
+const isDirect = (() => {
+  try {
+    const self = resolve(fileURLToPath(import.meta.url));
+    const invoked = resolve(process.argv[1] ?? '');
+    return self === invoked;
+  } catch {
+    return false;
+  }
+})();
+
+if (isDirect) {
+  const cli = makeCli();
+  // Root override already installed inside makeCli()
+  // Parse process.argv (which will be normalized by our parse patch if needed)
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  cli.parseAsync();
+}

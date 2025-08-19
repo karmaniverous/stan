@@ -1,11 +1,11 @@
 // README.md
 
-# STAN — STAN Tames Architectural Nonsense
+# STAN — STAN Tames Autoregressive Nonsense
 
 > 🎲 **A tip of the hat to Stanisław Ulam.**  
 > In 1946, while recovering from illness and noodling over card games, Ulam helped ignite the **Monte Carlo method**—random sampling to tackle hard, deterministic problems.  
 > **STAN** brings a bit of that spirit to software: **S**ample your project, **T**ar it up, let your AI **A**nalyze, and have it **N**arrate with confidence.  
-> Also, yes: **STAN Tames Architectural Nonsense.** Because your repo shouldn’t gaslight your AI.
+> Also, yes: **STAN Tames Autoregressive Nonsense.** Because your repo shouldn’t gaslight your AI.
 
 **STAN** produces a _single source of truth_ for AI‑assisted development: a tarball of your repo plus deterministic outputs from your build/test/lint/typecheck scripts.  
 You get **portable, auditable, reproducible** context—locally and in CI.
@@ -23,7 +23,7 @@ Handing an AI “whatever happens to be in my editor” is unreliable. STAN enfo
 
 Result: **Sharper answers, fewer mistakes, repeatable reviews.**
 
-> **Backronym bonus:** **S**ample • **T**ar • **A**nalyze • **N**arrate — **STAN Tames Architectural Nonsense.**
+> **Backronym bonus:** **S**ample • **T**ar • **A**nalyze • **N**arrate — **STAN Tames Autoregressive Nonsense.**
 
 ---
 

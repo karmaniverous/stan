@@ -1,3 +1,4 @@
+// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (current + updated):
  * - Execute configured scripts; create per-script artifacts.
@@ -266,13 +267,20 @@ export const runSelected = async (
           files: string[],
         ) => Promise<void>;
       };
-      // Exclude <outputPath>/.diff from the combined tar contents.
+      // Exclude <outputPath>/.diff and the target tar itself to avoid self-inclusion.
       await tar.create(
         {
           file: tarPath,
           cwd,
-          filter: (p: string) =>
-            !(p === `${outRel}/.diff` || p.startsWith(`${outRel}/.diff/`)),
+          filter: (p: string) => {
+            if (p === `${outRel}/.diff` || p.startsWith(`${outRel}/.diff/`)) {
+              return false;
+            }
+            if (p === `${outRel}/${base}.tar`) {
+              return false; // prevent combined.tar from including itself
+            }
+            return true;
+          },
         },
         [outRel],
       );

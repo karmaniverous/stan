@@ -9,3 +9,4 @@ esm/
 node_modules/
 /stan.dist/
 /stan
+/stan.patch

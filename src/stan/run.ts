@@ -5,6 +5,8 @@
  * - Snapshot update occurs only if one does not exist (create) or via `stan snap`.
  * - NEW: pass updateSnapshot='createIfMissing' to createArchiveDiff.
  * - Combine mode remains; when archive is included, still write archive.diff.tar.
+ * - UPDATED: The plan summary printed before the script log should be attractively
+ *   formatted with newlines and clear labels, not a single line.
  */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
@@ -112,7 +114,7 @@ const combineTextOutputs = async (
   return combinedPath;
 };
 
-/** Render a short, plain-language summary of the run plan. */
+/** Render a readable, multi-line summary of the run plan. */
 const renderRunPlan = (args: {
   selection: Selection;
   config: ContextConfig;
@@ -130,17 +132,17 @@ const renderRunPlan = (args: {
   const keys = selection == null ? Object.keys(config.scripts) : selection;
   const scripts = (keys ?? []).filter((k) => k !== 'archive');
 
-  const parts = [
-    `STAN will run ${scripts.length.toString()} script(s) (${scripts.join(', ') || 'none'}) ${
-      mode === 'sequential' ? 'sequentially' : 'concurrently'
-    }`,
+  const lines = [
+    'STAN run plan',
+    `mode: ${mode === 'sequential' ? 'sequential' : 'concurrent'}`,
     `output: ${config.outputPath}/`,
+    `scripts: ${scripts.length ? scripts.join(', ') : 'none'}`,
     `archive: ${willArchive ? 'yes' : 'no'}`,
     `combine: ${behavior.combine ? 'yes' : 'no'}`,
     `diff: ${behavior.diff ? 'yes' : 'no'}`, // retained for compatibility
     `keep output dir: ${behavior.keep ? 'yes' : 'no'}`,
   ];
-  return `stan: ${parts.join('; ')}`;
+  return `stan:\n  ${lines.join('\n  ')}`;
 };
 
 export const runSelected = async (
@@ -154,7 +156,7 @@ export const runSelected = async (
   const outRel = config.outputPath;
   const outAbs = await ensureOutputDir(cwd, outRel, Boolean(behavior.keep));
 
-  // One-line plan summary (project-level directive).
+  // Multi-line plan summary (project-level directive).
   console.log(
     renderRunPlan({
       selection,

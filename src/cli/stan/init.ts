@@ -11,6 +11,12 @@
  * - Ensure stan.system.md and stan.project.md exist (from dist templates).
  * - After init, create/update the diff snapshot (and log a short message).
  * - Avoid process.exit in tests via exitOverride; swallow help-related codes.
+ *
+ * UPDATED REQUIREMENTS:
+ * - When a config already exists, "stan init" should re-run the interactive
+ *   process using current config values as defaults rather than exiting.
+ * - During interactive init, explicitly prompt the user to confirm resetting
+ *   the diff snapshot; honor their decision.
  */
 import { existsSync } from 'node:fs';
 import { copyFile, readFile, writeFile } from 'node:fs/promises';
@@ -22,7 +28,7 @@ import { packageDirectorySync } from 'package-directory';
 import YAML from 'yaml';
 
 import type { ContextConfig, ScriptMap } from '@/stan/config';
-import { ensureOutputDir, findConfigPathSync } from '@/stan/config';
+import { ensureOutputDir, findConfigPathSync, loadConfig } from '@/stan/config';
 import { writeArchiveSnapshot } from '@/stan/diff';
 
 /** Swallow Commander exits so tests never call process.exit. */
@@ -43,7 +49,7 @@ const installExitOverride = (cmd: Command): void => {
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
 
-/** Normalize argv from unit tests like ["node","stan", ...] -\> [...] */
+/** Normalize argv from unit tests like ["node","stan", ...] -> [...] */
 const normalizeArgv = (
   argv?: readonly string[],
 ): readonly string[] | undefined => {
@@ -131,47 +137,54 @@ const parseCsv = (v: string): string[] =>
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
-/** Prompt for interactive values when not forced. */
+/** Prompt for interactive values when not forced. Supports defaults. */
 const promptForConfig = async (
   cwd: string,
   pkgScripts: Record<string, string>,
+  defaults?: Partial<ContextConfig>,
 ): Promise<
   Pick<
     ContextConfig,
     'outputPath' | 'combinedFileName' | 'includes' | 'excludes' | 'scripts'
-  >
+  > & { resetDiff: boolean }
 > => {
   // Dynamic import to avoid hard dependency at type level.
   const { default: inquirer } = (await import('inquirer')) as {
-    default: { prompt: (qs: unknown[]) => Promise<Record<string, unknown>> };
+    default: {
+      prompt: (qs: unknown[]) => Promise<Record<string, unknown>>;
+    };
   };
 
   const scriptKeys = Object.keys(pkgScripts);
+  const defaultSelected = defaults?.scripts
+    ? Object.keys(defaults.scripts).filter((k) => scriptKeys.includes(k))
+    : [];
+
   const answers = await inquirer.prompt([
     {
       type: 'input',
       name: 'outputPath',
       message: 'Output directory:',
-      default: 'stan',
+      default: defaults?.outputPath ?? 'stan',
     },
     {
       type: 'input',
       name: 'combinedFileName',
       message: 'Base name for combined artifacts:',
-      default: 'combined',
+      default: defaults?.combinedFileName ?? 'combined',
     },
     {
       type: 'input',
       name: 'includes',
       message:
         'Paths to include (CSV; optional; overrides excludes when provided):',
-      default: '',
+      default: (defaults?.includes ?? []).join(','),
     },
     {
       type: 'input',
       name: 'excludes',
       message: 'Paths to exclude (CSV; optional):',
-      default: '',
+      default: (defaults?.excludes ?? []).join(','),
     },
     ...(scriptKeys.length
       ? [
@@ -183,20 +196,29 @@ const promptForConfig = async (
               name: `${k}: ${pkgScripts[k]}`,
               value: k,
             })),
+            default: defaultSelected,
             loop: false,
           },
         ]
       : []),
+    {
+      type: 'confirm',
+      name: 'resetDiff',
+      message: 'Reset diff snapshot now?',
+      default: true,
+    },
   ]);
 
   const pick = (n: string, def: string): string => {
     const v = answers[n];
     return typeof v === 'string' && v.trim().length > 0 ? v.trim() : def;
-    // includes/excludes handle empty to [] below
   };
 
-  const out = pick('outputPath', 'stan');
-  const combined = pick('combinedFileName', 'combined');
+  const out = pick('outputPath', defaults?.outputPath ?? 'stan');
+  const combined = pick(
+    'combinedFileName',
+    defaults?.combinedFileName ?? 'combined',
+  );
 
   const includesCsv = (answers['includes'] as string) ?? '';
   const excludesCsv = (answers['excludes'] as string) ?? '';
@@ -208,7 +230,7 @@ const promptForConfig = async (
     : [];
 
   const scripts: ScriptMap = {};
-  for (const key of selected) scripts[key] = pkgScripts[key];
+  for (const key of selected) scripts[key] = 'npm run ' + key;
 
   return {
     outputPath: out,
@@ -216,6 +238,7 @@ const promptForConfig = async (
     includes: includesCsv ? parseCsv(includesCsv) : [],
     excludes: excludesCsv ? parseCsv(excludesCsv) : [],
     scripts,
+    resetDiff: Boolean(answers.resetDiff),
   };
 };
 
@@ -224,12 +247,8 @@ export const performInit = async (
   { cwd = process.cwd(), force = false }: { cwd?: string; force?: boolean },
 ): Promise<string | null> => {
   const existing = findConfigPathSync(cwd);
-  if (existing && !force) {
-    // Ensure docs are present even if config already exists.
-    await ensureDocs(cwd);
-    return existing;
-  }
 
+  // We always ensure the base output dir exists (idempotent).
   const outRelDefault = 'stan';
   await ensureOutputDir(cwd, outRelDefault, true);
 
@@ -242,10 +261,21 @@ export const performInit = async (
     includes: [],
   };
 
+  let resetDiffNow = true;
+
   if (!force) {
-    // Interactive prompts
+    // Load existing (if any) to use as interactive defaults
+    let defaults: Partial<ContextConfig> | undefined;
+    if (existing) {
+      try {
+        defaults = await loadConfig(cwd);
+      } catch {
+        defaults = undefined;
+      }
+    }
+
     const scripts = await readPackageJsonScripts(cwd);
-    const picked = await promptForConfig(cwd, scripts);
+    const picked = await promptForConfig(cwd, scripts, defaults);
 
     config = {
       outputPath: picked.outputPath,
@@ -254,6 +284,7 @@ export const performInit = async (
       excludes: picked.excludes,
       scripts: picked.scripts,
     };
+    resetDiffNow = picked.resetDiff;
   }
 
   const cfgPath = path.join(cwd, 'stan.config.yml');
@@ -276,13 +307,17 @@ export const performInit = async (
   console.log(`stan: wrote stan.config.yml`);
 
   // Create or replace snapshot after init
-  await writeArchiveSnapshot({
-    cwd,
-    outputPath: config.outputPath,
-    includes: config.includes ?? [],
-    excludes: config.excludes ?? [],
-  });
-  console.log('stan: snapshot updated');
+  if (force || resetDiffNow) {
+    await writeArchiveSnapshot({
+      cwd,
+      outputPath: config.outputPath,
+      includes: config.includes ?? [],
+      excludes: config.excludes ?? [],
+    });
+    console.log('stan: snapshot updated');
+  } else {
+    console.log('stan: snapshot unchanged');
+  }
 
   return cfgPath;
 };
@@ -294,7 +329,7 @@ export const registerInit = (cli: Command): Command => {
   const sub = cli
     .command('init')
     .description(
-      'Create a stan.config.json|yml by scanning package.json scripts.',
+      'Create or update stan.config.json|yml by scanning package.json scripts.',
     );
 
   installExitOverride(sub);

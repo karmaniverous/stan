@@ -1,13 +1,14 @@
+outputPath: stan
 combinedFileName: combined
+includes: []
 excludes:
   - assets
   - docs
-outputPath: stan
 scripts:
-  build: npm run stan:build
-  docs: npm run docs
-  knip: npm run knip
-  lint: npm run lint
-  test: npm run test
-  typecheck: npm run typecheck
-
+  build: rimraf dist && rollup --config rollup.config.ts --configPlugin
+    @rollup/plugin-typescript
+  docs: typedoc
+  knip: knip
+  lint: eslint .
+  test: vitest --run --coverage
+  typecheck: tsc

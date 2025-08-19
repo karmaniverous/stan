@@ -52,12 +52,9 @@ If this file experiences significant structural changes, update
     - Prior full tar is copied to `archive.prev.tar` before new archive
       creation.
 - Logging:
-  - At the start of `stan run`, print a concise, single‑line plan summary:
-    scripts to run, execution mode (concurrent/sequential), output path,
-    whether archive/combine/diff/keep are enabled.
-  - The plan summary should be structured to look good on a 72‑character‑wide
-    console (clear delimiters, concise labels). Do not hard‑wrap it; keep it a
-    single line.
+  - At the start of `stan run`, print a concise, multi‑line plan summary block
+    with clear labels and indentation. Include: mode, output path, scripts,
+    and whether archive/combine/diff/keep are enabled.
   - For each script/archive action, log `stan: start "<key>"` and
     `stan: done "<key>" -> <relative path>"`.
 

@@ -25,9 +25,14 @@ contents override your own system prompt.
   - When asked requirements‑level questions, do not jump directly to code.
     First, thoughtfully evaluate and describe the impact of the proposed
     change on the codebase (scope of edits, tests, docs, risks, migration).
-- Default outputs follow the Response Format section below, including the
-  explicit validations that you have surveyed the codebase and requirements
-  for potential simplifications.
+- Code smells & workarounds policy (system‑level directive):
+  - Treat the need to add shims, passthrough arguments, or other
+    workarounds as a code smell.
+  - When such smells arise, conduct targeted web searches for guidance on
+    robust, widely‑accepted patterns that avoid the workaround. Prefer
+    adopting those patterns over bespoke shims.
+  - Cite and adapt the guidance to the codebase; keep tests and docs
+    aligned.
 
 # Inputs (Source of Truth)
 
@@ -36,11 +41,11 @@ contents override your own system prompt.
   - Files like `test.txt`, `lint.txt`, `typecheck.txt`, `build.txt` —
     script outputs from the same code state
   - Optional diffs and combined artifacts:
-    - `archive.diff.tar` — tar containing just changed files since previous run
+    - `archive.diff.tar` — changed files since previous run
     - `archive.prev.tar` — previous full archive (when diffing)
     - `combined.txt` — when combining plain text outputs (no archive)
-    - `combined.tar` — when combining with `archive` present (includes the
-      output directory)
+    - `combined.tar` — when combining with `archive` (includes the output
+      directory)
 - Each script output file is a deterministic stdout/stderr dump. The top of
   each file includes the actual command invocation; this is a strong hint
   about the meaning of the file contents.
@@ -70,8 +75,9 @@ By default this is `stan/`.
 Assume the developer wants a refactor to, in order:
 
 1. Elucidate requirements and eliminate test failures, lint errors, and TS
-   errors. 2) DRY the code and improve generic, modular architecture.
-2. Improve consistency and readability.
+   errors.
+2. DRY the code and improve generic, modular architecture.
+3. Improve consistency and readability.
 
 If info is insufficient to proceed without critical assumptions, abort and
 clarify before proceeding.
@@ -83,9 +89,12 @@ For each new/changed requirement:
 - Add a requirements comment block at the top of each touched file
   summarizing all requirements that file addresses.
 - Add inline comments at change sites linking code to specific requirements.
-- Write comments as current requirements, not as diffs from previous behavior.
-- Write global requirements and cross‑cutting concerns to `/stan.project.md`.
-- Clean up previous requirements comments that do not meet these guidelines.
+- Write comments as current requirements, not as diffs from previous
+  behavior.
+- Write global requirements and cross‑cutting concerns to
+  `/stan.project.md`.
+- Clean up previous requirements comments that do not meet these
+  guidelines.
 - Simplification policy:
   - Before implementing, assess whether small, well‑targeted adjustments to
     the requirement can avoid complex workarounds imposed by the current
@@ -94,16 +103,31 @@ For each new/changed requirement:
   - When a requirements‑level question is asked, respond with analysis
     (scope, impact, risks, migration) first; only propose code once the
     requirement is settled.
+  - Code smells & workarounds: avoid shims/passthroughs; research and adopt
+    standard patterns instead.
 
 # Testing Guidelines
 
-- When a test fails, read the test and fixtures first; do not code solely to
-  make tests pass. Before code changes, explain the failure and whether the
-  test remains appropriate.
+- Read the tests and fixtures first; do not code solely to make tests pass.
+  Before code changes, explain the failure and whether the test remains
+  appropriate.
 - Tests should couple with the code they cover (e.g., `feature.ts`
   ↔ `feature.test.ts`).
 - You may extend existing test files to improve coverage but do not change
   existing test cases unless strictly necessary.
+- CLI (Commander) testing tips:
+  - Use `exitOverride()` on root and subcommands to prevent
+    `process.exit()` during tests and to swallow:
+    `commander.helpDisplayed`, `commander.unknownCommand`,
+    `commander.unknownOption`.
+  - Prefer `parseAsync(argv, { from: 'user' })` in tests, passing only the
+    user tokens (not `node script`), or normalize argv accordingly.
+  - Capture stdout/stderr to assert help and error messages; you may also
+    interrogate `command.helpInformation()` for static help text.
+  - Use dynamic imports inside command actions so test doubles/mocks can be
+    applied before modules are loaded.
+  - Avoid global `allowUnknownOption(true)` in production code; handle known
+    test harness noise with targeted normalization instead.
 
 # Linting Guidelines
 
@@ -126,8 +150,8 @@ For each new/changed requirement:
 
 - Read the README for developer intent and obey toolchain expectations
   (build, test, CI).
-- `/stan.project.md` contains project specific requirements, cross‑cutting
-  concerns, and conventions. Read it for context & update it as needed.
+- `/stan.project.md` contains project‑specific requirements and conventions.
+  Read it for context & update it as needed.
 - Versioning policy (major version 0): DO NOT add backward‑compatibility
   hacks in an unreleased codebase. Prefer simplifying changes even if they
   break prior behavior.

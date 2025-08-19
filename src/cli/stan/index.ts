@@ -1,4 +1,3 @@
-// src/cli/stan/index.ts
 /* src/cli/stan/index.ts
  * REQUIREMENTS (current):
  * - Export makeCli(): Command — root CLI factory for the "stan" tool.
@@ -7,12 +6,11 @@
  *   - "init" subcommand to scaffold config and docs.
  * - Avoid invoking process.exit during tests; call cli.exitOverride() at the root.
  *   - IMPORTANT: When displaying help, do not throw in tests; ignore "helpDisplayed".
- *   - Also ignore "unknownCommand" and "unknownOption" to tolerate argv noise in test harnesses.
+ *   - Also ignore "unknownCommand" and "unknownOption".
  * - When executed directly (built CLI), parse argv.
  * - Help for root should include available script keys from config.
- * - Be tolerant of argv coming from test harnesses: ["node","stan", ...].
- *   - Implement hidden shim commands `node -> stan` and register run/init beneath to
- *     recognize both "stan run" and "node stan run" without polluting help output.
+ * - Be tolerant of unit-test argv like ["node","stan", ...] by normalizing argv
+ *   before parsing (without polluting help output).
  * See /stan.project.md for global requirements.
  */
 import { resolve } from 'node:path';
@@ -21,13 +19,11 @@ import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
-
 import { registerInit } from './init';
 import { registerRun } from './runner';
 
 const installExitOverride = (cmd: Command): void => {
   cmd.exitOverride((err) => {
-    // Avoid process.exit in tests; swallow routine Commander exits.
     if (
       err.code === 'commander.helpDisplayed' ||
       err.code === 'commander.unknownCommand' ||
@@ -38,50 +34,21 @@ const installExitOverride = (cmd: Command): void => {
   });
 };
 
-/** Hidden shims so tests can pass ["node", "stan", ...] and still reach real subcommands. */
-const registerTestHarnessShims = (cli: Command): void => {
-  // Hidden "node" command
-  const nodeShim = new Command('node');
-  nodeShim.hideHelp();
-  installExitOverride(nodeShim);
-
-  // Hidden "stan" beneath "node"
-  const stanShim = new Command('stan');
-  stanShim.hideHelp();
-  installExitOverride(stanShim);
-
-  // Register real subcommands under hidden chain
-  registerRun(stanShim);
-  registerInit(stanShim);
-
-  nodeShim.addCommand(stanShim);
-  cli.addCommand(nodeShim);
+/** Normalize argv from unit tests like ["node","stan", ...] -> [...]. */
+const normalizeArgv = (
+  argv?: readonly string[],
+): readonly string[] | undefined => {
+  if (!Array.isArray(argv)) return argv;
+  if (argv.length >= 2 && argv[0] === 'node' && argv[1] === 'stan') {
+    return argv.slice(2);
+  }
+  return argv;
 };
 
-export const makeCli = (): Command => {
-  const cli = new Command('stan');
-  cli.description('Generate STAN snapshots (archive + consistent outputs)');
-
-  // Avoid process.exit in tests or consumers expecting to manage errors themselves.
-  installExitOverride(cli);
-
-  // Subcommands (top-level)
-  registerRun(cli);
-  registerInit(cli);
-
-  // Hidden shims for argv like ["node","stan",...]
-  registerTestHarnessShims(cli);
-
-  // Help footer: list configured script keys
-  cli.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
-
-  return cli;
-};
-
-// Execute when invoked directly (not during unit tests which import makeCli()).
-const thisFile = fileURLToPath(import.meta.url);
-const invoked = process.argv[1] ? resolve(process.argv[1]) : '';
-if (invoked && resolve(thisFile) === invoked) {
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  makeCli().parseAsync(process.argv);
-}
+/** Patch parse() and parseAsync() to normalize argv before Commander parses. */
+const patchParseMethods = (cli: Command): void => {
+  const self = cli as unknown as {
+    parse: (argv?: readonly string[], opts?: unknown) => unknown;
+    parseAsync: (argv?: readonly string[], opts?: unknown) => Promise<unknown>;
+  };
+ 

@@ -1,45 +1,10 @@
-# Global & Cross‑Cutting Requirements
+# Project‑Specific Requirements
 
-This document is the single source of truth for project‑wide requirements. Individual files should not duplicate these; instead they include a short header like:
+This file contains STAN (this repo) specific requirements and conventions.
+General coding and testing standards live in `/stan.system.md`.
 
-> `/** See /stan.project.md for global requirements. */`
-
-Important: when this file experiences significant structural changes, update /stan.project.template.md to match so `stan init` scaffolds remain current.
-
-## TypeScript
-
-- **No `any`.** Prefer precise types and `unknown` + narrowing when needed.
-- **No type parameter defaults** that hide inference.
-- **Arrow functions** for all functions.
-- **Consistent naming** for variables/types/params.
-- **Use path alias** `@/*` for all non‑sibling imports. The alias is defined in `tsconfig.json`:
-  ```json
-  {
-    "compilerOptions": {
-      "baseUrl": ".",
-      "paths": { "@/*": ["src/*"] }
-    }
-  }
-  ```
-
-## Linting & Formatting
-
-- ESLint 9 flat config with:
-  - Base JS rules (`@eslint/js`).
-  - TypeScript via `typescript-eslint` (_type‑aware rules only under `src/**`_).
-  - Import sorting via `eslint-plugin-simple-import-sort`.
-  - Prettier enforced via `eslint-plugin-prettier`.
-  - Vitest plugin enabled for `*.test.*` files.
-  - JSON linting via `eslint-plugin-jsonc`.
-- Target **zero lint errors/warnings**.
-- Keep **typed rules** scoped to `src/**` to avoid requiring a TS project for root scripts (e.g., `archive.ts`).
-
-## Testing
-
-- Use **Vitest** with the config in `vitest.config.ts`.
-- **Do not change existing test cases** unless necessary to reflect the current design; you may add new cases.
-- Only **mock non‑local** dependencies (e.g., `tar`, child processes).
-- Tests should assert behavior, not implementation details.
+If this file experiences significant structural changes, update
+`/stan.project.template.md` to match so `stan init` scaffolds remain current.
 
 ## Build
 
@@ -48,25 +13,52 @@ Important: when this file experiences significant structural changes, update /st
   - `dist/cli` (executables, with shebang),
   - `dist/types` (d.ts bundle).
 - Use the `@` alias at build time via Rollup alias config.
+- The `stan.dist/` build is used for internal CLI testing (`npm run stan:build`)
+  and is cleaned after build.
 
-## CLI
+## CLI (repo tool behavior)
 
-- Use **`@commander-js/extra-typings`** for typed CLI definitions.
-- Export a **`makeCli()`** factory; no compatibility exports for earlier names.
-- Avoid `process.exit()` in library/CLI code so tests can run in‑process.
-- When executed as a script, run `await makeCli().parseAsync(process.argv)`.
-- Help: native `-h/--help` is enabled for the root and subcommands. During tests, `exitOverride` swallows `helpDisplayed` so the process does not exit.
-- Default selection: when invoked without explicit script keys, the CLI runs all configured scripts and implicitly adds the special `"archive"` job (unless explicitly excluded via `-e archive`).
+- Root command: `stan`.
+- Subcommands:
+  - `stan run [scripts...]` — run configured scripts to produce artifacts.
+  - `stan init` — scaffold config and docs (`stan.config.yml`, `.gitignore`,
+    project docs).
+- Avoid `process.exit()` inside CLI code; use Commander’s `exitOverride()` so
+  tests can parse without exiting.
+- Help:
+  - Native `-h/--help` enabled on root and subcommands.
+  - A dynamic help footer lists available script keys from config, including
+    the special `archive` key.
+- Selection & execution:
+  - When invoked without explicit script keys, `stan run` runs all configured
+    scripts and implicitly includes the special `"archive"` job (unless
+    excluded via `-e archive`).
+  - Default mode is concurrent for non‑archive scripts.
+  - Archive execution is serialized: STAN always runs `"archive"` after other
+    scripts complete, even in concurrent mode, to avoid file‑handle collisions
+    with in‑flight build steps.
+- Combine & diff:
+  - `-c/--combine`:
+    - If `archive` is present, STAN writes a single `<combined>.tar` that
+      includes the output directory (no separate `archive.tar`).
+    - If `archive` is not present, STAN writes `<combined>.txt` containing
+      per‑script outputs.
+    - The base name is configured by `combinedFileName` (defaults to
+      `"combined"`).
+  - `-d/--diff`:
+    - When `archive` is included, STAN writes `archive.diff.tar` containing
+      only changed files since the last run and maintains
+      `<outputPath>/.archive.snapshot.json`.
+    - Prior full tar is copied to `archive.prev.tar` before new archive
+      creation.
 
 ## Configuration Resolution
 
-- The tool may be installed **globally**; be robust to arbitrary **cwd**:
-  - Resolve the package root using [`package-directory`](https://www.npmjs.com/package/package-directory).
-  - Look for `stan.config.json|yml` **at the package root**.
+- The tool may be installed globally; be robust to arbitrary `cwd`:
+  - Resolve the package root using `package-directory`.
+  - Look for `stan.config.json|yml` at the package root or current `cwd`.
 
 ## Context Config Shape
-
-`ContextConfig` (see `src/stan/config.ts`) supports:
 
 ```ts
 type ContextConfig = {
@@ -75,17 +67,22 @@ type ContextConfig = {
   /** Override .gitignore behavior for archiving (prefix paths, non‑globbing). */
   includes?: string[];
   excludes?: string[];
+  /** Base name for combined artifacts; defaults to "combined". */
+  combinedFileName?: string;
 };
 ```
 
-- `includes` and `excludes` are **path prefixes** (non‑glob) relative to the package root.
-- Precedence: **includes override excludes**. When `includes` is defined, it acts as an allow‑list (only included prefixes are considered).
-- The output directory is excluded from archives **unless** `--combine` is used (in which case it is included).
+- `includes` and `excludes` are path prefixes (non‑glob) relative to the
+  package root.
+- Precedence: includes override excludes. When `includes` is defined, it acts
+  as an allow‑list (only included prefixes are considered).
+- The output directory is excluded from archives unless `--combine` is used
+  (in which case it is included).
 
 ## UX / Help
 
-- If no scripts are selected **or created artifacts array is empty**, print the available keys:
-  `renderAvailableScriptsHelp(cwd)`.
+- If no scripts are selected or created artifacts array is empty, print the
+  available keys: `renderAvailableScriptsHelp(cwd)`.
 
 ## Logging
 
@@ -95,9 +92,22 @@ type ContextConfig = {
 
 ## Artifacts
 
-- The `order.txt` file is a test harness artifact used to assert execution order. It is written only when `NODE_ENV==='test'` or when explicitly enabled by `STAN_WRITE_ORDER=1`. It is not produced during normal CLI runs.
+- Default output directory is configured by `outputPath` (often `stan/`).
+- Per‑script artifacts: `<outputPath>/<key>.txt` combine stdout + stderr.
+- Archive artifacts:
+  - `<outputPath>/archive.tar` (when not using `--combine`).
+  - `<outputPath>/archive.diff.tar` (with `--diff`).
+  - `<outputPath>/archive.prev.tar` (when diffing).
+- Combine artifacts:
+  - `<outputPath>/<combined>.tar` when `archive` is included.
+  - `<outputPath>/<combined>.txt` when `archive` is not included.
+- Test harness artifact `order.txt`:
+  - Written only when `NODE_ENV==='test'` or `STAN_WRITE_ORDER==='1'`.
+  - Not produced during normal CLI runs.
 
-## Misc
+## Notes & Pointers
 
-- Use Node ESM (`"type": "module"`).
+- General TypeScript, linting, and testing standards — including Commander
+  testing tips — are defined in `/stan.system.md` and apply here.
+- This repository uses Node ESM (`"type": "module"`).
 - Use `radash` only when it improves clarity & brevity.

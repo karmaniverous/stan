@@ -1,4 +1,3 @@
-// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (current):
  * - Execute configured scripts under ContextConfig in either 'concurrent' or 'sequential' mode.
@@ -59,9 +58,7 @@ const normalizeSelection = (
   const requested = new Set(selection);
   const ordered = all.filter((k) => requested.has(k));
 
-  // Preserve explicit request for special 'archive' even though it is not in config.scripts.
   if (requested.has('archive')) ordered.push('archive');
-
   return ordered;
 };
 
@@ -98,7 +95,6 @@ const runOne = async (
     child.on('close', () => resolveP());
   });
   stream.end();
-  // Ensure OS file handle is released before proceeding (prevents EBUSY on Windows).
   await waitForStreamClose(stream);
 
   if (orderFile) {
@@ -139,7 +135,6 @@ export const runSelected = async (
   const outRel = config.outputPath;
   const outAbs = await ensureOutputDir(cwd, outRel, Boolean(behavior.keep));
 
-  // Gate order.txt for tests or explicit opt-in.
   const shouldWriteOrder =
     process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
 
@@ -151,11 +146,9 @@ export const runSelected = async (
   const baseKeys = normalizeSelection(selection, config);
   if (baseKeys.length === 0) return [];
 
-  // Default include archive when no explicit selection is provided.
   const includeArchiveByDefault = selection == null || selection.length === 0;
   const hasArchive = includeArchiveByDefault || baseKeys.includes('archive');
 
-  // Exclude 'archive' from normal script execution; it is handled separately below.
   const toRun = baseKeys.filter((k) => k !== 'archive');
 
   const created: string[] = [];
@@ -168,7 +161,7 @@ export const runSelected = async (
     for (const k of toRun) {
       await runner(k);
     }
-    // Archive after others (sequential).
+    // Archive after others
     if (hasArchive && !behavior.combine) {
       console.log('stan: start "archive"');
       const archivePath = await createArchive(cwd, outRel, {
@@ -194,14 +187,13 @@ export const runSelected = async (
       }
     }
   } else {
-    // Concurrent for non-archive tasks
+    // Run non-archive tasks concurrently
     const tasks: Array<Promise<void>> = toRun.map((k) =>
       runner(k).then(() => void 0),
     );
-
     await Promise.all(tasks);
 
-    // Archive AFTER other tasks to avoid file-handle collisions.
+    // Archive AFTER other tasks (avoid collisions)
     if (hasArchive && !behavior.combine) {
       console.log('stan: start "archive"');
       const archivePath = await createArchive(cwd, outRel, {

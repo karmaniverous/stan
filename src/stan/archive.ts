@@ -16,6 +16,11 @@
  * - Maintain a previous full archive copy at <outputPath>/.diff/archive.prev.tar:
  *   - Before writing a new archive, if <outputPath>/archive.tar exists, copy it to .diff/archive.prev.tar.
  *   - After writing a new archive, if .diff/archive.prev.tar does not exist (first run), copy the new archive to .diff/archive.prev.tar.
+ *
+ * UPDATE:
+ * - When includeOutputDir === true, force-add <outputPath> as a directory entry and
+ *   filter out <outputPath>/.diff and both archive files to guarantee output
+ *   directory contents are included.
  */
 import { existsSync } from 'node:fs';
 import { copyFile, mkdir } from 'node:fs/promises';
@@ -25,7 +30,11 @@ import { filterFiles, listFiles } from './fs';
 
 type TarLike = {
   create: (
-    opts: { file: string; cwd?: string },
+    opts: {
+      file: string;
+      cwd?: string;
+      filter?: (path: string, stat: unknown) => boolean;
+    },
     files: string[],
   ) => Promise<void>;
 };
@@ -82,7 +91,29 @@ export const createArchive = async (
   // Dynamic import across package boundary; local type TarLike narrows to the
   // subset we need. Cast justified and localized at the boundary.
   const tar = (await import('tar')) as unknown as TarLike;
-  await tar.create({ file: archivePath, cwd }, files);
+
+  if (includeOutputDir) {
+    // Ensure output directory is included regardless of file enumeration
+    const filesToPack = Array.from(new Set([...files, outputPath]));
+    const isUnder = (prefix: string, p: string): boolean =>
+      p === prefix || p.startsWith(`${prefix}/`);
+
+    await tar.create(
+      {
+        file: archivePath,
+        cwd,
+        filter: (p: string) =>
+          !(
+            isUnder(`${outputPath}/.diff`, p) ||
+            p === `${outputPath}/archive.tar` ||
+            p === `${outputPath}/archive.diff.tar`
+          ),
+      },
+      filesToPack,
+    );
+  } else {
+    await tar.create({ file: archivePath, cwd }, files);
+  }
 
   // Ensure prev exists on first run.
   if (!existsSync(prevPath)) {

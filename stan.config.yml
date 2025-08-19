@@ -5,10 +5,11 @@ excludes:
   - assets
   - docs
 scripts:
-  build: npm run build
-  docs: npm run docs
+  build: npm run stan:build
+  docs: npm run stan:docs
   knip: npm run knip
   lint: npm run lint
   test: npm run test
   typecheck: npm run typecheck
 defaultPatchFile: /stan.patch
+

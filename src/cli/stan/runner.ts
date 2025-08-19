@@ -1,4 +1,3 @@
-// src/cli/stan/runner.ts
 /**
  * REQUIREMENTS (current):
  * - Register subcommand `stan run` with:
@@ -73,7 +72,7 @@ export const registerRun = (cli: Command): Command => {
       const selection = computeSelection(
         keys,
         enumeratedClean ?? null,
-        opts.except as string[] | undefined,
+        (opts as { except?: string[] }).except,
       );
 
       const mode: ExecutionMode = (opts as { sequential?: boolean }).sequential

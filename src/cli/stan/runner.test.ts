@@ -1,4 +1,3 @@
-// src/cli/stan/runner.test.ts
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';

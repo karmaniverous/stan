@@ -1,4 +1,3 @@
-// src/cli/stan/index.ts
 /* src/cli/stan/index.ts
  * REQUIREMENTS (current):
  * - Export makeCli(): Command — root CLI factory for the "stan" tool.

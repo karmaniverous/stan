@@ -1,4 +1,3 @@
-// src/stan/help.ts
 /**
  * REQUIREMENTS (current):
  * - Render a help footer listing available script keys from the discovered config.

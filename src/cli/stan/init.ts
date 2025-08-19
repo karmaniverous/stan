@@ -31,62 +31,10 @@ import type { ContextConfig, ScriptMap } from '@/stan/config';
 import { ensureOutputDir, findConfigPathSync, loadConfig } from '@/stan/config';
 import { writeArchiveSnapshot } from '@/stan/diff';
 
-/** Swallow Commander exits so tests never call process.exit. */
-const installExitOverride = (cmd: Command): void => {
-  cmd.exitOverride((err) => {
-    if (
-      err.code === 'commander.helpDisplayed' ||
-      err.code === 'commander.unknownCommand' ||
-      err.code === 'commander.unknownOption' ||
-      err.code === 'commander.help'
-    )
-      return;
-    // Commander has already printed any relevant message.
-    throw err;
-  });
-};
+import { applyCliSafety } from './cli-utils';
 
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
-
-/** Normalize argv from unit tests like ["node","stan", ...] -> [...] */
-const normalizeArgv = (
-  argv?: readonly string[],
-): readonly string[] | undefined => {
-  if (!isStringArray(argv)) return undefined;
-  if (argv.length >= 2 && argv[0] === 'node' && argv[1] === 'stan') {
-    return argv.slice(2);
-  }
-  return argv;
-};
-
-/** Patch parse()/parseAsync() on an arbitrary Command instance (used in tests). */
-const patchParseMethods = (cli: Command): void => {
-  type FromOpt = { from?: 'user' | 'node' };
-  type ParseFn = (argv?: readonly string[], opts?: FromOpt) => Command;
-  type ParseAsyncFn = (
-    argv?: readonly string[],
-    opts?: FromOpt,
-  ) => Promise<Command>;
-
-  const holder = cli as unknown as {
-    parse: ParseFn;
-    parseAsync: ParseAsyncFn;
-  };
-
-  const origParse = holder.parse.bind(cli);
-  const origParseAsync = holder.parseAsync.bind(cli);
-
-  holder.parse = (argv?: readonly string[], opts?: FromOpt) => {
-    origParse(normalizeArgv(argv), opts);
-    return cli;
-  };
-
-  holder.parseAsync = async (argv?: readonly string[], opts?: FromOpt) => {
-    await origParseAsync(normalizeArgv(argv), opts);
-    return cli;
-  };
-};
 
 const readPackageJsonScripts = async (
   cwd: string,
@@ -318,8 +266,7 @@ export const performInit = async (
 };
 
 export const registerInit = (cli: Command): Command => {
-  installExitOverride(cli);
-  patchParseMethods(cli);
+  applyCliSafety(cli);
 
   const sub = cli
     .command('init')
@@ -327,7 +274,7 @@ export const registerInit = (cli: Command): Command => {
       'Create or update stan.config.json|yml by scanning package.json scripts.',
     );
 
-  installExitOverride(sub);
+  applyCliSafety(sub);
 
   sub.option(
     '-f, --force',

@@ -2,10 +2,19 @@
 /**
  * Test setup
  * - Avoid Windows EBUSY on rm(tempDir) by ensuring we are not inside the directory being removed.
+ *   We reset cwd before and after each test to a neutral location.
  */
 import { tmpdir } from 'node:os';
 
-import { afterEach } from 'vitest';
+import { afterEach, beforeEach } from 'vitest';
+
+beforeEach(() => {
+  try {
+    process.chdir(tmpdir());
+  } catch {
+    // ignore
+  }
+});
 
 afterEach(() => {
   try {

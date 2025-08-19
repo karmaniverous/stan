@@ -23,10 +23,10 @@
  *   directory contents are included.
  */
 import { existsSync } from 'node:fs';
-import { copyFile, mkdir } from 'node:fs/promises';
+import { copyFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { filterFiles, listFiles } from './fs';
+import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
 
 type TarLike = {
   create: (
@@ -61,11 +61,7 @@ export const createArchive = async (
   let fileName = rawFileName ?? 'archive.tar';
   if (!fileName.endsWith('.tar')) fileName += '.tar';
 
-  const outDir = resolve(cwd, outputPath);
-  await mkdir(outDir, { recursive: true });
-
-  const diffDir = resolve(outDir, '.diff');
-  await mkdir(diffDir, { recursive: true });
+  const { outDir, diffDir } = await ensureOutAndDiff(cwd, outputPath);
 
   const all = await listFiles(cwd);
   const files = await filterFiles(all, {

@@ -16,10 +16,10 @@
  */
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import { filterFiles, listFiles } from './fs';
+import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
 
 type TarLike = {
   create: (
@@ -53,20 +53,6 @@ const snapshotPathFor = (outDir: string): string =>
 
 const sentinelPathFor = (outDir: string): string =>
   join(outDir, '.diff', '.stan_no_changes');
-
-const ensureOutAndDiff = async (
-  cwd: string,
-  outputPath: string,
-): Promise<{
-  outDir: string;
-  diffDir: string;
-}> => {
-  const outDir = resolve(cwd, outputPath);
-  await mkdir(outDir, { recursive: true });
-  const diffDir = join(outDir, '.diff');
-  await mkdir(diffDir, { recursive: true });
-  return { outDir, diffDir };
-};
 
 /**
  * Compute (and optionally update) the snapshot file in <outputPath>/.diff/.

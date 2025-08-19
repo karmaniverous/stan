@@ -3,7 +3,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { readdir, readFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 /** Recursively enumerate files under `root`, returning posix-style relative paths. */
@@ -81,4 +81,16 @@ export const filterFiles = async (
     return files.filter((f) => includes.some((p) => matchesPrefix(f, p)));
   }
   return files.filter((f) => !deny.some((p) => matchesPrefix(f, p)));
+};
+
+/** Ensure <outputPath> and <outputPath>/.diff exist, returning their absolute paths. */
+export const ensureOutAndDiff = async (
+  cwd: string,
+  outputPath: string,
+): Promise<{ outDir: string; diffDir: string }> => {
+  const outDir = resolve(cwd, outputPath);
+  await mkdir(outDir, { recursive: true });
+  const diffDir = join(outDir, '.diff');
+  await mkdir(diffDir, { recursive: true });
+  return { outDir, diffDir };
 };

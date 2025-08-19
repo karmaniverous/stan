@@ -49,7 +49,11 @@ export const registerRun = (cli: Command): Command => {
   cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
 
   cmd.action(
-    async (enumerated: string[] | undefined, opts: Record<string, unknown>) => {
+    async (
+      enumerated: string[] | undefined,
+      opts: Record<string, unknown>,
+      command: Command,
+    ) => {
       const cwd = process.cwd();
 
       // Dynamic import to ensure Vitest mocks are respected in tests.
@@ -58,7 +62,6 @@ export const registerRun = (cli: Command): Command => {
       // Guard loadConfig to avoid undefined in mocked/test scenarios.
       let maybe: unknown;
       try {
-        // eslint-disable-next-line @typescript-eslint/await-thenable
         maybe = await cfgMod.loadConfig(cwd);
       } catch {
         maybe = undefined;
@@ -82,11 +85,18 @@ export const registerRun = (cli: Command): Command => {
 
       const keys = Object.keys(config.scripts);
 
+      // Determine operands robustly: prefer Commander-provided `enumerated`,
+      // but fall back to `command.args` when needed.
+      const rawArgs =
+        Array.isArray(enumerated) && enumerated.length > 0
+          ? enumerated
+          : (command?.args ?? []);
+
       // Sanitize enumerated args: ignore stray tokens not matching known keys
       const known = new Set([...keys, 'archive']);
       const enumeratedClean =
-        Array.isArray(enumerated) && enumerated.length
-          ? enumerated.filter((k) => known.has(k))
+        Array.isArray(rawArgs) && rawArgs.length
+          ? rawArgs.filter((k) => known.has(k))
           : undefined;
 
       const selection = computeSelection(

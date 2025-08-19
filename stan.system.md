@@ -164,7 +164,7 @@ Then, when you produce code changes:
 - full file listing in a 10‑backtick fence (no elisions)
   - Place the file path as an H2 markdown header line immediately above
     and outside the code block in the exact form:
-    `## <path-from-repo-root>`
+    `## path-from-repo-root`
   - Do not insert the file path as a comment inside the code listing
 
 After all file listings, include the commit message:

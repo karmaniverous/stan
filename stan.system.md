@@ -94,7 +94,7 @@ Then, when you produce code changes:
 - **path from repo root**
 - **explanation of changes** (link to requirements)
 - **full file listing** in a 10‑backtick fence (no elisions)
-  - Place the file path as a header line immediately above the code block in the form: `path: <path-from-repo-root>`
+  - Place the file path as a markdown header line immediately above and outside the code block in the form: `<path-from-repo-root>`
   - Do not insert the file path as a comment inside the code listing
 
 After all file listings, include the commit message:

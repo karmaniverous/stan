@@ -17,7 +17,13 @@ const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 export default [
   // Ignore generated and third‑party artifacts
   {
-    ignores: ['dist/**', '.rollup.cache/**', 'coverage/**', 'node_modules/**'],
+    ignores: [
+      'dist/**',
+      '.rollup.cache/**',
+      'coverage/**',
+      'node_modules/**',
+      'docs/**',
+    ],
   },
 
   // Base JS

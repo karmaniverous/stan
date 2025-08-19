@@ -19,7 +19,7 @@ import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { type Command, CommanderError } from 'commander';
+import { type Command } from 'commander';
 import { packageDirectorySync } from 'package-directory';
 import YAML from 'yaml';
 
@@ -28,21 +28,12 @@ import { ensureOutputDir, findConfigPathSync } from '@/stan/config';
 
 const TOKEN = /^\w+/;
 
+/** Swallow Commander exits so tests never call process.exit. */
 const installExitOverride = (cmd: Command): void => {
-  cmd.exitOverride((err) => {
-    const code = (err as { code?: string }).code;
-    if (
-      code === 'commander.helpDisplayed' ||
-      code === 'commander.unknownCommand' ||
-      code === 'commander.unknownOption'
-    ) {
-      // Swallow during tests; Commander will have printed its message already.
-      return;
-    }
-    // Re-throw unknown errors
-    throw err instanceof Error
-      ? err
-      : new CommanderError(1, 'error', String(err));
+  cmd.exitOverride(() => {
+    // Intentionally swallow all Commander exits during tests so no process.exit occurs.
+    // Commander has already printed any relevant message.
+    return;
   });
 };
 

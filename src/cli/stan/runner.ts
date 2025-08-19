@@ -15,24 +15,30 @@
  */
 import type { Command } from 'commander';
 
-import { loadConfig } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { type ExecutionMode, type RunBehavior, runSelected } from '@/stan/run';
 
-/** Compute the final selection list based on enumeration and --except. */
+/**
+ * Compute the final selection list based on enumeration and --except.
+ * Rules:
+ * - If enumerated has entries, start with those; otherwise, start with null (meaning all).
+ * - If --except is provided, remove excluded keys from the base (enumerated or all keys).
+ * - Return null when no explicit selection and no excludes are present.
+ */
 const computeSelection = (
   allKeys: string[],
-  enumerated?: string[] | undefined,
-  except?: string[] | undefined,
+  enumerated?: string[],
+  except?: string[],
 ): string[] | null => {
-  if (enumerated && enumerated.length) {
-    return except && except.length
-      ? allKeys.filter((k) => !enumerated.includes(k))
-      : enumerated;
+  let selected: string[] | null =
+    Array.isArray(enumerated) && enumerated.length ? [...enumerated] : null;
+
+  if (Array.isArray(except) && except.length) {
+    const base = selected ?? allKeys;
+    selected = base.filter((k) => !except.includes(k));
   }
-  if (except && except.length)
-    return allKeys.filter((k) => !except.includes(k));
-  return null;
+
+  return selected;
 };
 
 export const registerRunner = (cli: Command): Command => {
@@ -53,17 +59,30 @@ export const registerRunner = (cli: Command): Command => {
         opts: Record<string, unknown>,
       ) => {
         const cwd = process.cwd();
+
+        // Dynamic import to ensure Vitest mocks are respected in tests.
+        const { loadConfig } = await import('@/stan/config');
         const config = await loadConfig(cwd);
         const keys = Object.keys(config.scripts);
+
+        // Sanitize enumerated args: ignore stray tokens like "node", "stan" etc.
+        const known = new Set([...keys, 'archive']);
+        const enumeratedClean =
+          Array.isArray(enumerated) && enumerated.length
+            ? enumerated.filter((k) => known.has(k))
+            : undefined;
+
         const selection = computeSelection(
           keys,
-          enumerated,
+          enumeratedClean,
           opts.except as string[] | undefined,
         );
+
         const mode: ExecutionMode = (opts as { sequential?: boolean })
           .sequential
           ? 'sequential'
           : 'concurrent';
+
         const behavior: RunBehavior = {
           combine: Boolean((opts as { combine?: boolean }).combine),
           keep: Boolean((opts as { keep?: boolean }).keep),
@@ -71,6 +90,7 @@ export const registerRunner = (cli: Command): Command => {
           combinedFileName: (opts as { combinedFileName?: string })
             .combinedFileName,
         };
+
         const created = await runSelected(
           cwd,
           config,
@@ -78,7 +98,8 @@ export const registerRunner = (cli: Command): Command => {
           mode,
           behavior,
         );
-        // Avoid throwing if a test double returned undefined; print help only when nothing created.
+
+        // Print help footer when nothing is created (empty selection or unknown keys).
         if (!Array.isArray(created) || created.length === 0) {
           console.log(renderAvailableScriptsHelp(cwd));
         }

@@ -23,6 +23,8 @@ If this file experiences significant structural changes, update
   - `stan run [scripts...]` — run configured scripts to produce artifacts.
   - `stan init` — scaffold config and docs (`stan.config.yml`, `.gitignore`,
     project docs).
+  - `stan snap` — create/replace the diff snapshot (without writing an archive).
+  - `stan patch [file]` — apply a git patch (defaults to `defaultPatchFile`).
 - Avoid `process.exit()` inside CLI code; use Commander’s `exitOverride()` so
   tests can parse without exiting.
 - Help:
@@ -70,11 +72,11 @@ If this file experiences significant structural changes, update
 type ContextConfig = {
   outputPath: string;
   scripts: Record<string, string>;
-  /** Override .gitignore behavior for archiving (prefix paths, non‑globbing). */
   includes?: string[];
   excludes?: string[];
-  /** Base name for combined artifacts; defaults to "combined". */
   combinedFileName?: string;
+  /** Default patch filename for `stan patch`; defaults to '/stan.patch'. */
+  defaultPatchFile?: string;
 };
 ```
 

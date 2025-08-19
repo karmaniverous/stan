@@ -17,6 +17,9 @@
  * - Before clearing (when keep===false), if `<outputPath>/archive.tar` exists, copy it to `.diff/archive.prev.tar`.
  * - Migrate legacy `<outputPath>/.archive.snapshot.json` into `<outputPath>/.diff/`.
  * - Zero "any" usage.
+ *
+ * UPDATED REQUIREMENTS:
+ * - Add `defaultPatchFile?: string` to ContextConfig, defaulting to '/stan.patch'.
  */
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { copyFile, mkdir, readdir, readFile } from 'node:fs/promises';
@@ -36,10 +39,15 @@ export type ContextConfig = {
   excludes?: string[];
   /** Base name for combined artifacts; defaults to "combined" when not configured. */
   combinedFileName?: string;
+  /** Default patch filename for `stan patch`; default '/stan.patch' if unspecified. */
+  defaultPatchFile?: string;
 };
 
 const normalizeCombinedName = (v: unknown): string =>
   typeof v === 'string' && v.trim().length > 0 ? v.trim() : 'combined';
+
+const normalizeDefaultPatchFile = (v: unknown): string =>
+  typeof v === 'string' && v.trim().length > 0 ? v.trim() : '/stan.patch';
 
 const parseFile = async (abs: string): Promise<ContextConfig> => {
   const raw = await readFile(abs, 'utf8');
@@ -52,6 +60,8 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const combinedFileName = (cfg as { combinedFileName?: unknown })
     .combinedFileName;
+  const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
+    .defaultPatchFile;
 
   if (typeof outputPath !== 'string' || outputPath.length === 0) {
     throw new Error('Invalid config: "outputPath" must be a non-empty string');
@@ -70,6 +80,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
     combinedFileName: normalizeCombinedName(combinedFileName),
+    defaultPatchFile: normalizeDefaultPatchFile(defaultPatchFile),
   };
 };
 
@@ -108,6 +119,8 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const combinedFileName = (cfg as { combinedFileName?: unknown })
     .combinedFileName;
+  const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
+    .defaultPatchFile;
 
   if (typeof outputPath !== 'string' || outputPath.length === 0) {
     throw new Error('Invalid config: "outputPath" must be a non-empty string');
@@ -125,6 +138,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
     combinedFileName: normalizeCombinedName(combinedFileName),
+    defaultPatchFile: normalizeDefaultPatchFile(defaultPatchFile),
   };
 };
 

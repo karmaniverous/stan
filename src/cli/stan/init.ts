@@ -17,6 +17,7 @@
  *   process using current config values as defaults rather than exiting.
  * - During interactive init, explicitly prompt the user to confirm resetting
  *   the diff snapshot; honor their decision.
+ * - Persist `defaultPatchFile` to config (default '/stan.patch').
  */
 import { existsSync } from 'node:fs';
 import { copyFile, readFile, writeFile } from 'node:fs/promises';
@@ -248,7 +249,6 @@ export const performInit = async (
 ): Promise<string | null> => {
   const existing = findConfigPathSync(cwd);
 
-  // We always ensure the base output dir exists (idempotent).
   const outRelDefault = 'stan';
   await ensureOutputDir(cwd, outRelDefault, true);
 
@@ -259,6 +259,7 @@ export const performInit = async (
     combinedFileName: 'combined',
     excludes: [], // UPDATED: no default excludes
     includes: [],
+    defaultPatchFile: '/stan.patch',
   };
 
   let resetDiffNow = true;
@@ -283,6 +284,7 @@ export const performInit = async (
       includes: picked.includes,
       excludes: picked.excludes,
       scripts: picked.scripts,
+      defaultPatchFile: defaults?.defaultPatchFile ?? '/stan.patch',
     };
     resetDiffNow = picked.resetDiff;
   }

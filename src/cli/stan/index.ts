@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
+import { registerPatch } from '@/stan/patch';
 import { registerSnap } from '@/stan/snap';
 
 import { performInit, registerInit } from './init';
@@ -97,6 +98,7 @@ export const makeCli = (): Command => {
   registerRun(cli);
   registerInit(cli);
   registerSnap(cli);
+  registerPatch(cli);
 
   // Root action:
   // - If config is missing: run interactive init (not forced) and create a snapshot.

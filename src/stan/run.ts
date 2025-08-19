@@ -1,3 +1,4 @@
+// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (current + updated):
  * - Execute configured scripts; create per-script artifacts.
@@ -13,10 +14,10 @@ import { createWriteStream } from 'node:fs';
 import { appendFile, readFile, writeFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 
-import { createArchive } from '@/stan/archive';
-import type { ContextConfig } from '@/stan/config';
-import { ensureOutputDir } from '@/stan/config';
-import { createArchiveDiff } from '@/stan/diff';
+import { createArchive } from './archive';
+import type { ContextConfig } from './config';
+import { ensureOutputDir } from './config';
+import { createArchiveDiff } from './diff';
 
 export type Selection = string[] | null;
 export type ExecutionMode = 'concurrent' | 'sequential';

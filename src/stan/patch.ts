@@ -1,3 +1,4 @@
+// src/cli/stan/patch.ts
 /* src/cli/stan/patch.ts
  * "stan patch" subcommand: syntactic sugar over `git apply`.
  * - Defaults to config.defaultPatchFile (default '/stan.patch').
@@ -8,7 +9,7 @@ import path from 'node:path';
 
 import type { Command } from 'commander';
 
-import { loadConfig } from '@/stan/config';
+import { loadConfig } from './config';
 
 const installExitOverride = (cmd: Command): void => {
   cmd.exitOverride((err) => {

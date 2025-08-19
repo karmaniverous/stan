@@ -1,3 +1,4 @@
+// src/cli/stan/snap.ts
 /* src/cli/stan/snap.ts
  * "stan snap" subcommand: create/replace the diff snapshot explicitly.
  */
@@ -71,8 +72,8 @@ export const registerSnap = (cli: Command): Command => {
 
   sub.action(async () => {
     const cwd = process.cwd();
-    const cfgMod = await import('@/stan/config');
-    const diffMod = await import('@/stan/diff');
+    const cfgMod = await import('./config');
+    const diffMod = await import('./diff');
 
     let maybe: unknown;
     try {

@@ -5,10 +5,10 @@ excludes:
   - assets
   - docs
 scripts:
-  build: rimraf dist && rollup --config rollup.config.ts --configPlugin
-    @rollup/plugin-typescript
-  docs: typedoc
-  knip: knip
-  lint: eslint .
-  test: vitest --run --coverage
-  typecheck: tsc
+  build: npm run build
+  docs: npm run docs
+  knip: npm run knip
+  lint: npm run lint
+  test: npm run test
+  typecheck: npm run typecheck
+defaultPatchFile: /stan.patch

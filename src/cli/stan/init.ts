@@ -1,3 +1,4 @@
+// src/cli/stan/init.ts
 /* src/cli/stan/init.ts
  * REQUIREMENTS (current + updated):
  * - "stan init" subcommand.
@@ -50,7 +51,7 @@ const installExitOverride = (cmd: Command): void => {
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
 
-/** Normalize argv from unit tests like ["node","stan", ...] -> [...] */
+/** Normalize argv from unit tests like ["node","stan", ...] -\> [...] */
 const normalizeArgv = (
   argv?: readonly string[],
 ): readonly string[] | undefined => {

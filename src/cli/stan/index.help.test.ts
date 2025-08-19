@@ -9,17 +9,29 @@ vi.mock('@/stan/help', () => ({
 import { makeCli } from '@/cli/stan/index';
 
 describe('CLI help footer and subcommand registration', () => {
-  it('appends help footer from renderAvailableScriptsHelp and registers subcommands', () => {
+  it('prints help with custom footer and registers subcommands', async () => {
     const cli = makeCli();
-    const help = cli.helpInformation();
 
-    // Help contains our mocked footer
-    expect(help).toContain('MOCK HELP FOOTER');
+    let out = '';
+    const writeSpy = vi
+      .spyOn(process.stdout, 'write')
+      // @ts-expect-error allow any chunk
+      .mockImplementation((chunk: unknown) => {
+        out += String(chunk);
+        return true;
+      });
+
+    // Trigger help output; exitOverride swallows process.exit
+    await cli.parseAsync(['node', 'stan', '--help'], { from: 'user' });
+
+    expect(out).toContain('MOCK HELP FOOTER');
 
     // Subcommands should include run, init, snap, patch
     const subNames = cli.commands.map((c) => c.name());
     expect(subNames).toEqual(
       expect.arrayContaining(['run', 'init', 'snap', 'patch']),
     );
+
+    writeSpy.mockRestore();
   });
 });

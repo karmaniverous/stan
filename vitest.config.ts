@@ -1,4 +1,3 @@
-// vitest.config.ts
 /** See /stan.project.md for global requirements. */
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';

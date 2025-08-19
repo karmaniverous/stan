@@ -18,8 +18,8 @@
  * - Robustly recover enumerated script keys:
  *   - Accept action parameter as string | string[].
  *   - Then use command.args (non-option operands).
- *   - Also consult parent tokens (args/rawArgs) to derive operands when earlier sources
- *     yield no known keys (even if they were non-empty).
+ *   - If no known keys found yet, aggregate tokens from command and parent
+ *     (rawArgs + args) and parse them, skipping -e/--except value blocks.
  *   - Filter to known script keys (plus "archive"), dedupe, preserve order.
  */
 import type { Command } from 'commander';
@@ -57,24 +57,11 @@ const stringsFrom = (v: unknown): string[] => {
   return out;
 };
 
-/** Extract enumerated operands from parent tokens, skipping option values for -e/--except. */
-const enumeratedFromParentTokens = (command: Command): string[] => {
-  const parent = (command as unknown as { parent?: unknown }).parent as
-    | Command
-    | undefined;
-
-  const tokens: string[] = [
-    ...stringsFrom(
-      (parent as unknown as { args?: unknown[] } | undefined)?.args,
-    ),
-    ...stringsFrom(
-      (parent as unknown as { rawArgs?: unknown[] } | undefined)?.rawArgs,
-    ),
-  ];
-
+/** Parse tokens, skipping -e/--except value blocks, capturing non-option operands. */
+const enumeratedFromTokens = (command: Command, tokens: string[]): string[] => {
   if (tokens.length === 0) return [];
 
-  // Find this subcommand name within tokens to anchor operand scanning
+  // Anchor at subcommand name if present
   const subName = command.name();
   const startIdx = tokens.indexOf(subName);
   let i = startIdx >= 0 ? startIdx + 1 : 0;
@@ -108,7 +95,7 @@ const enumeratedFromParentTokens = (command: Command): string[] => {
  * REQUIREMENT: robustly recover enumerated script keys from Commander.
  * - Prefer action parameter (string | string[]).
  * - Else fall back to command.args (filtering out option tokens).
- * - If no known keys found yet, also parse from parent tokens (args/rawArgs).
+ * - If no known keys found yet, aggregate tokens from command/parent and parse them.
  * - Filter to known script keys (plus "archive").
  */
 const recoverEnumerated = (
@@ -132,10 +119,30 @@ const recoverEnumerated = (
     }
   }
 
-  // Check if we already have known keys; if not, use parent tokens
+  // If no known keys yet, aggregate broader tokens and parse them
   const cleanedFirst = out.filter((k) => known.has(k));
   if (cleanedFirst.length === 0) {
-    for (const s of enumeratedFromParentTokens(command)) out.push(s);
+    const parent = (command as unknown as { parent?: unknown }).parent as
+      | Command
+      | undefined;
+
+    const tokens: string[] = [
+      // Prefer rawArgs where available
+      ...stringsFrom(
+        (command as unknown as { rawArgs?: unknown[] }).rawArgs ?? [],
+      ),
+      ...stringsFrom(
+        (parent as unknown as { rawArgs?: unknown[] } | undefined)?.rawArgs ??
+          [],
+      ),
+      // Then args
+      ...stringsFrom((command as unknown as { args?: unknown[] }).args ?? []),
+      ...stringsFrom(
+        (parent as unknown as { args?: unknown[] } | undefined)?.args ?? [],
+      ),
+    ];
+
+    for (const s of enumeratedFromTokens(command, tokens)) out.push(s);
   }
 
   // Deduplicate (preserve order) and filter to known keys
@@ -196,7 +203,7 @@ export const registerRun = (cli: Command): Command => {
 
       const keys = Object.keys(config.scripts);
 
-      // Determine operands robustly: param, then args, with parent-token fallback if needed.
+      // Determine operands robustly: param, then args, with aggregated-token fallback if needed.
       const known = new Set([...keys, 'archive']);
       const enumeratedClean = recoverEnumerated(command, enumerated, known);
 

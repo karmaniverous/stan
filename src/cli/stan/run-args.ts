@@ -1,4 +1,3 @@
-// src/cli/stan/run-args.ts
 /* src/cli/stan/run-args.ts
  * Pure derivation of run invocation parameters from enumerated args and flags.
  * This is intentionally free of Commander coupling so tests can cover behavior
@@ -11,7 +10,7 @@
  *     (config.scripts), dedupe, preserve order.
  *     Apply --except: when selection===null, treat as "all minus except".
  *   - mode: 'sequential' when -s/--sequential was set (here: sequential flag).
- *   - behavior: { combine, keep, diff, archive } mapped from flags.
+ *   - behavior: { combine, keep, archive } mapped from flags.
  */
 import type { ContextConfig } from '@/stan/config';
 import type { ExecutionMode, RunBehavior } from '@/stan/run';
@@ -57,20 +56,11 @@ export const deriveRunInvocation = (args: {
   sequential?: unknown;
   combine?: unknown;
   keep?: unknown;
-  diff?: unknown;
   archive?: unknown;
   config: ContextConfig;
 }): DerivedRunInvocation => {
-  const {
-    enumerated,
-    except,
-    sequential,
-    combine,
-    keep,
-    diff,
-    archive,
-    config,
-  } = args;
+  const { enumerated, except, sequential, combine, keep, archive, config } =
+    args;
 
   const allKeys = Object.keys(config.scripts);
   const known = new Set(allKeys);
@@ -100,7 +90,6 @@ export const deriveRunInvocation = (args: {
   const behavior: RunBehavior = {
     combine: Boolean(combine),
     keep: Boolean(keep),
-    diff: Boolean(diff),
     archive: Boolean(archive),
   };
 

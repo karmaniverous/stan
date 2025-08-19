@@ -1,4 +1,3 @@
-// src/stan/run.ts
 /* src/stan/run.ts
  * REQUIREMENTS (updated):
  * - Execute configured scripts; create per-script artifacts.
@@ -25,7 +24,6 @@ export type ExecutionMode = 'concurrent' | 'sequential';
 export type RunBehavior = {
   combine?: boolean;
   keep?: boolean;
-  diff?: boolean; // retained for plan logging only
   archive?: boolean;
 };
 
@@ -113,7 +111,6 @@ const renderRunPlan = (args: {
     `scripts: ${scripts.length ? scripts.join(', ') : 'none'}`,
     `archive: ${behavior.archive ? 'yes' : 'no'}`,
     `combine: ${behavior.combine ? 'yes' : 'no'}`,
-    `diff: ${behavior.diff ? 'yes' : 'no'}`, // retained for compatibility
     `keep output dir: ${behavior.keep ? 'yes' : 'no'}`,
   ];
   return `stan:\n  ${lines.join('\n  ')}`;

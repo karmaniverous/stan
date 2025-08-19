@@ -40,7 +40,6 @@ If this file experiences significant structural changes, update
   - `-c/--combine`: Include script outputs inside the archives and do not keep them
     on disk. Implies `--archive` and conflicts with `--keep`.
   - `-k/--keep`: Do not clear the output directory before running. Conflicts with `--combine`.
-  - `-d/--diff`: Retained for plan display; diff is always created when `--archive` is used.
 - Diff snapshot policy:
   - Create snapshot only if missing during runs; `stan snap` replaces it.
   - Snapshot lives under `<outputPath>/.diff/.archive.snapshot.json`.
@@ -49,7 +48,7 @@ If this file experiences significant structural changes, update
 
 - At the start of `stan run`, print a concise, multi‑line plan summary block
   with clear labels and indentation. Include: mode, output path, scripts,
-  and whether archive/combine/diff/keep are enabled.
+  and whether archive/combine/keep are enabled.
 - For each script/archive action, log `stan: start "<key>"` and
   `stan: done "<key>" -> <relative path>"`.
 
@@ -105,12 +104,4 @@ type ContextConfig = {
 - Per‑script artifacts: `<outputPath>/<key>.txt` combine stdout + stderr.
 - Archives (when `--archive` is enabled):
   - `<outputPath>/archive.tar`
-  - `<outputPath>/archive.diff.tar`
-- Combine behavior (`--combine`):
-  - Archives include `<outputPath>` (excluding `<outputPath>/.diff`) and
-    script outputs are removed from disk after archiving.
-
-## Notes & Pointers
-
-- This repository uses Node ESM (`"type": "module"`).
-- Use `radash` only when it improves clarity & brevity.
+  -

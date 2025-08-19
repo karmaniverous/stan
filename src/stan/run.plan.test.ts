@@ -22,7 +22,6 @@ describe('run plan header', () => {
     const cfg: ContextConfig = {
       outputPath: 'stan',
       scripts: {}, // no scripts; plan should show "scripts: none"
-      combinedFileName: 'combined',
     };
 
     const lines: string[] = [];
@@ -42,7 +41,6 @@ describe('run plan header', () => {
     expect(printed).toContain('scripts: none');
     expect(printed).toMatch(/archive:\s+(yes|no)/);
     expect(printed).toMatch(/combine:\s+(yes|no)/);
-    expect(printed).toMatch(/diff:\s+(yes|no)/);
     expect(printed).toMatch(/keep output dir:\s+(yes|no)/);
   });
 });

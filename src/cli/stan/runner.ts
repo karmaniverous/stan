@@ -1,4 +1,3 @@
-// src/cli/stan/runner.ts
 /* src/cli/stan/runner.ts
  * CLI adapter for "stan run".
  * Now delegates selection/mode/behavior derivation to a pure helper to make
@@ -19,8 +18,7 @@ export const registerRun = (cli: Command): Command => {
     .option('-e, --except <keys...>', 'script keys to exclude')
     .option('-s, --sequential', 'run sequentially in config order')
     .option('-a, --archive', 'create archive.tar and archive.diff.tar')
-    .option('-k, --keep', 'keep (do not clear) the output directory')
-    .option('-d, --diff', 'create archive.diff.tar (requires --archive)');
+    .option('-k, --keep', 'keep (do not clear) the output directory');
 
   // -c implies -a; -c conflicts -k
   const combineOpt = new Option(
@@ -70,7 +68,6 @@ export const registerRun = (cli: Command): Command => {
       sequential: (opts as { sequential?: unknown }).sequential,
       combine: (opts as { combine?: unknown }).combine,
       keep: (opts as { keep?: unknown }).keep,
-      diff: (opts as { diff?: unknown }).diff,
       archive: (opts as { archive?: unknown }).archive,
       config,
     });

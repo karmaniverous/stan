@@ -14,13 +14,14 @@
  * - On empty result, print renderAvailableScriptsHelp(cwd).
  * - Avoid `any`; keep imports via `@/*` alias.
  *
- * NEW (robust enumeration):
+ * NEW (robust enumeration & lint-safe):
  * - Robustly recover enumerated script keys:
- *   - Prefer the action parameter (enumerated).
+ *   - Accept action parameter as string | string[].
  *   - Then use command.args (non-option operands).
  *   - Also consult command.processedArgs (Commander keeps parsed values here),
- *     flattening nested arrays produced by variadic args.
+ *     safely collecting nested strings.
  *   - Filter to known script keys (plus "archive"), dedupe, preserve order.
+ * - Replace unsafe spreads with a recursive, type-safe collector.
  */
 import type { Command } from 'commander';
 
@@ -43,44 +44,46 @@ const computeSelection = (
   return selected;
 };
 
-/** Flatten nested arrays of unknown values to a string[] (dropping non-strings). */
-const flattenStrings = (vals: unknown): string[] => {
-  if (!Array.isArray(vals)) return [];
+/** Collect all string leaves from an unknown value (recursively handles nested arrays). */
+const stringsFrom = (v: unknown): string[] => {
   const out: string[] = [];
-  const stack: unknown[] = [...vals];
-  while (stack.length) {
-    const v = stack.shift();
-    if (typeof v === 'string') out.push(v);
-    else if (Array.isArray(v)) stack.unshift(...v);
-  }
+  const walk = (x: unknown): void => {
+    if (typeof x === 'string') {
+      out.push(x);
+    } else if (Array.isArray(x)) {
+      for (const el of x) walk(el);
+    }
+  };
+  walk(v);
   return out;
 };
 
 /**
  * REQUIREMENT: robustly recover enumerated script keys from Commander.
- * - Prefer action parameter (enumerated).
+ * - Prefer action parameter (string | string[]).
  * - Else fall back to command.args (filtering out option tokens).
  * - Also inspect command.processedArgs (Commander’s parsed argument values),
- *   flattening to strings (covers variadic args when action param is empty).
+ *   collecting strings safely.
  * - Filter to known script keys (plus "archive").
  */
 const recoverEnumerated = (
   command: Command,
-  enumerated: string[] | undefined,
+  enumerated: unknown,
   known: Set<string>,
 ): string[] | undefined => {
   const out: string[] = [];
 
-  // 1) Action parameter (preferred)
-  if (Array.isArray(enumerated) && enumerated.length) {
-    out.push(...enumerated);
-  }
+  // 1) Action parameter (may be string or string[])
+  out.push(...stringsFrom(enumerated));
 
   // 2) Fallback: command.args (non-option operands)
   const args = (command as unknown as { args?: unknown[] }).args;
   if (Array.isArray(args) && args.length) {
     for (const v of args) {
       if (typeof v === 'string' && !v.startsWith('-')) out.push(v);
+      else if (Array.isArray(v)) {
+        for (const s of stringsFrom(v)) out.push(s);
+      }
     }
   }
 
@@ -88,7 +91,7 @@ const recoverEnumerated = (
   const processed = (command as unknown as { processedArgs?: unknown[] })
     .processedArgs;
   if (Array.isArray(processed) && processed.length) {
-    out.push(...flattenStrings(processed));
+    for (const s of stringsFrom(processed)) out.push(s);
   }
 
   // Deduplicate (preserve order) and filter to known keys
@@ -114,7 +117,7 @@ export const registerRun = (cli: Command): Command => {
 
   cmd.action(
     async (
-      enumerated: string[] | undefined,
+      enumerated: unknown,
       opts: Record<string, unknown>,
       command: Command,
     ) => {
@@ -149,7 +152,7 @@ export const registerRun = (cli: Command): Command => {
 
       const keys = Object.keys(config.scripts);
 
-      // Determine operands robustly: prefer action parameter, then args, then processedArgs.
+      // Determine operands robustly: param, then args, then processedArgs.
       const known = new Set([...keys, 'archive']);
       const enumeratedClean = recoverEnumerated(command, enumerated, known);
 

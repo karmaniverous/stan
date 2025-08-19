@@ -1,16 +1,15 @@
 /* src/cli/stan/init.ts
- * REQUIREMENTS (current):
- * - Add "stan init" subcommand:
- *   - "--force" creates default stan.config.yml with outputPath: stan and adds "/stan" to .gitignore.
- *   - Otherwise scan package.json; copy script stubs to config (best-effort).
- * - Expose helpers performInit (used by tests) and registerInit.
- * - Avoid process.exit during parsing in tests by calling .exitOverride() on the root and subcommand.
- *   - IMPORTANT: Swallow "helpDisplayed", "unknownCommand", and "unknownOption" so tests don't fail while native help remains enabled.
- * - Leverage native Commander help (-h/--help) instead of custom help wiring.
- * - Use alias "@/..." for internal imports; avoid "any".
- * - During init, ensure stan.system.md and stan.project.md are present:
- *   - If not present in the project root, copy stan.system.md from the package dist.
- *   - If stan.project.md is not present, copy stan.project.template.md from the package dist as stan.project.md.
+ * REQUIREMENTS (current + updated):
+ * - "stan init" subcommand.
+ * - Defaults in generated stan.config.yml should cover common needs:
+ *   - outputPath: stan
+ *   - combinedFileName: combined
+ *   - excludes: ['assets', 'docs']
+ *   - scripts map (best-effort from package.json when not --force)
+ * - Add "/stan" to .gitignore if missing.
+ * - Ensure stan.system.md and stan.project.md exist (from dist templates).
+ * - After init, create/update the diff snapshot (and log a short message).
+ * - Avoid process.exit in tests via exitOverride; swallow help-related codes.
  */
 import { existsSync } from 'node:fs';
 import { copyFile, readFile, writeFile } from 'node:fs/promises';
@@ -23,6 +22,7 @@ import YAML from 'yaml';
 
 import type { ContextConfig, ScriptMap } from '@/stan/config';
 import { ensureOutputDir, findConfigPathSync } from '@/stan/config';
+import { writeArchiveSnapshot } from '@/stan/diff';
 
 const TOKEN = /^\w+/;
 
@@ -32,7 +32,8 @@ const installExitOverride = (cmd: Command): void => {
     if (
       err.code === 'commander.helpDisplayed' ||
       err.code === 'commander.unknownCommand' ||
-      err.code === 'commander.unknownOption'
+      err.code === 'commander.unknownOption' ||
+      err.code === 'commander.help'
     )
       return;
     // Commander has already printed any relevant message.
@@ -43,7 +44,7 @@ const installExitOverride = (cmd: Command): void => {
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
 
-/** Normalize argv from unit tests like ["node","stan", ...] -\> \[...]. */
+/** Normalize argv from unit tests like ["node","stan", ...] -> [...] */
 const normalizeArgv = (
   argv?: readonly string[],
 ): readonly string[] | undefined => {
@@ -63,9 +64,6 @@ const patchParseMethods = (cli: Command): void => {
     opts?: FromOpt,
   ) => Promise<Command>;
 
-  // Commander does not type expose these overrides; cast limited to the
-  // specific surface we patch and return the same cli instance. (Dynamic
-  // method patch across library boundary; cast justified.)
   const holder = cli as unknown as {
     parse: ParseFn;
     parseAsync: ParseAsyncFn;
@@ -136,12 +134,20 @@ export const performInit = async (
   if (existing && !force) {
     // Ensure docs are present even if config already exists.
     await ensureDocs(cwd);
+    // Optionally refresh snapshot? We don't touch snapshot here to avoid surprises.
     return existing;
   }
 
   const outRel = 'stan';
   await ensureOutputDir(cwd, outRel, true);
-  const config: ContextConfig = { outputPath: outRel, scripts: {} };
+
+  // Base config with defaults
+  const config: ContextConfig = {
+    outputPath: outRel,
+    scripts: {},
+    combinedFileName: 'combined',
+    excludes: ['assets', 'docs'],
+  };
 
   if (!force) {
     // Try to read package.json scripts and keep only tokenized commands.
@@ -172,6 +178,16 @@ export const performInit = async (
   await ensureDocs(cwd);
 
   console.log(`stan: wrote stan.config.yml`);
+
+  // Create snapshot after init (replace or create)
+  await writeArchiveSnapshot({
+    cwd,
+    outputPath: config.outputPath,
+    includes: config.includes ?? [],
+    excludes: config.excludes ?? [],
+  });
+  console.log('stan: snapshot updated');
+
   return cfgPath;
 };
 
@@ -189,7 +205,7 @@ export const registerInit = (cli: Command): Command => {
 
   sub.option(
     '-f, --force',
-    'Create stan.config.yml with outputPath=stan and add it to .gitignore.',
+    'Create stan.config.yml with defaults (outputPath=stan) and add it to .gitignore.',
   );
 
   sub.action(async (opts: { force?: boolean }) => {

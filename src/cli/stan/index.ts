@@ -1,6 +1,7 @@
 /* REQUIREMENTS (current):
  * - Export makeCli(): Command — root CLI factory for the "stan" tool.
- * - Register subcommands: run, init, and NEW: snap.
+ * - Register subcommands: run, init, snap.
+ * - Vector to init when no config exists (root invocation with no args).
  * - Avoid invoking process.exit during tests; call cli.exitOverride().
  * - Help for root should include available script keys from config.
  */
@@ -13,7 +14,7 @@ import { Command } from 'commander';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { registerSnap } from '@/stan/snap';
 
-import { registerInit } from './init';
+import { performInit, registerInit } from './init';
 import { registerRun } from './runner';
 
 /** Install a Commander exit override that swallows benign exits during tests. */
@@ -22,7 +23,8 @@ const installExitOverride = (cmd: Command): void => {
     if (
       err.code === 'commander.helpDisplayed' ||
       err.code === 'commander.unknownCommand' ||
-      err.code === 'commander.unknownOption'
+      err.code === 'commander.unknownOption' ||
+      err.code === 'commander.help'
     ) {
       // Commander already printed any relevant message. Do not call process.exit.
       return;
@@ -95,6 +97,24 @@ export const makeCli = (): Command => {
   registerRun(cli);
   registerInit(cli);
   registerSnap(cli);
+
+  // Root action:
+  // - If config exists: print help info (without throwing).
+  // - If config is missing: run init --force and (via init) create a snapshot.
+  cli.action(async () => {
+    const cwd = process.cwd();
+    const cfgMod = await import('@/stan/config');
+    const hasConfig = !!cfgMod.findConfigPathSync(cwd);
+
+    if (!hasConfig) {
+      await performInit(cli, { cwd, force: true });
+      // performInit prints its own messages and now writes the snapshot.
+      return;
+    }
+
+    // Print help information without invoking .help() (which throws on exit).
+    console.log(cli.helpInformation());
+  });
 
   return cli;
 };

@@ -1,8 +1,5 @@
 /* src/cli/stan/snap.ts
  * "stan snap" subcommand: create/replace the diff snapshot explicitly.
- * - Loads config (same resolution rules).
- * - Writes snapshot to <outputPath>/.diff/.archive.snapshot.json.
- * - Avoids process.exit via exitOverride; normalizes test argv.
  */
 import type { Command } from 'commander';
 
@@ -11,7 +8,8 @@ const installExitOverride = (cmd: Command): void => {
     if (
       err.code === 'commander.helpDisplayed' ||
       err.code === 'commander.unknownCommand' ||
-      err.code === 'commander.unknownOption'
+      err.code === 'commander.unknownOption' ||
+      err.code === 'commander.help'
     ) {
       return;
     }

@@ -133,6 +133,10 @@ refactor log under `/refactors/`.
   appropriate.
 - Tests should couple with the code they cover (e.g., `feature.ts`
   ↔ `feature.test.ts`).
+- Do not write tests that rely on the internals of the unit under test (CLI/parser/library internals).
+  Treat such tests as a design smell. If you think you need to rely on internals,
+  discuss and simplify the seam before proceeding.
+- Prefer testing pure functions and narrow adapters over end‑to‑end harnesses when feasible.
 
 # Linting Guidelines
 

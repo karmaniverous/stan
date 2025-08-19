@@ -1,73 +1,36 @@
-import { mkdtemp, rm } from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ContextConfig } from '@/stan/config';
 
-const runSelectedSpy = vi.fn().mockResolvedValue([]);
-
-vi.mock('@/stan/run', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/stan/run')>();
-  return {
-    ...actual,
-    runSelected: (...args: unknown[]) => runSelectedSpy(...args),
-  };
-});
-
-vi.mock('@/stan/config', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/stan/config')>();
-  return {
-    ...actual,
-    findConfigPathSync: vi.fn().mockReturnValue('stan.config.yml'),
-    loadConfig: vi.fn().mockResolvedValue({
-      outputPath: 'stan',
-      combinedFileName: 'bundle',
-      scripts: { test: 'echo test', lint: 'echo lint' },
-    }),
-  };
-});
-
-import { makeCli } from './index';
+import { deriveRunInvocation } from './run-args';
 
 describe('CLI -c/--combine and -k/--keep', () => {
-  let dir: string;
+  const cfg: ContextConfig = {
+    outputPath: 'stan',
+    combinedFileName: 'bundle',
+    scripts: { test: 'echo test', lint: 'echo lint' },
+  };
 
-  beforeEach(async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'stan-cli-2-'));
-    process.chdir(dir);
-    runSelectedSpy.mockReset();
-  });
-
-  afterEach(async () => {
-    // Avoid EBUSY on Windows: change cwd before rm.
-    try {
-      process.chdir(os.tmpdir());
-    } catch {
-      // ignore
-    }
-    await rm(dir, { recursive: true, force: true });
-    vi.restoreAllMocks();
-  });
-
-  it('passes combine and keep flags to the runner (no enumeration)', async () => {
-    const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', 'run', '-c', '-k'], { from: 'user' });
-
-    const [, , selection, mode, behavior] = runSelectedSpy.mock.calls[0];
-    expect(selection).toBeNull(); // run all
-    expect(mode).toBe('concurrent');
-    expect(behavior).toMatchObject({ combine: true, keep: true });
-  });
-
-  it('honors combinedFileName from config when combining', async () => {
-    const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', 'run', '-c', 'lint'], {
-      from: 'user',
+  it('passes combine and keep flags to the runner (no enumeration)', () => {
+    const d = deriveRunInvocation({
+      enumerated: [],
+      combine: true,
+      keep: true,
+      config: cfg,
     });
+    expect(d.selection).toBeNull(); // run all
+    expect(d.mode).toBe('concurrent');
+    expect(d.behavior).toMatchObject({ combine: true, keep: true });
+  });
 
-    const [, , selection, , behavior] = runSelectedSpy.mock.calls[0];
-    expect(selection).toEqual(['lint']);
-    expect(behavior).toMatchObject({
+  it('honors combinedFileName from config when combining', () => {
+    const d = deriveRunInvocation({
+      enumerated: ['lint'],
+      combine: true,
+      config: cfg,
+    });
+    expect(d.selection).toEqual(['lint']);
+    expect(d.behavior).toMatchObject({
       combine: true,
       combinedFileName: 'bundle',
     });

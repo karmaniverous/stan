@@ -1,72 +1,37 @@
-import { mkdtemp, rm } from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ContextConfig } from '@/stan/config';
 
-const runSelectedSpy = vi.fn().mockResolvedValue([]);
-
-vi.mock('@/stan/run', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/stan/run')>();
-  return {
-    ...actual,
-    runSelected: (...args: unknown[]) => runSelectedSpy(...args),
-  };
-});
-
-vi.mock('@/stan/config', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/stan/config')>();
-  return {
-    ...actual,
-    findConfigPathSync: vi.fn().mockReturnValue('stan.config.yml'),
-    loadConfig: vi.fn().mockResolvedValue({
-      outputPath: 'stan',
-      scripts: { test: 'echo test', lint: 'echo lint' },
-    }),
-  };
-});
-
-import { makeCli } from './index';
+import { deriveRunInvocation } from './run-args';
 
 describe('CLI argument parsing', () => {
-  let dir: string;
+  const cfg: ContextConfig = {
+    outputPath: 'stan',
+    scripts: { test: 'echo test', lint: 'echo lint' },
+    combinedFileName: 'bundle',
+  };
 
-  beforeEach(async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'stan-cli-'));
-    process.chdir(dir);
-    runSelectedSpy.mockReset();
-  });
-
-  afterEach(async () => {
-    // Avoid EBUSY on Windows: change cwd before rm.
-    try {
-      process.chdir(os.tmpdir());
-    } catch {
-      // ignore
-    }
-    await rm(dir, { recursive: true, force: true });
-    vi.restoreAllMocks();
-  });
-
-  it('passes -e selection with provided keys to runSelected', async () => {
-    const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', 'run', '-e', 'test'], {
-      from: 'user',
+  it('passes -e selection with provided keys (all except <keys>)', () => {
+    const d = deriveRunInvocation({
+      enumerated: [], // no explicit operands
+      except: ['test'],
+      sequential: false,
+      combine: false,
+      keep: false,
+      diff: false,
+      config: cfg,
     });
-
-    const [, , selection, mode] = runSelectedSpy.mock.calls[0];
-    expect(selection).toEqual(['lint']); // all except 'test'
-    expect(mode).toBe('concurrent');
+    expect(d.selection).toEqual(['lint']); // all except 'test'
+    expect(d.mode).toBe('concurrent');
   });
 
-  it('passes -s to run sequentially and preserves config order', async () => {
-    const cli = makeCli();
-    await cli.parseAsync(['node', 'stan', 'run', 'lint', 'test', '-s'], {
-      from: 'user',
+  it('passes -s to run sequentially and preserves enumerated order', () => {
+    const d = deriveRunInvocation({
+      enumerated: ['lint', 'test'],
+      sequential: true,
+      config: cfg,
     });
-
-    const [, , selection, mode] = runSelectedSpy.mock.calls[0];
-    expect(selection).toEqual(['lint', 'test']);
-    expect(mode).toBe('sequential');
+    expect(d.selection).toEqual(['lint', 'test']);
+    expect(d.mode).toBe('sequential');
   });
 });

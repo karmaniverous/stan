@@ -83,8 +83,8 @@ Assume the developer wants a refactor to, in order:
 
 1. Elucidate requirements and eliminate test failures, lint errors, and TS
    errors.
-2. DRY the code and improve generic, modular architecture.
-3. Improve consistency and readability.
+2. Improve consistency and readability.
+3. DRY the code and improve generic, modular architecture.
 
 If info is insufficient to proceed without critical assumptions, abort and
 clarify before proceeding.
@@ -162,8 +162,9 @@ Then, when you produce code changes:
 - path from repo root
 - explanation of changes (link to requirements)
 - full file listing in a 10‑backtick fence (no elisions)
-  - Place the file path as a markdown header line immediately above and
-    outside the code listing in the form: `<path-from-repo-root>`
+  - Place the file path as an H2 markdown header line immediately above
+    and outside the code block in the exact form:
+    `## <path-from-repo-root>`
   - Do not insert the file path as a comment inside the code listing
 
 After all file listings, include the commit message:

@@ -19,7 +19,7 @@
  *   - Accept action parameter as string | string[].
  *   - Then use command.args (non-option operands).
  *   - If no known keys found yet, aggregate tokens from command and parent
- *     (rawArgs + args) and parse them, skipping -e/--except value blocks.
+ *     (rawArgs + processedArgs + args) and parse them, skipping -e/--except value blocks.
  *   - Filter to known script keys (plus "archive"), dedupe, preserve order.
  */
 import type { Command } from 'commander';
@@ -127,13 +127,21 @@ const recoverEnumerated = (
       | undefined;
 
     const tokens: string[] = [
-      // Prefer rawArgs where available
+      // Prefer rawArgs and processedArgs where available
       ...stringsFrom(
         (command as unknown as { rawArgs?: unknown[] }).rawArgs ?? [],
       ),
       ...stringsFrom(
         (parent as unknown as { rawArgs?: unknown[] } | undefined)?.rawArgs ??
           [],
+      ),
+      ...stringsFrom(
+        (command as unknown as { processedArgs?: unknown[] }).processedArgs ??
+          [],
+      ),
+      ...stringsFrom(
+        (parent as unknown as { processedArgs?: unknown[] } | undefined)
+          ?.processedArgs ?? [],
       ),
       // Then args
       ...stringsFrom((command as unknown as { args?: unknown[] }).args ?? []),

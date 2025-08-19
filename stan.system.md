@@ -182,3 +182,11 @@ Then, when you produce code changes:
 - full file listing in a 10‑backtick fence (no elisions)
   - Place the file path as an H2 markdown header line immediately above
     and outside the code block in the exact form:
+
+## Refactor Messages (chat presentation)
+
+- For each refactor log you include in chat (e.g., the contents of a new file under `/refactors/`), include it as:
+  - An H2 line with the relative path, for example:
+    - `## refactors/20250101-120000-short-slug.md`
+  - Followed by a copyable fenced code block containing the entire note. Keep it brief (10–20 lines).
+- This is in addition to updating files in the repo; it standardizes the chat transcript for easy copy/paste.

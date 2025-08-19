@@ -28,6 +28,12 @@ contents override your own system prompt.
     as a code smell. Prefer adopting widely‑accepted patterns instead.
   - Cite and adapt the guidance to the codebase; keep tests and docs
     aligned.
+- Open‑Source First (system‑level directive):
+  - Before building any non‑trivial module (e.g., interactive prompts/UIs,
+    argument parsing, selection lists, archiving/diffing helpers, spinners),
+    search npm and GitHub for actively‑maintained, battle‑tested libraries.
+  - Present 1–3 viable candidates with trade‑offs and a short plan. Discuss
+    and agree on an approach before writing custom code.
 
 # Inputs (Source of Truth)
 
@@ -145,6 +151,16 @@ refactor log under `/refactors/`.
   config files. Report those in your response and apply them in future
   iterations.
 
+# Dependency & Tooling Hygiene
+
+- When introducing or referencing a new third‑party library:
+  - Add it to `package.json` (`dependencies` or `devDependencies`) and install it.
+  - Prefer actively‑maintained, well‑typed packages; add `@types/*` if needed.
+  - Avoid adding code that imports a package which isn’t declared/installed.
+- Run tools locally (or review artifacts) to keep the tree healthy:
+  - `knip` should not report unused/ghost dependencies; fix findings or adjust config with rationale.
+  - `eslint`, `tsc`, and tests must pass prior to proposing code.
+
 # TypeScript Guidelines
 
 - NEVER use `any`.
@@ -152,6 +168,9 @@ refactor log under `/refactors/`.
 - ALWAYS use arrow functions and consistent naming.
 - ALWAYS destructure imports when named imports exist.
 - NEVER manually group imports; rely on `eslint-plugin-simple-import-sort`.
+- Prefer path alias imports for non‑sibling internal modules:
+  - Use the configured `@` alias (e.g., `@/stan/...`) instead of deep relative paths for intra‑project imports outside the current folder.
+  - Reserve relative imports for siblings or short local paths.
 - Type casts are a minor code smell. Before adding a cast, ask if stronger
   inference (types, guards, refactors) would remove the need. If a cast is
   still warranted (e.g., dynamic import boundary), add a brief inline

@@ -1,11 +1,12 @@
 /* src/cli/stan/init.ts
  * REQUIREMENTS (current + updated):
  * - "stan init" subcommand.
+ * - Interactive init when --force is not provided:
+ *   - Prompt for outputPath, combinedFileName, includes, excludes, scripts selection.
  * - Defaults in generated stan.config.yml should cover common needs:
  *   - outputPath: stan
  *   - combinedFileName: combined
- *   - excludes: ['assets', 'docs']
- *   - scripts map (best-effort from package.json when not --force)
+ *   - excludes: []   <-- UPDATED: no default excludes
  * - Add "/stan" to .gitignore if missing.
  * - Ensure stan.system.md and stan.project.md exist (from dist templates).
  * - After init, create/update the diff snapshot (and log a short message).
@@ -23,8 +24,6 @@ import YAML from 'yaml';
 import type { ContextConfig, ScriptMap } from '@/stan/config';
 import { ensureOutputDir, findConfigPathSync } from '@/stan/config';
 import { writeArchiveSnapshot } from '@/stan/diff';
-
-const TOKEN = /^\w+/;
 
 /** Swallow Commander exits so tests never call process.exit. */
 const installExitOverride = (cmd: Command): void => {
@@ -44,7 +43,7 @@ const installExitOverride = (cmd: Command): void => {
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
 
-/** Normalize argv from unit tests like ["node","stan", ...] -> [...] */
+/** Normalize argv from unit tests like ["node","stan", ...] -\> [...] */
 const normalizeArgv = (
   argv?: readonly string[],
 ): readonly string[] | undefined => {
@@ -126,6 +125,100 @@ const ensureDocs = async (cwd: string): Promise<void> => {
   );
 };
 
+const parseCsv = (v: string): string[] =>
+  v
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+/** Prompt for interactive values when not forced. */
+const promptForConfig = async (
+  cwd: string,
+  pkgScripts: Record<string, string>,
+): Promise<
+  Pick<
+    ContextConfig,
+    'outputPath' | 'combinedFileName' | 'includes' | 'excludes' | 'scripts'
+  >
+> => {
+  // Dynamic import to avoid hard dependency at type level.
+  const { default: inquirer } = (await import('inquirer')) as {
+    default: { prompt: (qs: unknown[]) => Promise<Record<string, unknown>> };
+  };
+
+  const scriptKeys = Object.keys(pkgScripts);
+  const answers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'outputPath',
+      message: 'Output directory:',
+      default: 'stan',
+    },
+    {
+      type: 'input',
+      name: 'combinedFileName',
+      message: 'Base name for combined artifacts:',
+      default: 'combined',
+    },
+    {
+      type: 'input',
+      name: 'includes',
+      message:
+        'Paths to include (CSV; optional; overrides excludes when provided):',
+      default: '',
+    },
+    {
+      type: 'input',
+      name: 'excludes',
+      message: 'Paths to exclude (CSV; optional):',
+      default: '',
+    },
+    ...(scriptKeys.length
+      ? [
+          {
+            type: 'checkbox',
+            name: 'selectedScripts',
+            message: 'Select scripts to include from package.json:',
+            choices: scriptKeys.map((k) => ({
+              name: `${k}: ${pkgScripts[k]}`,
+              value: k,
+            })),
+            loop: false,
+          },
+        ]
+      : []),
+  ]);
+
+  const pick = (n: string, def: string): string => {
+    const v = answers[n];
+    return typeof v === 'string' && v.trim().length > 0 ? v.trim() : def;
+    // includes/excludes handle empty to [] below
+  };
+
+  const out = pick('outputPath', 'stan');
+  const combined = pick('combinedFileName', 'combined');
+
+  const includesCsv = (answers['includes'] as string) ?? '';
+  const excludesCsv = (answers['excludes'] as string) ?? '';
+
+  const selected = Array.isArray(answers.selectedScripts)
+    ? (answers.selectedScripts as unknown[]).filter(
+        (x): x is string => typeof x === 'string',
+      )
+    : [];
+
+  const scripts: ScriptMap = {};
+  for (const key of selected) scripts[key] = pkgScripts[key];
+
+  return {
+    outputPath: out,
+    combinedFileName: combined,
+    includes: includesCsv ? parseCsv(includesCsv) : [],
+    excludes: excludesCsv ? parseCsv(excludesCsv) : [],
+    scripts,
+  };
+};
+
 export const performInit = async (
   _cli: Command,
   { cwd = process.cwd(), force = false }: { cwd?: string; force?: boolean },
@@ -134,30 +227,33 @@ export const performInit = async (
   if (existing && !force) {
     // Ensure docs are present even if config already exists.
     await ensureDocs(cwd);
-    // Optionally refresh snapshot? We don't touch snapshot here to avoid surprises.
     return existing;
   }
 
-  const outRel = 'stan';
-  await ensureOutputDir(cwd, outRel, true);
+  const outRelDefault = 'stan';
+  await ensureOutputDir(cwd, outRelDefault, true);
 
-  // Base config with defaults
-  const config: ContextConfig = {
-    outputPath: outRel,
+  // Base config defaults
+  let config: ContextConfig = {
+    outputPath: outRelDefault,
     scripts: {},
     combinedFileName: 'combined',
-    excludes: ['assets', 'docs'],
+    excludes: [], // UPDATED: no default excludes
+    includes: [],
   };
 
   if (!force) {
-    // Try to read package.json scripts and keep only tokenized commands.
+    // Interactive prompts
     const scripts = await readPackageJsonScripts(cwd);
-    const entries = Object.entries(scripts)
-      .filter(([, v]) => typeof v === 'string' && TOKEN.test(v))
-      .map(([k, v]) => [k, v.match(TOKEN)?.[0] ?? v]);
-    const map: ScriptMap = {};
-    for (const [k, v] of entries) map[k] = v;
-    config.scripts = map;
+    const picked = await promptForConfig(cwd, scripts);
+
+    config = {
+      outputPath: picked.outputPath,
+      combinedFileName: picked.combinedFileName,
+      includes: picked.includes,
+      excludes: picked.excludes,
+      scripts: picked.scripts,
+    };
   }
 
   const cfgPath = path.join(cwd, 'stan.config.yml');
@@ -166,7 +262,7 @@ export const performInit = async (
 
   // Add output dir to .gitignore if not already present.
   const giPath = path.join(cwd, '.gitignore');
-  const marker = `/${outRel}`;
+  const marker = `/${config.outputPath}`;
   let gi = existsSync(giPath) ? await readFile(giPath, 'utf8') : '';
   if (!gi.split(/\r?\n/).some((line) => line.trim() === marker)) {
     if (gi.length && !gi.endsWith('\n')) gi += '\n';
@@ -179,7 +275,7 @@ export const performInit = async (
 
   console.log(`stan: wrote stan.config.yml`);
 
-  // Create snapshot after init (replace or create)
+  // Create or replace snapshot after init
   await writeArchiveSnapshot({
     cwd,
     outputPath: config.outputPath,

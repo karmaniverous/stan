@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "commander": "^14.0.0",
+    "inquirer": "^12.9.3",
     "package-directory": "^8.1.0",
     "yaml": "^2.8.1"
   },

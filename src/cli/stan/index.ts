@@ -1,7 +1,7 @@
 /* REQUIREMENTS (current):
  * - Export makeCli(): Command — root CLI factory for the "stan" tool.
  * - Register subcommands: run, init, snap.
- * - Vector to init when no config exists (root invocation with no args).
+ * - Vector to interactive init when no config exists (root invocation with no args).
  * - Avoid invoking process.exit during tests; call cli.exitOverride().
  * - Help for root should include available script keys from config.
  */
@@ -36,7 +36,7 @@ const installExitOverride = (cmd: Command): void => {
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
 
-/** Normalize argv from unit tests like ["node","stan", ...] -> [...] */
+/** Normalize argv from unit tests like ["node","stan", ...] -\> [...] */
 const normalizeArgv = (
   argv?: readonly string[],
 ): readonly string[] | undefined => {
@@ -99,16 +99,16 @@ export const makeCli = (): Command => {
   registerSnap(cli);
 
   // Root action:
-  // - If config exists: print help info (without throwing).
-  // - If config is missing: run init --force and (via init) create a snapshot.
+  // - If config is missing: run interactive init (not forced) and create a snapshot.
+  // - If config exists: print help page (no exit).
   cli.action(async () => {
     const cwd = process.cwd();
     const cfgMod = await import('@/stan/config');
     const hasConfig = !!cfgMod.findConfigPathSync(cwd);
 
     if (!hasConfig) {
-      await performInit(cli, { cwd, force: true });
-      // performInit prints its own messages and now writes the snapshot.
+      await performInit(cli, { cwd, force: false });
+      // performInit prints its own messages and writes the snapshot.
       return;
     }
 

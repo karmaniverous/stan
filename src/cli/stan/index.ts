@@ -6,9 +6,6 @@
  * - Help for root should include available script keys from config.
  */
 
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { Command } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
@@ -60,20 +57,3 @@ export const makeCli = (): Command => {
 
   return cli;
 };
-
-// Execute when run directly (built CLI)
-const isDirect = (() => {
-  try {
-    const self = resolve(fileURLToPath(import.meta.url));
-    const invoked = resolve(process.argv[1] ?? '');
-    return self === invoked;
-  } catch {
-    return false;
-  }
-})();
-
-if (isDirect) {
-  const cli = makeCli();
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  cli.parseAsync();
-}

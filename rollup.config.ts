@@ -95,8 +95,8 @@ export const buildLibrary = (dest: string): RollupOptions => ({
 });
 
 const discoverCliEntries = (): string[] => {
-  // Only include CLI entry points, not tests.
-  const candidates = ['src/cli/stan/index.ts'];
+  // Include both the programmatic CLI entry and the launcher.
+  const candidates = ['src/cli/stan/index.ts', 'src/cli/stan/stan.ts'];
   return candidates.filter((p) => fs.existsSync(p));
 };
 

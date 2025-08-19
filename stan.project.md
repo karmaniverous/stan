@@ -29,36 +29,29 @@ If this file experiences significant structural changes, update
   tests can parse without exiting.
 - Help:
   - Native `-h/--help` enabled on root and subcommands.
-  - A dynamic help footer lists available script keys from config, including
-    the special `archive` key.
+  - A dynamic help footer lists available script keys from config.
 - Selection & execution:
   - When invoked without explicit script keys, `stan run` runs all configured
-    scripts and implicitly includes the special `"archive"` job (unless
-    excluded via `-e archive`).
-  - Default mode is concurrent for non‑archive scripts.
-  - Archive execution is serialized: STAN always runs `"archive"` after other
-    scripts complete, even in concurrent mode, to avoid file‑handle collisions
-    with in‑flight build steps.
-- Combine & diff:
-  - `-c/--combine`:
-    - If `archive` is present, STAN writes a single `<combined>.tar` that
-      includes the output directory (no separate `archive.tar`).
-    - If `archive` is not present, STAN combines produced **text outputs** into
-      a single `<combined>.txt`.
-    - The base name is configured by `combinedFileName` (defaults to
-      `"combined"`).
-  - `-d/--diff`:
-    - When `archive` is included, STAN writes `archive.diff.tar` containing
-      only changed files since the last run and maintains
-      `<outputPath>/.archive.snapshot.json`.
-    - Prior full tar is copied to `archive.prev.tar` before new archive
-      creation.
-- Logging:
-  - At the start of `stan run`, print a concise, multi‑line plan summary block
-    with clear labels and indentation. Include: mode, output path, scripts,
-    and whether archive/combine/diff/keep are enabled.
-  - For each script/archive action, log `stan: start "<key>"` and
-    `stan: done "<key>" -> <relative path>"`.
+    scripts.
+  - Default mode is concurrent for scripts; sequential preserves enumerated
+    order with `-s/--sequential`.
+- Archives & outputs (flags):
+  - `-a/--archive`: After scripts run, write `archive.tar` and `archive.diff.tar`.
+  - `-c/--combine`: Include script outputs inside the archives and do not keep them
+    on disk. Implies `--archive` and conflicts with `--keep`.
+  - `-k/--keep`: Do not clear the output directory before running. Conflicts with `--combine`.
+  - `-d/--diff`: Retained for plan display; diff is always created when `--archive` is used.
+- Diff snapshot policy:
+  - Create snapshot only if missing during runs; `stan snap` replaces it.
+  - Snapshot lives under `<outputPath>/.diff/.archive.snapshot.json`.
+
+## Logging
+
+- At the start of `stan run`, print a concise, multi‑line plan summary block
+  with clear labels and indentation. Include: mode, output path, scripts,
+  and whether archive/combine/diff/keep are enabled.
+- For each script/archive action, log `stan: start "<key>"` and
+  `stan: done "<key>" -> <relative path>"`.
 
 ## Configuration Resolution
 
@@ -74,7 +67,6 @@ type ContextConfig = {
   scripts: Record<string, string>;
   includes?: string[];
   excludes?: string[];
-  combinedFileName?: string;
   /** Default patch filename for `stan patch`; defaults to '/stan.patch'. */
   defaultPatchFile?: string;
 };
@@ -85,7 +77,7 @@ type ContextConfig = {
 - Precedence: includes override excludes. When `includes` is defined, it acts
   as an allow‑list (only included prefixes are considered).
 - The output directory is excluded from archives unless `--combine` is used
-  (in which case it is included).
+  (in which case it is included and script outputs are not kept on disk).
 
 ## UX / Help
 
@@ -111,16 +103,12 @@ type ContextConfig = {
 
 - Default output directory is configured by `outputPath` (often `stan/`).
 - Per‑script artifacts: `<outputPath>/<key>.txt` combine stdout + stderr.
-- Archive artifacts:
-  - `<outputPath>/archive.tar` (when not using `--combine`).
-  - `<outputPath>/archive.diff.tar` (with `--diff`).
-  - `<outputPath>/archive.prev.tar` (when diffing).
-- Combine artifacts:
-  - `<outputPath>/<combined>.tar` when `archive` is included.
-  - `<outputPath>/<combined>.txt` when `archive` is not included.
-- Test harness artifact `order.txt`:
-  - Written only when `NODE_ENV==='test'` or `STAN_WRITE_ORDER==='1'`.
-  - Not produced during normal CLI runs.
+- Archives (when `--archive` is enabled):
+  - `<outputPath>/archive.tar`
+  - `<outputPath>/archive.diff.tar`
+- Combine behavior (`--combine`):
+  - Archives include `<outputPath>` (excluding `<outputPath>/.diff`) and
+    script outputs are removed from disk after archiving.
 
 ## Notes & Pointers
 

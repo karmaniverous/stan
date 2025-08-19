@@ -10,12 +10,12 @@ You get portable, auditable, reproducible context—locally and in CI.
 
 Why STAN?
 
-- One archive. stan/archive.tar captures the exact files to read—no surprises.
+- One archive (on demand). With -a/--archive, archive.tar captures the exact files to read—no surprises.
 - Structured logs. stan/test.txt, stan/lint.txt, stan/typecheck.txt, stan/build.txt are consistent and easy to diff.
-- Always-on diffs. Whenever you include the archive task, STAN writes stan/archive.diff.tar for changed files—no extra flag needed. First time? The diff equals the full set (sensible defaults, zero ceremony).
+- Always-on diffs (when archiving). Whenever you use -a, STAN writes stan/archive.diff.tar for changed files—no extra ceremony. First time? The diff equals the full set (sensible defaults, zero ceremony).
 - Snapshot with intent. Normal runs create a snapshot only when missing; use stan snap when you want to reset or replace it. Your diffs stay meaningful.
 - Patch on tap. Got a suggested patch from an AI or teammate? Save it and run stan patch to apply it safely at your repo root.
-- Optional combine. One artifact to rule them all—tar your output directory alongside the code or condense logs into a single text file.
+- Simpler combine. With -a -c, script outputs live inside the archives (not on disk). No separate “combined artifact” to maintain.
 
 Backronym bonus: Sample • Tar • Analyze • Narrate — STAN Tames Autoregressive Nonsense.
 
@@ -47,37 +47,39 @@ Example stan.config.yml:
 
 ```
 outputPath: stan
-combinedFileName: combined
+includes: []
+excludes: []
 scripts:
   build: npm run build
   knip: npm run knip
   lint: npm run lint
   test: npm run test
   typecheck: npm run typecheck
+defaultPatchFile: /stan.patch
 ```
 
 3. Generate artifacts
 
 ```
-# runs all configured scripts concurrently; creates stan/archive.tar
+# Run all configured scripts (no archives by default)
 npx stan
 
-# run selected scripts only (preserves order when -s is used)
+# Run selected scripts only (preserves order with -s)
 npx stan test typecheck -s
 
-# run all except <keys>
+# Run all except <keys>
 npx stan -e knip lint
 
-# combine outputs into a single artifact
-npx stan -c
+# Produce code archives (regular + diff) after running scripts
+npx stan -a
 
-# compute an archive diff (always-on when archive runs; snapshot is created on first run)
-npx stan -d   # optional; retained for plan display
+# Put script outputs INSIDE the archives (and do not keep them on disk)
+npx stan -a -c
 ```
 
 Snapshot & Diff (the duo)
 
-- Always-on diffs: If you include the archive task, STAN writes stan/archive.diff.tar containing only changed files since the last snapshot.
+- Always-on diffs (with -a): If you pass -a/--archive, STAN writes stan/archive.diff.tar containing only changed files since the last snapshot.
 - First-run behavior: No snapshot yet? Your diff equals the full set—simple and predictable.
 - Snapshot policy:
   - Normal runs: Create a snapshot only if one does not exist.
@@ -90,34 +92,36 @@ CLI
 stan [scripts...] [options]
 ```
 
-When you run stan --help, the footer lists script keys discovered from your config, and always includes the special archive task.
+Options (high level)
 
-Selection
-
-- [scripts...]: run only these keys in order (when paired with -s).
-- -e, --except <keys...>: run all scripts except these.
-
-Execution mode
-
-- Default is concurrent.
-- -s, --sequential: run scripts sequentially, preserving the enumerated order.
+- Selection
+  - [scripts...]: run only these keys in order (when paired with -s).
+  - -e, --except <keys...>: run all scripts except these.
+- Execution mode
+  - Default is concurrent.
+  - -s, --sequential: run scripts sequentially, preserving enumerable order.
+- Archives & outputs
+  - -a, --archive: after scripts run, write archive.tar and archive.diff.tar.
+  - -c, --combine: include script outputs inside the archives and do not keep them on disk. Implies --archive and conflicts with --keep.
+  - -k, --keep: do not clear the output directory before running. Conflicts with --combine.
+  - -d, --diff: retained for plan display; diff.tar is always created whenever --archive is used.
 
 Artifacts
 
-- Default: Clears the output directory (unless --keep), creates stan/archive.tar, and writes one text file per script (e.g., stan/test.txt).
-- -k, --keep: Do not clear the output directory before running.
-
-Combine
-
-- -c, --combine:
-  - If archive is present among jobs, STAN runs non‑archive jobs first, then creates a single combined tar (including the output directory). It does not also create archive.tar.
-  - If archive is not present, STAN combines produced text outputs into a single <name>.txt.
-  - The base name <name> is controlled by the combinedFileName config key (default: combined).
-
-Diff
-
-- Always-on when archive runs; stan/archive.diff.tar is written every time.
-- Snapshot lives at <outputPath>/.diff/.archive.snapshot.json and is created when missing (or replaced via stan snap).
+- Without -a:
+  - Per-script artifacts written on disk: <outputPath>/<key>.txt
+  - No archives are produced.
+- With -a (no -c):
+  - Per-script artifacts remain on disk.
+  - Archives:
+    - <outputPath>/archive.tar (code only; excludes <outputPath>)
+    - <outputPath>/archive.diff.tar (changed files only; excludes <outputPath>)
+- With -a -c:
+  - Script outputs are included inside both archives (archive.tar and archive.diff.tar) and removed from the output directory after archiving.
+  - On disk, you will only see:
+    - <outputPath>/archive.tar
+    - <outputPath>/archive.diff.tar
+    - <outputPath>/.diff (snapshot & prev archive)
 
 New: stan snap
 
@@ -148,19 +152,25 @@ What gets produced?
 
 By default (with outputPath: stan):
 
-```
-stan/
-├─ archive.tar
-├─ archive.diff.tar          # always produced when archive runs
-├─ .diff/
-│  ├─ .archive.snapshot.json
-│  └─ archive.prev.tar
-├─ build.txt
-├─ lint.txt
-├─ test.txt
-├─ typecheck.txt
-└─ combined.txt              # when --combine without archive
-```
+- No -a:
+  - stan/
+    - build.txt, lint.txt, test.txt, typecheck.txt (as applicable)
+- With -a (no -c):
+  - stan/
+    - build.txt, lint.txt, test.txt, typecheck.txt (as applicable)
+    - archive.tar
+    - archive.diff.tar
+    - .diff/
+      - .archive.snapshot.json
+      - archive.prev.tar
+- With -a -c:
+  - stan/
+    - archive.tar
+    - archive.diff.tar
+    - .diff/
+      - .archive.snapshot.json
+      - archive.prev.tar
+  - (Per-script outputs are included inside archives and removed from disk.)
 
 Pro tip: The multi-line plan
 
@@ -184,7 +194,8 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
-      - run: npx stan -c -d
+      # Produce archives containing outputs; outputs are not kept on disk
+      - run: npx stan -a -c
       - name: Upload STAN artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -197,7 +208,6 @@ Tips & Troubleshooting
 - Prefer portable script entries in your config (e.g., npm run test). STAN captures stdout + stderr for deterministic logs.
 - Add the output directory (default stan/) to your .gitignore.
 - Don’t see the snapshot you expect? Run npx stan snap to explicitly reset it.
-- Avoid Windows file-handle collisions: if you pipe build logs to a file that’s open in another process, close the viewer or use a unique temp file for the build run.
 
 FAQ
 

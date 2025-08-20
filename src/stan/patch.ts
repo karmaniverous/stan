@@ -35,7 +35,7 @@ const repoJoin = (cwd: string, p: string): string =>
   p.startsWith('/') ? path.join(cwd, p.slice(1)) : path.resolve(cwd, p);
 
 /** Unwrap only outer chat fences/banners if they wrap the entire payload.
- * Preserve any interior lines (e.g., "+```" within diff hunks).
+ * Preserve any interior lines (e.g., "+\`\`\`" within diff hunks).
  */
 const unwrapChatWrappers = (text: string): string => {
   const lines = text.split(/\r?\n/);

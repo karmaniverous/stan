@@ -36,7 +36,9 @@ export const makeCli = (): Command => {
   cli.hook('preAction', (thisCommand) => {
     try {
       const root = thisCommand.parent ?? thisCommand;
-      const opts = (root as unknown as { opts?: () => { debug?: boolean } }).opts?.();
+      const opts = (
+        root as unknown as { opts?: () => { debug?: boolean } }
+      ).opts?.();
       if (opts?.debug) process.env.STAN_DEBUG = '1';
     } catch {
       // ignore

@@ -136,20 +136,41 @@ type ApplyResult = {
   captures: AttemptCapture[];
 };
 
+/** Build tolerant git apply attempts for a given strip level.
+ * NOTE: Include --recount to recompute hunk header line counts (tolerates line-number drift).
+ */
 const buildApplyAttempts = (check: boolean, strip: number): ApplyAttempt[] => {
   const base = check ? ['--check'] : [];
   const with3WayNowarn: ApplyAttempt = {
-    args: [...base, '--3way', '--whitespace=nowarn', `-p${strip.toString()}`],
+    args: [
+      ...base,
+      '--3way',
+      '--whitespace=nowarn',
+      '--recount',
+      `-p${strip.toString()}`,
+    ],
     strip,
     label: `3way-nowarn-p${strip.toString()}`,
   };
   const with3WayIgnore: ApplyAttempt = {
-    args: [...base, '--3way', '--ignore-whitespace', `-p${strip.toString()}`],
+    args: [
+      ...base,
+      '--3way',
+      '--ignore-whitespace',
+      '--recount',
+      `-p${strip.toString()}`,
+    ],
     strip,
     label: `3way-ignore-p${strip.toString()}`,
   };
   const withReject: ApplyAttempt = {
-    args: [...base, '--reject', '--whitespace=nowarn', `-p${strip.toString()}`],
+    args: [
+      ...base,
+      '--reject',
+      '--whitespace=nowarn',
+      '--recount',
+      `-p${strip.toString()}`,
+    ],
     strip,
     label: `reject-nowarn-p${strip.toString()}`,
   };

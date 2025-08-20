@@ -12,14 +12,24 @@
 <li>Simpler combine. With <code>-a -c</code>, script outputs live inside the archives (not on disk). No separate “combined artifact” to maintain.</li>
 </ul>
 <p>Backronym bonus: Sample • Tar • Analyze • Narrate — STAN Tames Autoregressive Nonsense.</p>
-<h2 id="install" class="tsd-anchor-link">Install<a href="#install" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">i</span><span class="hl-1"> -</span><span class="hl-2">D</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span><br/><span class="hl-1"># </span><span class="hl-0">or</span><br/><span class="hl-0">pnpm</span><span class="hl-1"> </span><span class="hl-0">add</span><span class="hl-1"> -</span><span class="hl-2">D</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span><br/><span class="hl-1"># </span><span class="hl-0">or</span><br/><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">add</span><span class="hl-1"> -</span><span class="hl-2">D</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span>
+<h2 id="install" class="tsd-anchor-link">Install<a href="#install" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Global install (recommended for CLI usage):</p>
+<pre><code><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">i</span><span class="hl-1"> -</span><span class="hl-0">g</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span><br/><span class="hl-1"># </span><span class="hl-0">or</span><br/><span class="hl-0">pnpm</span><span class="hl-1"> </span><span class="hl-0">add</span><span class="hl-1"> -</span><span class="hl-0">g</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span><br/><span class="hl-1"># </span><span class="hl-0">or</span><br/><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">global</span><span class="hl-1"> </span><span class="hl-0">add</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span>
+</code><button>Copy</button></pre>
+
+<p>Then run the CLI as <code>stan ...</code> from any project.</p>
+<p>Local (dev) install (optional):</p>
+<pre><code><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">i</span><span class="hl-1"> -</span><span class="hl-2">D</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span>
 </code><button>Copy</button></pre>
 
 <p>The CLI installs as <code>stan</code>.</p>
+<p>Verify:</p>
+<pre><code><span class="hl-0">stan</span><span class="hl-1"> --</span><span class="hl-0">version</span><br/><span class="hl-0">stan</span><span class="hl-1"> --</span><span class="hl-0">help</span>
+</code><button>Copy</button></pre>
+
 <h2 id="quickstart" class="tsd-anchor-link">Quickstart<a href="#quickstart" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ol>
 <li>Initialize config</li>
 </ol>
-<pre><code><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">init</span>
+<pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">init</span>
 </code><button>Copy</button></pre>
 
 <p>This scaffolds <code>stan.config.yml</code> (or JSON) with an output path (default <code>stan/</code>) and a script map.</p>
@@ -27,13 +37,17 @@
 <li>Check the config</li>
 </ol>
 <p>Example <code>stan.config.yml</code>:</p>
-<pre><code><span class="hl-3">outputPath</span><span class="hl-1">: </span><span class="hl-0">stan</span><br/><span class="hl-3">includes</span><span class="hl-1">: []</span><br/><span class="hl-3">excludes</span><span class="hl-1">: []</span><br/><span class="hl-3">scripts</span><span class="hl-1">:</span><br/><span class="hl-1">  </span><span class="hl-3">build</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build</span><br/><span class="hl-1">  </span><span class="hl-3">knip</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">knip</span><br/><span class="hl-1">  </span><span class="hl-3">lint</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">lint</span><br/><span class="hl-1">  </span><span class="hl-3">test</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">test</span><br/><span class="hl-1">  </span><span class="hl-3">typecheck</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">typecheck</span><br/><span class="hl-3">defaultPatchFile</span><span class="hl-1">: /</span><span class="hl-0">stan</span><span class="hl-1">.</span><span class="hl-0">patch</span>
+<pre><code><span class="hl-3">stanPath</span><span class="hl-1">: </span><span class="hl-0">stan</span><br/><span class="hl-3">includes</span><span class="hl-1">: []</span><br/><span class="hl-3">excludes</span><span class="hl-1">: []</span><br/><span class="hl-3">scripts</span><span class="hl-1">:</span><br/><span class="hl-1">  </span><span class="hl-3">build</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-3">stan</span><span class="hl-1">:</span><span class="hl-0">build</span><br/><span class="hl-1">  </span><span class="hl-3">lint</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">lint</span><br/><span class="hl-1">  </span><span class="hl-3">test</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">test</span><br/><span class="hl-1">  </span><span class="hl-3">typecheck</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">typecheck</span>
 </code><button>Copy</button></pre>
 
 <ol start="3">
 <li>Generate artifacts</li>
 </ol>
-<pre><code><span class="hl-1"># </span><span class="hl-0">Run</span><span class="hl-1"> </span><span class="hl-0">all</span><span class="hl-1"> </span><span class="hl-0">configured</span><span class="hl-1"> </span><span class="hl-4">scripts</span><span class="hl-1"> (</span><span class="hl-0">no</span><span class="hl-1"> </span><span class="hl-0">archives</span><span class="hl-1"> </span><span class="hl-0">by</span><span class="hl-1"> </span><span class="hl-0">default</span><span class="hl-1">)</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Run</span><span class="hl-1"> </span><span class="hl-0">selected</span><span class="hl-1"> </span><span class="hl-0">scripts</span><span class="hl-1"> </span><span class="hl-4">only</span><span class="hl-1"> (</span><span class="hl-0">preserves</span><span class="hl-1"> </span><span class="hl-0">order</span><span class="hl-1"> </span><span class="hl-0">with</span><span class="hl-1"> -</span><span class="hl-0">s</span><span class="hl-1">)</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">test</span><span class="hl-1"> </span><span class="hl-0">typecheck</span><span class="hl-1"> -</span><span class="hl-0">s</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Run</span><span class="hl-1"> </span><span class="hl-0">all</span><span class="hl-1"> </span><span class="hl-0">except</span><span class="hl-1"> &lt;</span><span class="hl-0">keys</span><span class="hl-1">&gt;</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">e</span><span class="hl-1"> </span><span class="hl-0">knip</span><span class="hl-1"> </span><span class="hl-0">lint</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Produce</span><span class="hl-1"> </span><span class="hl-0">code</span><span class="hl-1"> </span><span class="hl-4">archives</span><span class="hl-1"> (</span><span class="hl-0">regular</span><span class="hl-1"> + </span><span class="hl-0">diff</span><span class="hl-1">) </span><span class="hl-0">after</span><span class="hl-1"> </span><span class="hl-0">running</span><span class="hl-1"> </span><span class="hl-0">scripts</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">a</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Put</span><span class="hl-1"> </span><span class="hl-0">script</span><span class="hl-1"> </span><span class="hl-0">outputs</span><span class="hl-1"> </span><span class="hl-2">INSIDE</span><span class="hl-1"> </span><span class="hl-0">the</span><span class="hl-1"> </span><span class="hl-4">archives</span><span class="hl-1"> (</span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">do</span><span class="hl-1"> </span><span class="hl-0">not</span><span class="hl-1"> </span><span class="hl-0">keep</span><span class="hl-1"> </span><span class="hl-0">them</span><span class="hl-1"> </span><span class="hl-0">on</span><span class="hl-1"> </span><span class="hl-0">disk</span><span class="hl-1">)</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">a</span><span class="hl-1"> -</span><span class="hl-0">c</span>
+<pre><code><span class="hl-1"># </span><span class="hl-0">Run</span><span class="hl-1"> </span><span class="hl-0">all</span><span class="hl-1"> </span><span class="hl-0">configured</span><span class="hl-1"> </span><span class="hl-0">scripts</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">s</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Run</span><span class="hl-1"> </span><span class="hl-0">selected</span><span class="hl-1"> </span><span class="hl-0">scripts</span><span class="hl-1"> </span><span class="hl-4">only</span><span class="hl-1"> (</span><span class="hl-0">preserves</span><span class="hl-1"> </span><span class="hl-0">order</span><span class="hl-1"> </span><span class="hl-0">with</span><span class="hl-1"> -</span><span class="hl-0">q</span><span class="hl-1">)</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">s</span><span class="hl-1"> </span><span class="hl-0">test</span><span class="hl-1"> </span><span class="hl-0">typecheck</span><span class="hl-1"> -</span><span class="hl-0">q</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Run</span><span class="hl-1"> </span><span class="hl-0">all</span><span class="hl-1"> </span><span class="hl-4">except</span><span class="hl-1"> &lt;</span><span class="hl-5">keys</span><span class="hl-1">&gt; (</span><span class="hl-0">reduces</span><span class="hl-1"> </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-0">full</span><span class="hl-1"> </span><span class="hl-0">set</span><span class="hl-1"> </span><span class="hl-0">when</span><span class="hl-1"> -</span><span class="hl-0">s</span><span class="hl-1"> </span><span class="hl-0">absent</span><span class="hl-1">)</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">x</span><span class="hl-1"> </span><span class="hl-0">lint</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Reduce</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">selected</span><span class="hl-1"> </span><span class="hl-0">set</span><span class="hl-1"> </span><span class="hl-6">with</span><span class="hl-1"> -</span><span class="hl-0">x</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">s</span><span class="hl-1"> </span><span class="hl-0">test</span><span class="hl-1"> </span><span class="hl-0">typecheck</span><span class="hl-1"> -</span><span class="hl-0">x</span><span class="hl-1"> </span><span class="hl-0">test</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Produce</span><span class="hl-1"> </span><span class="hl-0">code</span><span class="hl-1"> </span><span class="hl-4">archives</span><span class="hl-1"> (</span><span class="hl-0">regular</span><span class="hl-1"> + </span><span class="hl-0">diff</span><span class="hl-1">) </span><span class="hl-0">after</span><span class="hl-1"> </span><span class="hl-0">running</span><span class="hl-1"> </span><span class="hl-0">scripts</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">a</span><span class="hl-1"> -</span><span class="hl-0">s</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Put</span><span class="hl-1"> </span><span class="hl-0">script</span><span class="hl-1"> </span><span class="hl-0">outputs</span><span class="hl-1"> </span><span class="hl-2">INSIDE</span><span class="hl-1"> </span><span class="hl-0">the</span><span class="hl-1"> </span><span class="hl-4">archives</span><span class="hl-1"> (</span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">do</span><span class="hl-1"> </span><span class="hl-0">not</span><span class="hl-1"> </span><span class="hl-0">keep</span><span class="hl-1"> </span><span class="hl-0">them</span><span class="hl-1"> </span><span class="hl-0">on</span><span class="hl-1"> </span><span class="hl-0">disk</span><span class="hl-1">)</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">a</span><span class="hl-1"> -</span><span class="hl-0">c</span><span class="hl-1"> -</span><span class="hl-0">s</span>
+</code><button>Copy</button></pre>
+
+<p>Tip: enable debug globally</p>
+<pre><code><span class="hl-1"># </span><span class="hl-0">Global</span><span class="hl-1"> </span><span class="hl-0">debug</span><span class="hl-1"> </span><span class="hl-0">applies</span><span class="hl-1"> </span><span class="hl-0">to</span><span class="hl-1"> </span><span class="hl-0">all</span><span class="hl-1"> </span><span class="hl-0">subcommands</span><br/><span class="hl-0">stan</span><span class="hl-1"> -</span><span class="hl-0">d</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> -</span><span class="hl-0">s</span>
 </code><button>Copy</button></pre>
 
 <h2 id="snapshot--diff-the-duo" class="tsd-anchor-link">Snapshot &amp; Diff (the duo)<a href="#snapshot--diff-the-duo" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
@@ -45,73 +59,159 @@
 <li>Explicit reset/update: Use <code>stan snap</code> to (re)write the snapshot on demand.</li>
 </ul>
 </li>
-<li>Previous full archive: STAN maintains <code>stan/.diff/archive.prev.tar</code> for reference.</li>
+<li>Previous full archive: STAN maintains <code>stan/diff/archive.prev.tar</code> for reference.</li>
 </ul>
-<h2 id="cli" class="tsd-anchor-link">CLI<a href="#cli" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> [</span><span class="hl-0">scripts</span><span class="hl-1">...] [</span><span class="hl-0">options</span><span class="hl-1">]</span>
+<h2 id="cli" class="tsd-anchor-link">CLI<a href="#cli" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> [</span><span class="hl-0">options</span><span class="hl-1">]</span>
 </code><button>Copy</button></pre>
 
 <h3 id="options" class="tsd-anchor-link">Options<a href="#options" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
-<li>Selection
+<li>Selection (one of -a, -s, or -x is required)
 <ul>
-<li><code>[scripts...]</code>: run only these keys in order (when paired with <code>-s</code>).</li>
-<li><code>-e, --except &lt;keys...&gt;</code>: run all scripts except these.</li>
+<li><code>-s, --scripts [keys...]</code>: run only these keys. If no keys are listed, all scripts run.</li>
+<li><code>-x, --except-scripts &lt;keys...&gt;</code>: exclude these keys. If <code>-s</code> is present, reduces that set; otherwise reduces from the full set.</li>
 </ul>
 </li>
 <li>Execution mode
 <ul>
-<li>Default is concurrent.</li>
-<li><code>-s, --sequential</code>: run scripts sequentially, preserving enumerable order.</li>
+<li><code>-q, --sequential</code>: run scripts sequentially in config order. Requires <code>-s</code> or <code>-x</code>.</li>
 </ul>
 </li>
 <li>Archives &amp; outputs
 <ul>
-<li><code>-a, --archive</code>: after scripts run, write <code>archive.tar</code> and <code>archive.diff.tar</code>.</li>
-<li><code>-c, --combine</code>: include script outputs inside the archives and do not keep them on disk. Implies <code>--archive</code> and conflicts with <code>--keep</code>.</li>
+<li><code>-a, --archive</code>: after scripts run (or immediately if selection is empty), write <code>archive.tar</code> and <code>archive.diff.tar</code>.</li>
+<li><code>-c, --combine</code>: include script outputs inside the archives and do not keep them on disk. Implies <code>--archive</code> and requires <code>-s</code> or <code>-x</code>. Conflicts with <code>--keep</code>.</li>
 <li><code>-k, --keep</code>: do not clear the output directory before running. Conflicts with <code>--combine</code>.</li>
 </ul>
 </li>
 </ul>
-<h3 id="artifacts" class="tsd-anchor-link">Artifacts<a href="#artifacts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
-<li>Without <code>-a</code>:
+<p>Global:</p>
 <ul>
-<li>Per-script artifacts written on disk: <code>&lt;outputPath&gt;/&lt;key&gt;.txt</code></li>
-<li>No archives are produced.</li>
+<li><code>-d, --debug</code> (on <code>stan</code>): enable verbose debug logging for all subcommands.</li>
+</ul>
+<h3 id="stan-patch" class="tsd-anchor-link">stan patch<a href="#stan-patch" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Apply a patch shared via chat or a file.</p>
+<p>Common flows:</p>
+<pre><code><span class="hl-1"># </span><span class="hl-0">Clean</span><span class="hl-1"> </span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">apply</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-0">the</span><span class="hl-1"> </span><span class="hl-4">clipboard</span><span class="hl-1"> (</span><span class="hl-0">default</span><span class="hl-1">)</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Validate</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-0">the</span><span class="hl-1"> </span><span class="hl-0">clipboard</span><span class="hl-1"> </span><span class="hl-0">without</span><span class="hl-1"> </span><span class="hl-0">changing</span><span class="hl-1"> </span><span class="hl-0">files</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> --</span><span class="hl-0">check</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Read</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-4">file</span><span class="hl-1"> (</span><span class="hl-0">unified</span><span class="hl-1"> </span><span class="hl-0">diff</span><span class="hl-1">) </span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">apply</span><span class="hl-1"> </span><span class="hl-0">it</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> -</span><span class="hl-0">f</span><span class="hl-1"> </span><span class="hl-0">my</span><span class="hl-1">.</span><span class="hl-0">patch</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Validate</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> </span><span class="hl-0">file</span><span class="hl-1"> </span><span class="hl-0">only</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> -</span><span class="hl-0">f</span><span class="hl-1"> </span><span class="hl-0">my</span><span class="hl-1">.</span><span class="hl-0">patch</span><span class="hl-1"> --</span><span class="hl-0">check</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Alternatively</span><span class="hl-1">, </span><span class="hl-0">pass</span><span class="hl-1"> </span><span class="hl-0">the</span><span class="hl-1"> </span><span class="hl-0">diff</span><span class="hl-1"> </span><span class="hl-0">inline</span><span class="hl-1"> </span><span class="hl-6">as</span><span class="hl-1"> </span><span class="hl-5">an</span><span class="hl-1"> </span><span class="hl-5">argument</span><span class="hl-1"> (</span><span class="hl-5">beware</span><span class="hl-1"> </span><span class="hl-5">shell</span><span class="hl-1"> </span><span class="hl-5">limits</span><span class="hl-1"> </span><span class="hl-5">on</span><span class="hl-1"> </span><span class="hl-5">very</span><span class="hl-1"> </span><span class="hl-5">large</span><span class="hl-1"> </span><span class="hl-5">diffs</span><span class="hl-1">)</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> </span><span class="hl-7">&quot;diff --git a/x b/</span><span class="hl-8">x</span><br/><span class="hl-1">--- </span><span class="hl-0">a</span><span class="hl-1">/</span><span class="hl-0">x</span><br/><span class="hl-1">+++ </span><span class="hl-0">b</span><span class="hl-1">/</span><span class="hl-0">x</span><br/><span class="hl-1">@@ -</span><span class="hl-9">1</span><span class="hl-1">,</span><span class="hl-9">1</span><span class="hl-1"> +</span><span class="hl-9">1</span><span class="hl-1">,</span><span class="hl-9">1</span><span class="hl-1"> @@</span><br/><span class="hl-1">-</span><span class="hl-0">old</span><br/><span class="hl-1">+</span><span class="hl-10">new</span><span class="hl-7">&quot;</span>
+</code><button>Copy</button></pre>
+
+<p>Behavior details:</p>
+<ul>
+<li>Canonical workspace: cleaned input is written to <code>&lt;stanPath&gt;/patch/.patch</code>; diagnostics go to <code>&lt;stanPath&gt;/patch/.debug/</code>. Any newly created <code>*.rej</code> files are moved to <code>&lt;stanPath&gt;/refactors/patch-rejects-&lt;UTC timestamp&gt;/</code>.</li>
+<li>Detection: If clipboard/file content looks like base64 and decodes to a unified diff (e.g., contains <code>diff --git</code>, <code>---</code>, <code>+++</code>, <code>@@</code>), it will be decoded. Otherwise, the text is treated as a raw unified diff.</li>
+<li>Cleanups: code fences/banners removed, zero‑width characters stripped, line endings normalized to LF, and a final newline ensured. Whitespace within lines is preserved.</li>
+<li>Application strategy: tries <code>git apply</code> with tolerant settings over both strip levels:
+<ul>
+<li><code>--3way --whitespace=nowarn --recount -p1</code></li>
+<li><code>--3way --ignore-whitespace --recount -p1</code></li>
+<li><code>--reject --whitespace=nowarn --recount -p1</code></li>
+<li>If needed, repeats with <code>-p0</code> in the same order.</li>
 </ul>
 </li>
-<li>With <code>-a</code> (no <code>-c</code>):
-<ul>
-<li>Per-script artifacts remain on disk.</li>
-<li>Archives:
-<ul>
-<li><code>&lt;outputPath&gt;/archive.tar</code> (code only; excludes <code>&lt;outputPath&gt;</code>)</li>
-<li><code>&lt;outputPath&gt;/archive.diff.tar</code> (changed files only; excludes <code>&lt;outputPath&gt;</code>)</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>With <code>-a -c</code>:
-<ul>
-<li>Script outputs are included inside both archives (<code>archive.tar</code> and <code>archive.diff.tar</code>) and removed from the output directory after archiving.</li>
-<li>On disk, you will only see:
-<ul>
-<li><code>&lt;outputPath&gt;/archive.tar</code></li>
-<li><code>&lt;outputPath&gt;/archive.diff.tar</code></li>
-<li><code>&lt;outputPath&gt;/.diff</code> (snapshot &amp; prev archive)</li>
-</ul>
-</li>
-</ul>
-</li>
+<li>Windows note: Passing very large base64 as an inline command-line argument can exceed the ~32K character limit. Clipboard default or <code>-f</code> are recommended for large patches.</li>
 </ul>
 <h3 id="stan-snap" class="tsd-anchor-link"><code>stan snap</code><a href="#stan-snap" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Explicitly (re)generate the diff snapshot—without writing an archive:</p>
-<pre><code><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span>
+<pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span>
 </code><button>Copy</button></pre>
 
 <p>Useful when you want to “re-baseline” diffs after intentional changes.</p>
-<h3 id="stan-patch" class="tsd-anchor-link"><code>stan patch</code><a href="#stan-patch" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Apply a repo-root–relative patch with a single command:</p>
-<pre><code><span class="hl-1"># </span><span class="hl-0">Save</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">diff</span><span class="hl-1"> </span><span class="hl-0">to</span><span class="hl-1"> /</span><span class="hl-0">stan</span><span class="hl-1">.</span><span class="hl-0">patch</span><span class="hl-1">, </span><span class="hl-3">then</span><span class="hl-1">:</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><br/><br/><span class="hl-1"># </span><span class="hl-0">or</span><span class="hl-1"> </span><span class="hl-0">specify</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-3">file</span><span class="hl-1">:</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> ./</span><span class="hl-0">my</span><span class="hl-1">-</span><span class="hl-0">fix</span><span class="hl-1">.</span><span class="hl-0">patch</span>
+<h2 id="bootloader-wire-stan-into-your-ai-agent" class="tsd-anchor-link">Bootloader (wire STAN into your AI agent)<a href="#bootloader-wire-stan-into-your-ai-agent" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>STAN ships a minimal “bootloader” system prompt that you can paste into the AI assistant you use (ChatGPT, Claude, a local agent, etc.). Its only job is to:</p>
+<ul>
+<li>integrity‑check any attached tar archives,</li>
+<li>locate <code>&lt;stanPath&gt;/system/stan.system.md</code> inside the latest artifact (using stanPath from <code>stan.config.*</code>), and</li>
+<li>load that file as the governing system prompt for the rest of the conversation (refusing to proceed if it’s missing).</li>
+</ul>
+<p>Where to find it:</p>
+<ul>
+<li>In your repo: <code>&lt;stanPath&gt;/system/stan.bootloader.md</code> (default: <code>stan/system/stan.bootloader.md</code>).</li>
+<li>From the npm package: <code>node_modules/@karmaniverous/stan/dist/stan.bootloader.md</code> (we also ship <code>stan.system.md</code> and <code>stan.project.template.md</code> under <code>dist/</code> for convenience).</li>
+</ul>
+<p>How to use it:</p>
+<ol>
+<li>
+<p>Generate artifacts with STAN:</p>
+<ul>
+<li><code>stan run -a -s</code> (or select the scripts you need).</li>
+<li>This writes <code>stan/output/archive.tar</code> (and <code>archive.diff.tar</code>).</li>
+</ul>
+</li>
+<li>
+<p>In your AI tool, set the system prompt to the contents of <code>stan.bootloader.md</code>.</p>
+</li>
+<li>
+<p>Attach <code>archive.tar</code> (and <code>archive.diff.tar</code> if present). If you used <code>-c/--combine</code>, your script outputs are already inside those archives; otherwise you can attach the text logs too.</p>
+</li>
+<li>
+<p>State your request (e.g., “Fix the failing tests” or “Refactor X”).</p>
+<ul>
+<li>The bootloader will switch the AI to <code>stan.system.md</code> automatically.</li>
+</ul>
+</li>
+</ol>
+<p>Troubleshooting:</p>
+<ul>
+<li>If the AI reports that <code>stan/system/stan.system.md</code> is missing, ensure:
+<ul>
+<li>your archive contains <code>&lt;stanPath&gt;/system/stan.system.md</code> (default <code>stan/system/stan.system.md</code>),</li>
+<li>your <code>stan.config.yml|json</code> is present and has the correct <code>stanPath</code>, or</li>
+<li>attach a raw file named exactly <code>stan.system.md</code> as a separate file.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="snap-history-stash-and-archives" class="tsd-anchor-link">Snap history, stash, and archives<a href="#snap-history-stash-and-archives" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p><code>snap</code> maintains a bounded history and can optionally stash before capturing:</p>
+<ul>
+<li>
+<p>History and navigation:</p>
+<ul>
+<li><code>stan snap</code> — write a new snapshot (pushes history, clears redos).</li>
+<li><code>stan snap undo</code> — move to the previous snapshot and restore it.</li>
+<li><code>stan snap redo</code> — move forward in history and restore it.</li>
+<li><code>stan snap set 0</code> — jump to a specific history index and restore it.</li>
+<li><code>stan snap info</code> — show newest→oldest stack with local timestamps; marks the current index.</li>
+</ul>
+</li>
+<li>
+<p>Stash changes first:</p>
+<ul>
+<li><code>stan snap -s</code> — runs <code>git stash -u</code> before snapshot; after success, attempts <code>git stash pop</code>.
+<ul>
+<li>If <code>stash -u</code> fails: snapshot is aborted (no changes made).</li>
+<li>If <code>stash pop</code> fails: a warning is logged; the snapshot remains.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>Archive captures with the snapshot:</p>
+<ul>
+<li>If <code>stan/output/archive.tar</code> or <code>archive.diff.tar</code> exist at snap time, STAN copies them into <code>stan/diff/archives/</code> with the same timestamp stem as the snapshot (e.g., <code>archive-YYYYMMDD-HHMMSS.tar</code>).</li>
+<li>Snapshots are stored under <code>stan/diff/snapshots/</code> and the active snapshot lives at <code>stan/diff/.archive.snapshot.json</code>.</li>
+</ul>
+</li>
+<li>
+<p>History depth:</p>
+<ul>
+<li>Defaults to 10 entries; override by adding <code>maxUndos: &lt;n&gt;</code> to <code>stan.config.*</code>.</li>
+</ul>
+</li>
+</ul>
+<p>Example session:</p>
+<pre><code><span class="hl-1"># </span><span class="hl-0">Create</span><span class="hl-1"> </span><span class="hl-0">baseline</span><span class="hl-1"> </span><span class="hl-0">snapshot</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Make</span><span class="hl-1"> </span><span class="hl-0">intentional</span><span class="hl-1"> </span><span class="hl-0">changes</span><span class="hl-1">, </span><span class="hl-0">then</span><span class="hl-1"> </span><span class="hl-0">replace</span><span class="hl-1"> </span><span class="hl-0">baseline</span><span class="hl-1"> </span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">capture</span><span class="hl-1"> </span><span class="hl-0">any</span><span class="hl-1"> </span><span class="hl-0">current</span><span class="hl-1"> </span><span class="hl-0">archives</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><span class="hl-1"> -</span><span class="hl-0">s</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Inspect</span><span class="hl-1"> </span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">navigate</span><span class="hl-1"> </span><span class="hl-0">history</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><span class="hl-1"> </span><span class="hl-0">info</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><span class="hl-1"> </span><span class="hl-0">undo</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><span class="hl-1"> </span><span class="hl-0">redo</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><span class="hl-1"> </span><span class="hl-0">set</span><span class="hl-1"> </span><span class="hl-9">0</span>
 </code><button>Copy</button></pre>
 
+<h2 id="large-file-guidance-300-lines" class="tsd-anchor-link">Large-file guidance (300+ lines)<a href="#large-file-guidance-300-lines" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>To keep patches focused and modules testable, STAN flags any source file longer than 300 lines and requests a plan.</p>
+<p>What you’ll see:</p>
 <ul>
-<li>Paths beginning with <code>/</code> are treated as repo-root relative for portability.</li>
+<li>A list of long files (path + LOC).</li>
+<li>For each file, either:
+<ul>
+<li>a short outline for splitting it (proposed modules, responsibilities, and test strategy), or</li>
+<li>a documented reason to keep it long (e.g., generated code, cohesive DSL, or deliberate monolith with clear navigation).</li>
 </ul>
-</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#stan--stan-tames-autoregressive-nonsense"><span>STAN — <wbr/>STAN <wbr/>Tames <wbr/>Autoregressive <wbr/>Nonsense</span></a><ul><li><a href="#why-stan"><span>Why <wbr/>STAN?</span></a></li><li><a href="#install"><span>Install</span></a></li><li><a href="#quickstart"><span>Quickstart</span></a></li><li><a href="#snapshot--diff-the-duo"><span>Snapshot &amp; <wbr/>Diff (the duo)</span></a></li><li><a href="#cli"><span>CLI</span></a></li><li><ul><li><a href="#options"><span>Options</span></a></li><li><a href="#artifacts"><span>Artifacts</span></a></li><li><a href="#stan-snap"><span>stan snap</span></a></li><li><a href="#stan-patch"><span>stan patch</span></a></li></ul></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">@karmaniverous/stan</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
+</li>
+</ul>
+<p>Example checklist (assistant output):</p>
+<pre><code><span class="hl-0">Long</span><span class="hl-1"> </span><span class="hl-4">files</span><span class="hl-1"> (&gt;</span><span class="hl-9">300</span><span class="hl-1"> </span><span class="hl-2">LOC</span><span class="hl-1">) </span><span class="hl-3">detected</span><span class="hl-1">:</span><br/><span class="hl-9">1</span><span class="hl-1">) </span><span class="hl-0">src</span><span class="hl-1">/</span><span class="hl-0">feature</span><span class="hl-1">/</span><span class="hl-0">engine</span><span class="hl-1">.</span><span class="hl-0">ts</span><span class="hl-1"> — ~</span><span class="hl-9">512</span><span class="hl-1"> </span><span class="hl-2">LOC</span><br/><span class="hl-1">   - </span><span class="hl-3">Proposal</span><span class="hl-1">: </span><span class="hl-0">Split</span><span class="hl-1"> </span><span class="hl-0">into</span><br/><span class="hl-1">     • </span><span class="hl-0">engine</span><span class="hl-1">/</span><span class="hl-0">core</span><span class="hl-1">.</span><span class="hl-4">ts</span><span class="hl-1"> (</span><span class="hl-0">state</span><span class="hl-1"> + </span><span class="hl-0">lifecycle</span><span class="hl-1">)</span><br/><span class="hl-1">     • </span><span class="hl-0">engine</span><span class="hl-1">/</span><span class="hl-0">plugins</span><span class="hl-1">.</span><span class="hl-4">ts</span><span class="hl-1"> (</span><span class="hl-0">registry</span><span class="hl-1"> + </span><span class="hl-0">hooks</span><span class="hl-1">)</span><br/><span class="hl-1">     • </span><span class="hl-0">engine</span><span class="hl-1">/</span><span class="hl-0">runner</span><span class="hl-1">.</span><span class="hl-4">ts</span><span class="hl-1"> (</span><span class="hl-0">execution</span><span class="hl-1">, </span><span class="hl-0">error</span><span class="hl-1"> </span><span class="hl-0">boundaries</span><span class="hl-1">)</span><br/><span class="hl-1">   - </span><span class="hl-3">Tests</span><span class="hl-1">: </span><span class="hl-0">unit</span><span class="hl-1"> </span><span class="hl-0">per</span><span class="hl-1"> </span><span class="hl-5">module</span><span class="hl-1"> + </span><span class="hl-0">high</span><span class="hl-1">-</span><span class="hl-0">level</span><span class="hl-1"> </span><span class="hl-0">integration</span><br/><br/><span class="hl-9">2</span><span class="hl-1">) </span><span class="hl-0">src</span><span class="hl-1">/</span><span class="hl-0">vendor</span><span class="hl-1">/</span><span class="hl-0">sql</span><span class="hl-1">-</span><span class="hl-0">grammar</span><span class="hl-1">.</span><span class="hl-0">ts</span><span class="hl-1"> — ~</span><span class="hl-9">1</span><span class="hl-1">,</span><span class="hl-9">042</span><span class="hl-1"> </span><span class="hl-2">LOC</span><br/><span class="hl-1">   - </span><span class="hl-3">Decision</span><span class="hl-1">: </span><span class="hl-0">Keep</span><span class="hl-1"> </span><span class="hl-4">long</span><span class="hl-1"> (</span><span class="hl-0">generated</span><span class="hl-1"> </span><span class="hl-0">grammar</span><span class="hl-1">; </span><span class="hl-0">splitting</span><span class="hl-1"> </span><span class="hl-0">harms</span><span class="hl-1"> </span><span class="hl-0">maintainability</span><span class="hl-1">)</span><br/><span class="hl-1">   - </span><span class="hl-3">Action</span><span class="hl-1">: </span><span class="hl-0">Add</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-2">README</span><span class="hl-1"> </span><span class="hl-0">note</span><span class="hl-1"> </span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">exclude</span><span class="hl-1"> </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-0">coverage</span><span class="hl-1"> </span><span class="hl-0">thresholds</span>
+</code><button>Copy</button></pre>
+
+<p>No changes are made automatically; STAN waits for confirmation on which files to split before emitting patches.</p>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#stan--stan-tames-autoregressive-nonsense"><span>STAN — <wbr/>STAN <wbr/>Tames <wbr/>Autoregressive <wbr/>Nonsense</span></a><ul><li><a href="#why-stan"><span>Why <wbr/>STAN?</span></a></li><li><a href="#install"><span>Install</span></a></li><li><a href="#quickstart"><span>Quickstart</span></a></li><li><a href="#snapshot--diff-the-duo"><span>Snapshot &amp; <wbr/>Diff (the duo)</span></a></li><li><a href="#cli"><span>CLI</span></a></li><li><ul><li><a href="#options"><span>Options</span></a></li><li><a href="#stan-patch"><span>stan patch</span></a></li><li><a href="#stan-snap"><span>stan snap</span></a></li></ul></li><li><a href="#bootloader-wire-stan-into-your-ai-agent"><span>Bootloader (wire <wbr/>STAN into your <wbr/>AI agent)</span></a></li><li><a href="#snap-history-stash-and-archives"><span>Snap history, stash, and archives</span></a></li><li><a href="#large-file-guidance-300-lines"><span>Large-<wbr/>file guidance (300+ lines)</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">@karmaniverous/stan</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

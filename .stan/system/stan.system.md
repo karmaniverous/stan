@@ -173,13 +173,13 @@ CRITICAL: Fence Hygiene (Nested Code Blocks) and Coverage
 
 - You MUST compute fence lengths dynamically to ensure that each outer fence has one more backtick than any fence it contains.
 - Algorithm:
-  1. Collect all code blocks you will emit (every “Full Listing” and “Patch” for each file; any additional examples).
+  1. Collect all code blocks you will emit (every “Patch” per file; any optional “Full Listing” blocks, if requested).
   2. For each block, scan its content and compute the maximum run of consecutive backticks appearing anywhere inside (including literals in examples).
   3. Choose the fence length for that block as maxInnerBackticks + 1 (minimum 3).
   4. If a block contains other fenced blocks (e.g., an example that itself shows fences), treat those inner fences as part of the scan. If the inner block uses N backticks, the enclosing block must use at least N+1 backticks.
-  5. Apply the same fence length to both the “Full Listing” and “Patch” blocks of a given file; if either requires a larger fence, use the larger value for both.
+  5. If a file has both a “Patch” and an optional “Full Listing”, use the larger fence length for both blocks.
   6. Never emit a block whose outer fence length is less than or equal to the maximum backtick run inside it.
-  7. As a sanity check, after composing the message, rescan each block and verify the rule holds; if not, increase fence lengths and re‑emit.
+  7. After composing the message, rescan each block and verify the rule holds; if not, increase fence lengths and re‑emit.
 
 - Coverage:
   - For every file you add, modify, or delete in this response:
@@ -188,7 +188,7 @@ CRITICAL: Fence Hygiene (Nested Code Blocks) and Coverage
 
 Exact Output Template (headings and order)
 
-Use these headings exactly; wrap each “Full Listing” and “Patch” in a fence computed by the algorithm above.
+Use these headings exactly; wrap each Patch (and optional Full Listing) in a fence computed by the algorithm above.
 
 ---
 
@@ -230,13 +230,9 @@ Use these headings exactly; wrap each “Full Listing” and “Patch” in a fe
 
 ## CREATED: <stanPath>/refactors/20250819-122100-a-refactor-note.md
 
-### Full Listing: <stanPath>/refactors/20250819-122100-a-refactor-note.md
-
-<full listing fenced per algorithm>
-
 ### Patch: <stanPath>/refactors/20250819-122100-a-refactor-note.md
 
-## <plain unified diff fenced per algorithm>
+<plain unified diff fenced per algorithm>
 
 Validation
 
@@ -249,3 +245,7 @@ Validation
 - Always emit plain unified diffs with @@ hunks.
 - Do not wrap the patch beyond the fence required by the +1 rule.
 - Coverage must include every created/updated/deleted file referenced above.
+
+Optional Full Listings
+
+- If the user explicitly asks for full listings, include the “Full Listing” block(s) for the requested file(s) using fences computed by the same algorithm.

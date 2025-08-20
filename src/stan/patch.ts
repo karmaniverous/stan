@@ -1,39 +1,18 @@
 /* src/cli/stan/patch.ts
  * "stan patch" subcommand: apply a patch from clipboard / file / inline input.
- * - Default: read unified diff from clipboard; write cleaned content to <stanPath>/patch/.patch, then apply (staged).
- * - -f, --file [filename]: read from file as source; cleaned content is still written to <stanPath>/patch/.patch.
- * - -c, --check: run git apply --check (validate only). No staging, no changes.
- * - Detection & cleanup:
- *   - Remove chat wrappers or BEGIN/END banners only when they wrap the entire payload.
- *   - Try extracting the first fenced code block containing a unified diff; otherwise slice from the first diff marker; strip trailing closing fences.
- *   - Normalize EOL to LF; ensure trailing newline; do not alter whitespace within lines.
- * - Apply strategy (staged by default):
- *   - For apply: include --index and try strip p=1 then p=0 across:
- *     1) --3way --whitespace=nowarn --recount
- *     2) --3way --ignore-whitespace --recount
- *     3) --reject --whitespace=nowarn --recount
- *   - For --check: same sets but with --check and without --index.
  */
-import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import {
-  copyFile,
-  mkdir,
-  readdir,
-  readFile,
-  rename,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 import type { Command } from 'commander';
-import path from 'path';
 
 import { applyCliSafety } from '@/cli/stan/cli-utils';
 
-import { findConfigPathSync, loadConfig } from './config';
-import { makeStanDirs } from './paths';
-import { utcStamp } from './util/time';
+import { ApplyResult, buildApplyAttempts, runGitApply } from './patch/apply';
+import { detectAndCleanPatch } from './patch/clean';
+import { resolvePatchContext } from './patch/context';
+import { listRejFiles, moveRejFilesToRefactors } from './patch/rejects';
 
 type PatchSource =
   | { kind: 'clipboard' }
@@ -42,92 +21,6 @@ type PatchSource =
 
 const repoJoin = (cwd: string, p: string): string =>
   p.startsWith('/') ? path.join(cwd, p.slice(1)) : path.resolve(cwd, p);
-
-const unwrapChatWrappers = (text: string): string => {
-  const lines = text.split(/\r?\n/);
-  let i = 0;
-  while (i < lines.length && lines[i].trim() === '') i += 1;
-  let j = lines.length - 1;
-  while (j >= 0 && lines[j].trim() === '') j -= 1;
-  if (i > j) return text;
-
-  const first = lines[i].trim();
-  const last = lines[j].trim();
-  const isFence = (s: string) => /^```/.test(s);
-  const isBegin = (s: string) => /^BEGIN[_ -]?PATCH/i.test(s);
-  const isEnd = (s: string) => /^END[_ -]?PATCH/i.test(s);
-
-  const unwrapIf = (cond: boolean): string => {
-    if (!cond) return text;
-    const inner = lines.slice(i + 1, j);
-    return [...lines.slice(0, i), ...inner, ...lines.slice(j + 1)].join('\n');
-  };
-
-  if (isFence(first) && isFence(last)) return unwrapIf(true);
-  if (isBegin(first) && isEnd(last)) return unwrapIf(true);
-  return text;
-};
-
-const stripZeroWidthAndNormalize = (s: string): string => {
-  const ZERO_WIDTH_RE = /[\u200B-\u200D\uFEFF]/g;
-  const noZW = s.replace(ZERO_WIDTH_RE, '');
-  const lf = noZW.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  return lf.endsWith('\n') ? lf : lf + '\n';
-};
-
-const ensureFinalNewline = (s: string): string =>
-  s.endsWith('\n') ? s : s + '\n';
-
-const looksLikeUnifiedDiff = (t: string): boolean => {
-  if (/^diff --git /m.test(t)) return true;
-  if (/^---\s+(?:a\/|\S)/m.test(t) && /^\+\+\+\s+(?:b\/|\S)/m.test(t))
-    return true;
-  if (/^@@\s+-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s+@@/m.test(t)) return true;
-  return false;
-};
-
-const extractFencedUnifiedDiff = (text: string): string | null => {
-  const lines = text.split('\n');
-  for (let i = 0; i < lines.length; i += 1) {
-    const open = lines[i];
-    const m = open.match(/^`{3,}.*$/);
-    if (!m) continue;
-    const tickCount = (open.match(/^`+/) ?? [''])[0].length;
-    for (let j = i + 1; j < lines.length; j += 1) {
-      if (new RegExp(`^\\\`${'{'}${tickCount}{'}'}\\s*$`).test(lines[j])) {
-        const inner = lines.slice(i + 1, j).join('\n');
-        if (looksLikeUnifiedDiff(inner)) return inner;
-        i = j;
-        break;
-      }
-    }
-  }
-  return null;
-};
-
-const extractRawUnifiedDiff = (text: string): string | null => {
-  let idx = text.search(/^diff --git /m);
-  if (idx < 0) idx = text.search(/^---\s+(?:a\/|\S)/m);
-  if (idx < 0) return null;
-  const body = text.slice(idx);
-  const trimmed = body.replace(/\n`{3,}\s*$/m, '\n');
-  return trimmed;
-};
-
-const detectAndCleanPatch = (input: string): string => {
-  const pre = stripZeroWidthAndNormalize(input.trim());
-  const maybeUnwrapped = unwrapChatWrappers(pre);
-  const normalized = stripZeroWidthAndNormalize(maybeUnwrapped);
-
-  const fenced = extractFencedUnifiedDiff(normalized);
-  if (fenced)
-    return ensureFinalNewline(stripZeroWidthAndNormalize(fenced).trimEnd());
-
-  const raw = extractRawUnifiedDiff(normalized);
-  if (raw) return ensureFinalNewline(stripZeroWidthAndNormalize(raw).trimEnd());
-
-  return ensureFinalNewline(normalized);
-};
 
 const readFromClipboard = async (): Promise<string> => {
   const { default: clipboardy } = (await import('clipboardy')) as {
@@ -139,195 +32,6 @@ const readFromClipboard = async (): Promise<string> => {
 const ensureParentDir = async (p: string): Promise<void> => {
   const dir = path.dirname(p);
   if (!existsSync(dir)) await mkdir(dir, { recursive: true });
-};
-
-type ApplyAttempt = {
-  args: string[];
-  strip: number;
-  label: string;
-};
-
-type AttemptCapture = {
-  label: string;
-  code: number;
-  stdout: string;
-  stderr: string;
-};
-
-type ApplyResult = {
-  ok: boolean;
-  tried: string[];
-  lastCode: number;
-  captures: AttemptCapture[];
-};
-
-const buildApplyAttempts = (
-  check: boolean,
-  strip: number,
-  stage: boolean,
-): ApplyAttempt[] => {
-  const base = check ? ['--check'] : stage ? ['--index'] : [];
-  const with3WayNowarn: ApplyAttempt = {
-    args: [
-      ...base,
-      '--3way',
-      '--whitespace=nowarn',
-      '--recount',
-      `-p${strip.toString()}`,
-    ],
-    strip,
-    label: `3way-nowarn-p${strip.toString()}`,
-  };
-  const with3WayIgnore: ApplyAttempt = {
-    args: [
-      ...base,
-      '--3way',
-      '--ignore-whitespace',
-      '--recount',
-      `-p${strip.toString()}`,
-    ],
-    strip,
-    label: `3way-ignore-p${strip.toString()}`,
-  };
-  const withReject: ApplyAttempt = {
-    args: [
-      ...base,
-      '--reject',
-      '--whitespace=nowarn',
-      '--recount',
-      `-p${strip.toString()}`,
-    ],
-    strip,
-    label: `reject-nowarn-p${strip.toString()}`,
-  };
-  return [with3WayNowarn, with3WayIgnore, withReject];
-};
-
-const runGitApply = async (
-  cwd: string,
-  patchFileAbs: string,
-  attempts: ApplyAttempt[],
-): Promise<ApplyResult> => {
-  const tried: string[] = [];
-  const captures: AttemptCapture[] = [];
-
-  for (const att of attempts) {
-    tried.push(att.label);
-
-    const code = await new Promise<number>((resolveP) => {
-      const child = spawn('git', ['apply', ...att.args, patchFileAbs], {
-        cwd,
-        shell: false,
-        windowsHide: true,
-      });
-
-      let so = '';
-      let se = '';
-
-      const cp = child as unknown as {
-        stdout?: NodeJS.ReadableStream;
-        stderr?: NodeJS.ReadableStream;
-      };
-      cp.stderr?.on('data', (d: Buffer) => {
-        const s = d.toString('utf8');
-        se += s;
-        if (process.env.STAN_DEBUG === '1') process.stderr.write(s);
-      });
-      cp.stdout?.on('data', (d: Buffer) => {
-        const s = d.toString('utf8');
-        so += s;
-        if (process.env.STAN_DEBUG === '1') process.stdout.write(s);
-      });
-
-      child.on('close', (c) => {
-        captures.push({
-          label: att.label,
-          code: c ?? 0,
-          stdout: so,
-          stderr: se,
-        });
-        resolveP(c ?? 0);
-      });
-    });
-
-    if (code === 0) {
-      return { ok: true, tried, lastCode: 0, captures };
-    }
-    if (process.env.STAN_DEBUG === '1') {
-      console.error(`stan: git apply failed for ${att.label} (exit ${code})`);
-    }
-  }
-  return { ok: false, tried, lastCode: 1, captures };
-};
-
-const resolvePatchContext = async (
-  cwd0: string,
-): Promise<{
-  cwd: string;
-  patchAbs: string;
-  patchRel: string;
-}> => {
-  const cfgPath = findConfigPathSync(cwd0);
-  const cwd = cfgPath ? path.dirname(cfgPath) : cwd0;
-
-  let stanPath = '.stan';
-  try {
-    const cfg = await loadConfig(cwd);
-    stanPath = cfg.stanPath;
-  } catch {
-    // default used
-  }
-  const dirs = makeStanDirs(cwd, stanPath);
-  const patchAbs = path.join(dirs.patchAbs, '.patch');
-  const patchRel = path.relative(cwd, patchAbs).replace(/\\/g, '/');
-  return { cwd, patchAbs, patchRel };
-};
-
-const listRejFiles = async (root: string): Promise<string[]> => {
-  const out: string[] = [];
-  const walk = async (rel: string): Promise<void> => {
-    const abs = path.join(root, rel);
-    let entries: import('fs').Dirent[] = [];
-    try {
-      entries = await readdir(abs, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const e of entries) {
-      if (e.name === '.git' || e.name === 'node_modules') continue;
-      const childRel = rel ? `${rel}/${e.name}` : e.name;
-      if (e.isDirectory()) await walk(childRel);
-      else if (e.isFile() && e.name.endsWith('.rej'))
-        out.push(childRel.replace(/\\/g, '/'));
-    }
-  };
-  await walk('');
-  return out;
-};
-
-const moveRejFilesToRefactors = async (
-  cwd: string,
-  stanPath: string,
-  rels: string[],
-): Promise<string | null> => {
-  if (!rels.length) return null;
-  const batch = `patch-rejects-${utcStamp()}`;
-  const destRoot = path.join(cwd, stanPath, 'refactors', batch);
-  await mkdir(destRoot, { recursive: true });
-  for (const rel of rels) {
-    const srcAbs = path.join(cwd, rel);
-    const destAbs = path.join(destRoot, rel);
-    try {
-      await mkdir(path.dirname(destAbs), { recursive: true });
-      await rename(srcAbs, destAbs).catch(async () => {
-        await copyFile(srcAbs, destAbs);
-        await rm(srcAbs, { force: true });
-      });
-    } catch {
-      // best-effort
-    }
-  }
-  return path.relative(cwd, destRoot).replace(/\\/g, '/');
 };
 
 export const registerPatch = (cli: Command): Command => {
@@ -417,8 +121,7 @@ export const registerPatch = (cli: Command): Command => {
 
       // Track *.rej files created during attempts
       const preRej = await listRejFiles(cwd);
-
-      const result = await runGitApply(cwd, patchAbs, attempts);
+      const result: ApplyResult = await runGitApply(cwd, patchAbs, attempts);
 
       if (result.ok) {
         console.log(
@@ -432,20 +135,7 @@ export const registerPatch = (cli: Command): Command => {
         const postRej = await listRejFiles(cwd);
         const preSet = new Set(preRej);
         const newOnes = postRej.filter((r) => !preSet.has(r));
-        const cfgPath = findConfigPathSync(cwd);
-        const baseCwd = cfgPath ? path.dirname(cfgPath) : cwd;
-        let stanPath = '.stan';
-        try {
-          const cfg = await loadConfig(baseCwd);
-          stanPath = cfg.stanPath;
-        } catch {
-          // default
-        }
-        const movedTo = await moveRejFilesToRefactors(
-          baseCwd,
-          stanPath,
-          newOnes,
-        );
+        const movedTo = await moveRejFilesToRefactors(cwd, newOnes);
         if (movedTo) {
           console.log(
             `stan: moved ${newOnes.length.toString()} reject file(s) -> ${movedTo}`,

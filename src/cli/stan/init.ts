@@ -17,6 +17,12 @@
  * - During interactive init, explicitly prompt the user to confirm resetting
  *   the diff snapshot; honor their decision.
  * - Persist `defaultPatchFile` to config (default '/stan.patch').
+ *
+ * NEW:
+ * - Ensure stan.system.md is actually updated WHEN the user runs `stan init`
+ *   and ONLY then: copy the packaged stan.system.md from dist if the destination
+ *   file is missing OR its contents differ. Do NOT overwrite stan.project.md
+ *   if it exists (still copy only when missing).
  */
 import { existsSync } from 'node:fs';
 import { copyFile, readFile, writeFile } from 'node:fs/promises';
@@ -45,16 +51,38 @@ const readPackageJsonScripts = async (
   }
 };
 
-const copyDocIfMissing = async (
+/** Copy doc file from dist to project root.
+ * - When updateIfDifferent===true: always overwrite if destination missing or contents differ.
+ * - When updateIfDifferent===false: copy only if destination is missing.
+ */
+const copyDoc = async (
   cwd: string,
   moduleRoot: string,
   srcName: string,
   destName: string,
+  updateIfDifferent: boolean,
 ): Promise<void> => {
   const src = path.join(moduleRoot, srcName);
   const dest = path.join(cwd, destName);
-  if (!existsSync(dest) && existsSync(src)) {
+  if (!existsSync(src)) return;
+
+  if (!existsSync(dest)) {
     await copyFile(src, dest);
+    return;
+  }
+
+  if (!updateIfDifferent) return;
+
+  try {
+    const [a, b] = await Promise.all([
+      readFile(src, 'utf8'),
+      readFile(dest, 'utf8'),
+    ]);
+    if (a !== b) {
+      await copyFile(src, dest);
+    }
+  } catch {
+    // If we can't read/compare for any reason, do not overwrite silently.
   }
 };
 
@@ -67,12 +95,16 @@ const ensureDocs = async (cwd: string): Promise<void> => {
   // Both files are delivered in dist/ (rollup copies them to moduleRoot/dist).
   const distRoot = path.join(moduleRoot, 'dist');
 
-  await copyDocIfMissing(cwd, distRoot, 'stan.system.md', 'stan.system.md');
-  await copyDocIfMissing(
+  // stan.system.md: update when different (only upon running init)
+  await copyDoc(cwd, distRoot, 'stan.system.md', 'stan.system.md', true);
+
+  // stan.project.md: copy only if missing (user may have customized it)
+  await copyDoc(
     cwd,
     distRoot,
     'stan.project.template.md',
     'stan.project.md',
+    false,
   );
 };
 
@@ -241,7 +273,7 @@ export const performInit = async (
     await writeFile(giPath, gi, 'utf8');
   }
 
-  // Ensure docs are present.
+  // Ensure docs are present/updated per policy.
   await ensureDocs(cwd);
 
   console.log(`stan: wrote stan.config.yml`);

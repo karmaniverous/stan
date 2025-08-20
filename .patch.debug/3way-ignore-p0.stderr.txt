@@ -1,1 +1,1 @@
-error: a/src/cli/stan/init.ts: does not exist in index
+error: No valid patches in input (allow with "--allow-empty")

@@ -6,7 +6,7 @@ import { deriveRunInvocation } from './run-args';
 
 describe('CLI argument parsing (new selection model)', () => {
   const cfg: ContextConfig = {
-    outputPath: 'stan',
+    stanPath: 'stan',
     scripts: { test: 'echo test', lint: 'echo lint' },
   };
 

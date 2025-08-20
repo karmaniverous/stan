@@ -1,42 +1,20 @@
-diff --git a/src/cli/stan/init.ts b/src/cli/stan/init.ts
-index d4cfa62..b2a9b4a 100644
---- a/src/cli/stan/init.ts
-+++ b/src/cli/stan/init.ts
-@@ -17,6 +17,7 @@ import YAML from 'yaml';
- 
- import type { ContextConfig, ScriptMap } from '@/stan/config';
- import { ensureOutputDir, findConfigPathSync, loadConfig } from '@/stan/config';
- import { writeArchiveSnapshot } from '@/stan/diff';
-+import { makeStanDirs } from '@/stan/paths';
- 
- import { applyCliSafety } from './cli-utils';
- 
-@@ -227,18 +228,19 @@ export const performInit = async (
-   const cfgPath = path.join(cwd, 'stan.config.yml');
-   const yml = YAML.stringify(config);
-   await writeFile(cfgPath, yml, 'utf8');
- 
--  // .gitignore: do not ignore stan root; ignore output/diff/dist
-+  // .gitignore: ignore everything under stanPath except stan/system
-   const giPath = path.join(cwd, '.gitignore');
--  const linesToEnsure = [
--    `${config.stanPath}/output`,
--    `${config.stanPath}/diff`,
--    `${config.stanPath}/dist`,
--  ];
-+  const dirs = makeStanDirs(cwd, config.stanPath);
-+  const linesToEnsure = [`${dirs.rootRel}/*`, `!${dirs.systemRel}/`, `!${dirs.systemRel}/**`];
-   let gi = existsSync(giPath) ? await readFile(giPath, 'utf8') : '';
-   const existingLines = new Set(gi.split(/\r?\n/).map((l) => l.trim()));
-   let changed = false;
-   for (const l of linesToEnsure) {
-     if (!existingLines.has(l)) {
-       if (gi.length && !gi.endsWith('\n')) gi += '\n';
-       gi += `${l}\n`;
-       changed = true;
-     }
-   }
-   if (changed) await writeFile(giPath, gi, 'utf8');
- 
-   // Ensure docs in stan/system
-   await ensureDocs(cwd, config.stanPath);
+*** Begin Patch
+*** Add File: refactors/20250820-180000-stanpath-tests-migration.md
++# Refactor: complete stanPath test migration
++
++When: 2025-08-20T18:00:00Z
++Why: The codebase switched from outputPath to stanPath with a new layout (stan/system, stan/output, stan/diff). Tests and a few call sites still referenced outputPath and old paths, causing type errors and runtime failures.
++What changed:
++- Tests: updated all ContextConfig stubs to use `stanPath` and adjusted path assertions to `<stanPath>/output/...`.
++- fs.glob/diff tests: updated FilterOptions and createArchiveDiff calls to pass `stanPath`.
++- Plan header test: now expects `output: stan/output/`.
++- ESLint: ignored `stan/dist/**` to avoid lint noise from dev CLI builds under the new layout.
++Tests/Lint:
++- Expect typecheck errors related to outputPath to be resolved.
++- Unit tests should no longer crash on `.replace` due to missing `stanPath`.
++Links:
++- See stan/output/typecheck.txt, test.txt from prior run for original failures.
++Next:
++- Tackle patch application robustness (3‑way gating and full‑listing preference) as discussed previously.
++
+*** End Patch

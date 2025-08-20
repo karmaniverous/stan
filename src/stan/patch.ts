@@ -39,7 +39,7 @@ const repoJoin = (cwd: string, p: string): string =>
   p.startsWith('/') ? path.join(cwd, p.slice(1)) : path.resolve(cwd, p);
 
 /** Unwrap only outer chat fences/banners if they wrap the entire payload.
- * Preserve any interior lines (e.g., "+`\`\``" within diff hunks).
+ * Preserve any interior lines (e.g., "+`\`\`\`" within diff hunks).
  */
 const unwrapChatWrappers = (text: string): string => {
   const lines = text.split(/\r?\n/);
@@ -87,7 +87,7 @@ const looksLikeUnifiedDiff = (t: string): boolean => {
   return false;
 };
 
-/** Extract the first fenced code block (>=3 backticks) that contains unified diff markers. */
+/** Extract the first fenced code block (\>=3 backticks) that contains unified diff markers. */
 const extractFencedUnifiedDiff = (text: string): string | null => {
   const lines = text.split('\n');
   for (let i = 0; i < lines.length; i += 1) {

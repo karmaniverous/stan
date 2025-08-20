@@ -10,7 +10,7 @@ describe('renderAvailableScriptsHelp', () => {
   it('lists script keys from stan.config.yml and shows new examples', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'stan-help-'));
     const yml = [
-      'outputPath: stan',
+      'stanPath: stan',
       'scripts:',
       '  test: npm run test',
       '  lint: npm run lint',

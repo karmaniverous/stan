@@ -9,7 +9,6 @@ esm/
 node_modules/
 /stan.patch
 
-# New stan layout: ignore everything under stan/ except stan/system
-stan/*
-!stan/system/
-!stan/system/**
+.stan/diff/
+.stan/dist/
+.stan/output/

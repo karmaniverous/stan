@@ -6,7 +6,7 @@ import { deriveRunInvocation } from './run-args';
 
 describe('CLI -c/--combine, -k/--keep, -a/--archive (new flags)', () => {
   const cfg: ContextConfig = {
-    outputPath: 'stan',
+    stanPath: 'stan',
     scripts: { test: 'echo test', lint: 'echo lint' },
   };
 

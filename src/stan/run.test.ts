@@ -23,13 +23,13 @@ describe('script execution', () => {
 
   it('writes <key>.txt for a single requested script key and captures stderr', async () => {
     const cfg: ContextConfig = {
-      outputPath: 'out',
+      stanPath: 'out',
       scripts: {
         hello: 'node -e "console.error(123);process.stdout.write(`ok`)"',
       },
     };
     await runSelected(dir, cfg, ['hello']);
-    const out = path.join(dir, 'out', 'hello.txt');
+    const out = path.join(dir, 'out', 'output', 'hello.txt');
     expect(existsSync(out)).toBe(true);
     const body = await read(out);
     expect(body.includes('ok')).toBe(true);
@@ -49,22 +49,22 @@ describe('script execution', () => {
     );
 
     const cfg1: ContextConfig = {
-      outputPath: 'out',
+      stanPath: 'out',
       scripts: { a: 'node a.js', b: 'node b.js' },
     };
 
     await runSelected(dir, cfg1, ['b', 'a'], 'sequential');
-    const order1 = await read(path.join(dir, 'out', 'order.txt'));
+    const order1 = await read(path.join(dir, 'out', 'output', 'order.txt'));
     expect(order1).toBe('AB');
 
     // config order when not enumerated
     await runSelected(dir, cfg1, null, 'sequential');
-    const order2 = await read(path.join(dir, 'out', 'order.txt'));
+    const order2 = await read(path.join(dir, 'out', 'output', 'order.txt'));
     expect(order2).toBe('AB');
   });
 
   it('unknown key resolves with no artifacts', async () => {
-    const cfg: ContextConfig = { outputPath: 'out', scripts: {} };
+    const cfg: ContextConfig = { stanPath: 'out', scripts: {} };
     const created = await runSelected(dir, cfg, ['nope']);
     expect(created).toEqual([]);
   });

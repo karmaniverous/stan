@@ -1,4 +1,4 @@
-stanPath: stan
+stanPath: .stan
 includes: []
 excludes:
   - assets

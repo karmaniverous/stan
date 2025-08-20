@@ -23,6 +23,7 @@ export default [
       'coverage/**',
       'node_modules/**',
       'docs/**',
+      '.stan/**',
     ],
   },
 

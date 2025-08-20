@@ -20,7 +20,7 @@ describe('run plan header', () => {
 
   it('prints a multi-line plan with mode/output/scripts flags', async () => {
     const cfg: ContextConfig = {
-      outputPath: 'stan',
+      stanPath: 'stan',
       scripts: {}, // no scripts; plan should show "scripts: none"
     };
 
@@ -37,7 +37,7 @@ describe('run plan header', () => {
     const printed = lines.join('\n');
     expect(printed).toContain('STAN run plan');
     expect(printed).toContain('mode: concurrent');
-    expect(printed).toContain('output: stan/');
+    expect(printed).toContain('output: stan/output/');
     expect(printed).toContain('scripts: none');
     expect(printed).toMatch(/archive:\s+(yes|no)/);
     expect(printed).toMatch(/combine:\s+(yes|no)/);

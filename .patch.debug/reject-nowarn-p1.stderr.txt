@@ -1,15 +1,1 @@
-Checking patch src/cli/stan/init.ts...
-error: while searching for:
-
-import type { ContextConfig, ScriptMap } from '@/stan/config';
-import { ensureOutputDir, findConfigPathSync, loadConfig } from '@/stan/config';
-import { writeArchiveSnapshot } from '@/stan/diff';
-
-import { applyCliSafety } from './cli-utils';
-
-
-error: patch failed: src/cli/stan/init.ts:17
-Hunk #2 succeeded at 249 (offset 21 lines).
-Applying patch src/cli/stan/init.ts with 1 reject...
-Rejected hunk #1.
-Hunk #2 applied cleanly.
+error: No valid patches in input (allow with "--allow-empty")

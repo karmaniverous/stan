@@ -1,4 +1,3 @@
-// src/stan/run.combine.test.ts
 import { existsSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -43,13 +42,15 @@ describe('runSelected archive/combine/keep behavior', () => {
     );
 
     const cfg: ContextConfig = {
-      outputPath: 'stan',
+      stanPath: 'stan',
       scripts: { a: 'node a.js', b: 'node b.js' },
     };
     const created = await runSelected(dir, cfg, null, 'sequential', {
       archive: true,
     });
-    expect(created.includes(path.join(dir, 'stan', 'archive.tar'))).toBe(true);
+    expect(
+      created.includes(path.join(dir, 'stan', 'output', 'archive.tar')),
+    ).toBe(true);
   });
 
   it('--archive + --combine: outputs go inside archives and are removed on disk', async () => {
@@ -59,7 +60,7 @@ describe('runSelected archive/combine/keep behavior', () => {
       'utf8',
     );
     const cfg: ContextConfig = {
-      outputPath: 'stan',
+      stanPath: 'stan',
       scripts: { hello: 'node hello.js' },
     };
     const created = await runSelected(dir, cfg, ['hello'], 'concurrent', {
@@ -70,7 +71,9 @@ describe('runSelected archive/combine/keep behavior', () => {
     expect(created.some((p) => p.endsWith('archive.tar'))).toBe(true);
     expect(created.some((p) => p.endsWith('archive.diff.tar'))).toBe(true);
     // on-disk outputs removed
-    expect(existsSync(path.join(dir, 'stan', 'hello.txt'))).toBe(false);
+    expect(existsSync(path.join(dir, 'stan', 'output', 'hello.txt'))).toBe(
+      false,
+    );
   });
 
   it('--archive without --combine: outputs remain on disk and archives exist', async () => {
@@ -80,7 +83,7 @@ describe('runSelected archive/combine/keep behavior', () => {
       'utf8',
     );
     const cfg: ContextConfig = {
-      outputPath: 'stan',
+      stanPath: 'stan',
       scripts: { x: 'node x.js' },
     };
     const created = await runSelected(dir, cfg, ['x'], 'concurrent', {
@@ -89,6 +92,6 @@ describe('runSelected archive/combine/keep behavior', () => {
     expect(created.some((p) => p.endsWith('archive.tar'))).toBe(true);
     expect(created.some((p) => p.endsWith('archive.diff.tar'))).toBe(true);
     // on-disk output remains
-    expect(existsSync(path.join(dir, 'stan', 'x.txt'))).toBe(true);
+    expect(existsSync(path.join(dir, 'stan', 'output', 'x.txt'))).toBe(true);
   });
 });

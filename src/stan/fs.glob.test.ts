@@ -47,7 +47,7 @@ describe('filterFiles with glob patterns', () => {
     const all = await listFiles(dir);
     const filtered = await filterFiles(all, {
       cwd: dir,
-      outputPath: 'stan',
+      stanPath: 'stan',
       includeOutputDir: false,
       excludes: ['**/.tsbuild/**', '**/generated/**'],
     });
@@ -67,7 +67,7 @@ describe('filterFiles with glob patterns', () => {
     const all = await listFiles(dir);
     const filtered = await filterFiles(all, {
       cwd: dir,
-      outputPath: 'stan',
+      stanPath: 'stan',
       includeOutputDir: false,
       includes: ['**/*.md'],
     });

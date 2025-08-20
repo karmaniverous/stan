@@ -2,7 +2,7 @@
 
 import { buildCli, buildLibrary, buildTypes } from './rollup.config';
 
-const outputPath = 'stan/dist';
+const outputPath = '.stan/dist';
 
 export default [
   buildLibrary(outputPath),

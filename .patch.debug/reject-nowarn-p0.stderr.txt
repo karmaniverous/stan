@@ -1,2 +1,1 @@
-Checking patch a/src/cli/stan/init.ts => b/src/cli/stan/init.ts...
-error: a/src/cli/stan/init.ts: No such file or directory
+error: No valid patches in input (allow with "--allow-empty")

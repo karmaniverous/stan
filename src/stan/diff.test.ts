@@ -1,4 +1,3 @@
-// src/stan/diff.test.ts
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -30,7 +29,7 @@ describe('diff mode (updated behavior)', () => {
 
   it('creates archive.diff.tar whenever --archive is enabled', async () => {
     const cfg = {
-      outputPath: 'out',
+      stanPath: 'out',
       scripts: {
         test: 'node -e "console.error(123);process.stdout.write(`ok`)"',
       },
@@ -45,7 +44,7 @@ describe('diff mode (updated behavior)', () => {
 
   it('with --archive and --combine: writes regular+diff archives including outputs', async () => {
     const cfg = {
-      outputPath: 'out',
+      stanPath: 'out',
       scripts: {
         test: 'node -e "console.error(123);process.stdout.write(`ok`)"',
       },

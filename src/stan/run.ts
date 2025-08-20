@@ -15,7 +15,6 @@ import { relative, resolve } from 'node:path';
 
 import { createArchive } from './archive';
 import type { ContextConfig } from './config';
-import { ensureOutputDir } from './config';
 import { createArchiveDiff } from './diff';
 import { makeStanDirs } from './paths';
 
@@ -37,8 +36,8 @@ const configOrder = (config: ContextConfig): string[] =>
  * Normalize selection to config order.
  * - When selection is null/undefined, return all config keys.
  * - When selection exists:
- *   - [] => run nothing
- *   - non-empty => order by config order
+ *   - [] =\> run nothing
+ *   - non-empty =\> order by config order
  */
 const normalizeSelection = (
   selection: Selection | undefined | null,
@@ -148,11 +147,6 @@ export const runSelected = async (
   const behavior: RunBehavior = behaviorMaybe ?? {};
 
   // ensure directory tree
-  const rootAbs = await ensureOutputDir(
-    cwd,
-    config.stanPath,
-    Boolean(behavior.keep),
-  );
   const dirs = makeStanDirs(cwd, config.stanPath);
   const outAbs = dirs.outputAbs;
 

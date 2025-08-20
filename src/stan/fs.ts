@@ -8,6 +8,7 @@ import { join, resolve } from 'node:path';
 
 import ignoreFactory from 'ignore';
 import picomatch from 'picomatch';
+
 import { makeStanDirs } from './paths';
 
 /** Recursively enumerate files under `root`, returning posix-style relative paths. */

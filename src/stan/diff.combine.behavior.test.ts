@@ -60,7 +60,7 @@ describe('combine archiving behavior (outputs inside archives)', () => {
 
     await createArchiveDiff({
       cwd: dir,
-      outputPath: out,
+      stanPath: out,
       baseName: 'archive',
       includeOutputDirInDiff: true,
       updateSnapshot: 'replace',

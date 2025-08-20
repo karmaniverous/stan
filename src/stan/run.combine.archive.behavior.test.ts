@@ -56,7 +56,7 @@ describe('runSelected combine => regular archive includes output directory', () 
     );
 
     const cfg: ContextConfig = {
-      outputPath: 'stan',
+      stanPath: 'stan',
       scripts: { hello: 'node hello.js' },
     };
 

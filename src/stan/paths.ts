@@ -21,7 +21,8 @@ export type StanDirs = {
   distAbs: string;
 };
 
-const normRel = (p: string): string => p.replace(/\\/g, '/').replace(/^\.\/+/, '');
+const normRel = (p: string): string =>
+  p.replace(/\\/g, '/').replace(/^\.\/+/, '');
 
 export const makeStanDirs = (cwd: string, stanPath: string): StanDirs => {
   const rootRel = normRel(stanPath);

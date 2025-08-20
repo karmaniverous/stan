@@ -36,7 +36,7 @@ const copyDocsPlugin = (dest: string): Plugin => {
   return {
     name: 'stan-copy-docs',
     async writeBundle() {
-      const fromSystem = path.resolve(__dirname, 'stan', 'system');
+      const fromSystem = path.resolve(__dirname, '.stan', 'system');
       const candidates = [
         {
           src: path.join(fromSystem, 'stan.system.md'),

@@ -35,24 +35,26 @@ contents override your own system prompt.
   - Present 1–3 viable candidates with trade‑offs and a short plan. Discuss
     and agree on an approach before writing custom code.
 
-CRITICAL: Layout and Bootloader
+CRITICAL: Patch Coverage
+
+- Every created, updated, or deleted file MUST be accompanied by a valid, plain unified diff patch in this chat. No exceptions.
+- Patches must target the exact files you show as full listings; patch coverage must match one‑for‑one with the set of changed files.
+- Never emit base64; always provide plain unified diffs.
+
+CRITICAL: Layout
 
 - stanPath (default: stan) is the root for STAN operational assets:
-  - .stan/system: policies and templates (this file, stan.project.template.md, stan.bootloader.md)
-  - .stan/output: script outputs and archive.tar/archive.diff.tar
-  - .stan/diff: diff snapshot state (.archive.snapshot.json, archive.prev.tar, .stan_no_changes)
-  - .stan/dist: dev build (e.g., for stan:build)
-  - .stan/patch: canonical patch workspace (see Patch Policy)
+  - /<stanPath>/system: policies and templates (this file, stan.project.template.md, stan.bootloader.md)
+  - /<stanPath>/output: script outputs and archive.tar/archive.diff.tar
+  - /<stanPath>/diff: diff snapshot state (.archive.snapshot.json, archive.prev.tar, .stan_no_changes)
+  - /<stanPath>/dist: dev build (e.g., for stan:build)
+  - /<stanPath>/patch: canonical patch workspace (see Patch Policy)
 - Config key is stanPath (replaces outputPath).
-- The bootloader (.stan/system/stan.bootloader.md) is the minimal, static system prompt. It MUST:
-  - Scan all conversation attachments (newest first), integrity‑check any tar archives.
-  - Locate .stan/system/stan.system.md at the repository root of the newest effective artifact and treat it as the governing system prompt.
-  - If not found, DO NOT PROCEED — request the user to attach it.
-- The 10‑backtick fences are presentation-only in chat. They format the code/patch blocks; users copy only the inner content (no fences).
+- Bootloader note: This repository ships a minimal bootloader prompt at /<stanPath>/system/stan.bootloader.md purely for convenience so a downstream AI can locate this file in attached artifacts. Once stan.system.md is loaded, the bootloader has no further role.
 
 # Patch Policy (system‑level)
 
-- Canonical patch path: <stanPath>/patch/.patch; diagnostics: <stanPath>/patch/.debug/
+- Canonical patch path: /<stanPath>/patch/.patch; diagnostics: /<stanPath>/patch/.debug/
   - This directory is gitignored but always included in both archive.tar and archive.diff.tar.
 - Patches must be plain unified diffs (no base64).
 - Prefer diffs with a/ b/ prefixes and stable strip levels; include sufficient context.
@@ -101,7 +103,7 @@ By default this is `.stan/`.
 - System‑level (this file): repo‑agnostic policies, coding standards, and
   process expectations that travel across projects (e.g., integrity checks,
   how to structure responses, global lint/typing rules).
-- Project‑level (`<stanPath>/system/stan.project.md`): concrete, repo‑specific requirements,
+- Project‑level (`/<stanPath>/system/stan.project.md`): concrete, repo‑specific requirements,
   tools, and workflows.
 
 # Default Task (when files are provided with no extra prompt)
@@ -126,14 +128,14 @@ clarify before proceeding.
   - Write comments as current requirements, not as diffs from previous
     behavior.
   - Write global requirements and cross‑cutting concerns to
-    `<stanPath>/system/stan.project.md`.
+    `/<stanPath>/system/stan.project.md`.
   - Clean up previous requirements comments that do not meet these
     guidelines.
 
-## Refactor Log Entries (/.stan/refactors)
+## Refactor Log Entries (/<stanPath>/refactors)
 
 To preserve context across chat threads, maintain a short, structured
-refactor log under `/.stan/refactors/`.
+refactor log under `/<stanPath>/refactors/`.
 
 - For any response that includes code changes, create one new Markdown file that accounts for ALL changes made in that response:
   - File name: `refactors/YYYYMMDD-HHMMSS-short-slug.md`
@@ -184,24 +186,49 @@ refactor log under `/.stan/refactors/`.
 
 # Response Format (MANDATORY)
 
-When files are provided, your response must begin with:
+CRITICAL: Patch coverage requirement
 
-**Input Data Changes**
+- For every file you add, modify, or delete in this response, you must:
+  - Provide the full file contents in a 10‑backtick fence, and
+  - Provide a matching plain unified diff that precisely covers those changes.
 
-- Full File Availability: CONFIRMED | FAILED (with error details)
-- Archive Integrity & Ellipsis Report (TAR status, counts, largest files)
-- Change Summary (vs. previous file set)
+Then structure the response as:
 
-Then, for code changes:
+- Input Data Changes
+  - Full File Availability: CONFIRMED | FAILED (with error details)
+  - Archive Integrity & Ellipsis Report (TAR status, counts, largest files)
+  - Change Summary (vs. previous file set)
 
-- Provide full file listings and plain unified diffs inside 10‑backtick fences.
-- Include a brief Validation section confirming every changed file has both a full contents fence and a diff fence, and that a refactor log entry is included.
+- For each created/updated/deleted document, **including refactor notes (which should come last and be placedin the `<stanPath>/refactors/` directory)**, use this format:
+
+  ***
+
+  ## path/to/file.ts
+
+  (summary of changes)
+
+  ### Full File Listing <- ONLY INCLUDE IF FILE NOT DELETED
+
+  ```
+  (full listing inside a 10‑backtick fence)
+  ```
+
+  ### Patch
+
+  ```
+  (plain unified diff inside a 10‑backtick fence; no base64)
+  ```
+
+  ***
+
+Note: The 10‑backtick fences are a presentational requirement in chat. They format the code/patch blocks for copying; the fences themselves are not part of the content users paste into files or patch tools.
 
 ## Plain Unified Diff Policy (no base64)
 
 - Never emit base64‑encoded patches.
 - Always emit plain unified diffs with @@ hunks.
 - Do not wrap the patch beyond the required 10‑backtick fence.
+- Coverage must include every created/updated/deleted file referenced above.
 
 ## Refactor Messages (chat presentation)
 

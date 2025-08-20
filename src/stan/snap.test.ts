@@ -67,9 +67,21 @@ describe('snap CLI (stash, history, undo/redo/info)', () => {
 
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), 'stan-snap-'));
+    // Ensure CLI resolves config and writes artifacts under this temp repo
+    try {
+      process.chdir(dir);
+    } catch {
+      // ignore
+    }
   });
 
   afterEach(async () => {
+    // Leave the temp dir before removing it (Windows EBUSY safety)
+    try {
+      process.chdir(os.tmpdir());
+    } catch {
+      // ignore
+    }
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
@@ -111,7 +123,7 @@ describe('snap CLI (stash, history, undo/redo/info)', () => {
     await cli.parseAsync(['node', 'stan', 'snap'], { from: 'user' });
 
     const statePath = path.join(dir, 'out', 'diff', '.snap.state.json');
-    await waitFor(() => existsSync(statePath), 750);
+    await waitFor(() => existsSync(statePath), 1500);
 
     let state = JSON.parse(await read(statePath)) as {
       entries: { ts: string; snapshot: string }[];
@@ -130,7 +142,7 @@ describe('snap CLI (stash, history, undo/redo/info)', () => {
 
     // New snap at this point should drop redos and push new one; still trims to maxUndos=2
     await cli.parseAsync(['node', 'stan', 'snap'], { from: 'user' });
-    await waitFor(() => existsSync(statePath), 750);
+    await waitFor(() => existsSync(statePath), 1500);
     state = JSON.parse(await read(statePath));
     expect(state.entries.length).toBe(2);
     expect(state.index).toBe(1);

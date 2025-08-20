@@ -45,7 +45,6 @@ describe('CLI argument parsing (new selection model)', () => {
       exceptProvided: false,
       config: cfg,
     });
-    expect(d.selection).toEqual(['test', 'lint'].sort()); // order by config keys; derive returns config order
     // derive preserves config order; since cfg order is test, lint:
     expect(d.selection).toEqual(['test', 'lint']);
   });

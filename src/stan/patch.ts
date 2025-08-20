@@ -5,7 +5,7 @@
  *   Clean the content and write back to the same file before applying.
  * - -c, --check: run git apply --check (no changes); still perform detection/cleanup and write the cleaned output to the target file path.
  * - Detection & cleanup:
- *   - Remove code fences, BEGIN/END banners, zero-width chars.
+ *   - Remove chat wrappers (outer code fences or BEGIN/END banners) only when they wrap the entire payload.
  *   - If base64 decodes to text containing diff markers, use decoded text; otherwise treat original as raw diff.
  *   - Normalize EOL to LF; ensure trailing newline; do not alter whitespace within lines.
  * - Permissive apply strategy:
@@ -35,18 +35,34 @@ type PatchSource =
 const repoJoin = (cwd: string, p: string): string =>
   p.startsWith('/') ? path.join(cwd, p.slice(1)) : path.resolve(cwd, p);
 
-const stripCodeFence = (s: string): string => {
-  // Remove common code-fence wrappers and banners
-  const lines = s.split(/\r?\n/);
-  const out: string[] = [];
-  for (const line of lines) {
-    const t = line.trim();
-    if (t.startsWith('```')) continue;
-    if (/^BEGIN[_ -]?PATCH/i.test(t)) continue;
-    if (/^END[_ -]?PATCH/i.test(t)) continue;
-    out.push(line);
-  }
-  return out.join('\n');
+/** Unwrap only outer chat fences/banners if they wrap the entire payload.
+ * Preserve any interior lines (e.g., "+```" within diff hunks).
+ */
+const unwrapChatWrappers = (text: string): string => {
+  const lines = text.split(/\r?\n/);
+  let i = 0;
+  while (i < lines.length && lines[i].trim() === '') i += 1;
+  let j = lines.length - 1;
+  while (j >= 0 && lines[j].trim() === '') j -= 1;
+
+  if (i > j) return text;
+
+  const first = lines[i].trim();
+  const last = lines[j].trim();
+
+  const isFence = (s: string) => /^```/.test(s);
+  const isBegin = (s: string) => /^BEGIN[_ -]?PATCH/i.test(s);
+  const isEnd = (s: string) => /^END[_ -]?PATCH/i.test(s);
+
+  const unwrapIf = (cond: boolean): string => {
+    if (!cond) return text;
+    const inner = lines.slice(i + 1, j);
+    return [...lines.slice(0, i), ...inner, ...lines.slice(j + 1)].join('\n');
+  };
+
+  if (isFence(first) && isFence(last)) return unwrapIf(true);
+  if (isBegin(first) && isEnd(last)) return unwrapIf(true);
+  return text;
 };
 
 const stripZeroWidthAndNormalize = (s: string): string => {
@@ -81,10 +97,10 @@ const decodeIfBase64Patch = (raw: string): string | null => {
 };
 
 const detectAndCleanPatch = (input: string): string => {
-  const s = stripCodeFence(input.trim());
+  const unwrapped = unwrapChatWrappers(input.trim());
   // Attempt base64 decode to patch text; else treat as raw diff
-  const decoded = decodeIfBase64Patch(s);
-  const text = decoded ?? s;
+  const decoded = decodeIfBase64Patch(unwrapped);
+  const text = decoded ?? unwrapped;
   return stripZeroWidthAndNormalize(text);
 };
 

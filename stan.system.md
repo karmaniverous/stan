@@ -172,7 +172,7 @@ refactor log under `/refactors/`.
   - Use the configured `@` alias (e.g., `@/stan/...`) instead of deep relative paths for intra‑project imports outside the current folder.
   - Reserve relative imports for siblings or short local paths.
 - Type casts are a minor code smell. Before adding a cast, ask if stronger
-  inference (types, guards, refactors) would remove the need. If a cast is
+  inference (types, guards, refactors) would remove the need. If a cast is a
   still warranted (e.g., dynamic import boundary), add a brief inline
   comment explaining why it is safe. Re‑evaluate these comments on each
   iteration to remove casts when feasible.

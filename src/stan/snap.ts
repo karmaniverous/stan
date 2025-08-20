@@ -17,12 +17,22 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { Command } from 'commander';
 
 import { applyCliSafety } from '@/cli/stan/cli-utils';
+
+import {
+  ARCH_DIR,
+  ensureDirs,
+  readJson,
+  SNAP_DIR,
+  STATE_FILE,
+  within,
+  writeJson,
+} from './snap/shared';
 import { formatUtcStampLocal, utcStamp } from './util/time';
 
 type RunResult = { code: number; stdout: string; stderr: string };
@@ -73,29 +83,6 @@ type SnapState = {
   index: number; // current pointer (0-based)
   maxUndos: number;
 };
-
-const STATE_FILE = '.snap.state.json';
-const SNAP_DIR = 'snapshots';
-const ARCH_DIR = 'archives';
-
-const readJson = async <T>(p: string): Promise<T | null> => {
-  try {
-    const raw = await readFile(p, 'utf8');
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
-};
-
-const writeJson = async (p: string, v: unknown): Promise<void> => {
-  await writeFile(p, JSON.stringify(v, null, 2), 'utf8');
-};
-
-const ensureDirs = async (p: string[]): Promise<void> => {
-  await Promise.all(p.map((d) => mkdir(d, { recursive: true })));
-};
-
-const within = (...parts: string[]): string => path.join(...parts);
 
 export const registerSnap = (cli: Command): Command => {
   applyCliSafety(cli);
@@ -285,7 +272,7 @@ export const registerSnap = (cli: Command): Command => {
       if (st.entries.length === 0) {
         console.log('  (empty)');
       } else {
-        // Newest first
+        // Newest first; show local timestamp per system time zone
         st.entries
           .map((e, i) => ({ e, i }))
           .reverse()

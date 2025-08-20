@@ -11,6 +11,7 @@
  *   - when keep===false, clear ONLY <stanPath>/output (preserve <stanPath>/diff).
  * - NEW: defaultPatchFile?: string (default '/stan.patch').
  * - NEW: stanPath replaces outputPath (default '.stan').
+ * - NEW: maxUndos?: number (default 10) for snapshot undo/redo retention.
  */
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { copyFile, mkdir, readdir, readFile } from 'node:fs/promises';
@@ -32,6 +33,8 @@ export type ContextConfig = {
   excludes?: string[];
   /** Default patch filename for `stan patch`; default '/stan.patch' if unspecified. */
   defaultPatchFile?: string;
+  /** Maximum retained snapshot \“undos\” (history depth for snap undo/redo); default 10. */
+  maxUndos?: number;
 };
 
 /** Public default stan path for consumers and internal use. */
@@ -39,6 +42,17 @@ export const DEFAULT_STAN_PATH = '.stan';
 
 const normalizeDefaultPatchFile = (v: unknown): string =>
   typeof v === 'string' && v.trim().length > 0 ? v.trim() : '/stan.patch';
+
+const normalizeMaxUndos = (v: unknown): number => {
+  const n =
+    typeof v === 'number'
+      ? Math.floor(v)
+      : Number.isFinite(Number.parseInt(String(v), 10))
+        ? Math.floor(Number.parseInt(String(v), 10))
+        : NaN;
+  if (!Number.isFinite(n) || n < 1) return 10;
+  return n;
+};
 
 const parseFile = async (abs: string): Promise<ContextConfig> => {
   const raw = await readFile(abs, 'utf8');
@@ -52,6 +66,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
     .defaultPatchFile;
+  const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
 
   if (typeof stanPath !== 'string' || stanPath.length === 0) {
     throw new Error('Invalid config: "stanPath" must be a non-empty string');
@@ -69,6 +84,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
     defaultPatchFile: normalizeDefaultPatchFile(defaultPatchFile),
+    maxUndos: normalizeMaxUndos(maxUndos),
   };
 };
 
@@ -123,6 +139,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
     .defaultPatchFile;
+  const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
 
   if (typeof stanPath !== 'string' || stanPath.length === 0) {
     throw new Error('Invalid config: "stanPath" must be a non-empty string');
@@ -140,6 +157,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
     defaultPatchFile: normalizeDefaultPatchFile(defaultPatchFile),
+    maxUndos: normalizeMaxUndos(maxUndos),
   };
 };
 

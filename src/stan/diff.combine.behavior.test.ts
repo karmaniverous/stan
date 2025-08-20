@@ -52,6 +52,7 @@ describe('combine archiving behavior (outputs inside archives)', () => {
 
     // Make output tree with files that should and should not be included
     await mkdir(path.join(dir, out, 'diff'), { recursive: true });
+    await mkdir(path.join(dir, out, 'output'), { recursive: true });
     await writeFile(path.join(dir, out, 'hello.txt'), 'hello', 'utf8');
     await writeFile(path.join(dir, out, 'diff', 'snap.json'), '{}', 'utf8');
     // Simulate archives present under the output path

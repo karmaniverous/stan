@@ -33,6 +33,7 @@ import { applyCliSafety } from '@/cli/stan/cli-utils';
 
 import { findConfigPathSync, loadConfig } from './config';
 import { makeStanDirs } from './paths';
+import { utcStamp } from './util/time';
 
 type PatchSource =
   | { kind: 'clipboard' }
@@ -158,14 +159,6 @@ type ApplyResult = {
   tried: string[];
   lastCode: number;
   captures: AttemptCapture[];
-};
-
-const utcStamp = (): string => {
-  const d = new Date();
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(
-    d.getUTCDate(),
-  )}-${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}`;
 };
 
 const buildApplyAttempts = (

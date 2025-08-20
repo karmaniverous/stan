@@ -13,7 +13,7 @@
  *   - "undo" moves to a previous entry (if any) and restores diff/.archive.snapshot.json.
  *   - "set <index>" jumps to a specific snapshot index and restores it.
  *   - "redo" moves to a later entry (if any) and restores diff/.archive.snapshot.json.
- *   - "info" prints the stack with indices, timestamps, file presence, current index, and how many undos/redos remain.
+ *   - "info" prints the stack with indices; newest first; shows local timestamp, filename, and archive/diff presence.
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -23,6 +23,7 @@ import path from 'node:path';
 import type { Command } from 'commander';
 
 import { applyCliSafety } from '@/cli/stan/cli-utils';
+import { formatUtcStampLocal, utcStamp } from './util/time';
 
 type RunResult = { code: number; stdout: string; stderr: string };
 
@@ -59,14 +60,6 @@ const runGit = async (cwd: string, args: string[]): Promise<RunResult> =>
       resolve({ code: code ?? 0, stdout, stderr });
     });
   });
-
-const utcStamp = (): string => {
-  const d = new Date();
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(
-    d.getUTCDate(),
-  )}-${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}`;
-};
 
 type SnapEntry = {
   ts: string;
@@ -288,20 +281,26 @@ export const registerSnap = (cli: Command): Command => {
           ? Math.max(0, st.entries.length - 1 - st.index)
           : 0;
 
-      console.log('stan: snap stack');
+      console.log('stan: snap stack (newest → oldest)');
       if (st.entries.length === 0) {
         console.log('  (empty)');
       } else {
-        st.entries.forEach((e, i) => {
-          const mark = i === st.index ? '*' : ' ';
-          const hasArch = Boolean(e.archive);
-          const hasDiff = Boolean(e.archiveDiff);
-          console.log(
-            `  ${mark} [${i.toString()}] ${e.ts}  snapshot: ${e.snapshot}${
-              hasArch ? '  archive: yes' : '  archive: no'
-            }${hasDiff ? '  diff: yes' : '  diff: no'}`,
-          );
-        });
+        // Newest first
+        st.entries
+          .map((e, i) => ({ e, i }))
+          .reverse()
+          .forEach(({ e, i }) => {
+            const mark = i === st.index ? '*' : ' ';
+            const hasArch = Boolean(e.archive);
+            const hasDiff = Boolean(e.archiveDiff);
+            const local = formatUtcStampLocal(e.ts);
+            const file = path.basename(e.snapshot);
+            console.log(
+              `  ${mark} [${i.toString()}] ${local}  file: ${file}  archive: ${
+                hasArch ? 'yes' : 'no'
+              }  diff: ${hasDiff ? 'yes' : 'no'}`,
+            );
+          });
       }
       console.log(
         `  current index: ${st.index.toString()}  undos left: ${undos.toString()}  redos left: ${redos.toString()}`,

@@ -41,13 +41,17 @@ If this file experiences significant structural changes, update
 - Logs:
   - Patch source (clipboard/argument/file), target file path, applied/failed (or check passed/failed).
   - Write attempts and stderr/stdout sizes in `.debug/attempts.json`, plus per‑attempt stderr/stdout files.
+- Rejects:
+  - When `git apply` produces `*.rej` files, move any newly created rejects to `<stanPath>/refactors/patch-rejects-<UTC timestamp>/` preserving relative paths.
 
 ### stan snap
 
 - `snap` (default): creates/replaces the diff snapshot. With `-s/--stash`, stash before and pop after; on stash failure, abort (no snapshot).
 - `snap undo` / `snap redo`: navigate history; restore `.archive.snapshot.json`.
 - `snap set <index>`: jump to a specific history index and restore it.
-- `snap info`: print history entries with indices; show current position and undos/redos remaining.
+- `snap info`: print history entries with newest first. Each line shows:
+  - `[*] [index] <local timestamp>  file: <snapshot-filename>  archive: yes|no  diff: yes|no`
+  - `*` marks the current entry in the stack.
 - History lives under `<stanPath>/diff`: `.snap.state.json`, `snapshots/`, and optional `archives/` captures.
 - Trimming: respect `maxUndos` (default 10).
 

@@ -122,6 +122,20 @@ type ApplyAttempt = {
   label: string;
 };
 
+type AttemptCapture = {
+  label: string;
+  code: number;
+  stdout: string;
+  stderr: string;
+};
+
+type ApplyResult = {
+  ok: boolean;
+  tried: string[];
+  lastCode: number;
+  captures: AttemptCapture[];
+};
+
 const buildApplyAttempts = (check: boolean, strip: number): ApplyAttempt[] => {
   const base = check ? ['--check'] : [];
   const with3WayNowarn: ApplyAttempt = {
@@ -146,8 +160,10 @@ const runGitApply = async (
   cwd: string,
   patchFileAbs: string,
   attempts: ApplyAttempt[],
-): Promise<{ ok: boolean; tried: string[]; lastCode: number }> => {
+): Promise<ApplyResult> => {
   const tried: string[] = [];
+  const captures: AttemptCapture[] = [];
+
   for (const att of attempts) {
     tried.push(att.label);
 
@@ -158,37 +174,47 @@ const runGitApply = async (
         windowsHide: true,
       });
 
-      // Surface stderr/stdout only when STAN_DEBUG=1
+      let so = '';
+      let se = '';
+
       const cp = child as unknown as {
         stdout?: NodeJS.ReadableStream;
         stderr?: NodeJS.ReadableStream;
       };
       if (cp.stderr) {
         cp.stderr.on('data', (d: Buffer) => {
-          if (process.env.STAN_DEBUG === '1') {
-            process.stderr.write(d.toString('utf8'));
-          }
+          const s = d.toString('utf8');
+          se += s;
+          if (process.env.STAN_DEBUG === '1') process.stderr.write(s);
         });
       }
       if (cp.stdout) {
         cp.stdout.on('data', (d: Buffer) => {
-          if (process.env.STAN_DEBUG === '1') {
-            process.stdout.write(d.toString('utf8'));
-          }
+          const s = d.toString('utf8');
+          so += s;
+          if (process.env.STAN_DEBUG === '1') process.stdout.write(s);
         });
       }
 
-      child.on('close', (c) => resolveP(c ?? 0));
+      child.on('close', (c) => {
+        captures.push({
+          label: att.label,
+          code: c ?? 0,
+          stdout: so,
+          stderr: se,
+        });
+        resolveP(c ?? 0);
+      });
     });
 
     if (code === 0) {
-      return { ok: true, tried, lastCode: 0 };
+      return { ok: true, tried, lastCode: 0, captures };
     }
     if (process.env.STAN_DEBUG === '1') {
       console.error(`stan: git apply failed for ${att.label} (exit ${code})`);
     }
   }
-  return { ok: false, tried, lastCode: 1 };
+  return { ok: false, tried, lastCode: 1, captures };
 };
 
 const resolveWorkingCwdAndConfig = async (
@@ -218,7 +244,6 @@ export const registerPatch = (cli: Command): Command => {
     .description(
       'Apply a git patch from clipboard (default) or a file (with -f). Accepts base64 or unified diff.',
     )
-    // Optional positional input (base64 or diff). Using large inline arguments is discouraged on Windows.
     .argument('[input]', 'Patch data (base64 or unified diff)')
     .option(
       '-f, --file [filename]',
@@ -261,7 +286,6 @@ export const registerPatch = (cli: Command): Command => {
           console.error('stan: failed to read clipboard', e);
           return;
         }
-        // Always write cleaned clipboard content to defaultPatchFile
         destPathRel = defaultPatchFile;
         destPathAbs = repoJoin(cwd, destPathRel);
       } else if (source.kind === 'argument') {
@@ -270,7 +294,6 @@ export const registerPatch = (cli: Command): Command => {
         destPathRel = defaultPatchFile;
         destPathAbs = repoJoin(cwd, destPathRel);
       } else {
-        // file
         const rel = source.filePath;
         destPathRel = rel;
         destPathAbs = repoJoin(cwd, rel);
@@ -290,7 +313,7 @@ export const registerPatch = (cli: Command): Command => {
       // Detect & clean
       const cleaned = detectAndCleanPatch(raw);
 
-      // Write to designated path (clipboard/argument write to default file; file mode rewrites same file)
+      // Write cleaned content to designated path
       try {
         await ensureParentDir(destPathAbs);
         await writeFile(destPathAbs, cleaned, 'utf8');
@@ -306,28 +329,73 @@ export const registerPatch = (cli: Command): Command => {
       );
 
       const check = Boolean(opts?.check);
-      // Decide initial strip level guess: look for a/ and b/ prefixes
       const hasAB =
         /^(---|\+\+\+)\s+(a\/|b\/)/m.test(cleaned) ||
         /^diff --git a\//m.test(cleaned);
       const stripsFirst = hasAB ? [1, 0] : [0, 1];
 
-      // Build attempt plan
       const attempts: ApplyAttempt[] = [];
-      for (const p of stripsFirst) {
+      for (const p of stripsFirst)
         attempts.push(...buildApplyAttempts(check, p));
-      }
 
       const result = await runGitApply(cwd, destPathAbs, attempts);
+
       if (result.ok) {
         console.log(check ? 'stan: patch check passed' : 'stan: patch applied');
-      } else {
-        console.log(
-          `stan: patch ${check ? 'check failed' : 'failed'} (tried: ${result.tried.join(
-            ', ',
-          )})`,
-        );
+        return;
       }
+
+      // Write diagnostics bundle for analysis
+      try {
+        const debugDir = path.join(path.dirname(destPathAbs), '.patch.debug');
+        await mkdir(debugDir, { recursive: true });
+
+        // Save cleaned patch
+        await writeFile(path.join(debugDir, 'cleaned.patch'), cleaned, 'utf8');
+        // Save attempts
+        await writeFile(
+          path.join(debugDir, 'attempts.json'),
+          JSON.stringify(
+            result.captures.map((c) => ({
+              label: c.label,
+              code: c.code,
+              stderrBytes: Buffer.byteLength(c.stderr, 'utf8'),
+              stdoutBytes: Buffer.byteLength(c.stdout, 'utf8'),
+            })),
+            null,
+            2,
+          ),
+          'utf8',
+        );
+        // Save per-attempt stderr/stdout
+        for (const c of result.captures) {
+          const safe = c.label.replace(/[^a-z0-9.-]/gi, '_');
+          await writeFile(
+            path.join(debugDir, `${safe}.stderr.txt`),
+            c.stderr ?? '',
+            'utf8',
+          );
+          await writeFile(
+            path.join(debugDir, `${safe}.stdout.txt`),
+            c.stdout ?? '',
+            'utf8',
+          );
+        }
+
+        console.log(
+          `stan: wrote patch diagnostics -> ${path
+            .relative(cwd, debugDir)
+            .replace(/\\/g, '/')}`,
+        );
+      } catch {
+        // diagnostics best-effort
+      }
+
+      console.log(
+        `stan: patch ${check ? 'check failed' : 'failed'} (tried: ${result.tried.join(
+          ', ',
+        )})`,
+      );
     },
   );
 

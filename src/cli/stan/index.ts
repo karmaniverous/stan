@@ -32,6 +32,17 @@ export const makeCli = (): Command => {
   // Ensure tests never call process.exit() and argv normalization is consistent
   applyCliSafety(cli);
 
+  // Propagate -d/--debug to subcommands (set before any subcommand action)
+  cli.hook('preAction', (thisCommand) => {
+    try {
+      const root = thisCommand.parent ?? thisCommand;
+      const opts = (root as unknown as { opts?: () => { debug?: boolean } }).opts?.();
+      if (opts?.debug) process.env.STAN_DEBUG = '1';
+    } catch {
+      // ignore
+    }
+  });
+
   // Subcommands
   registerRun(cli);
   registerInit(cli);

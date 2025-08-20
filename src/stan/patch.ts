@@ -6,6 +6,10 @@
  * - -c, --check: run git apply --check (no changes); still perform detection/cleanup and write the cleaned output to the target file path.
  * - Detection & cleanup:
  *   - Remove chat wrappers (outer code fences or BEGIN/END banners) only when they wrap the entire payload.
+ *   - Also robustly EXTRACT a unified diff when the message includes additional text:
+ *     • Prefer the first fenced code block (>=3 backticks) that contains unified-diff markers.
+ *     • Otherwise slice from the first “diff --git …” or “--- …” marker to the end.
+ *     • Strip any trailing closing code-fence lines.
  *   - Normalize EOL to LF; ensure trailing newline; do not alter whitespace within lines.
  * - Permissive apply strategy:
  *   - Try sequences over strip levels p=1 then p=0:
@@ -35,7 +39,7 @@ const repoJoin = (cwd: string, p: string): string =>
   p.startsWith('/') ? path.join(cwd, p.slice(1)) : path.resolve(cwd, p);
 
 /** Unwrap only outer chat fences/banners if they wrap the entire payload.
- * Preserve any interior lines (e.g., "+\`\`\`" within diff hunks).
+ * Preserve any interior lines (e.g., "+`\`\``" within diff hunks).
  */
 const unwrapChatWrappers = (text: string): string => {
   const lines = text.split(/\r?\n/);
@@ -72,9 +76,67 @@ const stripZeroWidthAndNormalize = (s: string): string => {
   return lf.endsWith('\n') ? lf : lf + '\n';
 };
 
+const ensureFinalNewline = (s: string): string =>
+  s.endsWith('\n') ? s : s + '\n';
+
+const looksLikeUnifiedDiff = (t: string): boolean => {
+  if (/^diff --git /m.test(t)) return true;
+  if (/^---\s+(?:a\/|\S)/m.test(t) && /^\+\+\+\s+(?:b\/|\S)/m.test(t))
+    return true;
+  if (/^@@\s+-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s+@@/m.test(t)) return true;
+  return false;
+};
+
+/** Extract the first fenced code block (>=3 backticks) that contains unified diff markers. */
+const extractFencedUnifiedDiff = (text: string): string | null => {
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    const open = lines[i];
+    const m = open.match(/^`{3,}.*$/);
+    if (!m) continue;
+    const tickCount = (open.match(/^`+/) ?? [''])[0].length;
+    for (let j = i + 1; j < lines.length; j += 1) {
+      if (new RegExp(`^\\\`${'{'}${tickCount}{'}'}\\s*$`).test(lines[j])) {
+        const inner = lines.slice(i + 1, j).join('\n');
+        if (looksLikeUnifiedDiff(inner)) return inner;
+        i = j;
+        break;
+      }
+    }
+  }
+  return null;
+};
+
+/** Extract from raw markers (first diff --git or ---/+++). Strip trailing closing fences if present. */
+const extractRawUnifiedDiff = (text: string): string | null => {
+  let idx = text.search(/^diff --git /m);
+  if (idx < 0) idx = text.search(/^---\s+(?:a\/|\S)/m);
+  if (idx < 0) return null;
+  const body = text.slice(idx);
+
+  // remove trailing closing code-fence lines if present at the very end
+  const trimmed = body.replace(/\n`{3,}\s*$/m, '\n');
+  return trimmed;
+};
+
 const detectAndCleanPatch = (input: string): string => {
-  const unwrapped = unwrapChatWrappers(input.trim());
-  return stripZeroWidthAndNormalize(unwrapped);
+  // Normalize first so searches are consistent
+  const pre = stripZeroWidthAndNormalize(input.trim());
+  // If the entire payload is wrapped, unwrap once, then normalize again
+  const maybeUnwrapped = unwrapChatWrappers(pre);
+  const normalized = stripZeroWidthAndNormalize(maybeUnwrapped);
+
+  // 1) Prefer fenced code blocks that contain a unified diff
+  const fenced = extractFencedUnifiedDiff(normalized);
+  if (fenced)
+    return ensureFinalNewline(stripZeroWidthAndNormalize(fenced).trimEnd());
+
+  // 2) Otherwise slice from raw diff markers
+  const raw = extractRawUnifiedDiff(normalized);
+  if (raw) return ensureFinalNewline(stripZeroWidthAndNormalize(raw).trimEnd());
+
+  // 3) Fall back to normalized text (git will error; diagnostics will be saved)
+  return ensureFinalNewline(normalized);
 };
 
 const readFromClipboard = async (): Promise<string> => {
@@ -304,7 +366,7 @@ export const registerPatch = (cli: Command): Command => {
         }
       }
 
-      // Detect & clean (unified diff only)
+      // Detect & clean (unified diff only), tolerant to surrounding prose
       const cleaned = detectAndCleanPatch(raw);
 
       // Write cleaned content to designated path

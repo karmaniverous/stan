@@ -2,12 +2,12 @@
  * REQUIREMENTS (current):
  * - Render a help footer listing available script keys from the discovered config.
  * - If config cannot be loaded, return an empty string.
- * - The output should include:
- *   - A heading 'Available script keys:' then a comma-separated list of keys.
- *   - An 'Examples:' block with 'stan run', 'stan run test', 'stan run -s -e <key>' lines.
+ * - Output should include:
+ *   - 'Available script keys:' + comma-separated list
+ *   - 'Examples:' lines
  *
  * UPDATED:
- * - Do not inject a special 'archive' key; archive is now controlled via -a/--archive.
+ * - Examples now reflect new flags (-s/-x/-q).
  * - When STAN_DEBUG=1, log the reason config could not be loaded.
  */
 import { loadConfigSync } from './config';
@@ -17,17 +17,16 @@ export const renderAvailableScriptsHelp = (cwd: string): string => {
     const cfg = loadConfigSync(cwd);
     const keys = Object.keys(cfg.scripts);
     if (!keys.length) return '';
-    // Pick a safe example key (first configured key if available), else use a placeholder.
-    const exampleExcept = keys[0] ?? 'lint';
+    const example = keys[0] ?? 'lint';
     return [
       '',
       'Available script keys:',
       `  ${keys.join(', ')}`,
       '',
       'Examples:',
-      '  stan run',
-      '  stan run test',
-      `  stan run -s -e ${exampleExcept}`,
+      '  stan run -s',
+      `  stan run -s ${example}`,
+      `  stan run -q -x ${example}`,
       '',
     ].join('\n');
   } catch (e) {

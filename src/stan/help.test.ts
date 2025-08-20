@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { renderAvailableScriptsHelp } from './help';
 
 describe('renderAvailableScriptsHelp', () => {
-  it('lists script keys from stan.config.yml', async () => {
+  it('lists script keys from stan.config.yml and shows new examples', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'stan-help-'));
     const yml = [
       'outputPath: stan',
@@ -20,6 +20,7 @@ describe('renderAvailableScriptsHelp', () => {
     const help = renderAvailableScriptsHelp(cwd);
     expect(help).toMatch(/Available script keys:/);
     expect(help).toMatch(/test, lint/);
-    expect(help).toMatch(/stan run test/);
+    // Example should use -s now
+    expect(help).toMatch(/stan run -s test/);
   });
 });

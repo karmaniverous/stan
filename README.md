@@ -63,20 +63,30 @@ defaultPatchFile: /stan.patch
 3. Generate artifacts
 
 ```
-# Run all configured scripts (no archives by default)
-npx stan run
+# Run all configured scripts
+npx stan run -s
 
-# Run selected scripts only (preserves order with -s)
-npx stan run test typecheck -s
+# Run selected scripts only (preserves order with -q)
+npx stan run -s test typecheck -q
 
-# Run all except <keys>
-npx stan run -e knip lint
+# Run all except <keys> (reduces from full set when -s absent)
+npx stan run -x lint
+
+# Reduce a selected set with -x
+npx stan run -s test typecheck -x test
 
 # Produce code archives (regular + diff) after running scripts
-npx stan run -a
+npx stan run -a -s
 
 # Put script outputs INSIDE the archives (and do not keep them on disk)
-npx stan run -a -c
+npx stan run -a -c -s
+```
+
+Tip: enable debug globally
+
+```
+# Global debug applies to all subcommands
+npx stan -d run -s
 ```
 
 ## Snapshot & Diff (the duo)
@@ -91,29 +101,32 @@ npx stan run -a -c
 ## CLI
 
 ```
-stan run [scripts...] [options]
+stan run [options]
 ```
 
 ### Options
 
-- Selection
-  - `[scripts...]`: run only these keys in order (when paired with `-s`).
-  - `-e, --except <keys...>`: run all scripts except these.
+- Selection (one of -a, -s, or -x is required)
+  - `-s, --scripts [keys...]`: run only these keys. If no keys are listed, all scripts run.
+  - `-x, --except-scripts <keys...>`: exclude these keys. If `-s` is present, reduces that set; otherwise reduces from the full set.
 - Execution mode
-  - Default is concurrent.
-  - `-s, --sequential`: run scripts sequentially, preserving enumerable order.
+  - `-q, --sequential`: run scripts sequentially in config order. Requires `-s` or `-x`.
 - Archives & outputs
-  - `-a, --archive`: after scripts run, write `archive.tar` and `archive.diff.tar`.
-  - `-c, --combine`: include script outputs inside the archives and do not keep them on disk. Implies `--archive` and conflicts with `--keep`.
+  - `-a, --archive`: after scripts run (or immediately if selection is empty), write `archive.tar` and `archive.diff.tar`.
+  - `-c, --combine`: include script outputs inside the archives and do not keep them on disk. Implies `--archive` and requires `-s` or `-x`. Conflicts with `--keep`.
   - `-k, --keep`: do not clear the output directory before running. Conflicts with `--combine`.
+
+Global:
+
+- `-d, --debug` (on `stan`): enable verbose debug logging for all subcommands.
 
 ### Artifacts
 
 - Without `-a`:
-  - Per-script artifacts written on disk: `<outputPath>/<key>.txt`
+  - Per‑script artifacts written on disk: `<outputPath>/<key>.txt`
   - No archives are produced.
 - With `-a` (no `-c`):
-  - Per-script artifacts remain on disk.
+  - Per‑script artifacts remain on disk.
   - Archives:
     - `<outputPath>/archive.tar` (code only; excludes `<outputPath>`)
     - `<outputPath>/archive.diff.tar` (changed files only; excludes `<outputPath>`)

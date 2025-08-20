@@ -1,16 +1,21 @@
 /* src/cli/stan/run-args.ts
- * Pure derivation of run invocation parameters from enumerated args and flags.
- * This is intentionally free of Commander coupling so tests can cover behavior
- * deterministically.
+ * Pure derivation of run invocation parameters from flags (no Commander internals).
  *
- * REQUIREMENTS:
- * - Given enumerated (string | string[] | unknown) and flags (unknown),
- *   compute:
- *   - selection: string[] | null (null => run all). Filter to known keys
- *     (config.scripts), dedupe, preserve order.
- *     Apply --except: when selection===null, treat as "all minus except".
- *   - mode: 'sequential' when -s/--sequential was set (here: sequential flag).
- *   - behavior: { combine, keep, archive } mapped from flags.
+ * NEW SELECTION MODEL:
+ * - -s, --scripts [keys...]: optional variadic.
+ *   - if provided with keys: select those keys (filtered/deduped to known).
+ *   - if provided with no keys: select all known keys.
+ *   - if NOT provided: initial selection is [] (no scripts).
+ * - -x, --except-scripts <keys...>: variadic, requires at least one key.
+ *   - if -s is provided: reduce the -s selection by these keys.
+ *   - if -s is NOT provided: reduce from the full set of known keys (all minus except).
+ * - If neither -s nor -x is provided, selection is [] (runner enforces “one of -a/-s/-x required”).
+ *
+ * Mode:
+ * - -q, --sequential -> 'sequential'; otherwise 'concurrent'.
+ *
+ * Behavior:
+ * - combine, keep, archive are mapped directly to booleans; runner validates constraints.
  */
 import type { ContextConfig } from '@/stan/config';
 import type { ExecutionMode, RunBehavior } from '@/stan/run';
@@ -28,62 +33,80 @@ const stringsFrom = (v: unknown): string[] => {
   return out;
 };
 
-const computeSelection = (
-  allKeys: string[],
-  enumerated: string[] | null,
-  except: string[] | null,
-): string[] | null => {
-  let selected: string[] | null =
-    enumerated && enumerated.length ? [...enumerated] : null;
-
-  if (except && except.length) {
-    const base = selected ?? allKeys;
-    selected = base.filter((k) => !except.includes(k));
+const dedupePreserve = (list: string[]): string[] => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const k of list) {
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push(k);
+    }
   }
-  return selected;
+  return out;
 };
 
 export type DerivedRunInvocation = {
-  selection: string[] | null;
+  selection: string[]; // explicit list (empty allowed)
   mode: ExecutionMode;
   behavior: RunBehavior;
 };
 
-/** Derive runSelected inputs without touching Commander internals. */
 export const deriveRunInvocation = (args: {
-  enumerated: unknown;
-  except?: unknown;
-  sequential?: unknown;
+  // selection flags (presence and payload)
+  scriptsProvided?: boolean;
+  scriptsOpt?: unknown;
+  exceptProvided?: boolean;
+  exceptOpt?: unknown;
+
+  // other flags
+  sequential?: unknown; // -q
   combine?: unknown;
   keep?: unknown;
   archive?: unknown;
+
+  // config
   config: ContextConfig;
 }): DerivedRunInvocation => {
-  const { enumerated, except, sequential, combine, keep, archive, config } =
-    args;
+  const {
+    scriptsProvided = false,
+    scriptsOpt,
+    exceptProvided = false,
+    exceptOpt,
+    sequential,
+    combine,
+    keep,
+    archive,
+    config,
+  } = args;
 
   const allKeys = Object.keys(config.scripts);
   const known = new Set(allKeys);
 
-  // Positional operands => enumerated candidates
-  const rawEnum = stringsFrom(enumerated);
-  const enumFiltered = rawEnum.filter((k) => known.has(k));
-  const enumUnique = enumFiltered.filter(
-    (k, i) => enumFiltered.indexOf(k) === i,
+  const scriptsList = dedupePreserve(
+    stringsFrom(scriptsOpt).filter((k) => known.has(k)),
+  );
+  const exceptList = dedupePreserve(
+    stringsFrom(exceptOpt).filter((k) => known.has(k)),
   );
 
-  // Except values (variadic already handled by caller or Commander; we just normalize)
-  const rawExcept = stringsFrom(except);
-  const exceptFiltered = rawExcept.filter((k) => known.has(k));
-  const exceptUnique = exceptFiltered.filter(
-    (k, i) => exceptFiltered.indexOf(k) === i,
-  );
+  // Base selection from -s
+  let selected: string[] = [];
+  if (scriptsProvided) {
+    selected = scriptsList.length > 0 ? scriptsList : [...allKeys];
+  } else {
+    selected = [];
+  }
 
-  const selection = computeSelection(
-    allKeys,
-    enumUnique.length ? enumUnique : null,
-    exceptUnique.length ? exceptUnique : null,
-  );
+  // Apply -x
+  if (exceptProvided) {
+    const exSet = new Set(exceptList);
+    if (scriptsProvided) {
+      selected = selected.filter((k) => !exSet.has(k));
+    } else {
+      // reduce from full set when -s absent
+      selected = allKeys.filter((k) => !exSet.has(k));
+    }
+  }
 
   const mode: ExecutionMode = sequential ? 'sequential' : 'concurrent';
 
@@ -93,5 +116,5 @@ export const deriveRunInvocation = (args: {
     archive: Boolean(archive),
   };
 
-  return { selection, mode, behavior };
+  return { selection: selected, mode, behavior };
 };

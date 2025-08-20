@@ -1,25 +1,25 @@
-// src/cli/stan/runner.combine.test.ts
 import { describe, expect, it } from 'vitest';
 
 import type { ContextConfig } from '@/stan/config';
 
 import { deriveRunInvocation } from './run-args';
 
-describe('CLI -c/--combine, -k/--keep, -a/--archive', () => {
+describe('CLI -c/--combine, -k/--keep, -a/--archive (new flags)', () => {
   const cfg: ContextConfig = {
     outputPath: 'stan',
     scripts: { test: 'echo test', lint: 'echo lint' },
   };
 
-  it('passes combine, keep, archive flags to the runner (no enumeration)', () => {
+  it('passes combine, keep, archive flags with -s (no keys => all)', () => {
     const d = deriveRunInvocation({
-      enumerated: [],
+      scriptsProvided: true,
+      scriptsOpt: [], // presence of -s with no keys => all scripts
       combine: true,
       keep: true,
       archive: true,
       config: cfg,
     });
-    expect(d.selection).toBeNull(); // run all
+    expect(d.selection).toEqual(['test', 'lint']);
     expect(d.mode).toBe('concurrent');
     expect(d.behavior).toMatchObject({
       combine: true,
@@ -28,9 +28,10 @@ describe('CLI -c/--combine, -k/--keep, -a/--archive', () => {
     });
   });
 
-  it('filters selection to known keys and preserves order', () => {
+  it('filters -s selection to known keys and preserves order', () => {
     const d = deriveRunInvocation({
-      enumerated: ['lint', 'test', 'nope'],
+      scriptsProvided: true,
+      scriptsOpt: ['lint', 'test', 'nope'],
       archive: true,
       config: cfg,
     });

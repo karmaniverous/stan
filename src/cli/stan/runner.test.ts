@@ -4,32 +4,49 @@ import type { ContextConfig } from '@/stan/config';
 
 import { deriveRunInvocation } from './run-args';
 
-describe('CLI argument parsing', () => {
+describe('CLI argument parsing (new selection model)', () => {
   const cfg: ContextConfig = {
     outputPath: 'stan',
     scripts: { test: 'echo test', lint: 'echo lint' },
   };
 
-  it('passes -e selection with provided keys (all except <keys>)', () => {
+  it('passes -x selection with provided keys (all except <keys>)', () => {
     const d = deriveRunInvocation({
-      enumerated: [], // no explicit operands
-      except: ['test'],
+      scriptsProvided: false,
+      scriptsOpt: undefined,
+      exceptProvided: true,
+      exceptOpt: ['test'],
       sequential: false,
       combine: false,
       keep: false,
+      archive: false,
       config: cfg,
     });
     expect(d.selection).toEqual(['lint']); // all except 'test'
     expect(d.mode).toBe('concurrent');
   });
 
-  it('passes -s to run sequentially and preserves enumerated order', () => {
+  it('passes -q to run sequentially and preserves -s order', () => {
     const d = deriveRunInvocation({
-      enumerated: ['lint', 'test'],
+      scriptsProvided: true,
+      scriptsOpt: ['lint', 'test', 'nope'],
+      exceptProvided: false,
       sequential: true,
       config: cfg,
     });
     expect(d.selection).toEqual(['lint', 'test']);
     expect(d.mode).toBe('sequential');
+  });
+
+  it('-s with no keys selects all known scripts', () => {
+    const d = deriveRunInvocation({
+      scriptsProvided: true,
+      scriptsOpt: [], // explicit presence with no keys
+      exceptProvided: false,
+      config: cfg,
+    });
+    expect(d.selection).toEqual(['test', 'lint'].sort()); // order by config keys; derive returns config order
+    // derive preserves config order; since cfg order is test, lint:
+    expect(d.selection).toEqual(['test', 'lint']);
   });
 });

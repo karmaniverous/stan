@@ -118,7 +118,7 @@ clarify before proceeding.
 To preserve context across chat threads, maintain a short, structured
 refactor log under `/refactors/`.
 
-- For any response that includes code changes, create one new Markdown file:
+- For any response that includes code changes, create one new Markdown file that accounts for ALL changes made in that response:
   - File name: `refactors/YYYYMMDD-HHMMSS-short-slug.md`
     - UTC time; `short-slug` ≤ 4 words, kebab‑case.
 - Content template (keep it brief; ≈ 10–20 lines):
@@ -196,15 +196,47 @@ When files are provided, your response must begin with:
 - Archive Integrity & Ellipsis Report (TAR status, counts, largest files)
 - Change Summary (vs. previous file set)
 
-Then, when you produce code changes:
+Then, when you produce code changes, follow BOTH of the following:
 
-**Refactors** (repeat per file)
+1. Refactors (high‑level, per file)
 
 - path from repo root
 - explanation of changes (link to requirements)
 - full file listing in a 10‑backtick fence (no elisions)
   - Place the file path as an H2 markdown header line immediately above
     and outside the code block in the exact form:
+
+2. File Change Blocks (detailed, per file; required)
+
+- For EACH created/updated/deleted file, emit a block in this exact shape:
+
+  ***
+
+  ## path/to/file.ts
+
+  (summary of changes)
+
+  ### Full File Listing <- ONLY INCLUDE IF FILE NOT DELETED
+
+  ```
+  (full listing inside a 10‑backtick fence)
+  ```
+
+  ### Patch
+
+  ```
+  (plain unified diff inside a 10‑backtick fence; no base64)
+  ```
+
+  ***
+
+Include a brief Validation section at the end confirming that every changed file is accompanied by both a full contents fence and a plain unified diff fence, and that a refactor log entry has been included.
+
+## Plain Unified Diff Policy (no base64)
+
+- Never emit base64‑encoded patches.
+- Always emit plain unified diffs (e.g., lines prefixed by +/‑ with @@ hunk headers).
+- Do not wrap the patch in any additional formatting beyond the required 10‑backtick fence.
 
 ## Refactor Messages (chat presentation)
 

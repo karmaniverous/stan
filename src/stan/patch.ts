@@ -1,12 +1,11 @@
 /* src/cli/stan/patch.ts
  * "stan patch" subcommand: apply a patch from clipboard / file / inline input.
- * - Default: read base64 or unified diff from clipboard; write cleaned content to defaultPatchFile, then apply.
- * - -f, --file [filename]: read from file (base64 or diff); if filename missing, defaults to config.defaultPatchFile.
+ * - Default: read unified diff from clipboard; write cleaned content to defaultPatchFile, then apply.
+ * - -f, --file [filename]: read from file (unified diff); if filename missing, defaults to config.defaultPatchFile.
  *   Clean the content and write back to the same file before applying.
  * - -c, --check: run git apply --check (no changes); still perform detection/cleanup and write the cleaned output to the target file path.
  * - Detection & cleanup:
  *   - Remove chat wrappers (outer code fences or BEGIN/END banners) only when they wrap the entire payload.
- *   - If base64 decodes to text containing diff markers, use decoded text; otherwise treat original as raw diff.
  *   - Normalize EOL to LF; ensure trailing newline; do not alter whitespace within lines.
  * - Permissive apply strategy:
  *   - Try sequences over strip levels p=1 then p=0:
@@ -73,35 +72,9 @@ const stripZeroWidthAndNormalize = (s: string): string => {
   return lf.endsWith('\n') ? lf : lf + '\n';
 };
 
-const looksLikeBase64 = (s: string): boolean =>
-  // Base64 with optional whitespace/newlines
-  /^[A-Za-z0-9+/=\s]+$/.test(s);
-
-const containsDiffMarkers = (t: string): boolean => {
-  if (/^diff --git /m.test(t)) return true;
-  if (/^---\s+(a\/|\S)/m.test(t) && /^\+\+\+\s+(b\/|\S)/m.test(t)) return true;
-  if (/^@@\s+-\d+,\d+\s+\+\d+,\d+\s+@@/m.test(t)) return true;
-  return false;
-};
-
-const decodeIfBase64Patch = (raw: string): string | null => {
-  const compact = raw.replace(/\s+/g, '');
-  if (!compact || !looksLikeBase64(compact)) return null;
-  try {
-    const buf = Buffer.from(compact, 'base64');
-    const decoded = buf.toString('utf8');
-    return containsDiffMarkers(decoded) ? decoded : null;
-  } catch {
-    return null;
-  }
-};
-
 const detectAndCleanPatch = (input: string): string => {
   const unwrapped = unwrapChatWrappers(input.trim());
-  // Attempt base64 decode to patch text; else treat as raw diff
-  const decoded = decodeIfBase64Patch(unwrapped);
-  const text = decoded ?? unwrapped;
-  return stripZeroWidthAndNormalize(text);
+  return stripZeroWidthAndNormalize(unwrapped);
 };
 
 const readFromClipboard = async (): Promise<string> => {
@@ -263,9 +236,9 @@ export const registerPatch = (cli: Command): Command => {
   const sub = cli
     .command('patch')
     .description(
-      'Apply a git patch from clipboard (default) or a file (with -f). Accepts base64 or unified diff.',
+      'Apply a git patch from clipboard (default) or a file (with -f). Accepts unified diff.',
     )
-    .argument('[input]', 'Patch data (base64 or unified diff)')
+    .argument('[input]', 'Patch data (unified diff)')
     .option(
       '-f, --file [filename]',
       'Read patch from file (defaults to config.defaultPatchFile)',
@@ -331,7 +304,7 @@ export const registerPatch = (cli: Command): Command => {
         }
       }
 
-      // Detect & clean
+      // Detect & clean (unified diff only)
       const cleaned = detectAndCleanPatch(raw);
 
       // Write cleaned content to designated path

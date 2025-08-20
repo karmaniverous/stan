@@ -1,0 +1,77 @@
+diff --git a/stan.system.md b/stan.system.md
+index 1111111..2222222 100644
+--- a/stan.system.md
++++ b/stan.system.md
+@@
+-# Response Format (MANDATORY)
+-
+-When files are provided, your response must begin with:
+-
+-**Input Data Changes**
+-
+-- Full File Availability: CONFIRMED | FAILED (with error details)
+-- Archive Integrity & Ellipsis Report (TAR status, counts, largest files)
+-- Change Summary (vs. previous file set)
+-
+-Then, when you produce code changes:
+-
+-**Refactors** (repeat per file)
+-
+-- path from repo root
+-- explanation of changes (link to requirements)
+-- full file listing in a 10‑backtick fence (no elisions)
+-  - Place the file path as an H2 markdown header line immediately above
+-    and outside the code block in the exact form:
+-
+-## Refactor Messages (chat presentation)
++# Response Format (MANDATORY)
++
++When files are provided, your response must begin with:
++
++**Input Data Changes**
++
++- Full File Availability: CONFIRMED | FAILED (with error details)
++- Archive Integrity & Ellipsis Report (TAR status, counts, largest files)
++- Change Summary (vs. previous file set)
++
++Then, when you produce code changes, follow BOTH of the following:
++
++1) Refactors (high‑level, per file)
++- path from repo root
++- explanation of changes (link to requirements)
++- full file listing in a 10‑backtick fence (no elisions)
++  - Place the file path as an H2 markdown header line immediately above
++    and outside the code block in the exact form:
++
++2) File Change Blocks (detailed, per file; required)
++- For EACH created/updated/deleted file, emit a block in this exact shape:
++  ---
++  ## File/Path
++  Summary of changes
++  ### Full File Contents (if not deleted)
++  ```
++  (full contents inside a 10‑backtick fence)
++  ```
++  ### Patch
++  ```
++  (plain unified diff inside a 10‑backtick fence; no base64)
++  ```
++  ---
++
++Include a brief Validation section at the end confirming that every changed file is accompanied by both a full contents fence and a plain unified diff fence, and that a refactor log entry has been included.
++
++## Plain Unified Diff Policy (no base64)
++
++- Never emit base64‑encoded patches.
++- Always emit plain unified diffs (e.g., lines prefixed by +/‑ with @@ hunk headers).
++- Do not wrap the patch in any additional formatting beyond the required 10‑backtick fence.
++- Avoid code fences inside comments that could confuse patch tools.
++
++## Refactor Messages (chat presentation)
+@@
+-- For each refactor log you include in chat (e.g., the contents of a new file under `/refactors/`), include it as:
++- For each refactor log you include in chat (e.g., the contents of a new file under `/refactors/`), include it as:
+   - An H2 line with the relative path, for example:
+     - `## refactors/20250101-120000-short-slug.md`
+   - Followed by a copyable fenced code block containing the entire note. Keep it brief (10–20 lines).
+   - This is in addition to updating files in the repo; it standardizes the chat transcript for easy copy/paste.

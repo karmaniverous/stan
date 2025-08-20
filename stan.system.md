@@ -108,10 +108,6 @@ clarify before proceeding.
     `/stan.project.md`.
   - Clean up previous requirements comments that do not meet these
     guidelines.
-- Simplification policy:
-  - Before implementing, assess whether small adjustments to the requirement
-    can avoid complex workarounds imposed by the current toolchain. Prefer
-    that path if accepted.
 
 ## Refactor Log Entries (/refactors)
 
@@ -229,6 +225,8 @@ Then, when you produce code changes, follow BOTH of the following:
   ```
 
   ***
+
+Note: The 10‑backtick fences are a presentational requirement in chat. They format the code/patch blocks for copying; the fences themselves are not part of the content users paste into files or patch tools.
 
 Include a brief Validation section at the end confirming that every changed file is accompanied by both a full contents fence and a plain unified diff fence, and that a refactor log entry has been included.
 

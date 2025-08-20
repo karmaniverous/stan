@@ -1,5 +1,5 @@
 /** Shared filesystem helpers for STAN archiving & diffing.
- * See /stan.project.md for global & cross‑cutting requirements.
+ * See <stanPath>/system/stan.project.md for global & cross‑cutting requirements.
  */
 
 import { existsSync } from 'node:fs';

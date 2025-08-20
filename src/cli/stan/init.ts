@@ -4,7 +4,7 @@
  * - Generate stan.config.yml with stanPath: stan.
  * - Create <stanPath>/system and copy docs from dist:
  *   - stan.system.md, stan.project.template.md, stan.bootloader.md
- * - Add stan/output, stan/diff, stan/dist to .gitignore if missing (do NOT ignore the stan root).
+ * - Add <stanPath>/output, <stanPath>/diff, <stanPath>/dist to .gitignore (do NOT ignore the stanPath root).
  * - After init, create/update the diff snapshot (and log a short message).
  */
 import { existsSync } from 'node:fs';
@@ -250,13 +250,13 @@ export const performInit = async (
   const yml = YAML.stringify(config);
   await writeFile(cfgPath, yml, 'utf8');
 
-  // .gitignore: ignore everything under stanPath except stan/system
+  // .gitignore: ignore <stanPath>/output, <stanPath>/diff, and <stanPath>/dist (do not ignore the stanPath root)
   const giPath = path.join(cwd, '.gitignore');
   const dirs = makeStanDirs(cwd, config.stanPath);
   const linesToEnsure = [
-    `${dirs.rootRel}/*`,
-    `!${dirs.systemRel}/`,
-    `!${dirs.systemRel}/**`,
+    `${dirs.outputRel}/`,
+    `${dirs.diffRel}/`,
+    `${dirs.distRel}/`,
   ];
   let gi = existsSync(giPath) ? await readFile(giPath, 'utf8') : '';
   const existingLines = new Set(gi.split(/\r?\n/).map((l) => l.trim()));
@@ -270,7 +270,7 @@ export const performInit = async (
   }
   if (changed) await writeFile(giPath, gi, 'utf8');
 
-  // Ensure docs in stan/system
+  // Ensure docs in <stanPath>/system
   await ensureDocs(cwd, config.stanPath);
 
   console.log(`stan: wrote stan.config.yml`);

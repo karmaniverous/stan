@@ -1,4 +1,4 @@
-/** See /stan.project.md for global requirements. */
+/** See <stanPath>/system/stan.project.md for global requirements. */
 import aliasPlugin, { type Alias } from '@rollup/plugin-alias';
 import commonjsPlugin from '@rollup/plugin-commonjs';
 import jsonPlugin from '@rollup/plugin-json';

@@ -1,4 +1,4 @@
-/** See /stan.project.md for global requirements. */
+/** See <stanPath>/system/stan.project.md for global requirements. */
 
 import { buildCli, buildLibrary, buildTypes } from './rollup.config';
 

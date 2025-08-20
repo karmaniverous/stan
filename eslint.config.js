@@ -1,4 +1,4 @@
-/** See /stan.project.md for global & cross‑cutting requirements. */
+/** See <stanPath>/system/stan.project.md for global & cross‑cutting requirements. */
 /* eslint-env node */
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';

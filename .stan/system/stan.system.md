@@ -90,11 +90,11 @@ By default this is `.stan/`.
 - System‑level (this file): repo‑agnostic policies, coding standards, and
   process expectations that travel across projects (e.g., integrity checks,
   how to structure responses, global lint/typing rules).
-- Project‑level (`/stan.project.md`): concrete, repo‑specific requirements,
+- Project‑level (`<stanPath>/system/stan.project.md`): concrete, repo‑specific requirements,
   tools, and workflows (e.g., “this project uses Commander”, “CLI should
   print a plan line”, “how `stan run` behaves”, tool‑specific testing tips).
 - When a directive references a specific library, tool, file path, or CLI
-  behavior, prefer placing it in `/stan.project.md`. Keep this file free of
+  behavior, prefer placing it in `<stanPath>/system/stan.project.md`. Keep this file free of
   framework/tool specifics unless truly generic.
 
 # Default Task (when files are provided with no extra prompt)
@@ -119,7 +119,7 @@ clarify before proceeding.
   - Write comments as current requirements, not as diffs from previous
     behavior.
   - Write global requirements and cross‑cutting concerns to
-    `/stan.project.md`.
+    `<stanPath>/system/stan.project.md`.
   - Clean up previous requirements comments that do not meet these
     guidelines.
 
@@ -191,7 +191,7 @@ refactor log under `/.stan/refactors/`.
 
 - Read the README for developer intent and obey toolchain expectations
   (build, test, CI).
-- `/stan.project.md` contains project‑specific requirements and conventions.
+- `<stanPath>/system/stan.project.md` contains project‑specific requirements and conventions.
 - Versioning policy (major version 0): DO NOT add backward‑compatibility
   hacks in an unreleased codebase. Prefer simplifying changes even if they
   break prior behavior.

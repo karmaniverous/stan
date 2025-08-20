@@ -1,4 +1,4 @@
-/** See /stan.project.md for global requirements. */
+/** See <stanPath>/system/stan.project.md for global requirements. */
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';

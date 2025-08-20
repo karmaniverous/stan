@@ -211,6 +211,51 @@ export const registerSnap = (cli: Command): Command => {
     });
 
   sub
+    .command('set')
+    .argument('<index>', 'snapshot index to activate (0-based)')
+    .description('Jump to a specific snapshot index and restore it')
+    .action(async (indexArg: string) => {
+      const idx = Number.parseInt(indexArg, 10);
+      if (!Number.isFinite(idx) || idx < 0) {
+        console.error('stan: invalid index');
+        return;
+      }
+      const cwd0 = process.cwd();
+      const cfgMod = await import('./config');
+      const cfgPath = cfgMod.findConfigPathSync(cwd0);
+      const cwd = cfgPath ? path.dirname(cfgPath) : cwd0;
+      let cfg: { stanPath: string; maxUndos?: number };
+      try {
+        const loaded = await cfgMod.loadConfig(cwd);
+        cfg = { stanPath: loaded.stanPath, maxUndos: loaded.maxUndos };
+      } catch {
+        cfg = { stanPath: '.stan', maxUndos: 10 };
+      }
+      const dirs = (await import('./paths')).makeStanDirs(cwd, cfg.stanPath);
+      const diffDir = dirs.diffAbs;
+      const statePath = within(diffDir, STATE_FILE);
+      const snapPath = within(diffDir, '.archive.snapshot.json');
+      const st = (await readJson<SnapState>(statePath)) ?? {
+        entries: [],
+        index: -1,
+        maxUndos: cfg.maxUndos ?? 10,
+      };
+      if (idx < 0 || idx >= st.entries.length) {
+        console.error('stan: index out of range');
+        return;
+      }
+      const entry = st.entries[idx];
+      const snapAbs = within(diffDir, entry.snapshot);
+      const body = await readFile(snapAbs, 'utf8');
+      await writeFile(snapPath, body, 'utf8');
+      st.index = idx;
+      await writeJson(statePath, st);
+      const undos = st.index;
+      const redos = st.entries.length - 1 - st.index;
+      console.log(`stan: set -> ${entry.ts} (undos left ${undos.toString()}, redos left ${redos.toString()})`);
+    });
+
+  sub
     .command('info')
     .description('Print the snapshot stack and current position')
     .action(async () => {
@@ -249,7 +294,7 @@ export const registerSnap = (cli: Command): Command => {
           const hasArch = Boolean(e.archive);
           const hasDiff = Boolean(e.archiveDiff);
           console.log(
-            `  ${mark} ${e.ts}  snapshot: ${e.snapshot}${
+            `  ${mark} [${i.toString()}] ${e.ts}  snapshot: ${e.snapshot}${
               hasArch ? '  archive: yes' : '  archive: no'
             }${hasDiff ? '  diff: yes' : '  diff: no'}`,
           );

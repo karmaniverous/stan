@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile, mkdir } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -36,11 +36,9 @@ vi.mock('./diff', () => ({
     stanPath: string;
   }) => {
     const snapDir = path.join(cwd, stanPath, 'diff');
-    await (await import('node:fs/promises')).mkdir(snapDir, {
-      recursive: true,
-    });
+    await mkdir(snapDir, { recursive: true });
     const snapPath = path.join(snapDir, '.archive.snapshot.json');
-    await (await import('node:fs/promises')).writeFile(
+    await writeFile(
       snapPath,
       JSON.stringify({ ok: true, t: Date.now() }, null, 2),
       'utf8',
@@ -85,7 +83,7 @@ describe('snap CLI (stash, history, undo/redo/info)', () => {
     expect(existsSync(outSnap)).toBe(false);
   });
 
-  it('snap creates history, undo/redo navigates, new snap after undo clears redos, and history trims to maxUndos', async () => {
+  it('snap creates history, set/undo/redo navigate, new snap after undo clears redos, and history trims to maxUndos', async () => {
     // config with stanPath and maxUndos = 2
     await writeFile(
       path.join(dir, 'stan.config.yml'),
@@ -110,8 +108,10 @@ describe('snap CLI (stash, history, undo/redo/info)', () => {
     expect(state.entries.length).toBe(2);
     expect(state.index).toBe(1);
 
-    // Undo once (back to first)
-    await cli.parseAsync(['node', 'stan', 'snap', 'undo'], { from: 'user' });
+    // Jump to index 0 with set
+    await cli.parseAsync(['node', 'stan', 'snap', 'set', '0'], {
+      from: 'user',
+    });
     state = JSON.parse(await read(statePath));
     expect(state.index).toBe(0);
 
@@ -122,7 +122,6 @@ describe('snap CLI (stash, history, undo/redo/info)', () => {
     expect(state.index).toBe(1);
 
     // Redo should be impossible now (tail was cleared)
-    // But redo command should simply say "nothing to redo" and keep index
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     await cli.parseAsync(['node', 'stan', 'snap', 'redo'], { from: 'user' });
     logSpy.mockRestore();
@@ -135,4 +134,3 @@ describe('snap CLI (stash, history, undo/redo/info)', () => {
     infoSpy.mockRestore();
   });
 });
-

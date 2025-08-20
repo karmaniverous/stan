@@ -9,7 +9,6 @@
  *   - ensure <stanPath>/output and <stanPath>/diff exist.
  *   - when keep===false, copy <stanPath>/output/archive.tar -\> <stanPath>/diff/archive.prev.tar if it exists.
  *   - when keep===false, clear ONLY <stanPath>/output (preserve <stanPath>/diff).
- * - NEW: defaultPatchFile?: string (default '/stan.patch').
  * - NEW: stanPath replaces outputPath (default '.stan').
  * - NEW: maxUndos?: number (default 10) for snapshot undo/redo retention.
  */

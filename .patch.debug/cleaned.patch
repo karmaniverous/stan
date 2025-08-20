@@ -1,16 +1,176 @@
-diff --git a/src/stan/snap.ts b/src/stan/snap.ts
-index 4c2f0d9..0a9a2be 100644
---- a/src/stan/snap.ts
-+++ b/src/stan/snap.ts
-@@ -14,9 +14,8 @@
-  *   - "info" prints the stack with timestamps, file presence, current index, and how many undos/redos remain.
+diff --git a/src/stan/patch.ts b/src/stan/patch.ts
+index 7f74b2a..d73f4f2 100644
+--- a/src/stan/patch.ts
++++ b/src/stan/patch.ts
+@@ -1,20 +1,23 @@
+-/* src/cli/stan/patch.ts
++/* src/cli/stan/patch.ts
+  * "stan patch" subcommand: apply a patch from clipboard / file / inline input.
+- * - Default: read unified diff from clipboard; write cleaned content to defaultPatchFile, then apply.
+- * - -f, --file [filename]: read from file (unified diff); if filename missing, defaults to config.defaultPatchFile.
+- *   Clean the content and write back to the same file before applying.
+- * - -c, --check: run git apply --check (no changes); still perform detection/cleanup and write the cleaned output to the target file path.
++ * - Default: read unified diff from clipboard; write cleaned content to <stanPath>/diff/.patch, then apply (staged).
++ * - -f, --file [filename]: read from file; cleaned content is still written to <stanPath>/diff/.patch.
++ * - -c, --check: run git apply --check (validate only). No staging, no changes.
+  * - Detection & cleanup:
+  *   - Remove chat wrappers (outer code fences or BEGIN/END banners) only when they wrap the entire payload.
+  *   - Also robustly EXTRACT a unified diff when the message includes additional text:
+  *     • Prefer the first fenced code block (>=3 backticks) that contains unified-diff markers.
+  *     • Otherwise slice from the first “diff --git …” or “--- …” marker to the end.
+  *     • Strip any trailing closing code-fence lines.
+  *   - Normalize EOL to LF; ensure trailing newline; do not alter whitespace within lines.
+- * - Permissive apply strategy:
++ * - Permissive apply strategy (staged by default):
+  *   - Try sequences over strip levels p=1 then p=0:
+- *     1) --3way --whitespace=nowarn
+- *     2) --3way --ignore-whitespace
+- *     3) --reject --whitespace=nowarn
++ *     1) --3way --whitespace=nowarn --recount [--index for apply]
++ *     2) --3way --ignore-whitespace --recount [--index for apply]
++ *     3) --reject --whitespace=nowarn --recount [--index for apply]
+  *   - For --check, use --check with the same sets; stop on first success.
+  * - Repo-root anchoring for “/path” remains supported for file paths.
   */
- import { spawn } from 'node:child_process';
- import { existsSync } from 'node:fs';
--import {
--  copyFile, mkdir, readFile, readdir, rm, writeFile,
--} from 'node:fs/promises';
-+import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
- import path from 'node:path';
+@@
+-import { findConfigPathSync, loadConfig } from './config';
++import { findConfigPathSync, loadConfig } from './config';
++import { makeStanDirs } from './paths';
+@@
+-type ApplyAttempt = {
++type ApplyAttempt = {
+   args: string[];
+   strip: number;
+   label: string;
+ };
+@@
+-const buildApplyAttempts = (check: boolean, strip: number): ApplyAttempt[] => {
+-  const base = check ? ['--check'] : [];
++const buildApplyAttempts = (
++  check: boolean,
++  strip: number,
++  stage: boolean,
++): ApplyAttempt[] => {
++  const base = check ? ['--check'] : stage ? ['--index'] : [];
+   const with3WayNowarn: ApplyAttempt = {
+@@
+-};
++};
+@@
+-const resolveWorkingCwdAndConfig = async (
+-  cwd0: string,
+-): Promise<{
+-  cwd: string;
+-  defaultPatchFile: string;
+-}> => {
+-  const cfgPath = findConfigPathSync(cwd0);
+-  const cwd = cfgPath ? path.dirname(cfgPath) : cwd0;
+-
+-  let defaultPatchFile = '/stan.patch';
+-  try {
+-    const cfg = await loadConfig(cwd);
+-    defaultPatchFile = cfg.defaultPatchFile ?? '/stan.patch';
+-  } catch {
+-    // fall back to default
+-  }
+-  return { cwd, defaultPatchFile };
+-};
++const resolvePatchContext = async (
++  cwd0: string,
++): Promise<{ cwd: string; patchAbs: string; patchRel: string }> => {
++  const cfgPath = findConfigPathSync(cwd0);
++  const cwd = cfgPath ? path.dirname(cfgPath) : cwd0;
++  let stanPath = '.stan';
++  try {
++    const cfg = await loadConfig(cwd);
++    stanPath = cfg.stanPath;
++  } catch {
++    // default used
++  }
++  const dirs = makeStanDirs(cwd, stanPath);
++  const patchAbs = path.join(dirs.diffAbs, '.patch');
++  const patchRel = path.relative(cwd, patchAbs).replace(/\\/g, '/');
++  return { cwd, patchAbs, patchRel };
++};
+@@
+-      const cwd0 = process.cwd();
+-      const { cwd, defaultPatchFile } = await resolveWorkingCwdAndConfig(cwd0);
++      const { cwd, patchAbs, patchRel } = await resolvePatchContext(
++        process.cwd(),
++      );
+@@
+-      let raw: string;
+-      let destPathRel = defaultPatchFile;
+-      let destPathAbs = repoJoin(cwd, defaultPatchFile);
++      let raw: string;
+@@
+-        destPathRel = defaultPatchFile;
+-        destPathAbs = repoJoin(cwd, destPathRel);
+       } else if (source.kind === 'argument') {
+         console.log('stan: patch source: argument');
+         raw = source.text;
+-        destPathRel = defaultPatchFile;
+-        destPathAbs = repoJoin(cwd, destPathRel);
+       } else {
+         const rel = source.filePath;
+-        destPathRel = rel;
+-        destPathAbs = repoJoin(cwd, rel);
+         console.log(
+           `stan: patch source: file "${path
+             .relative(cwd, destPathAbs)
+             .replace(/\\/g, '/')}"`,
+         );
+-        try {
+-          raw = await readFile(destPathAbs, 'utf8');
++        try {
++          raw = await readFile(repoJoin(cwd, rel), 'utf8');
+         } catch (e) {
+           console.error('stan: failed to read file', e);
+           return;
+         }
+       }
+@@
+-      try {
+-        await ensureParentDir(destPathAbs);
+-        await writeFile(destPathAbs, cleaned, 'utf8');
++      try {
++        await ensureParentDir(patchAbs);
++        await writeFile(patchAbs, cleaned, 'utf8');
+       } catch (e) {
+         console.error('stan: failed to write cleaned patch', e);
+         return;
+       }
  
- import type { Command } from 'commander';
+-      console.log(
+-        `stan: applying patch "${path
+-          .relative(cwd, destPathAbs)
+-          .replace(/\\/g, '/')}"`,
+-      );
++      console.log(`stan: applying patch "${patchRel}"`);
+@@
+-      const attempts: ApplyAttempt[] = [];
+-      for (const p of stripsFirst)
+-        attempts.push(...buildApplyAttempts(check, p));
++      const attempts: ApplyAttempt[] = [];
++      for (const p of stripsFirst)
++        attempts.push(...buildApplyAttempts(check, p, !check));
+ 
+-      const result = await runGitApply(cwd, destPathAbs, attempts);
++      const result = await runGitApply(cwd, patchAbs, attempts);
+ 
+       if (result.ok) {
+-        console.log(check ? 'stan: patch check passed' : 'stan: patch applied');
++        console.log(check ? 'stan: patch check passed' : 'stan: patch applied (staged)');
+         return;
+       }
+@@
+-        const debugDir = path.join(path.dirname(destPathAbs), '.patch.debug');
++        const debugDir = path.join(path.dirname(patchAbs), '.patch.debug');
+@@
+-            .relative(cwd, debugDir)
++            .relative(cwd, debugDir)
+             .replace(/\\/g, '/')}`,
+         );
+       } catch {
+         // diagnostics best-effort
+       }

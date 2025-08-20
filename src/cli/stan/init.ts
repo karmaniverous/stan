@@ -218,7 +218,6 @@ export const performInit = async (
     scripts: {},
     excludes: [],
     includes: [],
-    defaultPatchFile: '/stan.patch',
   };
 
   let resetDiffNow = true;
@@ -241,7 +240,6 @@ export const performInit = async (
       includes: picked.includes,
       excludes: picked.excludes,
       scripts: picked.scripts,
-      defaultPatchFile: defaults?.defaultPatchFile ?? '/stan.patch',
     };
     resetDiffNow = picked.resetDiff;
   }

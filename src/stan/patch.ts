@@ -1,23 +1,18 @@
 /* src/cli/stan/patch.ts
  * "stan patch" subcommand: apply a patch from clipboard / file / inline input.
- * - Default: read unified diff from clipboard; write cleaned content to defaultPatchFile, then apply.
- * - -f, --file [filename]: read from file (unified diff); if filename missing, defaults to config.defaultPatchFile.
- *   Clean the content and write back to the same file before applying.
- * - -c, --check: run git apply --check (no changes); still perform detection/cleanup and write the cleaned output to the target file path.
+ * - Default: read unified diff from clipboard; write cleaned content to <stanPath>/diff/.patch, then apply (staged).
+ * - -f, --file [filename]: read from file (unified diff); cleaned content is still written to the canonical <stanPath>/diff/.patch.
+ * - -c, --check: run git apply --check (validate only). No staging, no changes.
  * - Detection & cleanup:
- *   - Remove chat wrappers (outer code fences or BEGIN/END banners) only when they wrap the entire payload.
- *   - Also robustly EXTRACT a unified diff when the message includes additional text:
- *     • Prefer the first fenced code block (>=3 backticks) that contains unified-diff markers.
- *     • Otherwise slice from the first “diff --git …” or “--- …” marker to the end.
- *     • Strip any trailing closing code-fence lines.
+ *   - Remove chat wrappers or BEGIN/END banners only when they wrap the entire payload.
+ *   - Try extracting the first fenced code block containing a unified diff; otherwise slice from the first diff marker; strip trailing closing fences.
  *   - Normalize EOL to LF; ensure trailing newline; do not alter whitespace within lines.
- * - Permissive apply strategy:
- *   - Try sequences over strip levels p=1 then p=0:
- *     1) --3way --whitespace=nowarn
- *     2) --3way --ignore-whitespace
- *     3) --reject --whitespace=nowarn
- *   - For --check, use --check with the same sets; stop on first success.
- * - Repo-root anchoring for “/path” remains supported for file paths.
+ * - Apply strategy (staged by default):
+ *   - For apply: include --index and try strip p=1 then p=0 across:
+ *     1) --3way --whitespace=nowarn --recount
+ *     2) --3way --ignore-whitespace --recount
+ *     3) --reject --whitespace=nowarn --recount
+ *   - For --check: same sets but with --check and without --index.
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -29,6 +24,7 @@ import type { Command } from 'commander';
 import { applyCliSafety } from '@/cli/stan/cli-utils';
 
 import { findConfigPathSync, loadConfig } from './config';
+import { makeStanDirs } from './paths';
 
 type PatchSource =
   | { kind: 'clipboard' }
@@ -38,9 +34,7 @@ type PatchSource =
 const repoJoin = (cwd: string, p: string): string =>
   p.startsWith('/') ? path.join(cwd, p.slice(1)) : path.resolve(cwd, p);
 
-/** Unwrap only outer chat fences/banners if they wrap the entire payload.
- * Preserve any interior lines (e.g., "+`\`\`\`" within diff hunks).
- */
+/** Unwrap only outer chat fences/banners if they wrap the entire payload. */
 const unwrapChatWrappers = (text: string): string => {
   const lines = text.split(/\r?\n/);
   let i = 0;
@@ -69,7 +63,6 @@ const unwrapChatWrappers = (text: string): string => {
 };
 
 const stripZeroWidthAndNormalize = (s: string): string => {
-  // Remove BOM + zero-width chars; normalize CRLF to LF
   const ZERO_WIDTH_RE = /[\u200B-\u200D\uFEFF]/g;
   const noZW = s.replace(ZERO_WIDTH_RE, '');
   const lf = noZW.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -87,7 +80,6 @@ const looksLikeUnifiedDiff = (t: string): boolean => {
   return false;
 };
 
-/** Extract the first fenced code block (\>=3 backticks) that contains unified diff markers. */
 const extractFencedUnifiedDiff = (text: string): string | null => {
   const lines = text.split('\n');
   for (let i = 0; i < lines.length; i += 1) {
@@ -107,35 +99,27 @@ const extractFencedUnifiedDiff = (text: string): string | null => {
   return null;
 };
 
-/** Extract from raw markers (first diff --git or ---/+++). Strip trailing closing fences if present. */
 const extractRawUnifiedDiff = (text: string): string | null => {
   let idx = text.search(/^diff --git /m);
   if (idx < 0) idx = text.search(/^---\s+(?:a\/|\S)/m);
   if (idx < 0) return null;
   const body = text.slice(idx);
-
-  // remove trailing closing code-fence lines if present at the very end
   const trimmed = body.replace(/\n`{3,}\s*$/m, '\n');
   return trimmed;
 };
 
 const detectAndCleanPatch = (input: string): string => {
-  // Normalize first so searches are consistent
   const pre = stripZeroWidthAndNormalize(input.trim());
-  // If the entire payload is wrapped, unwrap once, then normalize again
   const maybeUnwrapped = unwrapChatWrappers(pre);
   const normalized = stripZeroWidthAndNormalize(maybeUnwrapped);
 
-  // 1) Prefer fenced code blocks that contain a unified diff
   const fenced = extractFencedUnifiedDiff(normalized);
   if (fenced)
     return ensureFinalNewline(stripZeroWidthAndNormalize(fenced).trimEnd());
 
-  // 2) Otherwise slice from raw diff markers
   const raw = extractRawUnifiedDiff(normalized);
   if (raw) return ensureFinalNewline(stripZeroWidthAndNormalize(raw).trimEnd());
 
-  // 3) Fall back to normalized text (git will error; diagnostics will be saved)
   return ensureFinalNewline(normalized);
 };
 
@@ -171,11 +155,12 @@ type ApplyResult = {
   captures: AttemptCapture[];
 };
 
-/** Build tolerant git apply attempts for a given strip level.
- * NOTE: Include --recount to recompute hunk header line counts (tolerates line-number drift).
- */
-const buildApplyAttempts = (check: boolean, strip: number): ApplyAttempt[] => {
-  const base = check ? ['--check'] : [];
+const buildApplyAttempts = (
+  check: boolean,
+  strip: number,
+  stage: boolean,
+): ApplyAttempt[] => {
+  const base = check ? ['--check'] : stage ? ['--index'] : [];
   const with3WayNowarn: ApplyAttempt = {
     args: [
       ...base,
@@ -237,20 +222,16 @@ const runGitApply = async (
         stdout?: NodeJS.ReadableStream;
         stderr?: NodeJS.ReadableStream;
       };
-      if (cp.stderr) {
-        cp.stderr.on('data', (d: Buffer) => {
-          const s = d.toString('utf8');
-          se += s;
-          if (process.env.STAN_DEBUG === '1') process.stderr.write(s);
-        });
-      }
-      if (cp.stdout) {
-        cp.stdout.on('data', (d: Buffer) => {
-          const s = d.toString('utf8');
-          so += s;
-          if (process.env.STAN_DEBUG === '1') process.stdout.write(s);
-        });
-      }
+      cp.stderr?.on('data', (d: Buffer) => {
+        const s = d.toString('utf8');
+        se += s;
+        if (process.env.STAN_DEBUG === '1') process.stderr.write(s);
+      });
+      cp.stdout?.on('data', (d: Buffer) => {
+        const s = d.toString('utf8');
+        so += s;
+        if (process.env.STAN_DEBUG === '1') process.stdout.write(s);
+      });
 
       child.on('close', (c) => {
         captures.push({
@@ -273,23 +254,28 @@ const runGitApply = async (
   return { ok: false, tried, lastCode: 1, captures };
 };
 
-const resolveWorkingCwdAndConfig = async (
+const resolvePatchContext = async (
   cwd0: string,
 ): Promise<{
   cwd: string;
-  defaultPatchFile: string;
+  stanPath: string;
+  patchAbs: string;
+  patchRel: string;
 }> => {
   const cfgPath = findConfigPathSync(cwd0);
   const cwd = cfgPath ? path.dirname(cfgPath) : cwd0;
 
-  let defaultPatchFile = '/stan.patch';
+  let stanPath = '.stan';
   try {
     const cfg = await loadConfig(cwd);
-    defaultPatchFile = cfg.defaultPatchFile ?? '/stan.patch';
+    stanPath = cfg.stanPath;
   } catch {
-    // fall back to default
+    // default used
   }
-  return { cwd, defaultPatchFile };
+  const dirs = makeStanDirs(cwd, stanPath);
+  const patchAbs = path.join(dirs.diffAbs, '.patch');
+  const patchRel = path.relative(cwd, patchAbs).replace(/\\/g, '/');
+  return { cwd, stanPath, patchAbs, patchRel };
 };
 
 export const registerPatch = (cli: Command): Command => {
@@ -301,10 +287,7 @@ export const registerPatch = (cli: Command): Command => {
       'Apply a git patch from clipboard (default) or a file (with -f). Accepts unified diff.',
     )
     .argument('[input]', 'Patch data (unified diff)')
-    .option(
-      '-f, --file [filename]',
-      'Read patch from file (defaults to config.defaultPatchFile)',
-    )
+    .option('-f, --file [filename]', 'Read patch from file as source')
     .option('-c, --check', 'Validate patch without applying any changes');
 
   applyCliSafety(sub);
@@ -314,8 +297,9 @@ export const registerPatch = (cli: Command): Command => {
       inputMaybe?: string,
       opts?: { file?: string | boolean; check?: boolean },
     ) => {
-      const cwd0 = process.cwd();
-      const { cwd, defaultPatchFile } = await resolveWorkingCwdAndConfig(cwd0);
+      const { cwd, patchAbs, patchRel } = await resolvePatchContext(
+        process.cwd(),
+      );
 
       // Resolve source precedence
       let source: PatchSource;
@@ -323,16 +307,13 @@ export const registerPatch = (cli: Command): Command => {
         source = { kind: 'argument', text: inputMaybe };
       } else if (Object.prototype.hasOwnProperty.call(opts ?? {}, 'file')) {
         const opt = (opts as { file?: string | boolean }).file;
-        const dest =
-          typeof opt === 'string' && opt.length > 0 ? opt : defaultPatchFile;
-        source = { kind: 'file', filePath: dest };
+        const src = typeof opt === 'string' && opt.length > 0 ? opt : undefined;
+        source = src ? { kind: 'file', filePath: src } : { kind: 'clipboard' };
       } else {
         source = { kind: 'clipboard' };
       }
 
       let raw: string;
-      let destPathRel = defaultPatchFile;
-      let destPathAbs = repoJoin(cwd, defaultPatchFile);
 
       if (source.kind === 'clipboard') {
         console.log('stan: patch source: clipboard');
@@ -342,24 +323,16 @@ export const registerPatch = (cli: Command): Command => {
           console.error('stan: failed to read clipboard', e);
           return;
         }
-        destPathRel = defaultPatchFile;
-        destPathAbs = repoJoin(cwd, destPathRel);
       } else if (source.kind === 'argument') {
         console.log('stan: patch source: argument');
         raw = source.text;
-        destPathRel = defaultPatchFile;
-        destPathAbs = repoJoin(cwd, destPathRel);
       } else {
         const rel = source.filePath;
-        destPathRel = rel;
-        destPathAbs = repoJoin(cwd, rel);
         console.log(
-          `stan: patch source: file "${path
-            .relative(cwd, destPathAbs)
-            .replace(/\\/g, '/')}"`,
+          `stan: patch source: file "${path.relative(cwd, rel).replace(/\\/g, '/')}"`,
         );
         try {
-          raw = await readFile(destPathAbs, 'utf8');
+          raw = await readFile(repoJoin(cwd, rel), 'utf8');
         } catch (e) {
           console.error('stan: failed to read file', e);
           return;
@@ -369,20 +342,16 @@ export const registerPatch = (cli: Command): Command => {
       // Detect & clean (unified diff only), tolerant to surrounding prose
       const cleaned = detectAndCleanPatch(raw);
 
-      // Write cleaned content to designated path
+      // Write cleaned content to canonical path <stanPath>/diff/.patch
       try {
-        await ensureParentDir(destPathAbs);
-        await writeFile(destPathAbs, cleaned, 'utf8');
+        await ensureParentDir(patchAbs);
+        await writeFile(patchAbs, cleaned, 'utf8');
       } catch (e) {
         console.error('stan: failed to write cleaned patch', e);
         return;
       }
 
-      console.log(
-        `stan: applying patch "${path
-          .relative(cwd, destPathAbs)
-          .replace(/\\/g, '/')}"`,
-      );
+      console.log(`stan: applying patch "${patchRel}"`);
 
       const check = Boolean(opts?.check);
       const hasAB =
@@ -390,25 +359,24 @@ export const registerPatch = (cli: Command): Command => {
         /^diff --git a\//m.test(cleaned);
       const stripsFirst = hasAB ? [1, 0] : [0, 1];
 
-      const attempts: ApplyAttempt[] = [];
-      for (const p of stripsFirst)
-        attempts.push(...buildApplyAttempts(check, p));
+      const attempts = stripsFirst.flatMap((p) =>
+        buildApplyAttempts(check, p, !check),
+      );
 
-      const result = await runGitApply(cwd, destPathAbs, attempts);
+      const result = await runGitApply(cwd, patchAbs, attempts);
 
       if (result.ok) {
-        console.log(check ? 'stan: patch check passed' : 'stan: patch applied');
+        console.log(
+          check ? 'stan: patch check passed' : 'stan: patch applied (staged)',
+        );
         return;
       }
 
-      // Write diagnostics bundle for analysis
+      // Diagnostics bundle
       try {
-        const debugDir = path.join(path.dirname(destPathAbs), '.patch.debug');
+        const debugDir = path.join(path.dirname(patchAbs), '.patch.debug');
         await mkdir(debugDir, { recursive: true });
-
-        // Save cleaned patch
         await writeFile(path.join(debugDir, 'cleaned.patch'), cleaned, 'utf8');
-        // Save attempts
         await writeFile(
           path.join(debugDir, 'attempts.json'),
           JSON.stringify(
@@ -423,7 +391,6 @@ export const registerPatch = (cli: Command): Command => {
           ),
           'utf8',
         );
-        // Save per-attempt stderr/stdout
         for (const c of result.captures) {
           const safe = c.label.replace(/[^a-z0-9.-]/gi, '_');
           await writeFile(
@@ -437,14 +404,13 @@ export const registerPatch = (cli: Command): Command => {
             'utf8',
           );
         }
-
         console.log(
           `stan: wrote patch diagnostics -> ${path
             .relative(cwd, debugDir)
             .replace(/\\/g, '/')}`,
         );
       } catch {
-        // diagnostics best-effort
+        // best-effort
       }
 
       console.log(

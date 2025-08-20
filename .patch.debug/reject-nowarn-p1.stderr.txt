@@ -1,16 +1,3 @@
-Checking patch src/stan/snap.ts...
-error: while searching for:
- *   - "info" prints the stack with timestamps, file presence, current index, and how many undos/redos remain.
- */
-import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import {
-  copyFile, mkdir, readFile, readdir, rm, writeFile,
-} from 'node:fs/promises';
-import path from 'node:path';
+warning: recount: unexpected line: @@
 
-import type { Command } from 'commander';
-
-error: patch failed: src/stan/snap.ts:14
-Applying patch src/stan/snap.ts with 1 reject...
-Rejected hunk #1.
+error: corrupt patch at line 35

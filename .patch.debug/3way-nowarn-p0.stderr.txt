@@ -1,1 +1,3 @@
-error: a/src/stan/snap.ts: does not exist in index
+warning: recount: unexpected line: @@
+
+error: corrupt patch at line 35

@@ -23,32 +23,35 @@ If this file experiences significant structural changes, update
   - `stan run` — run configured scripts to produce artifacts.
   - `stan init` — scaffold config and docs.
   - `stan snap` — create/replace the diff snapshot (without writing an archive).
-  - `stan patch [file]` — apply a git patch (defaults to `defaultPatchFile`).
-- Avoid `process.exit()` inside CLI code; use Commander’s `exitOverride()` so
-  tests can parse without exiting.
-- Help:
-  - Native `-h/--help` enabled on root and subcommands.
-  - A dynamic help footer lists available script keys from config.
+  - `stan patch [input]` — apply a git patch (see below).
 
-### Selection & Execution (updated)
+### stan patch (updated)
+
+- Sources and precedence:
+  - `[input]`: optional; treat as patch data (base64 or unified diff). Note Windows command line length limits.
+  - `-f, --file [filename]`: read from file; if omitted, defaults to `defaultPatchFile` (usually `/stan.patch`).
+  - No `[input]` and no `-f`: read from the system clipboard.
+- `-c, --check`: run `git apply --check` (validate only).
+- Detection & cleanup:
+  - Remove code fences (```), BEGIN/END banners, zero‑width chars; normalize EOLs to LF; ensure trailing newline.
+  - If content base64‑decodes to a unified diff, use decoded text; else treat as raw unified diff.
+  - Write the cleaned patch to the designated patch file (clipboard/argument => defaultPatchFile; file mode => overwrite the same file).
+- Application strategy (tolerant):
+  - Try `--3way --whitespace=nowarn` then `--3way --ignore-whitespace` then `--reject --whitespace=nowarn`, across strip levels `-p1` then `-p0`.
+  - For `--check`, perform the same strategy with `--check` and stop at first success.
+- Logs:
+  - Patch source (clipboard/argument/file), target file path, applied/failed (or check passed/failed).
+- Windows:
+  - Prefer clipboard or file mode for large patches; positional input can exceed the ~32K command line limit.
+
+## Selection & Execution (updated)
 
 - One of `-a/--archive`, `-s/--scripts`, or `-x/--except-scripts` is required.
-- `-s, --scripts [keys...]`:
-  - Optional variadic.
-  - If present with keys: run exactly those keys (filtered to known; preserves order).
+- `-s, --scripts [keys...]` (optional variadic)
+  - If present with keys: run exactly those keys.
   - If present with no keys: run all configured scripts.
-- `-x, --except-scripts <keys...>`:
-  - Variadic; requires at least one key.
-  - If `-s` is present: reduce the `-s` selection by these keys.
-  - If `-s` is absent: reduce from the full set of configured scripts (run all minus these keys).
-- Execution mode:
-  - Default is concurrent.
-  - `-q, --sequential` preserves enumerated/config order.
-  - `-q` requires either `-s` or `-x`.
-- Archives & outputs:
-  - `-a/--archive`: After scripts run (or immediately if selection is empty), write `archive.tar` and `archive.diff.tar`.
-  - `-c/--combine`: Include script outputs inside the archives and do not keep them on disk. Implies `--archive` and requires `-s` or `-x`. Conflicts with `--keep`.
-  - `-k/--keep`: Do not clear the output directory before running. Conflicts with `--combine`.
+- `-x, --except-scripts <keys...>`: reduce from `-s` set or, if `-s` is absent, from the full set.
+- `-q, --sequential` requires `-s` or `-x`.
 
 ## Diff snapshot policy
 
@@ -57,48 +60,5 @@ If this file experiences significant structural changes, update
 
 ## Logging
 
-- At the start of `stan run`, print a concise, multi‑line plan summary block
-  with clear labels and indentation. Include: mode, output path, scripts,
-  and whether archive/combine/keep are enabled.
-- For each script/archive action, log `stan: start "<key>"` and
-  `stan: done "<key>" -> <relative path>"`.
-
-## Context Config Shape
-
-```ts
-type ContextConfig = {
-  outputPath: string;
-  scripts: Record<string, string>;
-  includes?: string[];
-  excludes?: string[];
-  /** Default patch filename for `stan patch`; defaults to '/stan.patch'. */
-  defaultPatchFile?: string;
-};
-```
-
-- `includes` and `excludes` support picomatch globs; includes override excludes.
-- The output directory is excluded from archives unless `--combine` is used
-  (in which case it is included and script outputs are not kept on disk).
-
-## UX / Help
-
-- If no scripts are selected and no artifacts are created, print the
-  available keys: `renderAvailableScriptsHelp(cwd)`.
-
-## Testing (CLI / Commander specifics)
-
-- Use `exitOverride()` on root and subcommands to prevent `process.exit()` during tests.
-- Prefer `parseAsync(argv, { from: 'user' })` in tests or normalize argv accordingly.
-- Capture stdout/stderr to assert help and error messages.
-- Use dynamic imports inside command actions so test doubles/mocks can be applied.
-
-## Artifacts
-
-- Default output directory is configured by `outputPath` (often `stan/`).
-- Per‑script artifacts: `<outputPath>/<key>.txt` combine stdout + stderr.
-- Archives (when `--archive` is enabled):
-  - `<outputPath>/archive.tar`
-  - `<outputPath>/archive.diff.tar`
-- Combine behavior (`--combine`):
-  - Archives include `<outputPath>` (excluding `<outputPath>/.diff`) and
-    script outputs are removed from disk after archiving.
+- At the start of `stan run`, print a concise plan.
+- For each script/archive action, log `stan: start "<key>"` and `stan: done "<key>" -> <path>"`.

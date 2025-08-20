@@ -1,11 +1,12 @@
 import { EventEmitter } from 'node:events';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
 import { Command } from 'commander';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock spawn to avoid running real git; return an EE that closes with code 0.
-// Use vitest-recommended pattern to partially mock a built-in module.
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>();
   return {
@@ -14,43 +15,78 @@ vi.mock('node:child_process', async (importOriginal) => {
     default: actual as unknown as object,
     spawn: () => {
       const ee = new EventEmitter();
-      // Simulate success; environments with a real git may still run it,
-      // so the test asserts final status (applied|failed), not the exact result.
       setTimeout(() => ee.emit('close', 0), 0);
       return ee as unknown;
     },
   };
 });
 
+// Mock clipboardy for clipboard tests
+vi.mock('clipboardy', () => ({
+  __esModule: true,
+  default: {
+    read: async () => 'Zm9v', // "foo" base64; content body unimportant due to spawn mock
+  },
+}));
+
 import { registerPatch } from '@/stan/patch';
 
-describe('patch subcommand', () => {
-  it('logs normalized repo-root patch path and emits a terminal status', async () => {
+describe('patch subcommand (clipboard and file modes)', () => {
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(path.join(os.tmpdir(), 'stan-patch-'));
+    process.chdir(dir);
+  });
+
+  afterEach(async () => {
+    try {
+      process.chdir(os.tmpdir());
+    } catch {
+      // ignore
+    }
+    await rm(dir, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it('reads from clipboard by default and logs terminal status', async () => {
     const cli = new Command();
     registerPatch(cli);
 
-    const cwd = process.cwd();
-    const rel = 'foo.patch';
-    const absRepoPath = path.join(cwd, rel);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    // No args => clipboard mode
+    await cli.parseAsync(['node', 'stan', 'patch'], { from: 'user' });
+
+    const logs = logSpy.mock.calls.map((c) => String(c[0]));
+    expect(logs.some((l) => /stan:\s+patch source:\s+clipboard/i.test(l))).toBe(
+      true,
+    );
+    // Terminal status: applied or check passed (applied here)
+    expect(logs.some((l) => /stan:\s+patch applied/i.test(l))).toBe(true);
+
+    logSpy.mockRestore();
+  });
+
+  it('reads from file with -f and logs terminal status', async () => {
+    const cli = new Command();
+    registerPatch(cli);
+
+    // Create a file patch (content body not validated; apply is mocked)
+    const rel = 'my.patch';
+    await writeFile(path.join(dir, rel), 'diff --git a/x b/x\n', 'utf8');
 
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    // Invoke: stan patch /foo.patch  -> should normalize to <cwd>/foo.patch
-    await cli.parseAsync(['node', 'stan', 'patch', '/foo.patch'], {
+    await cli.parseAsync(['node', 'stan', 'patch', '-f', rel], {
       from: 'user',
     });
 
     const logs = logSpy.mock.calls.map((c) => String(c[0]));
-    // First visible effect: applying normalized path relative to repo root.
-    expect(logs.some((l) => l.includes(`stan: applying patch "${rel}"`))).toBe(
-      true,
-    );
-
-    // Terminal status: either applied or failed must be logged.
-    const statusLogged = logs.some((l) =>
-      /stan:\s+patch\s+(applied|failed)/i.test(l),
-    );
-    expect(statusLogged).toBe(true);
+    expect(
+      logs.some((l) => /stan:\s+patch source:\s+file\s+"my\.patch"/i.test(l)),
+    ).toBe(true);
+    expect(logs.some((l) => /stan:\s+patch applied/i.test(l))).toBe(true);
 
     logSpy.mockRestore();
   });

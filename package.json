@@ -7,6 +7,7 @@
     "url": "https://github.com/karmaniverous/stan/issues"
   },
   "dependencies": {
+    "clipboardy": "^4.0.0",
     "commander": "^14.0.0",
     "ignore": "^7.0.5",
     "inquirer": "^12.9.3",

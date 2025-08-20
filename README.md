@@ -120,22 +120,22 @@ Global:
 
 - `-d, --debug` (on `stan`): enable verbose debug logging for all subcommands.
 
-### Artifacts
+### stan patch
 
-- Without `-a`:
-  - Per‑script artifacts written on disk: `<outputPath>/<key>.txt`
-  - No archives are produced.
-- With `-a` (no `-c`):
-  - Per‑script artifacts remain on disk.
-  - Archives:
-    - `<outputPath>/archive.tar` (code only; excludes `<outputPath>`)
-    - `<outputPath>/archive.diff.tar` (changed files only; excludes `<outputPath>`)
-- With `-a -c`:
-  - Script outputs are included inside both archives (`archive.tar` and `archive.diff.tar`) and removed from the output directory after archiving.
-  - On disk, you will only see:
-    - `<outputPath>/archive.tar`
-    - `<outputPath>/archive.diff.tar`
-    - `<outputPath>/.diff` (snapshot & prev archive)
+Apply a patch shared via chat or a file:
+
+- Default: read from clipboard (base64 or unified diff), save to the designated patch file, apply it.
+- From file: `stan patch -f` (uses the default patch file, e.g. `/stan.patch`) or `stan patch -f my.patch`
+- Dry run: add `-c/--check` to validate without changing files.
+
+Behavior details:
+
+- Detection: If clipboard/file content looks like base64 and decodes to a unified diff (e.g., contains `diff --git`, `---`, `+++`, `@@`), it will be decoded. Otherwise, the text is treated as a raw unified diff.
+- Cleanups: code fences/banners removed, zero‑width characters stripped, line endings normalized to LF, and a final newline ensured. Whitespace within lines is preserved.
+- Application strategy: tries `git apply` with tolerant settings over both strip levels:
+  - `--3way --whitespace=nowarn -p1`, then `--3way --ignore-whitespace -p1`, then `--reject --whitespace=nowarn -p1`
+  - If needed, repeats with `-p0`
+- Windows note: Passing very large base64 as an inline command-line argument can exceed the ~32K character limit. Clipboard default or `-f` are recommended for large patches.
 
 ### `stan snap`
 
@@ -146,17 +146,3 @@ npx stan snap
 ```
 
 Useful when you want to “re-baseline” diffs after intentional changes.
-
-### `stan patch`
-
-Apply a repo-root–relative patch with a single command:
-
-```
-# Save a diff to /stan.patch, then:
-npx stan patch
-
-# or specify a file:
-npx stan patch ./my-fix.patch
-```
-
-- Paths beginning with `/` are treated as repo-root relative for portability.

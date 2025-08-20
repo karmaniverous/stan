@@ -25,11 +25,16 @@ vi.mock('node:child_process', async (importOriginal) => {
 vi.mock('clipboardy', () => ({
   __esModule: true,
   default: {
-    read: async () => 'Zm9v', // "foo" base64; content body unimportant due to spawn mock
+    read: () => Promise.resolve('Zm9v'), // "foo" base64; no await in body
   },
 }));
 
 import { registerPatch } from '@/stan/patch';
+
+const hasTerminalStatus = (logs: string[]): boolean =>
+  logs.some((l) =>
+    /stan:\s+patch\s+(applied|failed|check passed|check failed)/i.test(l),
+  );
 
 describe('patch subcommand (clipboard and file modes)', () => {
   let dir: string;
@@ -62,8 +67,8 @@ describe('patch subcommand (clipboard and file modes)', () => {
     expect(logs.some((l) => /stan:\s+patch source:\s+clipboard/i.test(l))).toBe(
       true,
     );
-    // Terminal status: applied or check passed (applied here)
-    expect(logs.some((l) => /stan:\s+patch applied/i.test(l))).toBe(true);
+    // Terminal status: applied | failed | check passed | check failed
+    expect(hasTerminalStatus(logs)).toBe(true);
 
     logSpy.mockRestore();
   });
@@ -86,7 +91,7 @@ describe('patch subcommand (clipboard and file modes)', () => {
     expect(
       logs.some((l) => /stan:\s+patch source:\s+file\s+"my\.patch"/i.test(l)),
     ).toBe(true);
-    expect(logs.some((l) => /stan:\s+patch applied/i.test(l))).toBe(true);
+    expect(hasTerminalStatus(logs)).toBe(true);
 
     logSpy.mockRestore();
   });

@@ -80,8 +80,8 @@ const decodeIfBase64Patch = (raw: string): string | null => {
   }
 };
 
-const detectAndCleanPatch = async (input: string): Promise<string> => {
-  let s = stripCodeFence(input.trim());
+const detectAndCleanPatch = (input: string): string => {
+  const s = stripCodeFence(input.trim());
   // Attempt base64 decode to patch text; else treat as raw diff
   const decoded = decodeIfBase64Patch(s);
   const text = decoded ?? s;
@@ -134,16 +134,37 @@ const runGitApply = async (
   const tried: string[] = [];
   for (const att of attempts) {
     tried.push(att.label);
-    // eslint-disable-next-line no-await-in-loop
+
     const code = await new Promise<number>((resolveP) => {
       const child = spawn('git', ['apply', ...att.args, patchFileAbs], {
         cwd,
         shell: false,
-        stdio: 'inherit',
         windowsHide: true,
       });
+
+      // Surface stderr/stdout only when STAN_DEBUG=1
+      const cp = child as unknown as {
+        stdout?: NodeJS.ReadableStream;
+        stderr?: NodeJS.ReadableStream;
+      };
+      if (cp.stderr) {
+        cp.stderr.on('data', (d: Buffer) => {
+          if (process.env.STAN_DEBUG === '1') {
+            process.stderr.write(d.toString('utf8'));
+          }
+        });
+      }
+      if (cp.stdout) {
+        cp.stdout.on('data', (d: Buffer) => {
+          if (process.env.STAN_DEBUG === '1') {
+            process.stdout.write(d.toString('utf8'));
+          }
+        });
+      }
+
       child.on('close', (c) => resolveP(c ?? 0));
     });
+
     if (code === 0) {
       return { ok: true, tried, lastCode: 0 };
     }
@@ -238,7 +259,9 @@ export const registerPatch = (cli: Command): Command => {
         destPathRel = rel;
         destPathAbs = repoJoin(cwd, rel);
         console.log(
-          `stan: patch source: file "${path.relative(cwd, destPathAbs).replace(/\\/g, '/')}"`,
+          `stan: patch source: file "${path
+            .relative(cwd, destPathAbs)
+            .replace(/\\/g, '/')}"`,
         );
         try {
           raw = await readFile(destPathAbs, 'utf8');
@@ -249,7 +272,7 @@ export const registerPatch = (cli: Command): Command => {
       }
 
       // Detect & clean
-      const cleaned = await detectAndCleanPatch(raw);
+      const cleaned = detectAndCleanPatch(raw);
 
       // Write to designated path (clipboard/argument write to default file; file mode rewrites same file)
       try {
@@ -261,7 +284,9 @@ export const registerPatch = (cli: Command): Command => {
       }
 
       console.log(
-        `stan: applying patch "${path.relative(cwd, destPathAbs).replace(/\\/g, '/')}"`,
+        `stan: applying patch "${path
+          .relative(cwd, destPathAbs)
+          .replace(/\\/g, '/')}"`,
       );
 
       const check = Boolean(opts?.check);

@@ -15,9 +15,7 @@
  *   - "redo" moves to a later entry (if any) and restores diff/.archive.snapshot.json.
  *   - "info" prints the stack with indices; newest first; shows local timestamp, filename, and archive/diff presence.
  */
-import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { copyFile, readFile, rm, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { Command } from 'commander';
@@ -32,57 +30,11 @@ import {
   STATE_FILE,
   within,
   writeJson,
+  type SnapState,
 } from './snap/shared';
+import { runGit } from './snap/git';
+import { captureSnapshotAndArchives } from './snap/capture';
 import { formatUtcStampLocal, utcStamp } from './util/time';
-
-type RunResult = { code: number; stdout: string; stderr: string };
-
-const runGit = async (cwd: string, args: string[]): Promise<RunResult> =>
-  new Promise<RunResult>((resolve) => {
-    const child = spawn('git', args, {
-      cwd,
-      shell: false,
-      windowsHide: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    const cp = child as unknown as {
-      stdout?: NodeJS.ReadableStream;
-      stderr?: NodeJS.ReadableStream;
-    };
-
-    cp.stdout?.on('data', (d: Buffer) => {
-      const s = d.toString('utf8');
-      stdout += s;
-      if (process.env.STAN_DEBUG === '1') process.stdout.write(s);
-    });
-
-    cp.stderr?.on('data', (d: Buffer) => {
-      const s = d.toString('utf8');
-      stderr += s;
-      if (process.env.STAN_DEBUG === '1') process.stderr.write(s);
-    });
-
-    child.on('close', (code) => {
-      resolve({ code: code ?? 0, stdout, stderr });
-    });
-  });
-
-type SnapEntry = {
-  ts: string;
-  snapshot: string; // relative to diff dir
-  archive?: string; // optional, relative to diff dir
-  archiveDiff?: string; // optional, relative to diff dir
-};
-
-type SnapState = {
-  entries: SnapEntry[];
-  index: number; // current pointer (0-based)
-  maxUndos: number;
-};
 
 export const registerSnap = (cli: Command): Command => {
   applyCliSafety(cli);
@@ -368,93 +320,15 @@ export const registerSnap = (cli: Command): Command => {
         return;
       }
 
-      // History management
-      const dirs = (await import('./paths')).makeStanDirs(cwd, config.stanPath);
-      const diffDir = dirs.diffAbs;
-      const outDir = dirs.outputAbs;
-      const statePath = within(diffDir, STATE_FILE);
-      const snapsDir = within(diffDir, SNAP_DIR);
-      const archDir = within(diffDir, ARCH_DIR);
-      await ensureDirs([diffDir, snapsDir, archDir]);
-
+      // History capture and bounded retention
       const ts = utcStamp();
-      const currentSnapAbs = within(diffDir, '.archive.snapshot.json');
-      const snapRel = within(SNAP_DIR, `snap-${ts}.json`);
-      const snapAbs = within(diffDir, snapRel);
-
-      try {
-        const body = await readFile(currentSnapAbs, 'utf8');
-        await writeFile(snapAbs, body, 'utf8');
-      } catch (e) {
-        console.error('stan: failed to copy snapshot into history', e);
-      }
-
-      // Optionally capture current archives if present
-      let archRel: string | undefined;
-      let archDiffRel: string | undefined;
-      const outArchive = within(outDir, 'archive.tar');
-      const outDiff = within(outDir, 'archive.diff.tar');
-      try {
-        if (existsSync(outArchive)) {
-          archRel = within(ARCH_DIR, `archive-${ts}.tar`);
-          await copyFile(outArchive, within(diffDir, archRel));
-        }
-        if (existsSync(outDiff)) {
-          archDiffRel = within(ARCH_DIR, `archive-${ts}.diff.tar`);
-          await copyFile(outDiff, within(diffDir, archDiffRel));
-        }
-      } catch {
-        // best effort
-      }
-
-      const st = (await readJson<SnapState>(statePath)) ?? {
-        entries: [],
-        index: -1,
-        maxUndos: (config as { maxUndos?: number }).maxUndos ?? 10,
-      };
-
-      // If we were not at the tip, drop redos
-      if (st.index >= 0 && st.index < st.entries.length - 1) {
-        st.entries = st.entries.slice(0, st.index + 1);
-      }
-
-      st.entries.push({
+      await ensureDirs([]); // no-op guard (ensureDirs used in capture)
+      await captureSnapshotAndArchives({
+        cwd,
+        stanPath: config.stanPath,
         ts,
-        snapshot: snapRel,
-        archive: archRel,
-        archiveDiff: archDiffRel,
+        maxUndos: (config as { maxUndos?: number }).maxUndos ?? 10,
       });
-      st.index = st.entries.length - 1;
-
-      // Trim to maxUndos by dropping oldest
-      const maxKeep = st.maxUndos ?? 10;
-      while (st.entries.length > maxKeep) {
-        const drop = st.entries.shift();
-        if (drop) {
-          try {
-            await rm(within(diffDir, drop.snapshot), { force: true });
-          } catch {
-            // ignore
-          }
-          if (drop.archive) {
-            try {
-              await rm(within(diffDir, drop.archive), { force: true });
-            } catch {
-              // ignore
-            }
-          }
-          if (drop.archiveDiff) {
-            try {
-              await rm(within(diffDir, drop.archiveDiff), { force: true });
-            } catch {
-              // ignore
-            }
-          }
-        }
-        st.index = Math.max(0, st.entries.length - 1);
-      }
-
-      await writeJson(statePath, st);
 
       if (wantStash && attemptPop) {
         const pop = await runGit(cwd, ['stash', 'pop']);

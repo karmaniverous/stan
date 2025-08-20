@@ -23,3 +23,18 @@ export const readJson = async <T>(p: string): Promise<T | null> => {
 export const writeJson = async (p: string, v: unknown): Promise<void> => {
   await writeFile(p, JSON.stringify(v, null, 2), 'utf8');
 };
+
+/** History entry recorded in diff/.snap.state.json (relative paths under <stanPath>/diff). */
+export type SnapEntry = {
+  ts: string;
+  snapshot: string;
+  archive?: string;
+  archiveDiff?: string;
+};
+
+/** Snapshot history state with bounded undo depth. */
+export type SnapState = {
+  entries: SnapEntry[];
+  index: number;
+  maxUndos: number;
+};

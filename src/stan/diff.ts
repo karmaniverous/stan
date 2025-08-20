@@ -142,8 +142,11 @@ export const createArchiveDiff = async ({
         filter: (p: string) =>
           !(
             isUnder(`${stanPath}/diff`, p) ||
+            isUnder(`${stanPath}/.diff`, p) ||
             p === `${stanPath}/output/archive.tar` ||
-            p === `${stanPath}/output/archive.diff.tar`
+            p === `${stanPath}/output/archive.diff.tar` ||
+            p === `${stanPath}/archive.tar` ||
+            p === `${stanPath}/archive.diff.tar`
           ),
       },
       files,

@@ -95,7 +95,7 @@ export const filterFiles = async (
     return files.filter((f) => allow.some((m) => m(f)));
   }
 
-  // Deny-list mode: default denials + excludes + (optionally) outputPath
+  // Deny-list mode: default denials + excludes + (optionally) output/diff
   const denyMatchers: Matcher[] = [
     // default denials by prefix
     (f) => matchesPrefix(f, 'node_modules'),
@@ -104,10 +104,12 @@ export const filterFiles = async (
     ...(ig ? [(f: string) => ig.ignores(f)] : []),
     // user excludes (glob or prefix)
     ...excludes.map(toMatcher),
+    // always exclude <stanPath>/diff
+    (f) => matchesPrefix(f, `${stanRel}/diff`),
   ];
 
   if (!includeOutputDir) {
-    denyMatchers.push((f) => matchesPrefix(f, stanRel));
+    denyMatchers.push((f) => matchesPrefix(f, `${stanRel}/output`));
   }
 
   return files.filter((f) => !denyMatchers.some((m) => m(f)));

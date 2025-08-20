@@ -139,7 +139,7 @@ const promptForConfig = async (
       type: 'input',
       name: 'stanPath',
       message: 'STAN path:',
-      default: defaults?.stanPath ?? 'stan',
+      default: defaults?.stanPath ?? '.stan',
     },
     {
       type: 'input',
@@ -180,7 +180,7 @@ const promptForConfig = async (
   const out =
     typeof answers.stanPath === 'string' && answers.stanPath
       ? answers.stanPath.trim()
-      : (defaults?.stanPath ?? 'stan');
+      : (defaults?.stanPath ?? '.stan');
 
   const includesCsv = answers.includes ?? '';
   const excludesCsv = answers.excludes ?? '';
@@ -210,7 +210,7 @@ export const performInit = async (
 ): Promise<string | null> => {
   const existing = findConfigPathSync(cwd);
 
-  const defaultStanPath = 'stan';
+  const defaultStanPath = '.stan';
   await ensureOutputDir(cwd, defaultStanPath, true);
 
   let config: ContextConfig = {

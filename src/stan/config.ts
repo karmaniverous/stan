@@ -10,7 +10,7 @@
  *   - when keep===false, copy <stanPath>/output/archive.tar -> <stanPath>/diff/archive.prev.tar if it exists.
  *   - when keep===false, clear ONLY <stanPath>/output (preserve <stanPath>/diff).
  * - NEW: defaultPatchFile?: string (default '/stan.patch').
- * - NEW: stanPath replaces outputPath (default 'stan').
+ * - NEW: stanPath replaces outputPath (default '.stan').
  */
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { copyFile, mkdir, readdir, readFile } from 'node:fs/promises';
@@ -33,6 +33,9 @@ export type ContextConfig = {
   /** Default patch filename for `stan patch`; default '/stan.patch' if unspecified. */
   defaultPatchFile?: string;
 };
+
+/** Public default stan path for consumers and internal use. */
+export const DEFAULT_STAN_PATH = '.stan';
 
 const normalizeDefaultPatchFile = (v: unknown): string =>
   typeof v === 'string' && v.trim().length > 0 ? v.trim() : '/stan.patch';
@@ -146,9 +149,28 @@ export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
   return parseFile(p);
 };
 
+/** Resolve stanPath for a cwd; falls back to DEFAULT_STAN_PATH when config is absent. */
+export const resolveStanPathSync = (cwd: string): string => {
+  try {
+    return loadConfigSync(cwd).stanPath;
+  } catch {
+    return DEFAULT_STAN_PATH;
+  }
+};
+
+/** Async variant of resolveStanPathSync. */
+export const resolveStanPath = async (cwd: string): Promise<string> => {
+  try {
+    const cfg = await loadConfig(cwd);
+    return cfg.stanPath;
+  } catch {
+    return DEFAULT_STAN_PATH;
+  }
+};
+
 /** Ensure stanPath exists and manage output/diff subdirs.
  * - Always ensure <stanPath>/output and <stanPath>/diff exist.
- * - When keep===false, copy output/archive.tar -\> diff/archive.prev.tar (if present),
+ * - When keep===false, copy output/archive.tar -> diff/archive.prev.tar (if present),
  *   then clear ONLY the output directory.
  */
 export const ensureOutputDir = async (

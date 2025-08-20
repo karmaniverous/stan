@@ -22,18 +22,16 @@ import type { Command } from 'commander';
 
 import { applyCliSafety } from '@/cli/stan/cli-utils';
 
+import { captureSnapshotAndArchives } from './snap/capture';
+import { runGit } from './snap/git';
 import {
-  ARCH_DIR,
   ensureDirs,
   readJson,
-  SNAP_DIR,
+  type SnapState,
   STATE_FILE,
   within,
   writeJson,
-  type SnapState,
 } from './snap/shared';
-import { runGit } from './snap/git';
-import { captureSnapshotAndArchives } from './snap/capture';
 import { formatUtcStampLocal, utcStamp } from './util/time';
 
 export const registerSnap = (cli: Command): Command => {

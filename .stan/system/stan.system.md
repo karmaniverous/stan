@@ -124,6 +124,14 @@ By default this is `.stan/`.
 
 # Default Task (when files are provided with no extra prompt)
 
+Step 0 — Long-file scan (no automatic refactors)
+
+- Before proposing or making any code changes, enumerate all source files and flag any file whose length exceeds 300 lines.
+- Present a list of these files (path and approximate LOC). For each file, do one of:
+  - Propose how to break it into smaller, testable modules (short rationale and outline), or
+  - Document a clear decision to leave it long (with justification tied to requirements).
+- Do not refactor automatically. Wait for user confirmation on which files to split before emitting patches.
+
 Assume the developer wants a refactor to, in order:
 
 1. Elucidate requirements and eliminate test failures, lint errors, and TS

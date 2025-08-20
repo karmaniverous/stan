@@ -32,6 +32,11 @@ const nodeExternals = new Set([
   ...builtinModules.map((m) => `node:${m}`),
 ]);
 
+// Runtime deps that must not be bundled (rely on package assets / fallbacks)
+const externalPkgs = new Set<string>([
+  'clipboardy', // requires platform fallback binaries at runtime; bundling breaks resolution
+]);
+
 const copyDocsPlugin = (dest: string): Plugin => {
   return {
     name: 'stan-copy-docs',
@@ -85,7 +90,11 @@ const commonInputOptions = (
   onwarn(warning, defaultHandler) {
     defaultHandler(warning);
   },
-  external: (id) => nodeExternals.has(id),
+  external: (id) =>
+    nodeExternals.has(id) ||
+    externalPkgs.has(id) ||
+    // also treat deep subpath imports as external (e.g., clipboardy/fallbacks/...)
+    Array.from(externalPkgs).some((p) => id === p || id.startsWith(`${p}/`)),
 });
 
 const outCommon = (dest: string): OutputOptions[] => [

@@ -1,31 +1,14 @@
 /* src/cli/stan/init.ts
- * REQUIREMENTS (current + updated):
- * - "stan init" subcommand.
- * - Interactive init when --force is not provided:
- *   - Prompt for outputPath, includes, excludes, scripts selection.
- * - Defaults in generated stan.config.yml should cover common needs:
- *   - outputPath: stan
- *   - excludes: []   <-- UPDATED: no default excludes
- * - Add "/stan" to .gitignore if missing.
- * - Ensure stan.system.md and stan.project.md exist (from dist templates).
+ * "stan init" subcommand.
+ * UPDATED:
+ * - Generate stan.config.yml with stanPath: stan.
+ * - Create <stanPath>/system and copy docs from dist:
+ *   - stan.system.md, stan.project.template.md, stan.bootloader.md
+ * - Add stan/output, stan/diff, stan/dist to .gitignore if missing (do NOT ignore the stan root).
  * - After init, create/update the diff snapshot (and log a short message).
- * - Avoid process.exit in tests via exitOverride; swallow help-related codes.
- *
- * UPDATED REQUIREMENTS:
- * - When a config already exists, "stan init" should re-run the interactive
- *   process using current config values as defaults rather than exiting.
- * - During interactive init, explicitly prompt the user to confirm resetting
- *   the diff snapshot; honor their decision.
- * - Persist `defaultPatchFile` to config (default '/stan.patch').
- *
- * NEW:
- * - Ensure stan.system.md is actually updated WHEN the user runs `stan init`
- *   and ONLY then: copy the packaged stan.system.md from dist if the destination
- *   file is missing OR its contents differ. Do NOT overwrite stan.project.md
- *   if it exists (still copy only when missing).
  */
 import { existsSync } from 'node:fs';
-import { copyFile, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -36,6 +19,7 @@ import YAML from 'yaml';
 import type { ContextConfig, ScriptMap } from '@/stan/config';
 import { ensureOutputDir, findConfigPathSync, loadConfig } from '@/stan/config';
 import { writeArchiveSnapshot } from '@/stan/diff';
+import { makeStanDirs } from '@/stan/paths';
 
 import { applyCliSafety } from './cli-utils';
 
@@ -51,19 +35,18 @@ const readPackageJsonScripts = async (
   }
 };
 
-/** Copy doc file from dist to project root.
- * - When updateIfDifferent===true: always overwrite if destination missing or contents differ.
- * - When updateIfDifferent===false: copy only if destination is missing.
- */
 const copyDoc = async (
   cwd: string,
   moduleRoot: string,
   srcName: string,
-  destName: string,
+  destRel: string,
   updateIfDifferent: boolean,
 ): Promise<void> => {
   const src = path.join(moduleRoot, srcName);
-  const dest = path.join(cwd, destName);
+  const dest = path.join(cwd, destRel);
+  const destDir = path.dirname(dest);
+  await mkdir(destDir, { recursive: true });
+
   if (!existsSync(src)) return;
 
   if (!existsSync(dest)) {
@@ -82,28 +65,36 @@ const copyDoc = async (
       await copyFile(src, dest);
     }
   } catch {
-    // If we can't read/compare for any reason, do not overwrite silently.
+    // best effort
   }
 };
 
-const ensureDocs = async (cwd: string): Promise<void> => {
-  // Locate package root from the current module file (works for dev and built CLI)
+const ensureDocs = async (cwd: string, stanPath: string): Promise<void> => {
   const thisFile = fileURLToPath(import.meta.url);
   const thisDir = path.dirname(thisFile);
   const moduleRoot = packageDirectorySync({ cwd: thisDir }) ?? thisDir;
-
-  // Both files are delivered in dist/ (rollup copies them to moduleRoot/dist).
   const distRoot = path.join(moduleRoot, 'dist');
 
-  // stan.system.md: update when different (only upon running init)
-  await copyDoc(cwd, distRoot, 'stan.system.md', 'stan.system.md', true);
-
-  // stan.project.md: copy only if missing (user may have customized it)
+  // copy into <stanPath>/system
+  await copyDoc(
+    cwd,
+    distRoot,
+    'stan.system.md',
+    path.join(stanPath, 'system', 'stan.system.md'),
+    true,
+  );
   await copyDoc(
     cwd,
     distRoot,
     'stan.project.template.md',
-    'stan.project.md',
+    path.join(stanPath, 'system', 'stan.project.template.md'),
+    false,
+  );
+  await copyDoc(
+    cwd,
+    distRoot,
+    'stan.bootloader.md',
+    path.join(stanPath, 'system', 'stan.bootloader.md'),
     false,
   );
 };
@@ -116,24 +107,22 @@ const parseCsv = (v: string): string[] =>
 
 /** Strongly typed prompt answers to avoid unsafe-any issues. */
 type InitAnswers = {
-  outputPath: string;
+  stanPath: string;
   includes: string;
   excludes: string;
   selectedScripts?: string[];
   resetDiff: boolean;
 };
 
-/** Prompt for interactive values when not forced. Supports defaults. */
 const promptForConfig = async (
   cwd: string,
   pkgScripts: Record<string, string>,
   defaults?: Partial<ContextConfig>,
 ): Promise<
-  Pick<ContextConfig, 'outputPath' | 'includes' | 'excludes' | 'scripts'> & {
+  Pick<ContextConfig, 'stanPath' | 'includes' | 'excludes' | 'scripts'> & {
     resetDiff: boolean;
   }
 > => {
-  // Dynamic import to avoid hard dependency at type level.
   const { default: inquirer } = (await import('inquirer')) as {
     default: {
       prompt: (qs: unknown[]) => Promise<unknown>;
@@ -148,9 +137,9 @@ const promptForConfig = async (
   const answers = (await inquirer.prompt([
     {
       type: 'input',
-      name: 'outputPath',
-      message: 'Output directory:',
-      default: defaults?.outputPath ?? 'stan',
+      name: 'stanPath',
+      message: 'STAN path:',
+      default: defaults?.stanPath ?? 'stan',
     },
     {
       type: 'input',
@@ -189,9 +178,9 @@ const promptForConfig = async (
   ])) as InitAnswers;
 
   const out =
-    typeof answers.outputPath === 'string' && answers.outputPath
-      ? answers.outputPath.trim()
-      : (defaults?.outputPath ?? 'stan');
+    typeof answers.stanPath === 'string' && answers.stanPath
+      ? answers.stanPath.trim()
+      : (defaults?.stanPath ?? 'stan');
 
   const includesCsv = answers.includes ?? '';
   const excludesCsv = answers.excludes ?? '';
@@ -207,7 +196,7 @@ const promptForConfig = async (
   for (const key of selected) scripts[key] = 'npm run ' + key;
 
   return {
-    outputPath: out,
+    stanPath: out,
     includes: includesCsv ? parseCsv(includesCsv) : [],
     excludes: excludesCsv ? parseCsv(excludesCsv) : [],
     scripts,
@@ -221,14 +210,13 @@ export const performInit = async (
 ): Promise<string | null> => {
   const existing = findConfigPathSync(cwd);
 
-  const outRelDefault = 'stan';
-  await ensureOutputDir(cwd, outRelDefault, true);
+  const defaultStanPath = 'stan';
+  await ensureOutputDir(cwd, defaultStanPath, true);
 
-  // Base config defaults (no combined artifacts in current design)
   let config: ContextConfig = {
-    outputPath: outRelDefault,
+    stanPath: defaultStanPath,
     scripts: {},
-    excludes: [], // UPDATED: no default excludes
+    excludes: [],
     includes: [],
     defaultPatchFile: '/stan.patch',
   };
@@ -236,7 +224,6 @@ export const performInit = async (
   let resetDiffNow = true;
 
   if (!force) {
-    // Load existing (if any) to use as interactive defaults
     let defaults: Partial<ContextConfig> | undefined;
     if (existing) {
       try {
@@ -250,7 +237,7 @@ export const performInit = async (
     const picked = await promptForConfig(cwd, scripts, defaults);
 
     config = {
-      outputPath: picked.outputPath,
+      stanPath: picked.stanPath,
       includes: picked.includes,
       excludes: picked.excludes,
       scripts: picked.scripts,
@@ -263,26 +250,35 @@ export const performInit = async (
   const yml = YAML.stringify(config);
   await writeFile(cfgPath, yml, 'utf8');
 
-  // Add output dir to .gitignore if not already present.
+  // .gitignore: ignore everything under stanPath except stan/system
   const giPath = path.join(cwd, '.gitignore');
-  const marker = `/${config.outputPath}`;
+  const dirs = makeStanDirs(cwd, config.stanPath);
+  const linesToEnsure = [
+    `${dirs.rootRel}/*`,
+    `!${dirs.systemRel}/`,
+    `!${dirs.systemRel}/**`,
+  ];
   let gi = existsSync(giPath) ? await readFile(giPath, 'utf8') : '';
-  if (!gi.split(/\r?\n/).some((line) => line.trim() === marker)) {
-    if (gi.length && !gi.endsWith('\n')) gi += '\n';
-    gi += `${marker}\n`;
-    await writeFile(giPath, gi, 'utf8');
+  const existingLines = new Set(gi.split(/\r?\n/).map((l) => l.trim()));
+  let changed = false;
+  for (const l of linesToEnsure) {
+    if (!existingLines.has(l)) {
+      if (gi.length && !gi.endsWith('\n')) gi += '\n';
+      gi += `${l}\n`;
+      changed = true;
+    }
   }
+  if (changed) await writeFile(giPath, gi, 'utf8');
 
-  // Ensure docs are present/updated per policy.
-  await ensureDocs(cwd);
+  // Ensure docs in stan/system
+  await ensureDocs(cwd, config.stanPath);
 
   console.log(`stan: wrote stan.config.yml`);
 
-  // Create or replace snapshot after init
   if (force || resetDiffNow) {
     await writeArchiveSnapshot({
       cwd,
-      outputPath: config.outputPath,
+      stanPath: config.stanPath,
       includes: config.includes ?? [],
       excludes: config.excludes ?? [],
     });
@@ -307,7 +303,7 @@ export const registerInit = (cli: Command): Command => {
 
   sub.option(
     '-f, --force',
-    'Create stan.config.yml with defaults (outputPath=stan) and add it to .gitignore.',
+    'Create stan.config.yml with defaults (stanPath=stan).',
   );
 
   sub.action(async (opts: { force?: boolean }) => {

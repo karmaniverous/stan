@@ -27,7 +27,6 @@ const aliases: Alias[] = [{ find: '@', replacement: srcAbs }];
 const alias = aliasPlugin({ entries: aliases });
 
 // Treat Node built-ins and node: specifiers as external.
-// Dependencies are resolved by consumers at runtime; this keeps bundles lean.
 const nodeExternals = new Set([
   ...builtinModules,
   ...builtinModules.map((m) => `node:${m}`),
@@ -37,17 +36,28 @@ const copyDocsPlugin = (dest: string): Plugin => {
   return {
     name: 'stan-copy-docs',
     async writeBundle() {
-      const fromA = path.resolve(__dirname, 'stan.system.md');
-      const fromB = path.resolve(__dirname, 'stan.project.template.md');
-      const toDir = path.resolve(__dirname, dest);
-      const toA = path.join(toDir, 'stan.system.md');
-      const toB = path.join(toDir, 'stan.project.template.md');
+      const fromSystem = path.resolve(__dirname, 'stan', 'system');
+      const candidates = [
+        {
+          src: path.join(fromSystem, 'stan.system.md'),
+          dest: path.join(dest, 'stan.system.md'),
+        },
+        {
+          src: path.join(fromSystem, 'stan.project.template.md'),
+          dest: path.join(dest, 'stan.project.template.md'),
+        },
+        {
+          src: path.join(fromSystem, 'stan.bootloader.md'),
+          dest: path.join(dest, 'stan.bootloader.md'),
+        },
+      ];
       try {
-        await fs.ensureDir(toDir);
-        if (await fs.pathExists(fromA)) await fs.copyFile(fromA, toA);
-        if (await fs.pathExists(fromB)) await fs.copyFile(fromB, toB);
+        await fs.ensureDir(dest);
+        for (const c of candidates) {
+          if (await fs.pathExists(c.src)) await fs.copyFile(c.src, c.dest);
+        }
       } catch {
-        // Non-fatal: docs copy is best-effort
+        // best-effort
       }
     },
   };
@@ -73,7 +83,6 @@ const commonInputOptions = (
 ): InputOptions => ({
   plugins: makePlugins(minify, extras),
   onwarn(warning, defaultHandler) {
-    // Delegate default handling for now
     defaultHandler(warning);
   },
   external: (id) => nodeExternals.has(id),
@@ -89,13 +98,12 @@ export const buildLibrary = (dest: string): RollupOptions => ({
   output: outCommon(dest),
   ...commonInputOptions(
     true,
-    // Copy doc assets once from the library config
+    // Copy docs once from library config
     [copyDocsPlugin(dest)],
   ),
 });
 
 const discoverCliEntries = (): string[] => {
-  // Include both the programmatic CLI entry and the launcher.
   const candidates = ['src/cli/stan/index.ts', 'src/cli/stan/stan.ts'];
   return candidates.filter((p) => fs.existsSync(p));
 };

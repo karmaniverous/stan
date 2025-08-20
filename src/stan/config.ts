@@ -1,31 +1,16 @@
 /* src/stan/config.ts
- * REQUIREMENTS (current):
+ * REQUIREMENTS (updated):
  * - Load stan configuration from YAML or JSON (stan.config.yml|yaml|json) discovered from `cwd`.
- * - Validate shape: { outputPath: string; scripts: Record<string,string>; includes?: string[]; excludes?: string[] }.
- * - Forbid reserved script keys "archive" and "init" (error must match /archive.*init.*not allowed/i).
+ * - Validate shape: { stanPath: string; scripts: Record<string,string>; includes?: string[]; excludes?: string[] }.
+ * - Forbid reserved script keys "archive" and "init".
  * - Provide sync helpers used by CLI and help: findConfigPathSync, loadConfigSync.
  * - Provide async loadConfig passthrough for convenience.
- * - Provide ensureOutputDir(cwd, outputPath, keep) which creates or clears the output directory.
- * - Keep path alias semantics and zero "any" usage.
- *
- * NEW/UPDATED REQUIREMENTS:
- * - Diff support artifacts live under `<outputPath>/.diff`:
- *   - `.diff/archive.prev.tar` (copy of previous full archive),
- *   - `.diff/.archive.snapshot.json` (sha256 snapshot),
- *   - `.diff/.stan_no_changes` (sentinel for no-change diff tar).
- * - When keep===false, clear previously generated script artifacts but PRESERVE `<outputPath>/.diff`.
- * - Before clearing (when keep===false), if `<outputPath>/archive.tar` exists, copy it to `.diff/archive.prev.tar`.
- * - Migrate legacy `<outputPath>/.archive.snapshot.json` into `<outputPath>/.diff/`.
- * - Zero "any" usage.
- *
- * UPDATED REQUIREMENTS:
- * - Add `defaultPatchFile?: string` to ContextConfig, defaulting to '/stan.patch'.
- *
- * NEW (monorepo / nearest package root with config):
- * - findConfigPathSync(cwd) must search upwards and return the nearest directory that:
- *   - is a package root (contains package.json), AND
- *   - contains a stan.config.(yml|yaml|json).
- * - Also accept a direct config in cwd (even if it is not a package root), to preserve current UX.
+ * - Provide ensureOutputDir(cwd, stanPath, keep) which creates the stanPath tree and manages output/diff as follows:
+ *   - ensure <stanPath>/output and <stanPath>/diff exist.
+ *   - when keep===false, copy <stanPath>/output/archive.tar -> <stanPath>/diff/archive.prev.tar if it exists.
+ *   - when keep===false, clear ONLY <stanPath>/output (preserve <stanPath>/diff).
+ * - NEW: defaultPatchFile?: string (default '/stan.patch').
+ * - NEW: stanPath replaces outputPath (default 'stan').
  */
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { copyFile, mkdir, readdir, readFile } from 'node:fs/promises';
@@ -34,10 +19,12 @@ import { dirname, resolve } from 'node:path';
 import { packageDirectorySync } from 'package-directory';
 import YAML from 'yaml';
 
+import { makeStanDirs } from './paths';
+
 export type ScriptMap = Record<string, string>;
 
 export type ContextConfig = {
-  outputPath: string;
+  stanPath: string;
   scripts: ScriptMap;
   /** Paths to include in archiving logic (globs supported). */
   includes?: string[];
@@ -55,26 +42,26 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const cfg = abs.endsWith('.json')
     ? (JSON.parse(raw) as unknown)
     : (YAML.parse(raw) as unknown);
-  const outputPath = (cfg as { outputPath?: unknown }).outputPath;
+
+  const stanPath = (cfg as { stanPath?: unknown }).stanPath;
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
     .defaultPatchFile;
 
-  if (typeof outputPath !== 'string' || outputPath.length === 0) {
-    throw new Error('Invalid config: "outputPath" must be a non-empty string');
+  if (typeof stanPath !== 'string' || stanPath.length === 0) {
+    throw new Error('Invalid config: "stanPath" must be a non-empty string');
   }
   if (typeof scripts !== 'object' || scripts === null) {
     throw new Error('Invalid config: "scripts" must be an object');
   }
   const keys = Object.keys(scripts as ScriptMap);
   if (keys.includes('archive') || keys.includes('init')) {
-    // Message chosen to match tests: /archive.*init.*not allowed/i
     throw new Error('Script keys "archive" and "init" are not allowed');
   }
   return {
-    outputPath,
+    stanPath,
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
@@ -95,18 +82,13 @@ const tryConfigHere = (dir: string): string | null => {
   return null;
 };
 
-/** Resolve the absolute path to the nearest stan.config.* starting from cwd.
- * Priority:
- * 1) Directly in cwd (even if not a package root).
- * 2) Nearest ancestor directory that is a package root (has package.json) AND has a stan config.
- *    Continue ascending across package roots to find the first that has a config.
- */
+/** Resolve the absolute path to the nearest stan.config.* starting from cwd. */
 export const findConfigPathSync = (cwd: string): string | null => {
-  // 1) Direct config in cwd (non-package directories allowed)
+  // direct in cwd
   const direct = tryConfigHere(cwd);
   if (direct) return direct;
 
-  // 2) Ascend package roots until none remain; return first root with config
+  // ascend package roots
   const seen = new Set<string>();
   let cursor: string | null = cwd;
   while (cursor) {
@@ -121,7 +103,6 @@ export const findConfigPathSync = (cwd: string): string | null => {
     if (parent === pkgRoot || seen.has(parent)) break;
     cursor = parent;
   }
-
   return null;
 };
 
@@ -132,15 +113,16 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const cfg = p.endsWith('.json')
     ? (JSON.parse(raw) as unknown)
     : (YAML.parse(raw) as unknown);
-  const outputPath = (cfg as { outputPath?: unknown }).outputPath;
+
+  const stanPath = (cfg as { stanPath?: unknown }).stanPath;
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
     .defaultPatchFile;
 
-  if (typeof outputPath !== 'string' || outputPath.length === 0) {
-    throw new Error('Invalid config: "outputPath" must be a non-empty string');
+  if (typeof stanPath !== 'string' || stanPath.length === 0) {
+    throw new Error('Invalid config: "stanPath" must be a non-empty string');
   }
   if (typeof scripts !== 'object' || scripts === null) {
     throw new Error('Invalid config: "scripts" must be an object');
@@ -150,7 +132,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     throw new Error('Script keys "archive" and "init" are not allowed');
   }
   return {
-    outputPath,
+    stanPath,
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
@@ -164,52 +146,37 @@ export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
   return parseFile(p);
 };
 
-/** Ensure output directory exists and optionally clear it (when keep === false).
- * NEW: preserve and maintain `<outputPath>/.diff` across clears; migrate legacy snapshot; copy `archive.tar` to `.diff/archive.prev.tar` before clearing.
+/** Ensure stanPath exists and manage output/diff subdirs.
+ * - Always ensure <stanPath>/output and <stanPath>/diff exist.
+ * - When keep===false, copy output/archive.tar -> diff/archive.prev.tar (if present),
+ *   then clear ONLY the output directory.
  */
 export const ensureOutputDir = async (
   cwd: string,
-  outputPath: string,
+  stanPath: string,
   keep = false,
 ): Promise<string> => {
-  const dest = resolve(cwd, outputPath);
-  await mkdir(dest, { recursive: true });
+  const dirs = makeStanDirs(cwd, stanPath);
 
-  if (!keep && existsSync(dest)) {
-    const diffDir = resolve(dest, '.diff');
-    await mkdir(diffDir, { recursive: true });
+  await mkdir(dirs.rootAbs, { recursive: true });
+  await mkdir(dirs.outputAbs, { recursive: true });
+  await mkdir(dirs.diffAbs, { recursive: true });
 
-    // Migrate legacy snapshot if present at the root of outputPath.
-    const legacySnapshot = resolve(dest, '.archive.snapshot.json');
-    if (existsSync(legacySnapshot)) {
-      try {
-        await copyFile(
-          legacySnapshot,
-          resolve(diffDir, '.archive.snapshot.json'),
-        );
-        rmSync(legacySnapshot, { force: true });
-      } catch {
-        // ignore migration errors
-      }
-    }
-
-    // If a previous full archive exists, copy it to .diff/archive.prev.tar before clearing.
-    const archiveTar = resolve(dest, 'archive.tar');
+  if (!keep) {
+    const archiveTar = resolve(dirs.outputAbs, 'archive.tar');
     if (existsSync(archiveTar)) {
       try {
-        await copyFile(archiveTar, resolve(diffDir, 'archive.prev.tar'));
+        await copyFile(archiveTar, resolve(dirs.diffAbs, 'archive.prev.tar'));
       } catch {
         // ignore copy errors
       }
     }
 
-    // Clear everything except .diff
-    const entries = await readdir(dest, { withFileTypes: true });
+    const entries = await readdir(dirs.outputAbs, { withFileTypes: true });
     for (const e of entries) {
-      if (e.name === '.diff') continue;
-      rmSync(resolve(dest, e.name), { recursive: true, force: true });
+      rmSync(resolve(dirs.outputAbs, e.name), { recursive: true, force: true });
     }
   }
 
-  return dest;
+  return dirs.rootAbs;
 };

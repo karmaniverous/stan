@@ -1,26 +1,13 @@
 /* src/stan/archive.ts
  * Create a project archive under the output directory.
- * NOTE: Global and cross‑cutting requirements live in /stan.project.md.
- *
- * REQUIREMENTS (current):
- * - Create <outputPath>/archive.tar from project root, excluding node_modules/.git and (by default) the outputPath.
+ * REQUIREMENTS (updated):
+ * - Create <stanPath>/output/archive.tar from project root, excluding node_modules/.git and (by default) stanPath.
  * - Options:
- *   - includeOutputDir?: when true, do include the outputPath directory.
+ *   - includeOutputDir?: when true, include the <stanPath>/output directory contents while excluding stanPath/diff and the archive files.
  *   - fileName?: override base name (must end with .tar).
- * - Honor includes/excludes from config (non‑globbing prefixes, includes override excludes).
- * - Respect simple .gitignore entries as prefix excludes (no globbing).
+ * - Honor includes/excludes from config (globs supported; includes override excludes).
  * - Return the absolute path to the created tarball.
- * - Zero "any" usage.
- *
- * NEW REQUIREMENTS:
- * - Maintain a previous full archive copy at <outputPath>/.diff/archive.prev.tar:
- *   - Before writing a new archive, if <outputPath>/archive.tar exists, copy it to .diff/archive.prev.tar.
- *   - After writing a new archive, if .diff/archive.prev.tar does not exist (first run), copy the new archive to .diff/archive.prev.tar.
- *
- * UPDATE:
- * - When includeOutputDir === true, force-add <outputPath> as a directory entry and
- *   filter out <outputPath>/.diff and both archive files to guarantee output
- *   directory contents are included.
+ * - Maintain previous-archive copy at <stanPath>/diff/archive.prev.tar.
  */
 import { existsSync } from 'node:fs';
 import { copyFile } from 'node:fs/promises';
@@ -48,7 +35,7 @@ export type CreateArchiveOptions = {
 
 export const createArchive = async (
   cwd: string,
-  outputPath: string,
+  stanPath: string,
   options: CreateArchiveOptions = {},
 ): Promise<string> => {
   const {
@@ -61,12 +48,12 @@ export const createArchive = async (
   let fileName = rawFileName ?? 'archive.tar';
   if (!fileName.endsWith('.tar')) fileName += '.tar';
 
-  const { outDir, diffDir } = await ensureOutAndDiff(cwd, outputPath);
+  const { outDir, diffDir } = await ensureOutAndDiff(cwd, stanPath);
 
   const all = await listFiles(cwd);
   const files = await filterFiles(all, {
     cwd,
-    outputPath,
+    stanPath,
     includeOutputDir,
     includes,
     excludes,
@@ -75,7 +62,7 @@ export const createArchive = async (
   const archivePath = resolve(outDir, fileName);
   const prevPath = resolve(diffDir, 'archive.prev.tar');
 
-  // If an old archive exists (e.g., keep===true), copy it to prev before overwriting.
+  // If an old archive exists in output, copy it to diff before overwriting.
   if (existsSync(archivePath)) {
     try {
       await copyFile(archivePath, prevPath);
@@ -84,13 +71,13 @@ export const createArchive = async (
     }
   }
 
-  // Dynamic import across package boundary; local type TarLike narrows to the
-  // subset we need. Cast justified and localized at the boundary.
   const tar = (await import('tar')) as unknown as TarLike;
 
   if (includeOutputDir) {
-    // Ensure output directory is included regardless of file enumeration
-    const filesToPack = Array.from(new Set([...files, outputPath]));
+    // Force-include <stanPath>/output and exclude <stanPath>/diff and archive files.
+    const filesToPack = Array.from(
+      new Set([...files, `${stanPath.replace(/\\/g, '/')}/output`]),
+    );
     const isUnder = (prefix: string, p: string): boolean =>
       p === prefix || p.startsWith(`${prefix}/`);
 
@@ -100,9 +87,9 @@ export const createArchive = async (
         cwd,
         filter: (p: string) =>
           !(
-            isUnder(`${outputPath}/.diff`, p) ||
-            p === `${outputPath}/archive.tar` ||
-            p === `${outputPath}/archive.diff.tar`
+            isUnder(`${stanPath}/diff`, p) ||
+            p === `${stanPath}/output/archive.tar` ||
+            p === `${stanPath}/output/archive.diff.tar`
           ),
       },
       filesToPack,

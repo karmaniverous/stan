@@ -1,1 +1,1 @@
-error: patch with only garbage at line 5
+error: src/cli/stan/init.ts: does not match index

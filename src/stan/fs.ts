@@ -8,6 +8,7 @@ import { join, resolve } from 'node:path';
 
 import ignoreFactory from 'ignore';
 import picomatch from 'picomatch';
+import { makeStanDirs } from './paths';
 
 /** Recursively enumerate files under `root`, returning posix-style relative paths. */
 export const listFiles = async (root: string): Promise<string[]> => {
@@ -67,7 +68,7 @@ const toMatcher = (pattern: string): Matcher => {
 
 export type FilterOptions = {
   cwd: string;
-  outputPath: string;
+  stanPath: string;
   includeOutputDir: boolean;
   includes?: string[];
   excludes?: string[];
@@ -78,13 +79,13 @@ export const filterFiles = async (
   files: string[],
   {
     cwd,
-    outputPath,
+    stanPath,
     includeOutputDir,
     includes = [],
     excludes = [],
   }: FilterOptions,
 ): Promise<string[]> => {
-  const outRelNorm = outputPath.replace(/\\/g, '/');
+  const stanRel = stanPath.replace(/\\/g, '/');
   const ig = await buildIgnoreFromGitignore(cwd);
 
   // Allow-list mode: includes override excludes and default denials.
@@ -105,20 +106,20 @@ export const filterFiles = async (
   ];
 
   if (!includeOutputDir) {
-    denyMatchers.push((f) => matchesPrefix(f, outRelNorm));
+    denyMatchers.push((f) => matchesPrefix(f, stanRel));
   }
 
   return files.filter((f) => !denyMatchers.some((m) => m(f)));
 };
 
-/** Ensure <outputPath> and <outputPath>/.diff exist, returning their absolute paths. */
+/** Ensure <stanPath>/output and <stanPath>/diff exist, returning their absolute paths. */
 export const ensureOutAndDiff = async (
   cwd: string,
-  outputPath: string,
+  stanPath: string,
 ): Promise<{ outDir: string; diffDir: string }> => {
-  const outDir = resolve(cwd, outputPath);
-  await mkdir(outDir, { recursive: true });
-  const diffDir = join(outDir, '.diff');
-  await mkdir(diffDir, { recursive: true });
-  return { outDir, diffDir };
+  const dirs = makeStanDirs(cwd, stanPath);
+  await mkdir(dirs.rootAbs, { recursive: true });
+  await mkdir(dirs.outputAbs, { recursive: true });
+  await mkdir(dirs.diffAbs, { recursive: true });
+  return { outDir: dirs.outputAbs, diffDir: dirs.diffAbs };
 };

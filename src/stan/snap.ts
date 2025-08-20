@@ -37,11 +37,13 @@ const runGit = async (cwd: string, args: string[]): Promise<RunResult> =>
       stdout += s;
       if (process.env.STAN_DEBUG === '1') process.stdout.write(s);
     });
+
     cp.stderr?.on('data', (d: Buffer) => {
       const s = d.toString('utf8');
       stderr += s;
       if (process.env.STAN_DEBUG === '1') process.stderr.write(s);
     });
+
     child.on('close', (code) => {
       resolve({ code: code ?? 0, stdout, stderr });
     });
@@ -53,7 +55,10 @@ export const registerSnap = (cli: Command): Command => {
   const sub = cli
     .command('snap')
     .description('Create/update the diff snapshot (without writing an archive)')
-    .option('-s, --stash', 'stash changes (git stash -u) before snap and pop after');
+    .option(
+      '-s, --stash',
+      'stash changes (git stash -u) before snap and pop after',
+    );
 
   applyCliSafety(sub);
 
@@ -78,23 +83,23 @@ export const registerSnap = (cli: Command): Command => {
     const isContextConfig = (
       v: unknown,
     ): v is {
-      outputPath: string;
+      stanPath: string;
       scripts: Record<string, string>;
       includes?: string[];
       excludes?: string[];
     } =>
       !!v &&
       typeof v === 'object' &&
-      typeof (v as { outputPath?: unknown }).outputPath === 'string' &&
+      typeof (v as { stanPath?: unknown }).stanPath === 'string' &&
       typeof (v as { scripts?: unknown }).scripts === 'object';
 
     const config = isContextConfig(maybe)
       ? maybe
-      : { outputPath: 'stan', scripts: {} as Record<string, string> };
+      : { stanPath: 'stan', scripts: {} as Record<string, string> };
 
-    // Optional stash workflow
     const wantStash = Boolean(opts?.stash);
     let attemptPop = false;
+
     if (wantStash) {
       const res = await runGit(cwd, ['stash', '-u']);
       if (res.code === 0 && !/No local changes to save/i.test(res.stdout)) {
@@ -107,7 +112,7 @@ export const registerSnap = (cli: Command): Command => {
     try {
       await diffMod.writeArchiveSnapshot({
         cwd,
-        outputPath: config.outputPath,
+        stanPath: config.stanPath,
         includes: config.includes ?? [],
         excludes: config.excludes ?? [],
       });

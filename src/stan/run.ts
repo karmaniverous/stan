@@ -1,16 +1,12 @@
 /* src/stan/run.ts
- * REQUIREMENTS (updated):
- * - Execute configured scripts; create per-script artifacts.
- * - Archives are OFF by default; enabled only with -a/--archive.
- * - -c/--combine requires --archive and means:
- *   - include the output directory (script results) inside the archives,
- *   - and do not keep on-disk outputs (remove them after archiving).
- * - Always write archive.diff.tar whenever --archive is enabled.
- * - Snapshot update occurs only if one does not exist (create) or via `stan snap`.
- * - The plan summary printed before the script log is multi-line with clear labels.
- * - NEW: An empty selection means "run nothing" (do not treat as "all"), but still
- *        create archives when --archive is passed.
- * - NEW: When STAN_DEBUG=1, stream child stdout/stderr to console while writing artifacts.
+ * Execute configured scripts; create per-script artifacts.
+ * Archives are OFF by default; enabled only with -a/--archive.
+ * - -c/--combine requires --archive and means include the output directory (script results) inside the archives and remove on-disk outputs after archiving.
+ * - Always write archive.diff.tar whenever --archive is enabled (snapshot only when missing).
+ * - An empty selection means "run nothing", but still create archives when --archive is passed.
+ * - When STAN_DEBUG=1, stream child stdout/stderr to console while writing artifacts.
+ * UPDATED:
+ * - stanPath layout: outputs live under <stanPath>/output, diffs under <stanPath>/diff.
  */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
@@ -21,6 +17,7 @@ import { createArchive } from './archive';
 import type { ContextConfig } from './config';
 import { ensureOutputDir } from './config';
 import { createArchiveDiff } from './diff';
+import { makeStanDirs } from './paths';
 
 export type Selection = string[] | null;
 export type ExecutionMode = 'concurrent' | 'sequential';
@@ -40,8 +37,8 @@ const configOrder = (config: ContextConfig): string[] =>
  * Normalize selection to config order.
  * - When selection is null/undefined, return all config keys.
  * - When selection exists:
- *   - [] =\> run nothing
- *   - non-empty =\> order by config order
+ *   - [] => run nothing
+ *   - non-empty => order by config order
  */
 const normalizeSelection = (
   selection: Selection | undefined | null,
@@ -64,13 +61,13 @@ const waitForStreamClose = (stream: NodeJS.WritableStream): Promise<void> =>
 
 const runOne = async (
   cwd: string,
+  outAbs: string,
   outRel: string,
   key: string,
   cmd: string,
   orderFile?: string,
 ): Promise<string> => {
   console.log(`stan: start "${key}"`);
-  const outAbs = resolve(cwd, outRel);
   const outFile = resolve(outAbs, `${key}.txt`);
   const child = spawn(cmd, { cwd, shell: true, windowsHide: true });
 
@@ -96,7 +93,7 @@ const runOne = async (
   if (orderFile) {
     await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
   }
-  console.log(`stan: done "${key}" -> ${relForLog(cwd, outFile)}`);
+  console.log(`stan: done "${key}" -> ${outRel}/${key}.txt`);
   return outFile;
 };
 
@@ -109,14 +106,15 @@ const renderRunPlan = (args: {
 }): string => {
   const { selection, config, mode, behavior } = args;
 
-  // Determine script list shown
   const keys = selection == null ? Object.keys(config.scripts) : selection;
   const scripts = keys ?? [];
+
+  const dirs = makeStanDirs(process.cwd(), config.stanPath);
 
   const lines = [
     'STAN run plan',
     `mode: ${mode === 'sequential' ? 'sequential' : 'concurrent'}`,
-    `output: ${config.outputPath}/`,
+    `output: ${dirs.outputRel}/`,
     `scripts: ${scripts.length ? scripts.join(', ') : 'none'}`,
     `archive: ${behavior.archive ? 'yes' : 'no'}`,
     `combine: ${behavior.combine ? 'yes' : 'no'}`,
@@ -125,14 +123,13 @@ const renderRunPlan = (args: {
   return `stan:\n  ${lines.join('\n  ')}`;
 };
 
-/** Remove on-disk outputs after archiving when combine=true (preserve .diff and archives). */
+/** Remove on-disk outputs after archiving when combine=true (preserve archives). */
 const cleanupOutputsAfterCombine = async (
   cwd: string,
-  outRel: string,
+  outAbs: string,
 ): Promise<void> => {
-  const outAbs = resolve(cwd, outRel);
   const entries = await readdir(outAbs, { withFileTypes: true });
-  const keepNames = new Set(['.diff', 'archive.tar', 'archive.diff.tar']);
+  const keepNames = new Set(['archive.tar', 'archive.diff.tar']);
   await Promise.all(
     entries.map(async (e) => {
       if (keepNames.has(e.name)) return;
@@ -149,10 +146,17 @@ export const runSelected = async (
   behaviorMaybe?: RunBehavior,
 ): Promise<string[]> => {
   const behavior: RunBehavior = behaviorMaybe ?? {};
-  const outRel = config.outputPath;
-  const outAbs = await ensureOutputDir(cwd, outRel, Boolean(behavior.keep));
 
-  // Multi-line plan summary (project-level directive).
+  // ensure directory tree
+  const rootAbs = await ensureOutputDir(
+    cwd,
+    config.stanPath,
+    Boolean(behavior.keep),
+  );
+  const dirs = makeStanDirs(cwd, config.stanPath);
+  const outAbs = dirs.outputAbs;
+
+  // Multi-line plan summary
   console.log(
     renderRunPlan({
       selection,
@@ -177,10 +181,17 @@ export const runSelected = async (
 
   const created: string[] = [];
 
-  // Run scripts only when we have a non-empty selection
+  // Run scripts only when selection non-empty
   if (toRun.length > 0) {
     const runner = async (k: string): Promise<void> => {
-      const p = await runOne(cwd, outRel, k, config.scripts[k], orderFile);
+      const p = await runOne(
+        cwd,
+        outAbs,
+        dirs.outputRel,
+        k,
+        config.scripts[k],
+        orderFile,
+      );
       created.push(p);
     };
 
@@ -189,32 +200,26 @@ export const runSelected = async (
         await runner(k);
       }
     } else {
-      // Run non-archive tasks concurrently
-      const tasks: Array<Promise<void>> = toRun.map((k) =>
-        runner(k).then(() => void 0),
-      );
-      await Promise.all(tasks);
+      await Promise.all(toRun.map((k) => runner(k).then(() => void 0)));
     }
   }
 
-  // ARCHIVE PHASE (controlled by --archive flag)
+  // ARCHIVE PHASE
   if (behavior.archive) {
     const includeOutputs = Boolean(behavior.combine);
 
-    // Regular archive
     console.log('stan: start "archive"');
-    const archivePath = await createArchive(cwd, outRel, {
+    const archivePath = await createArchive(cwd, config.stanPath, {
       includeOutputDir: includeOutputs,
       includes: config.includes ?? [],
       excludes: config.excludes ?? [],
     });
     console.log(`stan: done "archive" -> ${relForLog(cwd, archivePath)}`);
 
-    // Diff archive (snapshot only when missing)
     console.log('stan: start "archive (diff)"');
     const { diffPath } = await createArchiveDiff({
       cwd,
-      outputPath: outRel,
+      stanPath: config.stanPath,
       baseName: 'archive',
       includes: config.includes ?? [],
       excludes: config.excludes ?? [],
@@ -224,7 +229,7 @@ export const runSelected = async (
     console.log(`stan: done "archive (diff)" -> ${relForLog(cwd, diffPath)}`);
 
     if (includeOutputs) {
-      await cleanupOutputsAfterCombine(cwd, outRel);
+      await cleanupOutputsAfterCombine(cwd, outAbs);
     }
 
     created.push(archivePath, diffPath);

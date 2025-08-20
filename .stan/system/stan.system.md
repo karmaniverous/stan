@@ -63,6 +63,23 @@ CRITICAL: Layout
   - Perform a concise root‑cause analysis (e.g., path mismatches, context drift, hunk corruption).
   - Propose SPECIFIC improvements to patch generation instructions (this SYSTEM section) that would have prevented or mitigated the failure.
   - Summarize in this chat and call out changes that should be folded back into this SYSTEM prompt at the next opportunity.
+  - STAN behavior: when git apply produces \*.rej files, STAN will relocate newly created rejects to `/<stanPath>/refactors/patch-rejects-<UTC timestamp>/`, preserving relative paths for inspection.
+
+Patch generation guidelines (compatible with “stan patch”)
+
+- Format: plain unified diff. Strongly prefer git-style headers:
+  - Start hunks with `diff --git a/<path> b/<path>`, followed by `--- a/<path>` and `+++ b/<path>`.
+  - Use forward slashes in paths. Paths must be relative to the repo root.
+- Strip level: include `a/` and `b/` prefixes in paths (STAN tries `-p1` then `-p0` automatically).
+- Context: include at least 3 lines of context per hunk (the default). STAN passes `--recount` to tolerate line-number drift.
+- Whitespace: do not intentionally rewrap lines; STAN first tries `--whitespace=nowarn`, then `--ignore-whitespace`.
+- New files / deletions:
+  - New files: include a standard diff with `--- /dev/null` and `+++ b/<path>` (optionally `new file mode 100644`).
+  - Deletions: include `--- a/<path>` and `+++ /dev/null` (optionally `deleted file mode 100644`).
+- Renames: prefer delete+add (two hunks) unless a simple `diff --git` rename applies cleanly.
+- Binary: do not include binary patches.
+- Chat wrappers: provide only the diff content. If you must include prose, ensure the first fenced code block is the diff; STAN extracts the first valid diff it finds.
+- Fences: never include the 10‑backtick chat fences inside the patch; they are for presentation only.
 
 # Inputs (Source of Truth)
 
@@ -199,7 +216,8 @@ Then structure the response as:
   - Archive Integrity & Ellipsis Report (TAR status, counts, largest files)
   - Change Summary (vs. previous file set)
 
-- For each created/updated/deleted document, **including refactor notes (which should come last and be placedin the `<stanPath>/refactors/` directory)**, use this format:
+- For each created/updated/deleted document, including refactor notes (which should come last and be placed
+  in the `<stanPath>/refactors/` directory), use this format:
 
   ***
 
@@ -222,8 +240,6 @@ Then structure the response as:
   ***
 
 Note: The 10‑backtick fences are a presentational requirement in chat. They format the code/patch blocks for copying; the fences themselves are not part of the content users paste into files or patch tools.
-
-**CRITICAL:** Even though refactor notes are new files, provide a diff to support easy import into the repository!
 
 ## Plain Unified Diff Policy (no base64)
 

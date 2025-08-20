@@ -16,10 +16,18 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import {
+  copyFile,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 
 import type { Command } from 'commander';
+import path from 'path';
 
 import { applyCliSafety } from '@/cli/stan/cli-utils';
 
@@ -152,6 +160,14 @@ type ApplyResult = {
   captures: AttemptCapture[];
 };
 
+const utcStamp = (): string => {
+  const d = new Date();
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(
+    d.getUTCDate(),
+  )}-${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}`;
+};
+
 const buildApplyAttempts = (
   check: boolean,
   strip: number,
@@ -274,6 +290,53 @@ const resolvePatchContext = async (
   return { cwd, patchAbs, patchRel };
 };
 
+const listRejFiles = async (root: string): Promise<string[]> => {
+  const out: string[] = [];
+  const walk = async (rel: string): Promise<void> => {
+    const abs = path.join(root, rel);
+    let entries: import('fs').Dirent[] = [];
+    try {
+      entries = await readdir(abs, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (e.name === '.git' || e.name === 'node_modules') continue;
+      const childRel = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) await walk(childRel);
+      else if (e.isFile() && e.name.endsWith('.rej'))
+        out.push(childRel.replace(/\\/g, '/'));
+    }
+  };
+  await walk('');
+  return out;
+};
+
+const moveRejFilesToRefactors = async (
+  cwd: string,
+  stanPath: string,
+  rels: string[],
+): Promise<string | null> => {
+  if (!rels.length) return null;
+  const batch = `patch-rejects-${utcStamp()}`;
+  const destRoot = path.join(cwd, stanPath, 'refactors', batch);
+  await mkdir(destRoot, { recursive: true });
+  for (const rel of rels) {
+    const srcAbs = path.join(cwd, rel);
+    const destAbs = path.join(destRoot, rel);
+    try {
+      await mkdir(path.dirname(destAbs), { recursive: true });
+      await rename(srcAbs, destAbs).catch(async () => {
+        await copyFile(srcAbs, destAbs);
+        await rm(srcAbs, { force: true });
+      });
+    } catch {
+      // best-effort
+    }
+  }
+  return path.relative(cwd, destRoot).replace(/\\/g, '/');
+};
+
 export const registerPatch = (cli: Command): Command => {
   applyCliSafety(cli);
 
@@ -359,6 +422,9 @@ export const registerPatch = (cli: Command): Command => {
         buildApplyAttempts(check, p, !check),
       );
 
+      // Track *.rej files created during attempts
+      const preRej = await listRejFiles(cwd);
+
       const result = await runGitApply(cwd, patchAbs, attempts);
 
       if (result.ok) {
@@ -366,6 +432,34 @@ export const registerPatch = (cli: Command): Command => {
           check ? 'stan: patch check passed' : 'stan: patch applied (staged)',
         );
         return;
+      }
+
+      // Move any new *.rej files into <stanPath>/refactors/patch-rejects-<ts>/
+      try {
+        const postRej = await listRejFiles(cwd);
+        const preSet = new Set(preRej);
+        const newOnes = postRej.filter((r) => !preSet.has(r));
+        const cfgPath = findConfigPathSync(cwd);
+        const baseCwd = cfgPath ? path.dirname(cfgPath) : cwd;
+        let stanPath = '.stan';
+        try {
+          const cfg = await loadConfig(baseCwd);
+          stanPath = cfg.stanPath;
+        } catch {
+          // default
+        }
+        const movedTo = await moveRejFilesToRefactors(
+          baseCwd,
+          stanPath,
+          newOnes,
+        );
+        if (movedTo) {
+          console.log(
+            `stan: moved ${newOnes.length.toString()} reject file(s) -> ${movedTo}`,
+          );
+        }
+      } catch {
+        // best-effort
       }
 
       // Diagnostics bundle

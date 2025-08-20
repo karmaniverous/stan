@@ -46,6 +46,7 @@ The CLI installs as `stan`.
 Verify:
 
 ```
+stan --version
 stan --help
 ```
 

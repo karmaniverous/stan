@@ -223,6 +223,8 @@ Then structure the response as:
 
 Note: The 10‑backtick fences are a presentational requirement in chat. They format the code/patch blocks for copying; the fences themselves are not part of the content users paste into files or patch tools.
 
+**CRITICAL:** Even though refactor notes are new files, provide a diff to support easy import into the repository!
+
 ## Plain Unified Diff Policy (no base64)
 
 - Never emit base64‑encoded patches.

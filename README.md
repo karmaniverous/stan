@@ -48,12 +48,11 @@ This scaffolds `stan.config.yml` (or JSON) with an output path (default `stan/`)
 Example `stan.config.yml`:
 
 ```
-outputPath: stan
+stanPath: stan
 includes: []
 excludes: []
 scripts:
-  build: npm run build
-  knip: npm run knip
+  build: npm run stan:build
   lint: npm run lint
   test: npm run test
   typecheck: npm run typecheck
@@ -146,3 +145,36 @@ npx stan snap
 ```
 
 Useful when you want to “re-baseline” diffs after intentional changes.
+
+## Bootloader (wire STAN into your AI agent)
+
+STAN ships a minimal “bootloader” system prompt that you can paste into the AI assistant you use (ChatGPT, Claude, a local agent, etc.). Its only job is to:
+
+- integrity‑check any attached tar archives,
+- locate `<stanPath>/system/stan.system.md` inside the latest artifact (using stanPath from `stan.config.*`), and
+- load that file as the governing system prompt for the rest of the conversation (refusing to proceed if it’s missing).
+
+Where to find it:
+
+- In your repo: `<stanPath>/system/stan.bootloader.md` (default: `stan/system/stan.bootloader.md`).
+- From the npm package: `node_modules/@karmaniverous/stan/dist/stan.bootloader.md` (we also ship `stan.system.md` and `stan.project.template.md` under `dist/` for convenience).
+
+How to use it:
+
+1. Generate artifacts with STAN:
+   - `npx stan run -a -s` (or select the scripts you need).
+   - This writes `stan/output/archive.tar` (and `archive.diff.tar`).
+
+2. In your AI tool, set the system prompt to the contents of `stan.bootloader.md`.
+
+3. Attach `archive.tar` (and `archive.diff.tar` if present). If you used `-c/--combine`, your script outputs are already inside those archives; otherwise you can attach the text logs too.
+
+4. State your request (e.g., “Fix the failing tests” or “Refactor X”).
+   - The bootloader will switch the AI to `stan.system.md` automatically.
+
+Troubleshooting:
+
+- If the AI reports that `stan/system/stan.system.md` is missing, ensure:
+  - your archive contains `<stanPath>/system/stan.system.md` (default `stan/system/stan.system.md`),
+  - your `stan.config.yml|json` is present and has the correct `stanPath`, or
+  - attach a raw file named exactly `stan.system.md` as a separate file.

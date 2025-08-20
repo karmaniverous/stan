@@ -79,7 +79,6 @@ Patch generation guidelines (compatible with “stan patch”)
 - Renames: prefer delete+add (two hunks) unless a simple `diff --git` rename applies cleanly.
 - Binary: do not include binary patches.
 - Chat wrappers: provide only the diff content. If you must include prose, ensure the first fenced code block is the diff; STAN extracts the first valid diff it finds.
-- Fences: never include the 10‑backtick chat fences inside the patch; they are for presentation only.
 
 # Inputs (Source of Truth)
 
@@ -149,7 +148,7 @@ clarify before proceeding.
   - Clean up previous requirements comments that do not meet these
     guidelines.
 
-## Refactor Log Entries (/<stanPath>/refactors)
+## Refactor Log Entries (`/<stanPath>/refactors`)
 
 To preserve context across chat threads, maintain a short, structured
 refactor log under `/<stanPath>/refactors/`.
@@ -168,87 +167,85 @@ refactor log under `/<stanPath>/refactors/`.
 - Keep entries human‑ and machine‑scannable; do not paste large diffs. Link
   to artifacts instead of duplicating content.
 
-# Testing Guidelines (generic)
-
-- Read the tests and fixtures first; do not code solely to make tests pass.
-- Tests should couple with the code they cover (e.g., `feature.ts`
-  ↔ `feature.test.ts`).
-- Avoid tests that rely on internal implementation details.
-
-# Linting Guidelines
-
-- Follow the project’s linter configuration; target zero errors/warnings.
-- Use `archive.tar` + `lint.txt` to infer config details not obvious from
-  config files.
-
-# Dependency & Tooling Hygiene
-
-- Add new third‑party libraries to package.json and install.
-- Prefer actively‑maintained, well‑typed packages; add `@types/*` if needed.
-
-# TypeScript Guidelines
-
-- NEVER use `any`.
-- ALWAYS use arrow functions and consistent naming.
-- ALWAYS destructure imports when named imports exist.
-- NEVER manually group imports; rely on `eslint-plugin-simple-import-sort`.
-- Prefer path alias imports (`@`) for non‑sibling modules.
-
-# Project Guidelines
-
-- Read the README for developer intent and obey toolchain expectations.
-- `<stanPath>/system/stan.project.md` contains project‑specific requirements.
-- Versioning policy (major version 0): prefer simplifying changes even if they
-  break prior behavior in unreleased codebases.
-
 # Response Format (MANDATORY)
 
-CRITICAL: Patch coverage requirement
+CRITICAL: Fence Hygiene (Nested Code Blocks) and Coverage
 
-- For every file you add, modify, or delete in this response, you must:
-  - Provide the full file contents in a 10‑backtick fence, and
-  - Provide a matching plain unified diff that precisely covers those changes.
+- You MUST compute fence lengths dynamically to ensure that each outer fence has one more backtick than any fence it contains.
+- Algorithm:
+  1. Collect all code blocks you will emit (every “Full Listing” and “Patch” for each file; any additional examples).
+  2. For each block, scan its content and compute the maximum run of consecutive backticks appearing anywhere inside (including literals in examples).
+  3. Choose the fence length for that block as maxInnerBackticks + 1 (minimum 3).
+  4. If a block contains other fenced blocks (e.g., an example that itself shows fences), treat those inner fences as part of the scan. If the inner block uses N backticks, the enclosing block must use at least N+1 backticks.
+  5. Apply the same fence length to both the “Full Listing” and “Patch” blocks of a given file; if either requires a larger fence, use the larger value for both.
+  6. Never emit a block whose outer fence length is less than or equal to the maximum backtick run inside it.
+  7. As a sanity check, after composing the message, rescan each block and verify the rule holds; if not, increase fence lengths and re‑emit.
 
-Then structure the response as:
+- Coverage:
+  - For every file you add, modify, or delete in this response:
+    - Provide a “Full Listing” (omit only for deletions), and
+    - Provide a matching plain unified diff “Patch” that precisely covers those changes (no base64).
 
-- Input Data Changes
-  - Full File Availability: CONFIRMED | FAILED (with error details)
-  - Archive Integrity & Ellipsis Report (TAR status, counts, largest files)
-  - Change Summary (vs. previous file set)
+Exact Output Template (headings and order)
 
-- For each created/updated/deleted document, including refactor notes (which should come last and be placed
-  in the `<stanPath>/refactors/` directory), use this format:
+Use these headings exactly; wrap each “Full Listing” and “Patch” in a fence computed by the algorithm above.
 
-  ***
+---
 
-  ## path/to/file.ts
+## Input Data Changes
 
-  (summary of changes)
+- Bullet points summarizing integrity, availability, and a short change list.
 
-  ### Full File Listing <- ONLY INCLUDE IF FILE NOT DELETED
+## CREATED: path/to/file/a.ts
 
-  ```
-  (full listing inside a 10‑backtick fence)
-  ```
+<change summary>
 
-  ### Patch
+### Full Listing: path/to/file/a.ts
 
-  ```
-  (plain unified diff inside a 10‑backtick fence; no base64)
-  ```
+<full listing fenced per algorithm>
 
-  ***
+### Patch: path/to/file/a.ts
 
-Note: The 10‑backtick fences are a presentational requirement in chat. They format the code/patch blocks for copying; the fences themselves are not part of the content users paste into files or patch tools.
+<plain unified diff fenced per algorithm>
+
+## UPDATED: path/to/file/b.ts
+
+<change summary>
+
+### Full Listing: path/to/file/b.ts
+
+<full listing fenced per algorithm>
+
+### Patch: path/to/file/b.ts
+
+<plain unified diff fenced per algorithm>
+
+## DELETED: path/to/file/c.ts
+
+<change summary>
+
+### Patch: path/to/file/c.ts
+
+<plain unified diff fenced per algorithm>
+
+## CREATED: <stanPath>/refactors/20250819-122100-a-refactor-note.md
+
+### Full Listing: <stanPath>/refactors/20250819-122100-a-refactor-note.md
+
+<full listing fenced per algorithm>
+
+### Patch: <stanPath>/refactors/20250819-122100-a-refactor-note.md
+
+## <plain unified diff fenced per algorithm>
+
+Validation
+
+- Confirm that every created/updated/deleted file has a “Full Listing” (skipped for deletions) and a matching “Patch”.
+- Confirm that fence lengths obey the +1 backtick rule for every block.
 
 ## Plain Unified Diff Policy (no base64)
 
 - Never emit base64‑encoded patches.
 - Always emit plain unified diffs with @@ hunks.
-- Do not wrap the patch beyond the required 10‑backtick fence.
+- Do not wrap the patch beyond the fence required by the +1 rule.
 - Coverage must include every created/updated/deleted file referenced above.
-
-## Refactor Messages (chat presentation)
-
-- For each refactor log you include in chat, add it as:
-  - An H2 path header, then a fenced block with the entire note.

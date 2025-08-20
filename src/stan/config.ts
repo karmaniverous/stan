@@ -30,17 +30,12 @@ export type ContextConfig = {
   includes?: string[];
   /** Paths to exclude in archiving logic (globs supported). */
   excludes?: string[];
-  /** Default patch filename for `stan patch`; default '/stan.patch' if unspecified. */
-  defaultPatchFile?: string;
-  /** Maximum retained snapshot \“undos\” (history depth for snap undo/redo); default 10. */
+  /** Maximum retained snapshot "undos" (history depth for snap undo/redo); default 10. */
   maxUndos?: number;
 };
 
 /** Public default stan path for consumers and internal use. */
 export const DEFAULT_STAN_PATH = '.stan';
-
-const normalizeDefaultPatchFile = (v: unknown): string =>
-  typeof v === 'string' && v.trim().length > 0 ? v.trim() : '/stan.patch';
 
 const normalizeMaxUndos = (v: unknown): number => {
   const n =
@@ -63,8 +58,6 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
-  const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
-    .defaultPatchFile;
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
 
   if (typeof stanPath !== 'string' || stanPath.length === 0) {
@@ -82,7 +75,6 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
-    defaultPatchFile: normalizeDefaultPatchFile(defaultPatchFile),
     maxUndos: normalizeMaxUndos(maxUndos),
   };
 };
@@ -136,8 +128,6 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
-  const defaultPatchFile = (cfg as { defaultPatchFile?: unknown })
-    .defaultPatchFile;
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
 
   if (typeof stanPath !== 'string' || stanPath.length === 0) {
@@ -155,7 +145,6 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
-    defaultPatchFile: normalizeDefaultPatchFile(defaultPatchFile),
     maxUndos: normalizeMaxUndos(maxUndos),
   };
 };
@@ -187,7 +176,7 @@ export const resolveStanPath = async (cwd: string): Promise<string> => {
 
 /** Ensure stanPath exists and manage output/diff subdirs.
  * - Always ensure <stanPath>/output and <stanPath>/diff exist.
- * - When keep===false, copy output/archive.tar -> diff/archive.prev.tar (if present),
+ * - When keep===false, copy output/archive.tar -\> diff/archive.prev.tar (if present),
  *   then clear ONLY the output directory.
  */
 export const ensureOutputDir = async (

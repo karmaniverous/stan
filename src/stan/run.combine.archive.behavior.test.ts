@@ -47,7 +47,7 @@ describe('runSelected combine => regular archive includes output directory', () 
     vi.restoreAllMocks();
   });
 
-  it('archive.tar contains files under <outputPath> when combine=true', async () => {
+  it('archive.tar contains files under <outputPath> and patch dir when combine=true', async () => {
     // Prepare a tiny script that writes to stdout so runSelected produces an output file.
     await writeFile(
       path.join(dir, 'hello.js'),
@@ -60,6 +60,10 @@ describe('runSelected combine => regular archive includes output directory', () 
       scripts: { hello: 'node hello.js' },
     };
 
+    // Create a patch file under stan/patch to ensure it is included
+    await mkdir(path.join(dir, 'stan', 'patch'), { recursive: true });
+    await writeFile(path.join(dir, 'stan', 'patch', 'note.txt'), 'p', 'utf8');
+
     // Run in combine mode so outputs are intended to be included in the regular archive
     await runSelected(dir, cfg, ['hello'], 'concurrent', {
       archive: true,
@@ -71,5 +75,7 @@ describe('runSelected combine => regular archive includes output directory', () 
 
     // Ensure files passed to tar for the regular archive include something under the output directory
     expect(regCall?.files.some((p) => p.startsWith('stan/'))).toBe(true);
+    // Ensure patch directory is included
+    expect(regCall?.files.some((p) => p.startsWith('stan/patch'))).toBe(true);
   });
 });

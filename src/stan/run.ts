@@ -138,6 +138,24 @@ const cleanupOutputsAfterCombine = async (
   );
 };
 
+/** Clear <stanPath>/patch contents after archiving (preserve the directory). */
+const cleanupPatchDirAfterArchive = async (
+  cwd: string,
+  stanPath: string,
+): Promise<void> => {
+  const dirs = makeStanDirs(cwd, stanPath);
+  try {
+    const entries = await readdir(dirs.patchAbs, { withFileTypes: true });
+    await Promise.all(
+      entries.map((e) =>
+        rm(resolve(dirs.patchAbs, e.name), { recursive: true, force: true }),
+      ),
+    );
+  } catch {
+    // best-effort
+  }
+};
+
 export const runSelected = async (
   cwd: string,
   config: ContextConfig,
@@ -227,6 +245,7 @@ export const runSelected = async (
     if (includeOutputs) {
       await cleanupOutputsAfterCombine(cwd, outAbs);
     }
+    await cleanupPatchDirAfterArchive(cwd, config.stanPath);
 
     created.push(archivePath, diffPath);
   }

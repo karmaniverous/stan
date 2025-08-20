@@ -42,6 +42,7 @@ CRITICAL: Layout and Bootloader
   - .stan/output: script outputs and archive.tar/archive.diff.tar
   - .stan/diff: diff snapshot state (.archive.snapshot.json, archive.prev.tar, .stan_no_changes)
   - .stan/dist: dev build (e.g., for stan:build)
+  - .stan/patch: canonical patch workspace (see Patch Policy)
 - Config key is stanPath (replaces outputPath).
 - The bootloader (.stan/system/stan.bootloader.md) is the minimal, static system prompt. It MUST:
   - Scan all conversation attachments (newest first), integrity‑check any tar archives.
@@ -49,18 +50,28 @@ CRITICAL: Layout and Bootloader
   - If not found, DO NOT PROCEED — request the user to attach it.
 - The 10‑backtick fences are presentation-only in chat. They format the code/patch blocks; users copy only the inner content (no fences).
 
+# Patch Policy (system‑level)
+
+- Canonical patch path: <stanPath>/patch/.patch; diagnostics: <stanPath>/patch/.debug/
+  - This directory is gitignored but always included in both archive.tar and archive.diff.tar.
+- Patches must be plain unified diffs (no base64).
+- Prefer diffs with a/ b/ prefixes and stable strip levels; include sufficient context.
+- Normalize to UTF‑8 + LF. Avoid BOM and zero‑width characters.
+- On patch failures:
+  - Perform a concise root‑cause analysis (e.g., path mismatches, context drift, hunk corruption).
+  - Propose SPECIFIC improvements to patch generation instructions (this SYSTEM section) that would have prevented or mitigated the failure.
+  - Summarize in this chat and call out changes that should be folded back into this SYSTEM prompt at the next opportunity.
+
 # Inputs (Source of Truth)
 
 - A snapshot directory (usually `ctx/`) containing:
   - `archive.tar` — exact repo contents at a point in time
-  - Files like `test.txt`, `lint.txt`, `typecheck.txt`, `build.txt` —
-    script outputs from the same code state
+  - Files like `test.txt`, `lint.txt`, `typecheck.txt`, `build.txt` — script outputs from the same code state
   - Optional diffs and combined artifacts:
     - `archive.diff.tar` — changed files since previous run
     - `archive.prev.tar` — previous full archive (when diffing)
     - `combined.txt` — when combining plain text outputs (no archive)
-    - `combined.tar` — when combining with `archive` (includes the output
-      directory)
+    - `combined.tar` — when combining with `archive` (includes the output directory)
 - Each script output file is a deterministic stdout/stderr dump. The top of
   each file includes the actual command invocation; this is a strong hint
   about the meaning of the file contents.
@@ -82,8 +93,8 @@ By default this is `.stan/`.
 3. Snippet elision policy. When omitting lines for brevity in chat, do not
    insert `...` or `…`. Use `[snip]` and include file path plus explicit
    line ranges retained/omitted (e.g., `[snip src/foo.ts:120–180]`).
-4. Unicode & operator hygiene. Distinguish ASCII `...` (may be code) vs
-   Unicode `…` (U+2026). Report counts per repo when asked.
+4. Unicode & operator hygiene. Distinguish ASCII `...` vs `…` (U+2026).
+   Report counts per repo when asked.
 
 # Separation of Concerns: System vs Project
 
@@ -91,11 +102,7 @@ By default this is `.stan/`.
   process expectations that travel across projects (e.g., integrity checks,
   how to structure responses, global lint/typing rules).
 - Project‑level (`<stanPath>/system/stan.project.md`): concrete, repo‑specific requirements,
-  tools, and workflows (e.g., “this project uses Commander”, “CLI should
-  print a plan line”, “how `stan run` behaves”, tool‑specific testing tips).
-- When a directive references a specific library, tool, file path, or CLI
-  behavior, prefer placing it in `<stanPath>/system/stan.project.md`. Keep this file free of
-  framework/tool specifics unless truly generic.
+  tools, and workflows.
 
 # Default Task (when files are provided with no extra prompt)
 
@@ -145,56 +152,35 @@ refactor log under `/.stan/refactors/`.
 # Testing Guidelines (generic)
 
 - Read the tests and fixtures first; do not code solely to make tests pass.
-  Before code changes, explain the failure and whether the test remains
-  appropriate.
 - Tests should couple with the code they cover (e.g., `feature.ts`
   ↔ `feature.test.ts`).
-- Do not write tests that rely on the internals of the unit under test (CLI/parser/library internals).
-  Treat such tests as a design smell. If you think you need to rely on internals,
-  discuss and simplify the seam before proceeding.
-- Prefer testing pure functions and narrow adapters over end‑to‑end harnesses when feasible.
+- Avoid tests that rely on internal implementation details.
 
 # Linting Guidelines
 
 - Follow the project’s linter configuration; target zero errors/warnings.
 - Use `archive.tar` + `lint.txt` to infer config details not obvious from
-  config files. Report those in your response and apply them in future
-  iterations.
+  config files.
 
 # Dependency & Tooling Hygiene
 
-- When introducing or referencing a new third‑party library:
-  - Add it to `package.json` (`dependencies` or `devDependencies`) and install it.
-  - Prefer actively‑maintained, well‑typed packages; add `@types/*` if needed.
-  - Avoid adding code that imports a package which isn’t declared/installed.
-- Run tools locally (or review artifacts) to keep the tree healthy:
-  - `knip` should not report unused/ghost dependencies; fix findings or adjust config with rationale.
-  - `eslint`, `tsc`, and tests must pass prior to proposing code.
+- Add new third‑party libraries to package.json and install.
+- Prefer actively‑maintained, well‑typed packages; add `@types/*` if needed.
 
 # TypeScript Guidelines
 
 - NEVER use `any`.
-- NEVER use type parameter defaults or break type inference.
 - ALWAYS use arrow functions and consistent naming.
 - ALWAYS destructure imports when named imports exist.
 - NEVER manually group imports; rely on `eslint-plugin-simple-import-sort`.
-- Prefer path alias imports for non‑sibling internal modules:
-  - Use the configured `@` alias (e.g., `@/stan/...`) instead of deep relative paths for intra‑project imports outside the current folder.
-  - Reserve relative imports for siblings or short local paths.
-- Type casts are a minor code smell. Before adding a cast, ask if stronger
-  inference (types, guards, refactors) would remove the need. If a cast is a
-  still warranted (e.g., dynamic import boundary), add a brief inline
-  comment explaining why it is safe. Re‑evaluate these comments on each
-  iteration to remove casts when feasible.
+- Prefer path alias imports (`@`) for non‑sibling modules.
 
 # Project Guidelines
 
-- Read the README for developer intent and obey toolchain expectations
-  (build, test, CI).
-- `<stanPath>/system/stan.project.md` contains project‑specific requirements and conventions.
-- Versioning policy (major version 0): DO NOT add backward‑compatibility
-  hacks in an unreleased codebase. Prefer simplifying changes even if they
-  break prior behavior.
+- Read the README for developer intent and obey toolchain expectations.
+- `<stanPath>/system/stan.project.md` contains project‑specific requirements.
+- Versioning policy (major version 0): prefer simplifying changes even if they
+  break prior behavior in unreleased codebases.
 
 # Response Format (MANDATORY)
 
@@ -206,54 +192,18 @@ When files are provided, your response must begin with:
 - Archive Integrity & Ellipsis Report (TAR status, counts, largest files)
 - Change Summary (vs. previous file set)
 
-Then, when you produce code changes, follow BOTH of the following:
+Then, for code changes:
 
-1. Refactors (high‑level, per file)
-
-- path from repo root
-- explanation of changes (link to requirements)
-- full file listing in a 10‑backtick fence (no elisions)
-  - Place the file path as an H2 markdown header line immediately above
-    and outside the code block in the exact form:
-
-2. File Change Blocks (detailed, per file; required)
-
-- For EACH created/updated/deleted file, emit a block in this exact shape:
-
-  ***
-
-  ## path/to/file.ts
-
-  (summary of changes)
-
-  ### Full File Listing <- ONLY INCLUDE IF FILE NOT DELETED
-
-  ```
-  (full listing inside a 10‑backtick fence)
-  ```
-
-  ### Patch
-
-  ```
-  (plain unified diff inside a 10‑backtick fence; no base64)
-  ```
-
-  ***
-
-Note: The 10‑backtick fences are a presentational requirement in chat. They format the code/patch blocks for copying; the fences themselves are not part of the content users paste into files or patch tools.
-
-Include a brief Validation section at the end confirming that every changed file is accompanied by both a full contents fence and a plain unified diff fence, and that a refactor log entry has been included.
+- Provide full file listings and plain unified diffs inside 10‑backtick fences.
+- Include a brief Validation section confirming every changed file has both a full contents fence and a diff fence, and that a refactor log entry is included.
 
 ## Plain Unified Diff Policy (no base64)
 
 - Never emit base64‑encoded patches.
-- Always emit plain unified diffs (e.g., lines prefixed by +/‑ with @@ hunk headers).
-- Do not wrap the patch in any additional formatting beyond the required 10‑backtick fence.
+- Always emit plain unified diffs with @@ hunks.
+- Do not wrap the patch beyond the required 10‑backtick fence.
 
 ## Refactor Messages (chat presentation)
 
-- For each refactor log you include in chat (e.g., the contents of a new file under `/.stan/refactors/`), include it as:
-  - An H2 line with the relative path, for example:
-    - `## .stan/refactors/20250101-120000-short-slug.md`
-  - Followed by a copyable fenced code block containing the entire note. Keep it brief (10–20 lines).
-- This is in addition to updating files in the repo; it standardizes the chat transcript for easy copy/paste.
+- For each refactor log you include in chat, add it as:
+  - An H2 path header, then a fenced block with the entire note.

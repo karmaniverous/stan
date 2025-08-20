@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm, writeFile, mkdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -51,6 +51,17 @@ import { registerSnap } from './snap';
 
 const read = (p: string) => readFile(p, 'utf8');
 
+const waitFor = async (
+  cond: () => boolean,
+  timeoutMs = 1000,
+): Promise<void> => {
+  const start = Date.now();
+  while (!cond()) {
+    if (Date.now() - start > timeoutMs) return;
+    await new Promise((r) => setTimeout(r, 25));
+  }
+};
+
 describe('snap CLI (stash, history, undo/redo/info)', () => {
   let dir: string;
 
@@ -100,6 +111,8 @@ describe('snap CLI (stash, history, undo/redo/info)', () => {
     await cli.parseAsync(['node', 'stan', 'snap'], { from: 'user' });
 
     const statePath = path.join(dir, 'out', 'diff', '.snap.state.json');
+    await waitFor(() => existsSync(statePath), 750);
+
     let state = JSON.parse(await read(statePath)) as {
       entries: { ts: string; snapshot: string }[];
       index: number;
@@ -117,6 +130,7 @@ describe('snap CLI (stash, history, undo/redo/info)', () => {
 
     // New snap at this point should drop redos and push new one; still trims to maxUndos=2
     await cli.parseAsync(['node', 'stan', 'snap'], { from: 'user' });
+    await waitFor(() => existsSync(statePath), 750);
     state = JSON.parse(await read(statePath));
     expect(state.entries.length).toBe(2);
     expect(state.index).toBe(1);

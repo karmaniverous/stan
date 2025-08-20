@@ -5,6 +5,7 @@
  * - output: <stanPath>/output
  * - diff: <stanPath>/diff
  * - dist: <stanPath>/dist
+ * - patch: <stanPath>/patch
  */
 import { resolve } from 'node:path';
 
@@ -14,11 +15,13 @@ export type StanDirs = {
   outputRel: string;
   diffRel: string;
   distRel: string;
+  patchRel: string;
   rootAbs: string;
   systemAbs: string;
   outputAbs: string;
   diffAbs: string;
   distAbs: string;
+  patchAbs: string;
 };
 
 const normRel = (p: string): string =>

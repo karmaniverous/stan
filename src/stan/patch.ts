@@ -1,7 +1,7 @@
 /* src/cli/stan/patch.ts
  * "stan patch" subcommand: apply a patch from clipboard / file / inline input.
- * - Default: read unified diff from clipboard; write cleaned content to <stanPath>/diff/.patch, then apply (staged).
- * - -f, --file [filename]: read from file (unified diff); cleaned content is still written to the canonical <stanPath>/diff/.patch.
+ * - Default: read unified diff from clipboard; write cleaned content to <stanPath>/patch/.patch, then apply (staged).
+ * - -f, --file [filename]: read from file as source; cleaned content is still written to <stanPath>/patch/.patch.
  * - -c, --check: run git apply --check (validate only). No staging, no changes.
  * - Detection & cleanup:
  *   - Remove chat wrappers or BEGIN/END banners only when they wrap the entire payload.
@@ -34,19 +34,16 @@ type PatchSource =
 const repoJoin = (cwd: string, p: string): string =>
   p.startsWith('/') ? path.join(cwd, p.slice(1)) : path.resolve(cwd, p);
 
-/** Unwrap only outer chat fences/banners if they wrap the entire payload. */
 const unwrapChatWrappers = (text: string): string => {
   const lines = text.split(/\r?\n/);
   let i = 0;
   while (i < lines.length && lines[i].trim() === '') i += 1;
   let j = lines.length - 1;
   while (j >= 0 && lines[j].trim() === '') j -= 1;
-
   if (i > j) return text;
 
   const first = lines[i].trim();
   const last = lines[j].trim();
-
   const isFence = (s: string) => /^```/.test(s);
   const isBegin = (s: string) => /^BEGIN[_ -]?PATCH/i.test(s);
   const isEnd = (s: string) => /^END[_ -]?PATCH/i.test(s);
@@ -258,7 +255,6 @@ const resolvePatchContext = async (
   cwd0: string,
 ): Promise<{
   cwd: string;
-  stanPath: string;
   patchAbs: string;
   patchRel: string;
 }> => {
@@ -273,9 +269,9 @@ const resolvePatchContext = async (
     // default used
   }
   const dirs = makeStanDirs(cwd, stanPath);
-  const patchAbs = path.join(dirs.diffAbs, '.patch');
+  const patchAbs = path.join(dirs.patchAbs, '.patch');
   const patchRel = path.relative(cwd, patchAbs).replace(/\\/g, '/');
-  return { cwd, stanPath, patchAbs, patchRel };
+  return { cwd, patchAbs, patchRel };
 };
 
 export const registerPatch = (cli: Command): Command => {
@@ -342,7 +338,7 @@ export const registerPatch = (cli: Command): Command => {
       // Detect & clean (unified diff only), tolerant to surrounding prose
       const cleaned = detectAndCleanPatch(raw);
 
-      // Write cleaned content to canonical path <stanPath>/diff/.patch
+      // Write cleaned content to canonical path <stanPath>/patch/.patch
       try {
         await ensureParentDir(patchAbs);
         await writeFile(patchAbs, cleaned, 'utf8');
@@ -374,7 +370,7 @@ export const registerPatch = (cli: Command): Command => {
 
       // Diagnostics bundle
       try {
-        const debugDir = path.join(path.dirname(patchAbs), '.patch.debug');
+        const debugDir = path.join(path.dirname(patchAbs), '.debug');
         await mkdir(debugDir, { recursive: true });
         await writeFile(path.join(debugDir, 'cleaned.patch'), cleaned, 'utf8');
         await writeFile(

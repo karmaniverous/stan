@@ -11,8 +11,9 @@
  *   - Maintain diff/.snap.state.json with { entries, index, maxUndos }.
  *   - "snap" pushes a new entry and clears any redos; trim to maxUndos (default 10).
  *   - "undo" moves to a previous entry (if any) and restores diff/.archive.snapshot.json.
+ *   - "set <index>" jumps to a specific snapshot index and restores it.
  *   - "redo" moves to a later entry (if any) and restores diff/.archive.snapshot.json.
- *   - "info" prints the stack with timestamps, file presence, current index, and how many undos/redos remain.
+ *   - "info" prints the stack with indices, timestamps, file presence, current index, and how many undos/redos remain.
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -252,7 +253,9 @@ export const registerSnap = (cli: Command): Command => {
       await writeJson(statePath, st);
       const undos = st.index;
       const redos = st.entries.length - 1 - st.index;
-      console.log(`stan: set -> ${entry.ts} (undos left ${undos.toString()}, redos left ${redos.toString()})`);
+      console.log(
+        `stan: set -> ${entry.ts} (undos left ${undos.toString()}, redos left ${redos.toString()})`,
+      );
     });
 
   sub

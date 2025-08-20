@@ -84,6 +84,7 @@ export const writeArchiveSnapshot = async ({
  * - Snapshot update behavior is controlled by updateSnapshot.
  * - When includeOutputDirInDiff === true, also include the entire <stanPath>/output tree
  *   (excluding <stanPath>/diff and the two archive files) regardless of change list length.
+ * - Always include <stanPath>/patch in the diff archive.
  */
 export const createArchiveDiff = async ({
   cwd,
@@ -103,6 +104,8 @@ export const createArchiveDiff = async ({
   includeOutputDirInDiff?: boolean;
 }): Promise<{ diffPath: string }> => {
   const { outDir, diffDir } = await ensureOutAndDiff(cwd, stanPath);
+
+  const patchRel = `${stanPath.replace(/\\/g, '/')}/patch`;
 
   const all = await listFiles(cwd);
   const filtered = await filterFiles(all, {
@@ -130,7 +133,7 @@ export const createArchiveDiff = async ({
 
   if (includeOutputDirInDiff) {
     const files = Array.from(
-      new Set([...changed, `${stanPath.replace(/\\/g, '/')}/output`]),
+      new Set([...changed, `${stanPath.replace(/\\/g, '/')}/output`, patchRel]),
     );
     const isUnder = (prefix: string, p: string): boolean =>
       p === prefix || p.startsWith(`${prefix}/`);
@@ -151,9 +154,14 @@ export const createArchiveDiff = async ({
   } else if (changed.length === 0) {
     const sentinel = sentinelPathFor(diffDir);
     await writeFile(sentinel, 'no changes', 'utf8');
-    await tar.create({ file: diffPath, cwd: diffDir }, ['.stan_no_changes']);
+    // Always include patch directory; tar from repo root to include sentinel path
+    await tar.create({ file: diffPath, cwd }, [
+      patchRel,
+      `${stanPath.replace(/\\/g, '/')}/diff/.stan_no_changes`,
+    ]);
   } else {
-    await tar.create({ file: diffPath, cwd }, changed);
+    const files = Array.from(new Set([...changed, patchRel]));
+    await tar.create({ file: diffPath, cwd }, files);
   }
 
   if (updateSnapshot === 'replace') {

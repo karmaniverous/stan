@@ -1,3 +1,0 @@
-warning: recount: unexpected line: @@
-
-error: corrupt patch at line 35

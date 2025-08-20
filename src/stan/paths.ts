@@ -33,12 +33,14 @@ export const makeStanDirs = (cwd: string, stanPath: string): StanDirs => {
   const outputRel = `${rootRel}/output`;
   const diffRel = `${rootRel}/diff`;
   const distRel = `${rootRel}/dist`;
+  const patchRel = `${rootRel}/patch`;
 
   const rootAbs = resolve(cwd, rootRel);
   const systemAbs = resolve(cwd, systemRel);
   const outputAbs = resolve(cwd, outputRel);
   const diffAbs = resolve(cwd, diffRel);
   const distAbs = resolve(cwd, distRel);
+  const patchAbs = resolve(cwd, patchRel);
 
   return {
     rootRel,
@@ -46,10 +48,12 @@ export const makeStanDirs = (cwd: string, stanPath: string): StanDirs => {
     outputRel,
     diffRel,
     distRel,
+    patchRel,
     rootAbs,
     systemAbs,
     outputAbs,
     diffAbs,
     distAbs,
+    patchAbs,
   };
 };

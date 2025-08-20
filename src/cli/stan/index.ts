@@ -23,7 +23,8 @@ export const makeCli = (): Command => {
     .name('stan')
     .description(
       'Generate reproducible STAN artifacts for AI-assisted development',
-    );
+    )
+    .option('-d, --debug', 'enable verbose debug logging');
 
   // Root-level help footer: show available script keys
   cli.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
@@ -41,6 +42,10 @@ export const makeCli = (): Command => {
   // - If config is missing: run interactive init (not forced) and create a snapshot.
   // - If config exists: print help page (no exit).
   cli.action(async () => {
+    if (cli.opts<{ debug?: boolean }>().debug) {
+      process.env.STAN_DEBUG = '1';
+    }
+
     const cwd = process.cwd();
     const cfgMod = await import('@/stan/config');
     const hasConfig = !!cfgMod.findConfigPathSync(cwd);

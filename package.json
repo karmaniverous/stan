@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "commander": "^14.0.0",
+    "ignore": "^7.0.5",
     "inquirer": "^12.9.3",
     "package-directory": "^8.1.0",
     "picomatch": "^4.0.3",
@@ -130,10 +131,10 @@
     "url": "git+https://github.com/karmaniverous/stan.git"
   },
   "scripts": {
-    "bootstrap": "concurrently -n typecheck,lint,test,build,docs -c auto \"npm:bootstrap:typecheck\" \"npm:bootstrap:lint\" \"npm:bootstrap:test\" \"npm:bootstrap:build\" \"npm:bootstrap:docs\" && npm bootstrap:archive",
+    "bootstrap": "concurrently -n typecheck,lint,test,build,docs -c auto \"npm:bootstrap:typecheck\" \"npm:bootstrap:lint\" \"npm:bootstrap:test\" \"npm:bootstrap:build\" \"npm:bootstrap:docs\" && npm run bootstrap:archive",
     "bootstrap:archive": "tsx bootstrap-archive.ts",
-    "bootstrap:build": "rimraf stan.dist && rollup --config stan.rollup.config.ts --configPlugin @rollup/plugin-typescript > stan/build.txt 2>&1 && rimraf stan.dist",
-    "bootstrap:docs": "npm run docs > stan/docs.txt 2>&1",
+    "bootstrap:build": "npm run stan:build > stan/build.txt 2>&1",
+    "bootstrap:docs": "npm run stan:docs > stan/docs.txt 2>&1",
     "bootstrap:lint": "npm run lint > stan/lint.txt 2>&1",
     "bootstrap:test": "npm run test > stan/test.txt 2>&1",
     "bootstrap:typecheck": "npm run typecheck > stan/typecheck.txt 2>&1",
@@ -144,7 +145,7 @@
     "lint:fix": "eslint --fix .",
     "release": "dotenvx run -f .env.local -- release-it",
     "release:pre": "dotenvx run -f .env.local -- release-it --no-git.requireBranch --github.prerelease --preRelease",
-    "stan": "tsx src/cli/stan/index.ts",
+    "stan": "tsx src/cli/stan/stan.ts",
     "stan:build": "rimraf stan.dist && rollup --config stan.rollup.config.ts --configPlugin @rollup/plugin-typescript && rimraf stan.dist",
     "stan:docs": "typedoc --emit none",
     "test": "vitest --run --coverage",

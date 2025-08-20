@@ -8,6 +8,7 @@
  *
  * UPDATED:
  * - Do not inject a special 'archive' key; archive is now controlled via -a/--archive.
+ * - When STAN_DEBUG=1, log the reason config could not be loaded.
  */
 import { loadConfigSync } from './config';
 
@@ -29,7 +30,10 @@ export const renderAvailableScriptsHelp = (cwd: string): string => {
       `  stan run -s -e ${exampleExcept}`,
       '',
     ].join('\n');
-  } catch {
+  } catch (e) {
+    if (process.env.STAN_DEBUG === '1') {
+      console.error('stan: unable to load config for help footer', e);
+    }
     return '';
   }
 };

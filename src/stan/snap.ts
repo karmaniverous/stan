@@ -1,7 +1,9 @@
-// src/cli/stan/snap.ts
 /* src/cli/stan/snap.ts
  * "stan snap" subcommand: create/replace the diff snapshot explicitly.
+ * NEW: Operate from the nearest package root with a stan config when available.
  */
+import path from 'node:path';
+
 import type { Command } from 'commander';
 
 import { applyCliSafety } from '@/cli/stan/cli-utils';
@@ -18,14 +20,20 @@ export const registerSnap = (cli: Command): Command => {
   applyCliSafety(sub);
 
   sub.action(async () => {
-    const cwd = process.cwd();
+    const cwd0 = process.cwd();
     const cfgMod = await import('./config');
     const diffMod = await import('./diff');
+
+    const cfgPath = cfgMod.findConfigPathSync(cwd0);
+    const cwd = cfgPath ? path.dirname(cfgPath) : cwd0;
 
     let maybe: unknown;
     try {
       maybe = await cfgMod.loadConfig(cwd);
-    } catch {
+    } catch (e) {
+      if (process.env.STAN_DEBUG === '1') {
+        console.error('stan: failed to load config for snapshot', e);
+      }
       maybe = undefined;
     }
 

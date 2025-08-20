@@ -3,11 +3,14 @@
  * Now delegates selection/mode/behavior derivation to a pure helper to make
  * tests deterministic and decouple from Commander internals.
  */
+import path from 'node:path';
+
 import { Command, Option } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { runSelected } from '@/stan/run';
 
+import { applyCliSafety } from './cli-utils';
 import { deriveRunInvocation } from './run-args';
 
 export const registerRun = (cli: Command): Command => {
@@ -18,7 +21,10 @@ export const registerRun = (cli: Command): Command => {
     .option('-e, --except <keys...>', 'script keys to exclude')
     .option('-s, --sequential', 'run sequentially in config order')
     .option('-a, --archive', 'create archive.tar and archive.diff.tar')
-    .option('-k, --keep', 'keep (do not clear) the output directory');
+    .option('-k, --keep', 'keep (do not clear) the output directory')
+    .option('-d, --debug', 'enable verbose debug logging');
+
+  applyCliSafety(cmd);
 
   // -c implies -a; -c conflicts -k
   const combineOpt = new Option(
@@ -34,15 +40,28 @@ export const registerRun = (cli: Command): Command => {
   cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
 
   cmd.action(async (enumerated: unknown, opts: Record<string, unknown>) => {
-    const cwd = process.cwd();
+    if (opts && (opts as { debug?: unknown }).debug) {
+      process.env.STAN_DEBUG = '1';
+    }
+
+    const cwdInitial = process.cwd();
 
     // Dynamic import to ensure Vitest mocks are respected in tests.
     const cfgMod = await import('@/stan/config');
 
+    // Resolve config and working directory:
+    // - If config exists: run from the directory that contains it (nearest package root with config).
+    // - Else: run from current cwd with default config.
+    const cfgPath = cfgMod.findConfigPathSync(cwdInitial);
+    const runCwd = cfgPath ? path.dirname(cfgPath) : cwdInitial;
+
     let maybe: unknown;
     try {
-      maybe = await cfgMod.loadConfig(cwd);
-    } catch {
+      maybe = await cfgMod.loadConfig(runCwd);
+    } catch (err) {
+      if (process.env.STAN_DEBUG === '1') {
+        console.error('stan: failed to load config', err);
+      }
       maybe = undefined;
     }
 
@@ -73,7 +92,7 @@ export const registerRun = (cli: Command): Command => {
     });
 
     const created = await runSelected(
-      cwd,
+      runCwd,
       config,
       derived.selection,
       derived.mode,
@@ -82,7 +101,7 @@ export const registerRun = (cli: Command): Command => {
 
     // Print help footer when nothing is created (empty selection or unknown keys).
     if (!Array.isArray(created) || created.length === 0) {
-      console.log(renderAvailableScriptsHelp(cwd));
+      console.log(renderAvailableScriptsHelp(runCwd));
     }
   });
 

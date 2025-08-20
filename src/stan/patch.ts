@@ -1,8 +1,8 @@
-// src/cli/stan/patch.ts
 /* src/cli/stan/patch.ts
  * "stan patch" subcommand: syntactic sugar over `git apply`.
  * - Defaults to config.defaultPatchFile (default '/stan.patch').
  * - Treat a leading '/' path as relative to the repo root (cwd) for portability.
+ * - NEW: Resolve the working directory to the nearest package root that has a stan config.
  */
 import { spawn } from 'node:child_process';
 import path from 'node:path';
@@ -11,7 +11,7 @@ import type { Command } from 'commander';
 
 import { applyCliSafety } from '@/cli/stan/cli-utils';
 
-import { loadConfig } from './config';
+import { findConfigPathSync, loadConfig } from './config';
 
 const resolveRepoPatchPath = (cwd: string, file: string): string => {
   // Treat a leading '/' as repo-root anchored, not OS root.
@@ -43,14 +43,20 @@ export const registerPatch = (cli: Command): Command => {
   applyCliSafety(sub);
 
   sub.action(async (provided?: string) => {
-    const cwd = process.cwd();
+    const cwd0 = process.cwd();
+    const cfgPath = findConfigPathSync(cwd0);
+    const cwd = cfgPath ? path.dirname(cfgPath) : cwd0;
+
     let file = provided;
 
     if (!file) {
       try {
         const cfg = await loadConfig(cwd);
         file = cfg.defaultPatchFile ?? '/stan.patch';
-      } catch {
+      } catch (e) {
+        if (process.env.STAN_DEBUG === '1') {
+          console.error('stan: failed to read config for defaultPatchFile', e);
+        }
         file = '/stan.patch';
       }
     }

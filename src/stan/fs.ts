@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
+import ignoreFactory from 'ignore';
 import picomatch from 'picomatch';
 
 /** Recursively enumerate files under `root`, returning posix-style relative paths. */
@@ -25,23 +26,20 @@ export const listFiles = async (root: string): Promise<string[]> => {
   return out;
 };
 
-/** Very simple .gitignore reader: treat non-globbing lines as prefix excludes. */
-export const readGitignorePrefixes = async (cwd: string): Promise<string[]> => {
+/** Build an "ignore" instance from .gitignore (full pattern semantics). */
+const buildIgnoreFromGitignore = async (
+  cwd: string,
+): Promise<ReturnType<typeof ignoreFactory> | null> => {
   const p = resolve(cwd, '.gitignore');
-  if (!existsSync(p)) return [];
-  const raw = await readFile(p, 'utf8').catch(() => '');
-  if (!raw) return [];
-  const lines = raw.split(/\r?\n/);
-  const prefixes: string[] = [];
-  for (const lineRaw of lines) {
-    const line = lineRaw.trim();
-    if (!line || line.startsWith('#')) continue;
-    // Only support simple prefix paths (no wildcards, no negations)
-    if (/[!*?[\]]/.test(line) || line.includes('**')) continue;
-    const noSlash = line.replace(/^\//, '').replace(/\/$/, '');
-    if (noSlash.length > 0) prefixes.push(noSlash);
+  if (!existsSync(p)) return null;
+  try {
+    const raw = await readFile(p, 'utf8');
+    const ig = ignoreFactory();
+    ig.add(raw);
+    return ig;
+  } catch {
+    return null;
   }
-  return prefixes;
 };
 
 const matchesPrefix = (f: string, p: string): boolean => {
@@ -87,7 +85,7 @@ export const filterFiles = async (
   }: FilterOptions,
 ): Promise<string[]> => {
   const outRelNorm = outputPath.replace(/\\/g, '/');
-  const gitignorePrefixes = await readGitignorePrefixes(cwd);
+  const ig = await buildIgnoreFromGitignore(cwd);
 
   // Allow-list mode: includes override excludes and default denials.
   if (includes.length > 0) {
@@ -100,8 +98,8 @@ export const filterFiles = async (
     // default denials by prefix
     (f) => matchesPrefix(f, 'node_modules'),
     (f) => matchesPrefix(f, '.git'),
-    // .gitignore (prefix-only support)
-    ...gitignorePrefixes.map((p) => (f: string) => matchesPrefix(f, p)),
+    // .gitignore (full semantics via "ignore")
+    ...(ig ? [(f: string) => ig.ignores(f)] : []),
     // user excludes (glob or prefix)
     ...excludes.map(toMatcher),
   ];

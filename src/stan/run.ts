@@ -8,6 +8,9 @@
  * - Always write archive.diff.tar whenever --archive is enabled.
  * - Snapshot update occurs only if one does not exist (create) or via `stan snap`.
  * - The plan summary printed before the script log is multi-line with clear labels.
+ * - NEW: An empty selection means "run nothing" (do not treat as "all"), but still
+ *        create archives when --archive is passed.
+ * - NEW: When STAN_DEBUG=1, stream child stdout/stderr to console while writing artifacts.
  */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
@@ -36,15 +39,17 @@ const configOrder = (config: ContextConfig): string[] =>
 /**
  * Normalize selection to config order.
  * - When selection is null/undefined, return all config keys.
- * - When selection exists, order by config order.
+ * - When selection exists:
+ *   - [] => run nothing
+ *   - non-empty => order by config order
  */
 const normalizeSelection = (
   selection: Selection | undefined | null,
   config: ContextConfig,
 ): string[] => {
   const all = configOrder(config);
-  if (!selection || selection.length === 0) return all;
-
+  if (!selection) return all;
+  if (selection.length === 0) return [];
   const requested = new Set(selection);
   return all.filter((k) => requested.has(k));
 };
@@ -68,12 +73,16 @@ const runOne = async (
   const outAbs = resolve(cwd, outRel);
   const outFile = resolve(outAbs, `${key}.txt`);
   const child = spawn(cmd, { cwd, shell: true, windowsHide: true });
+
+  const debug = process.env.STAN_DEBUG === '1';
   const stream = createWriteStream(outFile, { encoding: 'utf8' });
   child.stdout.on('data', (d: Buffer) => {
     stream.write(d);
+    if (debug) process.stdout.write(d);
   });
   child.stderr.on('data', (d: Buffer) => {
     stream.write(d);
+    if (debug) process.stderr.write(d);
   });
   await new Promise<void>((resolveP, rejectP) => {
     child.on('error', (e) =>
@@ -165,24 +174,27 @@ export const runSelected = async (
   }
 
   const toRun = normalizeSelection(selection, config);
-  if (toRun.length === 0) return [];
 
   const created: string[] = [];
-  const runner = async (k: string): Promise<void> => {
-    const p = await runOne(cwd, outRel, k, config.scripts[k], orderFile);
-    created.push(p);
-  };
 
-  if (mode === 'sequential') {
-    for (const k of toRun) {
-      await runner(k);
+  // Run scripts only when we have a non-empty selection
+  if (toRun.length > 0) {
+    const runner = async (k: string): Promise<void> => {
+      const p = await runOne(cwd, outRel, k, config.scripts[k], orderFile);
+      created.push(p);
+    };
+
+    if (mode === 'sequential') {
+      for (const k of toRun) {
+        await runner(k);
+      }
+    } else {
+      // Run non-archive tasks concurrently
+      const tasks: Array<Promise<void>> = toRun.map((k) =>
+        runner(k).then(() => void 0),
+      );
+      await Promise.all(tasks);
     }
-  } else {
-    // Run non-archive tasks concurrently
-    const tasks: Array<Promise<void>> = toRun.map((k) =>
-      runner(k).then(() => void 0),
-    );
-    await Promise.all(tasks);
   }
 
   // ARCHIVE PHASE (controlled by --archive flag)

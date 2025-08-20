@@ -20,10 +20,16 @@
  *
  * UPDATED REQUIREMENTS:
  * - Add `defaultPatchFile?: string` to ContextConfig, defaulting to '/stan.patch'.
+ *
+ * NEW (monorepo / nearest package root with config):
+ * - findConfigPathSync(cwd) must search upwards and return the nearest directory that:
+ *   - is a package root (contains package.json), AND
+ *   - contains a stan.config.(yml|yaml|json).
+ * - Also accept a direct config in cwd (even if it is not a package root), to preserve current UX.
  */
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { copyFile, mkdir, readdir, readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 import { packageDirectorySync } from 'package-directory';
 import YAML from 'yaml';
@@ -33,9 +39,9 @@ export type ScriptMap = Record<string, string>;
 export type ContextConfig = {
   outputPath: string;
   scripts: ScriptMap;
-  /** Paths to include in archiving logic (globs not yet supported). */
+  /** Paths to include in archiving logic (globs supported). */
   includes?: string[];
-  /** Paths to exclude in archiving logic (globs not yet supported). */
+  /** Paths to exclude in archiving logic (globs supported). */
   excludes?: string[];
   /** Default patch filename for `stan patch`; default '/stan.patch' if unspecified. */
   defaultPatchFile?: string;
@@ -76,25 +82,46 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   };
 };
 
-/** Resolve the absolute path to the nearest stan.config.* starting from cwd (then package root). */
-export const findConfigPathSync = (cwd: string): string | null => {
-  const candidates = [
-    'stan.config.yml',
-    'stan.config.yaml',
-    'stan.config.json',
-  ];
-  for (const name of candidates) {
-    const p = resolve(cwd, name);
+const configCandidates = [
+  'stan.config.yml',
+  'stan.config.yaml',
+  'stan.config.json',
+];
+const tryConfigHere = (dir: string): string | null => {
+  for (const name of configCandidates) {
+    const p = resolve(dir, name);
     if (existsSync(p)) return p;
   }
-  // Try package root if different
-  const root = packageDirectorySync({ cwd }) ?? cwd;
-  if (root !== cwd) {
-    for (const name of candidates) {
-      const p = resolve(root, name);
-      if (existsSync(p)) return p;
-    }
+  return null;
+};
+
+/** Resolve the absolute path to the nearest stan.config.* starting from cwd.
+ * Priority:
+ * 1) Directly in cwd (even if not a package root).
+ * 2) Nearest ancestor directory that is a package root (has package.json) AND has a stan config.
+ *    Continue ascending across package roots to find the first that has a config.
+ */
+export const findConfigPathSync = (cwd: string): string | null => {
+  // 1) Direct config in cwd (non-package directories allowed)
+  const direct = tryConfigHere(cwd);
+  if (direct) return direct;
+
+  // 2) Ascend package roots until none remain; return first root with config
+  const seen = new Set<string>();
+  let cursor: string | null = cwd;
+  while (cursor) {
+    const pkgRoot = packageDirectorySync({ cwd: cursor });
+    if (!pkgRoot || seen.has(pkgRoot)) break;
+    seen.add(pkgRoot);
+
+    const found = tryConfigHere(pkgRoot);
+    if (found) return found;
+
+    const parent = dirname(pkgRoot);
+    if (parent === pkgRoot || seen.has(parent)) break;
+    cursor = parent;
   }
+
   return null;
 };
 

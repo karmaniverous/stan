@@ -3,6 +3,8 @@ includes: []
 excludes:
   - assets
   - docs
+  - package-lock.json
+  - '*.local'
 scripts:
   build: npm run stan:build
   docs: npm run stan:docs

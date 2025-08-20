@@ -1,1 +1,4 @@
-error: No valid patches in input (allow with "--allow-empty")
+error: repository lacks the necessary blob to perform 3-way merge.
+Falling back to direct application...
+error: patch failed: src/stan/snap.ts:14
+error: src/stan/snap.ts: patch does not apply

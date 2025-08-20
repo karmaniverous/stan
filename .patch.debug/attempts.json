@@ -1,38 +1,38 @@
 [
   {
-    "label": "3way-nowarn-p0",
-    "code": 128,
-    "stderrBytes": 62,
-    "stdoutBytes": 0
-  },
-  {
-    "label": "3way-ignore-p0",
-    "code": 128,
-    "stderrBytes": 62,
-    "stdoutBytes": 0
-  },
-  {
-    "label": "reject-nowarn-p0",
-    "code": 128,
-    "stderrBytes": 62,
-    "stdoutBytes": 0
-  },
-  {
     "label": "3way-nowarn-p1",
-    "code": 128,
-    "stderrBytes": 62,
+    "code": 1,
+    "stderrBytes": 192,
     "stdoutBytes": 0
   },
   {
     "label": "3way-ignore-p1",
-    "code": 128,
-    "stderrBytes": 62,
+    "code": 1,
+    "stderrBytes": 192,
     "stdoutBytes": 0
   },
   {
     "label": "reject-nowarn-p1",
-    "code": 128,
-    "stderrBytes": 62,
+    "code": 1,
+    "stderrBytes": 531,
+    "stdoutBytes": 0
+  },
+  {
+    "label": "3way-nowarn-p0",
+    "code": 1,
+    "stderrBytes": 51,
+    "stdoutBytes": 0
+  },
+  {
+    "label": "3way-ignore-p0",
+    "code": 1,
+    "stderrBytes": 51,
+    "stdoutBytes": 0
+  },
+  {
+    "label": "reject-nowarn-p0",
+    "code": 1,
+    "stderrBytes": 112,
     "stdoutBytes": 0
   }
 ]

@@ -7,7 +7,7 @@
  *   - If pop fails (e.g., no stash entries), log an error and finish.
  * - Add bounded history (undo/redo/info) under <stanPath>/diff with a state pointer:
  *   - Keep copies of snapshots under diff/snapshots/snap-YYYYMMDD-HHMMSS.json.
- *   - If present at snap time, copy <stanPath>/output/archive.tar \& archive.diff.tar into diff/archives with the same timestamp stem.
+ *   - If present at snap time, copy <stanPath>/output/archive.tar & archive.diff.tar into diff/archives with the same timestamp stem.
  *   - Maintain diff/.snap.state.json with { entries, index, maxUndos }.
  *   - "snap" pushes a new entry and clears any redos; trim to maxUndos (default 10).
  *   - "undo" moves to a previous entry (if any) and restores diff/.archive.snapshot.json.
@@ -16,14 +16,7 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import {
-  copyFile,
-  mkdir,
-  readFile,
-  readdir,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { Command } from 'commander';

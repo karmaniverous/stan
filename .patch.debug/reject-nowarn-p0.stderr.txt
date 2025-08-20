@@ -1,1 +1,2 @@
-error: No valid patches in input (allow with "--allow-empty")
+Checking patch a/src/stan/snap.ts => b/src/stan/snap.ts...
+error: a/src/stan/snap.ts: No such file or directory

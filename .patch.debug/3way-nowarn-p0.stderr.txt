@@ -1,1 +1,1 @@
-error: No valid patches in input (allow with "--allow-empty")
+error: a/src/stan/snap.ts: does not exist in index

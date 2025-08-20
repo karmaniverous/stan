@@ -1,7 +1,4 @@
-diff --git a/src/stan/snap.ts b/src/stan/snap.ts
-index 4c2f0d9..0a9a2be 100644
---- a/src/stan/snap.ts
-+++ b/src/stan/snap.ts
+diff a/src/stan/snap.ts b/src/stan/snap.ts	(rejected hunks)
 @@ -14,9 +14,8 @@
   *   - "info" prints the stack with timestamps, file presence, current index, and how many undos/redos remain.
   */

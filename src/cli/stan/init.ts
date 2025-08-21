@@ -1,4 +1,4 @@
-/* src/cli/stan/init.ts
+/** src/cli/stan/init.ts
  * "stan init" subcommand.
  * UPDATED:
  * - Generate stan.config.yml with stanPath: stan.
@@ -128,6 +128,7 @@ type InitAnswers = {
   stanPath: string;
   includes: string;
   excludes: string;
+  preserveScripts?: boolean;
   selectedScripts?: string[];
   resetDiff: boolean;
 };
@@ -136,6 +137,7 @@ const promptForConfig = async (
   cwd: string,
   pkgScripts: Record<string, string>,
   defaults?: Partial<ContextConfig>,
+  preserveScriptsFromDefaults?: boolean,
 ): Promise<
   Pick<ContextConfig, 'stanPath' | 'includes' | 'excludes' | 'scripts'> & {
     resetDiff: boolean;
@@ -151,6 +153,11 @@ const promptForConfig = async (
   const defaultSelected = defaults?.scripts
     ? Object.keys(defaults.scripts).filter((k) => scriptKeys.includes(k))
     : [];
+
+  const hasDefaults =
+    !!defaults &&
+    !!defaults.scripts &&
+    Object.keys(defaults.scripts).length > 0;
 
   const answers = (await inquirer.prompt([
     {
@@ -172,6 +179,16 @@ const promptForConfig = async (
       message: 'Paths to exclude (CSV; optional):',
       default: (defaults?.excludes ?? []).join(','),
     },
+    ...(hasDefaults
+      ? [
+          {
+            type: 'confirm',
+            name: 'preserveScripts',
+            message: 'Preserve existing scripts from current config?',
+            default: preserveScriptsFromDefaults ?? true,
+          },
+        ]
+      : []),
     ...(scriptKeys.length
       ? [
           {
@@ -203,15 +220,21 @@ const promptForConfig = async (
   const includesCsv = answers.includes ?? '';
   const excludesCsv = answers.excludes ?? '';
 
-  const selected =
-    Array.isArray(answers.selectedScripts) && answers.selectedScripts.length
-      ? answers.selectedScripts.filter(
-          (x): x is string => typeof x === 'string',
-        )
-      : [];
+  let scripts: ScriptMap = {};
 
-  const scripts: ScriptMap = {};
-  for (const key of selected) scripts[key] = 'npm run ' + key;
+  if ((answers.preserveScripts ?? preserveScriptsFromDefaults) && hasDefaults) {
+    // Keep existing scripts verbatim
+    scripts = { ...(defaults.scripts as ScriptMap) };
+  } else {
+    const selected =
+      Array.isArray(answers.selectedScripts) && answers.selectedScripts.length
+        ? answers.selectedScripts.filter(
+            (x): x is string => typeof x === 'string',
+          )
+        : [];
+
+    for (const key of selected) scripts[key] = 'npm run ' + key;
+  }
 
   return {
     stanPath: out,
@@ -224,7 +247,11 @@ const promptForConfig = async (
 
 export const performInit = async (
   _cli: Command,
-  { cwd = process.cwd(), force = false }: { cwd?: string; force?: boolean },
+  {
+    cwd = process.cwd(),
+    force = false,
+    preserveScripts = false,
+  }: { cwd?: string; force?: boolean; preserveScripts?: boolean },
 ): Promise<string | null> => {
   const existing = findConfigPathSync(cwd);
 
@@ -240,18 +267,23 @@ export const performInit = async (
 
   let resetDiffNow = true;
 
-  if (!force) {
-    let defaults: Partial<ContextConfig> | undefined;
-    if (existing) {
-      try {
-        defaults = await loadConfig(cwd);
-      } catch {
-        defaults = undefined;
-      }
+  let defaults: Partial<ContextConfig> | undefined;
+  if (existing) {
+    try {
+      defaults = await loadConfig(cwd);
+    } catch {
+      defaults = undefined;
     }
+  }
 
-    const scripts = await readPackageJsonScripts(cwd);
-    const picked = await promptForConfig(cwd, scripts, defaults);
+  if (!force) {
+    const scriptsFromPkg = await readPackageJsonScripts(cwd);
+    const picked = await promptForConfig(
+      cwd,
+      scriptsFromPkg,
+      defaults,
+      preserveScripts,
+    );
 
     config = {
       stanPath: picked.stanPath,
@@ -260,6 +292,11 @@ export const performInit = async (
       scripts: picked.scripts,
     };
     resetDiffNow = picked.resetDiff;
+  } else {
+    // Force path: honor --preserve-scripts if there is a prior config
+    if (preserveScripts && defaults?.scripts) {
+      config.scripts = { ...defaults.scripts };
+    }
   }
 
   const cfgPath = path.join(cwd, 'stan.config.yml');
@@ -318,13 +355,21 @@ export const registerInit = (cli: Command): Command => {
 
   applyCliSafety(sub);
 
-  sub.option(
-    '-f, --force',
-    'Create stan.config.yml with defaults (stanPath=stan).',
-  );
+  sub
+    .option(
+      '-f, --force',
+      'Create stan.config.yml with defaults (stanPath=stan).',
+    )
+    .option(
+      '--preserve-scripts',
+      'Keep existing scripts from stan.config.* when present.',
+    );
 
-  sub.action(async (opts: { force?: boolean }) => {
-    await performInit(cli, { force: Boolean(opts.force) });
+  sub.action(async (opts: { force?: boolean; preserveScripts?: boolean }) => {
+    await performInit(cli, {
+      force: Boolean(opts.force),
+      preserveScripts: Boolean(opts.preserveScripts),
+    });
   });
 
   return cli;

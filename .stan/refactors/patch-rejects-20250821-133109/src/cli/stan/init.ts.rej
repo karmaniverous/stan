@@ -1,0 +1,27 @@
+diff a/src/cli/stan/init.ts b/src/cli/stan/init.ts	(rejected hunks)
+@@ -179,13 +194,20 @@ const promptForConfig = async (
+   const excludesCsv = answers.excludes ?? '';
+ 
+-  const selected =
+-    Array.isArray(answers.selectedScripts) && answers.selectedScripts.length
+-      ? answers.selectedScripts.filter(
+-          (x): x is string => typeof x === 'string',
+-        )
+-      : [];
+-  const scripts: ScriptMap = {};
+-  for (const key of selected) scripts[key] = 'npm run ' + key;
++  let scripts: ScriptMap = {};
++  if ((answers.preserveScripts ?? preserveScriptsFromDefaults) && hasDefaults) {
++    scripts = { ...(defaults!.scripts as ScriptMap) };
++  } else {
++    const selected =
++      Array.isArray(answers.selectedScripts) && answers.selectedScripts.length
++        ? answers.selectedScripts.filter(
++            (x): x is string => typeof x === 'string',
++          )
++        : [];
++    for (const key of selected) scripts[key] = 'npm run ' + key;
++  }
+ 
+   return {
+     stanPath: out,

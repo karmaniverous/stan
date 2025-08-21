@@ -10,8 +10,19 @@ import { getVersionInfo } from './version';
 export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
   const v = await getVersionInfo(cwd);
 
-  // Drift warning (downstream repos should avoid editing system prompt)
-  if (!v.systemPrompt.inSync) {
+  // Suppress drift warnings in these cases:
+  // - developing STAN itself (module root == repo root),
+  // - explicitly suppressed via env,
+  // - test environment (unless explicitly forced),
+  // - or when already in sync.
+  const suppressDrift =
+    v.systemPrompt.inSync ||
+    v.isDevModuleRepo ||
+    process.env.STAN_SUPPRESS_DRIFT === '1' ||
+    (process.env.NODE_ENV === 'test' &&
+      process.env.STAN_FORCE_DRIFT_WARN !== '1');
+
+  if (!suppressDrift) {
     console.warn(
       'stan: warning: local system prompt differs from packaged baseline.',
     );
@@ -24,7 +35,7 @@ export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
   }
 
   // Post-upgrade nudge when packaged docs changed (based on recorded install version)
-  if (v.packageVersion && v.docsMeta?.version) {
+  if (!v.isDevModuleRepo && v.packageVersion && v.docsMeta?.version) {
     const prev = v.docsMeta.version;
     const cur = v.packageVersion;
     if (prev !== cur) {

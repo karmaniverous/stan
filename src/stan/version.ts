@@ -18,6 +18,8 @@ export type VersionInfo = {
   nodeVersion: string;
   repoRoot: string;
   stanPath: string;
+  /** true when the running module root equals the current repo root (i.e., developing STAN itself) */
+  isDevModuleRepo: boolean;
   systemPrompt: {
     localExists: boolean;
     baselineExists: boolean;
@@ -111,11 +113,16 @@ export const getVersionInfo = async (cwd: string): Promise<VersionInfo> => {
 
   const docsMeta = await readJson<{ version?: string }>(docsMetaPath);
 
+  const isDevModuleRepo =
+    !!moduleRoot &&
+    path.resolve(moduleRoot) === path.resolve(repoRoot);
+
   return {
     packageVersion,
     nodeVersion: process.version,
     repoRoot,
     stanPath,
+    isDevModuleRepo,
     systemPrompt: {
       localExists,
       baselineExists,

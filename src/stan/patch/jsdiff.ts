@@ -1,3 +1,4 @@
+// src/stan/patch/jsdiff.ts
 /* src/stan/patch/jsdiff.ts
  * Apply a unified diff with the "diff" library as a fallback engine.
  * - Deterministic path resolution from patch headers (no fuzzy/basename matching).
@@ -9,7 +10,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { applyPatch, type ParsedDiff, parsePatch } from 'diff';
+import { applyPatch, parsePatch } from 'diff';
 
 const stripAB = (p?: string | null): string | null => {
   if (!p) return null;
@@ -50,7 +51,7 @@ export const applyWithJsDiff = async (args: {
       });
       continue;
     }
-    const rel = candidate.replace(/^[.\/]+/, '');
+    const rel = candidate.replace(/^[./]+/, '');
     const abs = path.resolve(cwd, rel);
 
     let original = '';
@@ -64,10 +65,14 @@ export const applyWithJsDiff = async (args: {
       continue;
     }
 
-    // Whitespace/EOL tolerance
-    const patched = applyPatch(original, p as ParsedDiff, {
-      compareLine: (a: string, b: string): boolean =>
-        normForCompare(a) === normForCompare(b),
+    // Whitespace/EOL tolerance for diff v8 API (compareLine signature changed)
+    const patched = applyPatch(original, p, {
+      compareLine: (
+        _lineNumber: number,
+        line: string,
+        _operation: string,
+        patchContent: string,
+      ): boolean => normForCompare(line) === normForCompare(patchContent),
       fuzzFactor: 0,
     });
 

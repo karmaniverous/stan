@@ -7,7 +7,7 @@
  * - Provide async loadConfig passthrough for convenience.
  * - Provide ensureOutputDir(cwd, stanPath, keep) which creates the stanPath tree and manages output/diff as follows:
  *   - ensure <stanPath>/output and <stanPath>/diff exist.
- *   - when keep===false, copy <stanPath>/output/archive.tar -\> <stanPath>/diff/archive.prev.tar if it exists.
+ *   - when keep===false, copy <stanPath>/output/archive.tar -> <stanPath>/diff/archive.prev.tar if it exists.
  *   - when keep===false, clear ONLY <stanPath>/output (preserve <stanPath>/diff).
  * - NEW: stanPath replaces outputPath (default '.stan').
  * - NEW: maxUndos?: number (default 10) for snapshot undo/redo retention.
@@ -176,7 +176,7 @@ export const resolveStanPath = async (cwd: string): Promise<string> => {
 
 /** Ensure stanPath exists and manage output/diff subdirs.
  * - Always ensure <stanPath>/output and <stanPath>/diff exist.
- * - When keep===false, copy output/archive.tar -\> diff/archive.prev.tar (if present),
+ * - When keep===false, copy output/archive.tar -> diff/archive.prev.tar (if present),
  *   then clear ONLY the output directory.
  */
 export const ensureOutputDir = async (
@@ -189,6 +189,8 @@ export const ensureOutputDir = async (
   await mkdir(dirs.rootAbs, { recursive: true });
   await mkdir(dirs.outputAbs, { recursive: true });
   await mkdir(dirs.diffAbs, { recursive: true });
+  // Also ensure the patch workspace exists for diff/archives that include it
+  await mkdir(dirs.patchAbs, { recursive: true });
 
   if (!keep) {
     const archiveTar = resolve(dirs.outputAbs, 'archive.tar');

@@ -124,5 +124,7 @@ export const ensureOutAndDiff = async (
   await mkdir(dirs.rootAbs, { recursive: true });
   await mkdir(dirs.outputAbs, { recursive: true });
   await mkdir(dirs.diffAbs, { recursive: true });
+  // Ensure patch workspace exists so archives can always include it safely
+  await mkdir(dirs.patchAbs, { recursive: true });
   return { outDir: dirs.outputAbs, diffDir: dirs.diffAbs };
 };

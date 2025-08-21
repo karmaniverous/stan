@@ -1,0 +1,10 @@
+diff a/.stan/system/stan.todo.md b/.stan/system/stan.todo.md	(rejected hunks)
+@@ -40,6 +40,9 @@ Done
+ - Version CLI:
+   • stan -v/--version prints STAN version, Node version, repo root, stanPath, doc baseline status (inSync), last docs version (if present)
++  • Init writes <stanPath>/system/.docs.meta.json with { "version": "<package.version>" }; preflight/-v use this for “docs last installed”
+ 
+- Partially done / scaffolding present
+-- Version info reads .stan/system/.docs.meta.json if present, but init does not write it yet.
++Partially done / scaffolding present
++  • (none)

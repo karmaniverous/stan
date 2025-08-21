@@ -97,6 +97,24 @@ const ensureDocs = async (cwd: string, stanPath: string): Promise<void> => {
     path.join(stanPath, 'system', 'stan.bootloader.md'),
     false,
   );
+
+  // Record the package version as the "docs last installed" marker.
+  // Preflight and `stan -v` read this from <stanPath>/system/.docs.meta.json.
+  try {
+    const pkgPath = path.join(moduleRoot, 'package.json');
+    const raw = await readFile(pkgPath, 'utf8');
+    const pkg = JSON.parse(raw) as { version?: string };
+    const version =
+      typeof pkg?.version === 'string' && pkg.version.length > 0
+        ? pkg.version
+        : undefined;
+    if (version) {
+      const metaPath = path.join(cwd, stanPath, 'system', '.docs.meta.json');
+      await writeFile(metaPath, JSON.stringify({ version }, null, 2), 'utf8');
+    }
+  } catch {
+    // best-effort
+  }
 };
 
 const parseCsv = (v: string): string[] =>

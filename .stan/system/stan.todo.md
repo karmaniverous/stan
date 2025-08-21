@@ -54,20 +54,20 @@ Done
   • Multi-strategy git apply with --recount across -p1/-p0; staged by default; diagnostics under <stanPath>/patch/.debug/
   • Moves new \*.rej to <stanPath>/refactors/patch-rejects-<ts>/
   • Canonical patch workspace at <stanPath>/patch; always included in archives; cleared on archive
-- Patch (P0 progress this turn):
+- Patch (P0 completed):
   • jsdiff fallback engine integrated (diff v8 API); whitespace/EOL‑tolerant apply; preserves CRLF; unit test stabilized and passing
   • Reporter polish: attempts.json carries both git attempt captures and jsdiff results (okFiles, failedFiles, sandboxRoot); on total failure (non‑debug), prints a concise last‑error snippet from git apply
-  • FEEDBACK envelope: now includes a lastErrorSnippet (concise stderr excerpt) for faster triage
+  • FEEDBACK envelope: includes a lastErrorSnippet (concise stderr excerpt) for faster triage
   • Sandbox retention: after --check runs, prune <stanPath>/patch/.sandbox to keep only the latest few (default 5)
-  • Test-only Prettier suppression for jsdiff test to avoid line‑ending churn in CI
-  • Parse/resolver (initial): parse unified diff, derive strip candidates (p1 vs p0), and include basic per-file diagnostics in FEEDBACK (missing a/b prefixes, may require --recount).
-  • Resolver (FS-backed): check path existence under repo and include "path not found" and exists: yes/no in diagnostics.
+  • Parse/resolver (initial): parse unified diff, derive strip candidates (p1 vs p0), and include basic per-file diagnostics in FEEDBACK (missing a/b prefixes, may require --recount)
+  • Resolver (FS-backed): check path existence under repo and include "path not found" and exists: yes/no in diagnostics
 - FS filtering:
   • Includes/excludes with glob support; .gitignore respected; deterministic deny/allow rules
 - Build/docs packaging:
   • Docs copied to dist (stan.system.md, stan.project.template.md, stan.bootloader.md)
 - Version CLI:
   • stan -v/--version prints STAN version, Node version, repo root, stanPath, doc baseline status (inSync), last docs version (if present)
+  • Init writes <stanPath>/system/.docs.meta.json with { "version": "<package.version>" } so preflight/-v can report “docs last installed”
 - P1 Preflight wiring:
   • preflightDocsAndVersion is called at run start (non‑blocking); unit test added
 - Type/lint cleanup:
@@ -75,40 +75,9 @@ Done
   • Resolved TypeScript generics/typing in src/stan/preflight.run.test.ts so typecheck/docs pass.
 
 Partially done / scaffolding present
-
-- Version info reads .stan/system/.docs.meta.json if present, but init does not write it yet.
+• (none)
 
 Open/remaining (prioritized)
-P0 — Robust patch handling (clipboard-driven FEEDBACK loop)
-
-- Goals
-  • Make patches “just work,” or when they don’t, return a compact, self-identifying FEEDBACK bundle copied to clipboard so the user can paste it back and get an improved diff without extra instructions.
-  • This accelerates all other workstreams (e.g., preflight, classifier) by increasing patch iteration throughput.
-- Scope (modules and responsibilities)
-  • intake/clean: Unwrap only outer fences/banners; strip zero-width; normalize LF; ensure final newline (exists).
-  • intake/parse: Parse unified diff into a normalized structure; identify candidate strip levels; per-file hunks (TODO).
-  • plan/resolver: Deterministic mapping (p1/p0; no fuzzy/basename by default); classify causes (path mismatch, context drift, EOL/whitespace) (TODO).
-  • engines/git-apply: Attempt matrix across p1/p0 with 3-way/ignore-whitespace/nowarn/recount; collect .rej and relocate; staged by default (exists; summarized).
-  • engines/jsdiff: [DONE] Whitespace/EOL-tolerant per-file patch as a second engine; preserves original EOL; deterministic failure when hunks cannot be placed.
-  • engines/dmp: Last-resort fuzzy application with conservative thresholds; flag fuzzy files clearly; unstaged (optional) (TODO).
-  • runner/pipeline: Orchestrate clean→parse→git→jsdiff→(dmp); honor --check; sandbox outputs under <stanPath>/patch/.sandbox/<ts>/; console status summary (exists; extended).
-  • reporter: [PARTIAL] .debug/cleaned.patch + attempts captures; attempts.json includes git+jsdiff; FEEDBACK contains last‑error snippet; consider bounded sandbox retention by size/time.
-  • io/workspace: Ensure patch/.debug/, patch/.sandbox/<ts>/, and refactors/patch-rejects-<ts>/ exist; confine artifacts (exists). [DONE] Prune sandboxes to last N (default 5) after --check.
-- FEEDBACK Bundle v1 (clipboard)
-  • Envelope markers: BEGIN_STAN_PATCH_FEEDBACK v1 … END STAN_PATCH_FEEDBACK
-  • Sections: repo, status (enginesTried/stripTried), summary (changed/failed/fuzzy), diagnostics (optional), patch.cleanedHead, attempts (git/jsdiff/dmp).
-  • Acceptance criteria:
-  – A deliberately failing patch produces a FEEDBACK bundle on the clipboard; console points to .debug; new .rej moved to refactors/ (exists)
-  – A whitespace/EOL-drift patch applies via jsdiff engine (when git apply fails) preserving original EOL per file (done)
-  – With --check, no repo files are changed and a .sandbox/<ts>/ is written; older sandboxes are pruned (done)
-  – No basename/fuzzy path matching in default mode; path/strip fixes regenerated in next diff (exists)
-  – FEEDBACK envelope includes last-error snippet for quick triage (done)
-  – Tests cover engines, pipeline orchestration, reporter, and clipboard write (partially done; jsdiff path covered)
-
-P2 — Version awareness metadata on init
-
-- Write <stanPath>/system/.docs.meta.json with { "version": "<package.version>" } (no hashes).
-- -v prints “docs last installed: <version>”; preflight uses it to detect post-upgrade nudges
 
 P3 — Archive classifier (binary/large)
 

@@ -18,7 +18,7 @@ vi.mock('./apply', () => ({
     }),
 }));
 
-import { registerPatch } from '@/stan/patch';
+import { registerPatch } from './patch';
 
 describe('jsdiff fallback applies patch and preserves EOL', () => {
   let dir: string;

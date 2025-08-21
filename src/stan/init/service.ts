@@ -1,7 +1,6 @@
-// src/stan/init/service.ts
+/* src/stan/init/service.ts */
 import path from 'node:path';
 
-import type { Command } from 'commander';
 import YAML from 'yaml';
 
 import type { ContextConfig, ScriptMap } from '../config';
@@ -11,14 +10,15 @@ import { ensureDocs } from './docs';
 import { ensureStanGitignore } from './gitignore';
 import { promptForConfig, readPackageJsonScripts } from './prompts';
 
-export const performInitService = async (
-  _cli: Command,
-  {
-    cwd = process.cwd(),
-    force = false,
-    preserveScripts = false,
-  }: { cwd?: string; force?: boolean; preserveScripts?: boolean },
-): Promise<string | null> => {
+export const performInitService = async ({
+  cwd = process.cwd(),
+  force = false,
+  preserveScripts = false,
+}: {
+  cwd?: string;
+  force?: boolean;
+  preserveScripts?: boolean;
+}): Promise<string | null> => {
   const existing = findConfigPathSync(cwd);
 
   const defaultStanPath = '.stan';
@@ -59,7 +59,6 @@ export const performInitService = async (
     };
     resetDiffNow = picked.resetDiff;
   } else {
-    // Force path: honor --preserve-scripts if there is a prior config
     if (preserveScripts && defaults?.scripts) {
       config.scripts = { ...defaults.scripts };
     }
@@ -69,10 +68,7 @@ export const performInitService = async (
   const yml = YAML.stringify(config);
   await (await import('node:fs/promises')).writeFile(cfgPath, yml, 'utf8');
 
-  // .gitignore: ensure stanPath subfolders are ignored (not stanPath root)
   await ensureStanGitignore(cwd, config.stanPath);
-
-  // Ensure docs in <stanPath>/system
   await ensureDocs(cwd, config.stanPath);
 
   console.log(`stan: wrote stan.config.yml`);

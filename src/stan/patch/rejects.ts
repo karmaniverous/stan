@@ -27,7 +27,7 @@ export const listRejFiles = async (root: string): Promise<string[]> => {
   return out;
 };
 
-/** Move newly created *.rej files into the patch workspace under <stanPath>/patch/rejects-<UTC>/. */
+/** Move newly created *.rej files into the patch workspace under <stanPath>/patch/rejects/<UTC>/. */
 export const moveRejFilesToPatchWorkspace = async (
   cwd: string,
   rels: string[],

@@ -47,7 +47,7 @@ vi.mock('./diff', () => ({
   },
 }));
 
-import { registerSnap } from './snap';
+import { registerSnap } from '@/cli/stan/snap';
 
 const read = (p: string) => readFile(p, 'utf8');
 

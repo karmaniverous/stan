@@ -29,7 +29,7 @@ vi.mock('clipboardy', () => ({
   },
 }));
 
-import { registerPatch } from '@/stan/patch';
+import { registerPatch } from '@/cli/stan/patch';
 
 const hasTerminalStatus = (logs: string[]): boolean =>
   logs.some((l) =>

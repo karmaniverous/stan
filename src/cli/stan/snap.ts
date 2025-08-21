@@ -1,10 +1,8 @@
 /* src/cli/stan/snap.ts
- * "stan snap" subcommand (CLI adapter): delegates to handlers.
+ * CLI adapter for "stan snap" — Commander wiring only.
  */
 import type { Command } from 'commander';
 import { Command as Commander } from 'commander';
-
-import { applyCliSafety } from '@/cli/stan/cli-utils';
 
 import {
   handleInfo,
@@ -12,7 +10,9 @@ import {
   handleSet,
   handleSnap,
   handleUndo,
-} from './snap/handlers';
+} from '@/stan/snap/handlers';
+
+import { applyCliSafety } from './cli-utils';
 
 export const registerSnap = (cli: Commander): Command => {
   applyCliSafety(cli);

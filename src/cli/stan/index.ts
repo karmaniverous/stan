@@ -9,13 +9,13 @@
 import { Command } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
-import { registerSnap } from '@/stan/snap';
 import { printVersionInfo } from '@/stan/version';
 
 import { applyCliSafety } from './cli-utils';
 import { performInit, registerInit } from './init';
 import { registerPatch } from './patch';
 import { registerRun } from './runner';
+import { registerSnap } from './snap';
 
 /** Build the root CLI (no side effects; safe for tests). */
 export const makeCli = (): Command => {

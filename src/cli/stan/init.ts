@@ -13,7 +13,7 @@ import { applyCliSafety } from './cli-utils';
 export const performInit = (
   cli: Command,
   opts: { cwd?: string; force?: boolean; preserveScripts?: boolean },
-) => performInitService(cli, opts);
+) => performInitService(opts);
 
 export const registerInit = (cli: Commander): Command => {
   applyCliSafety(cli);

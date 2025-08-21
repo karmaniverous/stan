@@ -78,7 +78,11 @@
 </li>
 <li>Archives &amp; outputs
 <ul>
-<li><code>-a, --archive</code>: after scripts run (or immediately if selection is empty), write <code>archive.tar</code> and <code>archive.diff.tar</code>.</li>
+<li><code>-a, --archive</code>: after scripts run (or immediately if selection is empty), write <code>archive.tar</code> and <code>archive.diff.tar</code>.
+<ul>
+<li>STAN also writes <code>stan/output/archive.warnings.txt</code> that lists excluded binary files and large text files; this file is included in the archives.</li>
+</ul>
+</li>
 <li><code>-c, --combine</code>: include script outputs inside the archives and do not keep them on disk. Implies <code>--archive</code> and requires <code>-s</code> or <code>-x</code>. Conflicts with <code>--keep</code>.</li>
 <li><code>-k, --keep</code>: do not clear the output directory before running. Conflicts with <code>--combine</code>.</li>
 </ul>
@@ -95,7 +99,19 @@
 
 <p>Behavior details:</p>
 <ul>
-<li>Canonical workspace: cleaned input is written to <code>&lt;stanPath&gt;/patch/.patch</code>; diagnostics go to <code>&lt;stanPath&gt;/patch/.debug/</code>. Any newly created <code>*.rej</code> files are moved to <code>&lt;stanPath&gt;/refactors/patch-rejects-&lt;UTC timestamp&gt;/</code>.</li>
+<li>Canonical workspace:
+<ul>
+<li>Cleaned input is written to <code>&lt;stanPath&gt;/patch/.patch</code>.</li>
+<li>Diagnostics live under <code>&lt;stanPath&gt;/patch/.debug/</code>:
+<ul>
+<li><code>cleaned.patch</code> — the cleaned unified diff that was applied/checked.</li>
+<li><code>attempts.json</code> — summary of each apply attempt (git/jsdiff), plus
+per‑attempt <code>*.stderr.txt</code> and <code>*.stdout.txt</code>.</li>
+</ul>
+</li>
+<li>Any newly created <code>*.rej</code> files are moved to <code>&lt;stanPath&gt;/patch/rejects/&lt;UTC timestamp&gt;/</code> (paths preserved).</li>
+</ul>
+</li>
 <li>Detection: If clipboard/file content looks like base64 and decodes to a unified diff (e.g., contains <code>diff --git</code>, <code>---</code>, <code>+++</code>, <code>@@</code>), it will be decoded. Otherwise, the text is treated as a raw unified diff.</li>
 <li>Cleanups: code fences/banners removed, zero‑width characters stripped, line endings normalized to LF, and a final newline ensured. Whitespace within lines is preserved.</li>
 <li>Application strategy: tries <code>git apply</code> with tolerant settings over both strip levels:
@@ -104,6 +120,23 @@
 <li><code>--3way --ignore-whitespace --recount -p1</code></li>
 <li><code>--reject --whitespace=nowarn --recount -p1</code></li>
 <li>If needed, repeats with <code>-p0</code> in the same order.</li>
+</ul>
+</li>
+<li>Feedback (failed/partial/check):
+<ul>
+<li>On failure, partial success, or <code>--check</code>, STAN builds a compact FEEDBACK envelope and:
+<ul>
+<li>saves it to <code>&lt;stanPath&gt;/patch/.debug/feedback.txt</code>, and</li>
+<li>copies it to the clipboard.</li>
+</ul>
+</li>
+<li>The console will log:
+<ul>
+<li><code>stan: wrote patch feedback -&gt; &lt;path&gt;</code></li>
+<li><code>stan: copied patch feedback to clipboard -&gt; &lt;path&gt;</code> (or <code>&lt;clipboard only&gt;</code> if the file write failed)</li>
+</ul>
+</li>
+<li>Paste this FEEDBACK back into chat verbatim to get a corrected patch tailored to the failure.</li>
 </ul>
 </li>
 <li>Windows note: Passing very large base64 as an inline command-line argument can exceed the ~32K character limit. Clipboard default or <code>-f</code> are recommended for large patches.</li>
@@ -153,6 +186,7 @@
 <li>your archive contains <code>&lt;stanPath&gt;/system/stan.system.md</code> (default <code>stan/system/stan.system.md</code>),</li>
 <li>your <code>stan.config.yml|json</code> is present and has the correct <code>stanPath</code>, or</li>
 <li>attach a raw file named exactly <code>stan.system.md</code> as a separate file.</li>
+<li>When <code>--archive</code> runs, STAN writes <code>stan/output/archive.warnings.txt</code> listing excluded binaries and large text files; this file is included in the archives and can help you refine <code>includes</code>/<code>excludes</code>.</li>
 </ul>
 </li>
 </ul>

@@ -22,18 +22,18 @@ Authoritative sources considered for each update
 - Current requirements in .stan/system/stan.system.md and .stan/system/stan.project.md.
 - Any prior plan entries in this file.
 
+Plan management policy (to avoid context loss)
+
+- This file is the canonical plan. The assistant must keep it current and small enough to remain readable.
+- Plan updates are delivered as patches to this file (Full Listing + Patch) with a matching refactor note under .stan/refactors/.
+- The plan may summarize or link to prior decisions; it should not re-litigate settled requirements unless requirements changed.
+
 Baseline (current requirements override older plan)
 
 - Requirements in .stan/system/stan.system.md are authoritative.
 - Path heuristics: no fuzzy/basename matching; deterministic patch application only.
 - Patch format: LF; a/ b/ prefixes; ≥3 lines context; avoid binary; no base64.
 - Design-first lifecycle: iterate requirements before code.
-
-Plan management policy (to avoid context loss)
-
-- This file is the canonical plan. The assistant must keep it current and small enough to remain readable.
-- Plan updates are delivered as patches to this file (Full Listing + Patch) with a matching refactor note under .stan/refactors/.
-- The plan may summarize or link to prior decisions; it should not re-litigate settled requirements unless requirements changed.
 
 Implementation status (synced with current snapshot)
 Done
@@ -108,19 +108,19 @@ P0 — Robust patch handling (clipboard-driven feedback loop)
 
 P1 — Preflight integration on stan run
 
-- Compare local stan.system.md to packaged baseline; warn on drift; suggest moving edits to stan.project.md; optional revert to baseline (TTY prompt; otherwise suggest command)
+- Compare local stan.system.md to packaged baseline; warn on drift; suggest moving edits to stan.project.md; optional revert to baseline (interactive only if TTY; otherwise print a suggested command).
 - At run start: call preflightDocsAndVersion()
 - Acceptance: visible warning on drift; nudge printed when package version advanced and docs changed
 
 P2 — Version awareness metadata on init
 
-- Write <stanPath>/system/.docs.meta.json with { version, hashes? } during init
+- Write <stanPath>/system/.docs.meta.json with { "version": "<package.version>" } (no hashes).
 - -v prints “docs last installed: <version>”; preflight uses it to detect post-upgrade nudges
 
 P3 — Archive classifier (binary/large)
 
 - Exclude binaries explicitly via istextorbinary; track concise top-N console summaries; list full details in <stanPath>/output/archive.warnings.txt
-- Detect large text (defaults: >1 MB or >3000 LOC; configurable constants)
+- Detect large text (defaults: size > 1 MB or LOC > 3000; configurable constants)
 - Include archive.warnings.txt in archives; under -c, still pack inside
 - Tests: classifier unit; archive integration (presence in tar); thresholds
 
@@ -138,11 +138,12 @@ Milestones (ordered) 0) P0 Robust patch handling (clipboard FEEDBACK loop)
 2. P2 Version meta write + -v polish
 3. P3 Archive classifier
 
-Defaults to confirm
+Defaults (confirmed)
 
-- “Large” thresholds: size > 1 MB; LOC > 3000 (configurable in code)
+- Large text thresholds: size > 1 MB; LOC > 3000
 - Binary exclusion: exclude by default with istextorbinary detection
 - Preflight revert UX: interactive only if TTY; otherwise print suggested command
+- Version metadata content: <stanPath>/system/.docs.meta.json holds only { version }
 
 Response Format for plan updates
 

@@ -1,0 +1,29 @@
+diff a/.stan/system/stan.todo.md b/.stan/system/stan.todo.md	(rejected hunks)
+@@ -1,6 +1,7 @@
+ # STAN Development Plan (tracked in .stan/system/stan.todo.md)
+ 
+ When updated: 2025-08-21 (UTC)
++ 
+ ALIASES
+ 
+ - “development plan” / “dev plan” / “implementation plan” / “todo list” → <stanPath>/system/stan.todo.md
+@@ -122,11 +129,17 @@ Housekeeping
+ - Knip: src/stan/preflight.ts “unused” will clear when wired; istextorbinary used by classifier
+ 
+ Milestones (ordered) 0) P0 Robust patch handling (clipboard FEEDBACK loop)
+ 
+ - Implement parse/resolver/jsdiff/(dmp)/pipeline/reporter/sandbox; add feedback builder and clipboard write
+ - Tests per P0 above
+ 
+ 1. P1 Preflight wiring
+ 2. P2 Version meta write + -v polish
+ 3. P3 Archive classifier
++
++Defaults (confirmed)
++
++- Large text thresholds: size > 1 MB; LOC > 3000
++- Binary exclusion: exclude by default with istextorbinary detection
++- Preflight revert UX: interactive only if TTY; otherwise print suggested command
++- Version metadata content: <stanPath>/system/.docs.meta.json holds only { version }
+ 
+ Response Format for plan updates

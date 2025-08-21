@@ -258,7 +258,10 @@ export const registerPatch = (cli: Command): Command => {
         const attemptsRel = path
           .relative(cwd, attemptsPath)
           .replace(/\\/g, '/');
-        console.log(`stan: wrote patch diagnostics -> ${attemptsRel}`);
+        const debugRel = path.relative(cwd, debugDir).replace(/\\/g, '/');
+        console.log(
+          `stan: wrote patch diagnostics -> ${attemptsRel} (per-attempt logs under ${debugRel}/)`,
+        );
       } catch {
         // best-effort
       }

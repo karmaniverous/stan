@@ -60,6 +60,7 @@ Done
   • FEEDBACK envelope: now includes a lastErrorSnippet (concise stderr excerpt) for faster triage
   • Sandbox retention: after --check runs, prune <stanPath>/patch/.sandbox to keep only the latest few (default 5)
   • Test-only Prettier suppression for jsdiff test to avoid line‑ending churn in CI
+  • Parse/resolver (initial): parse unified diff, derive strip candidates (p1 vs p0), and include basic per-file diagnostics in FEEDBACK (missing a/b prefixes, may require --recount).
 - FS filtering:
   • Includes/excludes with glob support; .gitignore respected; deterministic deny/allow rules
 - Build/docs packaging:
@@ -90,18 +91,18 @@ P0 — Robust patch handling (clipboard-driven FEEDBACK loop)
   • engines/jsdiff: [DONE] Whitespace/EOL-tolerant per-file patch as a second engine; preserves original EOL; deterministic failure when hunks cannot be placed.
   • engines/dmp: Last-resort fuzzy application with conservative thresholds; flag fuzzy files clearly; unstaged (optional) (TODO).
   • runner/pipeline: Orchestrate clean→parse→git→jsdiff→(dmp); honor --check; sandbox outputs under <stanPath>/patch/.sandbox/<ts>/; console status summary (exists; extended).
-  • reporter: [PARTIAL] .debug/cleaned.patch + attempts captures; attempts.json now includes git+jsdiff; print brief last‑error snippet (non‑debug). Next: include a concise stderr summary in the FEEDBACK envelope; consider bounded sandbox retention by size/time.
+  • reporter: [PARTIAL] .debug/cleaned.patch + attempts captures; attempts.json includes git+jsdiff; FEEDBACK contains last‑error snippet; consider bounded sandbox retention by size/time.
   • io/workspace: Ensure patch/.debug/, patch/.sandbox/<ts>/, and refactors/patch-rejects-<ts>/ exist; confine artifacts (exists). [DONE] Prune sandboxes to last N (default 5) after --check.
 - FEEDBACK Bundle v1 (clipboard)
   • Envelope markers: BEGIN_STAN_PATCH_FEEDBACK v1 … END STAN_PATCH_FEEDBACK
   • Sections: repo, status (enginesTried/stripTried), summary (changed/failed/fuzzy), diagnostics (optional), patch.cleanedHead, attempts (git/jsdiff/dmp).
-  • Next: include last‑error snippet in FEEDBACK for faster triage.
-- Acceptance criteria (updated)
-  • A deliberately failing patch produces a FEEDBACK bundle on the clipboard; console points to .debug; new .rej moved to refactors/ (exists)
-  • A whitespace/EOL-drift patch applies via jsdiff engine (when git apply fails) preserving original EOL per file (done)
-  • With --check, no repo files are changed and a .sandbox/<ts>/ is written; older sandboxes are pruned (done)
-  • No basename/fuzzy path matching in default mode; path/strip fixes regenerated in next diff (exists)
-  • Tests cover engines, pipeline orchestration, reporter, and clipboard write (partially done; jsdiff path covered)
+  • Acceptance criteria:
+  – A deliberately failing patch produces a FEEDBACK bundle on the clipboard; console points to .debug; new .rej moved to refactors/ (exists)
+  – A whitespace/EOL-drift patch applies via jsdiff engine (when git apply fails) preserving original EOL per file (done)
+  – With --check, no repo files are changed and a .sandbox/<ts>/ is written; older sandboxes are pruned (done)
+  – No basename/fuzzy path matching in default mode; path/strip fixes regenerated in next diff (exists)
+  – FEEDBACK envelope includes last-error snippet for quick triage (done)
+  – Tests cover engines, pipeline orchestration, reporter, and clipboard write (partially done; jsdiff path covered)
 
 P2 — Version awareness metadata on init
 
@@ -119,14 +120,4 @@ Housekeeping
 
 - Resolve lint warnings (tsdoc escape “>”; remove unused eslint-disable in version.ts)
 - Knip: src/stan/preflight.ts “unused” will clear when wired; istextorbinary used by classifier
-
-Milestones (ordered)
-
-0. P0 Robust patch handling (clipboard FEEDBACK loop)
-
-- Implement parse/resolver (per-file hunks) and optional DMP fallback
-- Reporter: FEEDBACK envelope last‑error summary and overall polish
-- Tests per P0 above
-
-1. P2 Version meta write + -v polish
-2. P3 Archive classifier
+- Low priority: “stan run -s -q” does not run scripts in config order — reproduce, add/adjust tests for sequential config-order execution with -s (no keys), and fix derive/runner if required.

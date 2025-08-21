@@ -20,6 +20,7 @@ import { applyCliSafety } from '@/cli/stan/cli-utils';
 import { utcStamp } from '../util/time';
 import { ApplyResult, buildApplyAttempts, runGitApply } from './apply';
 import { detectAndCleanPatch } from './clean';
+import { diagnosePatch, parseUnifiedDiff } from './parse';
 import { resolvePatchContext } from './context';
 import { buildFeedbackEnvelope, copyToClipboard } from './feedback';
 import { applyWithJsDiff } from './jsdiff';
@@ -155,6 +156,9 @@ export const registerPatch = (cli: Command): Command => {
       // Detect & clean (unified diff only), tolerant to surrounding prose
       const cleaned = detectAndCleanPatch(raw);
 
+      // Parse for strip candidates and basic diagnostics
+      const parsed = parseUnifiedDiff(cleaned);
+
       // Write cleaned content to canonical path <stanPath>/patch/.patch
       try {
         await ensureParentDir(patchAbs);
@@ -167,14 +171,8 @@ export const registerPatch = (cli: Command): Command => {
       console.log(`stan: applying patch "${patchRel}"`);
 
       const check = Boolean(opts?.check);
-      const hasAB =
-        /^(---|\+\+\+)\s+(a\/|b\/)/m.test(cleaned) ||
-        /^diff --git a\//m.test(cleaned);
-      const stripsFirst = hasAB ? [1, 0] : [0, 1];
-
-      const attempts = stripsFirst.flatMap((p) =>
-        buildApplyAttempts(check, p, !check),
-      );
+      const attempts = parsed.stripCandidates.flatMap((p) =>
+        buildApplyAttempts(check, p, !check));
 
       // Track *.rej files created during attempts
       const preRej = await listRejFiles(cwd);
@@ -297,6 +295,8 @@ export const registerPatch = (cli: Command): Command => {
         } catch {
           // ignore
         }
+        // Basic per-file diagnostics from parse (limit to 10 for chat)
+        const diagnostics = diagnosePatch(parsed).slice(0, 10);
 
         type Strip = 'p1' | 'p0';
         const stripList: Strip[] = attempts.map((a) =>
@@ -336,6 +336,7 @@ export const registerPatch = (cli: Command): Command => {
             },
           },
           lastErrorSnippet,
+          diagnostics,
         });
         await copyToClipboard(envelope);
         console.log(

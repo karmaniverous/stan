@@ -7,7 +7,6 @@ import YAML from 'yaml';
 import type { ContextConfig, ScriptMap } from '../config';
 import { ensureOutputDir, findConfigPathSync, loadConfig } from '../config';
 import { writeArchiveSnapshot } from '../diff';
-import { makeStanDirs } from '../paths';
 import { ensureDocs } from './docs';
 import { ensureStanGitignore } from './gitignore';
 import { promptForConfig, readPackageJsonScripts } from './prompts';

@@ -5,6 +5,7 @@ import type { Command } from 'commander';
 import { Command as Commander } from 'commander';
 
 import { applyCliSafety } from '@/cli/stan/cli-utils';
+
 import {
   handleInfo,
   handleRedo,

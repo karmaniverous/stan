@@ -9,12 +9,12 @@
 import { Command } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
-import { registerPatch } from '@/stan/patch';
 import { registerSnap } from '@/stan/snap';
 import { printVersionInfo } from '@/stan/version';
 
 import { applyCliSafety } from './cli-utils';
 import { performInit, registerInit } from './init';
+import { registerPatch } from './patch';
 import { registerRun } from './runner';
 
 /** Build the root CLI (no side effects; safe for tests). */

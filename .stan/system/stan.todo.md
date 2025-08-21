@@ -73,18 +73,16 @@ Done
 - Type/lint cleanup:
   • Fixed ESLint no-empty by adding debug-only logging in src/stan/run.ts preflight catch.
   • Resolved TypeScript generics/typing in src/stan/preflight.run.test.ts so typecheck/docs pass.
+  • FEEDBACK fallback file: envelope also written to <stanPath>/patch/.debug/feedback.txt for environments without clipboard access
+- Archive classifier:
+  • Binary files excluded from archive using istextorbinary
+  • Large text flagged (size > 1 MB or LOC > 3000); warnings emitted to <stanPath>/output/archive.warnings.txt and included in archives
+  • Unit tests for classifier service and archive integration (tar mocked)
 
 Partially done / scaffolding present
 • (none)
 
 Open/remaining (prioritized)
-
-P3 — Archive classifier (binary/large)
-
-- Exclude binaries explicitly via istextorbinary; track concise top-N console summaries; list full details in <stanPath>/output/archive.warnings.txt
-- Detect large text (defaults: size > 1 MB or LOC > 3000; configurable constants)
-- Include archive.warnings.txt in archives; under -c, still pack inside
-- Tests: classifier unit; archive integration (presence in tar); thresholds
 
 Housekeeping
 

@@ -339,6 +339,21 @@ export const registerPatch = (cli: Command): Command => {
           lastErrorSnippet,
           diagnostics,
         });
+        // Always write FEEDBACK to debug as a fallback for environments without clipboard.
+        try {
+          const debugDir = path.join(path.dirname(patchAbs), '.debug');
+          await mkdir(debugDir, { recursive: true });
+          const fbPath = path.join(debugDir, 'feedback.txt');
+          await writeFile(fbPath, envelope, 'utf8');
+          console.log(
+            `stan: wrote patch feedback -> ${path
+              .relative(cwd, fbPath)
+              .replace(/\\/g, '/')}`,
+          );
+        } catch {
+          // best-effort
+        }
+        // Best-effort copy to clipboard
         await copyToClipboard(envelope);
         console.log(
           'stan: copied patch feedback to clipboard (BEGIN_STAN_PATCH_FEEDBACK v1)',

@@ -10,9 +10,10 @@
  * - Maintain previous-archive copy at <stanPath>/diff/archive.prev.tar.
  */
 import { existsSync } from 'node:fs';
-import { copyFile } from 'node:fs/promises';
+import { copyFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { classifyForArchive } from './classifier';
 import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
 
 type TarLike = {
@@ -61,6 +62,7 @@ export const createArchive = async (
 
   const archivePath = resolve(outDir, fileName);
   const prevPath = resolve(diffDir, 'archive.prev.tar');
+  const warningsPath = resolve(outDir, 'archive.warnings.txt');
 
   // If an old archive exists in output, copy it to diff before overwriting.
   if (existsSync(archivePath)) {
@@ -71,12 +73,31 @@ export const createArchive = async (
     }
   }
 
+  // Classify prior to archiving:
+  // - exclude binaries
+  // - flag large text (not excluded)
+  const { textFiles, warningsBody } = await classifyForArchive(cwd, files);
+  const filesForArchive = textFiles;
+
+  // Emit warnings file, always present and included in archives.
+  try {
+    await writeFile(warningsPath, warningsBody, 'utf8');
+  } catch {
+    // best-effort
+  }
+
+  // Helper: ensure warnings file is included even when not packing the whole output directory.
+  const withWarnings = (relList: string[]): string[] => {
+    const warningsRel = `${stanPath.replace(/\\/g, '/')}/output/archive.warnings.txt`;
+    return Array.from(new Set([...relList, warningsRel]));
+  };
+
   const tar = (await import('tar')) as unknown as TarLike;
 
   if (includeOutputDir) {
     // Force-include <stanPath>/output and exclude <stanPath>/diff and archive files.
     const filesToPack = Array.from(
-      new Set([...files, `${stanPath.replace(/\\/g, '/')}/output`]),
+      new Set([...filesForArchive, `${stanPath.replace(/\\/g, '/')}/output`]),
     );
     const isUnder = (prefix: string, p: string): boolean =>
       p === prefix || p.startsWith(`${prefix}/`);
@@ -95,7 +116,7 @@ export const createArchive = async (
       filesToPack,
     );
   } else {
-    await tar.create({ file: archivePath, cwd }, files);
+    await tar.create({ file: archivePath, cwd }, withWarnings(filesForArchive));
   }
 
   // Ensure prev exists on first run.

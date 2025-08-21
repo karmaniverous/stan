@@ -45,6 +45,13 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 
 # Architecture: Services‑first (Ports & Adapters); Adapters‑thin
 
+## TypeScript module layout (guideline)
+
+- Prefer directory modules with an explicit public entry:
+  - Do NOT structure as `foo.ts` + helpers in `/foo`.
+  - INSTEAD, create `foo/index.ts` that exports the public interface of the module, with helpers as siblings under `foo/`.
+  - Callers import `foo` (the folder), not individual helper files; the index is the public API.
+
 - Business logic as services:
   - Implement domain and orchestration logic as services behind explicit ports (interfaces) and expose them via a stable public API. Services may both PRODUCE and CONSUME other services; compose them for higher‑level operations.
   - Services should be pure where practical; isolate side effects (filesystem, process, network, clipboard) behind ports injected as dependencies. Do not depend on ambient state (process.cwd/env) unless passed in explicitly.

@@ -1,5 +1,6 @@
-/* src/cli/stan/patch.ts
+/* src/cli/stan/patch (module index)
  * "stan patch" subcommand: apply a patch from clipboard / file / inline input.
+ * Follows the TS module layout guideline: module entry lives at src/stan/patch/index.ts.
  */
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -9,13 +10,13 @@ import type { Command } from 'commander';
 
 import { applyCliSafety } from '@/cli/stan/cli-utils';
 
-import { ApplyResult, buildApplyAttempts, runGitApply } from './patch/apply';
-import { detectAndCleanPatch } from './patch/clean';
-import { resolvePatchContext } from './patch/context';
-import { buildFeedbackEnvelope, copyToClipboard } from './patch/feedback';
-import { applyWithJsDiff } from './patch/jsdiff';
-import { listRejFiles, moveRejFilesToRefactors } from './patch/rejects';
-import { utcStamp } from './util/time';
+import { ApplyResult, buildApplyAttempts, runGitApply } from './apply';
+import { detectAndCleanPatch } from './clean';
+import { resolvePatchContext } from './context';
+import { buildFeedbackEnvelope, copyToClipboard } from './feedback';
+import { applyWithJsDiff } from './jsdiff';
+import { listRejFiles, moveRejFilesToRefactors } from './rejects';
+import { utcStamp } from '../util/time';
 
 type PatchSource =
   | { kind: 'clipboard' }
@@ -230,13 +231,7 @@ export const registerPatch = (cli: Command): Command => {
         const changed = pathsFromPatch(cleaned);
         const failedPaths = js.failed.map((f) => f.path);
         const anyOk = js.okFiles.length > 0;
-        const overall = check
-          ? anyOk
-            ? 'check'
-            : 'check'
-          : anyOk
-            ? 'partial'
-            : 'failed';
+        const overall = check ? (anyOk ? 'check' : 'check') : anyOk ? 'partial' : 'failed';
 
         // Best-effort repo name from package.json (no require())
         let repoName: string | undefined;

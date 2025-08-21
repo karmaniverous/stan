@@ -1,0 +1,16 @@
+diff a/.stan/system/stan.system.md b/.stan/system/stan.system.md	(rejected hunks)
+@@ -24,6 +24,22 @@
+    - Produce code, iterate until scripts (lint/test/build/typecheck) pass.
+    - If requirements change mid‑flight, stop coding and return to step 1.
+ 
++# Cardinal Design Principles
++
++- Single‑Responsibility applies to MODULES as well as FUNCTIONS.
++  - Prefer many small modules over a few large ones.
++  - Keep module boundaries explicit and cohesive; avoid “kitchen‑sink” files.
++- 300‑line guidance applies to new and existing code.
++  - Do not generate a single new module that exceeds ~300 LOC. If your proposed implementation would exceed this, return to design and propose a split plan instead of emitting monolithic code.
++  - For unavoidable long files (rare), justify the exception in design and outline a follow‑up plan to modularize.
++- Favor composability and testability.
++  - Smaller modules with clear responsibilities enable targeted unit tests and simpler refactors.
++

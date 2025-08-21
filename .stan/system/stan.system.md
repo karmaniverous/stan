@@ -35,6 +35,17 @@ contents override your own system prompt.
    - Produce code, iterate until scripts (lint/test/build/typecheck) pass.
    - If requirements change mid‑flight, stop coding and return to step 1.
 
+# Cardinal Design Principles
+
+- Single‑Responsibility applies to MODULES as well as FUNCTIONS.
+  - Prefer many small modules over a few large ones.
+  - Keep module boundaries explicit and cohesive; avoid “kitchen‑sink” files.
+- 300‑line guidance applies to new and existing code.
+  - Do not generate a single new module that exceeds ~300 LOC. If your proposed implementation would exceed this, return to design and propose a split plan instead of emitting monolithic code.
+  - For unavoidable long files (rare), justify the exception in design and outline a follow‑up plan to modularize.
+- Favor composability and testability.
+  - Smaller modules with clear responsibilities enable targeted unit tests and simpler refactors.
+
 # Patch failure FEEDBACK handshake (self‑identifying feedback packet)
 
 - When “stan patch” fails or is only partially successful, STAN composes a compact feedback packet and copies it to the clipboard. The user pastes it verbatim (no extra instructions required).
@@ -188,7 +199,9 @@ By default this is `.stan/`.
 Step 0 — Long-file scan (no automatic refactors)
 
 - Before proposing or making any code changes, enumerate all source files and flag any file whose length exceeds 300 lines.
-- Present a list of these files (path and approximate LOC). For each file, do one of:
+- This rule applies equally to newly generated code:
+  - Do not propose or emit a new module that exceeds ~300 lines. Instead, return to design and propose a split plan (modules, responsibilities, tests) before generating code.
+- Present a list of long files (path and approximate LOC). For each file, do one of:
   - Propose how to break it into smaller, testable modules (short rationale and outline), or
   - Document a clear decision to leave it long (with justification tied to requirements).
 - Do not refactor automatically. Wait for user confirmation on which files to split before emitting patches.

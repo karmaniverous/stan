@@ -74,4 +74,3 @@ export const copyToClipboard = async (text: string): Promise<void> => {
     // best-effort
   }
 };
-

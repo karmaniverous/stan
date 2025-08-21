@@ -1,0 +1,100 @@
+/* src/stan/patch/jsdiff.ts
+ * Apply a unified diff with the "diff" library as a fallback engine.
+ * - Deterministic path resolution from patch headers (no fuzzy/basename matching).
+ * - Whitespace/EOL-tolerant comparison (ignores CR and trailing whitespace).
+ * - Preserves original EOL flavor (CRLF vs LF) per file.
+ * - When check=true, writes patched content to a sandbox under <stanPath>/patch/.sandbox/<ts>/ without touching repo files.
+ */
+
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import { applyPatch, type ParsedDiff, parsePatch } from 'diff';
+
+const stripAB = (p?: string | null): string | null => {
+  if (!p) return null;
+  const s = p.replace(/^a\//, '').replace(/^b\//, '').trim();
+  // diff lib sometimes prefixes a/ or b/ on both fields; return normalized path
+  return s.length ? s : null;
+};
+
+const normForCompare = (s: string): string =>
+  s.replace(/\r/g, '').replace(/[ \t]+$/g, '');
+
+const toCRLF = (s: string): string => s.replace(/\n/g, '\r\n');
+
+export type JsDiffOutcome = {
+  okFiles: string[];
+  failed: Array<{ path: string; reason: string }>;
+  sandboxRoot?: string;
+};
+
+/** Apply cleaned unified diff text using jsdiff as a fallback engine. */
+export const applyWithJsDiff = async (args: {
+  cwd: string;
+  cleaned: string;
+  check: boolean;
+  sandboxRoot?: string;
+}): Promise<JsDiffOutcome> => {
+  const { cwd, cleaned, check, sandboxRoot } = args;
+  const patches = parsePatch(cleaned);
+  const okFiles: string[] = [];
+  const failed: Array<{ path: string; reason: string }> = [];
+
+  for (const p of patches) {
+    const candidate = stripAB(p.newFileName) ?? stripAB(p.oldFileName);
+    if (!candidate) {
+      failed.push({
+        path: '(unknown)',
+        reason: 'no file name in patch header',
+      });
+      continue;
+    }
+    const rel = candidate.replace(/^[.\/]+/, '');
+    const abs = path.resolve(cwd, rel);
+
+    let original = '';
+    let eolCRLF = false;
+    try {
+      const raw = await readFile(abs, 'utf8');
+      original = raw;
+      eolCRLF = /\r\n/.test(raw);
+    } catch {
+      failed.push({ path: rel, reason: 'target file not found' });
+      continue;
+    }
+
+    // Whitespace/EOL tolerance
+    const patched = applyPatch(original, p as ParsedDiff, {
+      compareLine: (a: string, b: string): boolean =>
+        normForCompare(a) === normForCompare(b),
+      fuzzFactor: 0,
+    });
+
+    if (patched === false || typeof patched !== 'string') {
+      failed.push({ path: rel, reason: 'unable to place hunk(s)' });
+      continue;
+    }
+
+    const finalBody = eolCRLF
+      ? toCRLF(patched.replace(/\r/g, ''))
+      : patched.replace(/\r/g, '');
+
+    try {
+      if (check) {
+        const root =
+          sandboxRoot ?? path.join(cwd, '.stan', 'patch', '.sandbox');
+        const dest = path.resolve(root, rel);
+        await mkdir(path.dirname(dest), { recursive: true });
+        await writeFile(dest, finalBody, 'utf8');
+      } else {
+        await writeFile(abs, finalBody, 'utf8');
+      }
+      okFiles.push(rel);
+    } catch {
+      failed.push({ path: rel, reason: 'write failed' });
+    }
+  }
+
+  return { okFiles, failed, sandboxRoot };
+};

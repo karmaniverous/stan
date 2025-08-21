@@ -13,7 +13,9 @@ import { ApplyResult, buildApplyAttempts, runGitApply } from './patch/apply';
 import { detectAndCleanPatch } from './patch/clean';
 import { resolvePatchContext } from './patch/context';
 import { buildFeedbackEnvelope, copyToClipboard } from './patch/feedback';
+import { applyWithJsDiff } from './patch/jsdiff';
 import { listRejFiles, moveRejFilesToRefactors } from './patch/rejects';
+import { utcStamp } from './util/time';
 
 type PatchSource =
   | { kind: 'clipboard' }
@@ -145,6 +147,27 @@ export const registerPatch = (cli: Command): Command => {
         return;
       }
 
+      // jsdiff fallback (unstaged; sandbox when --check)
+      const sandboxRoot = check
+        ? path.join(path.dirname(patchAbs), '.sandbox', utcStamp())
+        : undefined;
+
+      const js = await applyWithJsDiff({
+        cwd,
+        cleaned,
+        check,
+        sandboxRoot,
+      });
+
+      if (js.okFiles.length > 0 && js.failed.length === 0) {
+        console.log(
+          check
+            ? 'stan: patch check passed (jsdiff)'
+            : 'stan: patch applied via jsdiff (unstaged)',
+        );
+        return;
+      }
+
       // Move any new *.rej files into <stanPath>/refactors/patch-rejects-<ts>/
       let newRejects: string[] = [];
       try {
@@ -205,39 +228,49 @@ export const registerPatch = (cli: Command): Command => {
       // FEEDBACK bundle to clipboard (self-identifying)
       try {
         const changed = pathsFromPatch(cleaned);
-        const failed = [...changed]; // default assumption for failure path
+        const failedPaths = js.failed.map((f) => f.path);
+        const anyOk = js.okFiles.length > 0;
+        const overall = check
+          ? anyOk
+            ? 'check'
+            : 'check'
+          : anyOk
+            ? 'partial'
+            : 'failed';
+
+        // Best-effort repo name from package.json (no require())
+        let repoName: string | undefined;
+        try {
+          const rawPkg = await readFile(path.join(cwd, 'package.json'), 'utf8');
+          const pkg = JSON.parse(rawPkg) as { name?: string };
+          repoName = pkg.name;
+        } catch {
+          // ignore
+        }
+
+        type Strip = 'p1' | 'p0';
+        const stripList: Strip[] = attempts.map((a) =>
+          a.strip === 1 ? 'p1' : 'p0',
+        );
+
         const envelope = buildFeedbackEnvelope({
-          repo: {
-            // best-effort package name from repo root
-            name: (() => {
-              try {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-var-requires
-                const pkg = require(path.join(cwd, 'package.json')) as {
-                  name?: string;
-                };
-                return pkg?.name;
-              } catch {
-                return undefined;
-              }
-            })(),
-            stanPath,
-          },
+          repo: { name: repoName, stanPath },
           status: {
-            overall: check ? 'check' : 'failed',
-            enginesTried: ['git'],
-            stripTried: Array.from(
-              new Set(
-                attempts.map((a) => (a.strip === 1 ? 'p1' : 'p0') as const),
-              ),
-            ),
+            overall,
+            enginesTried: ['git', 'jsdiff'],
+            stripTried: Array.from(new Set<Strip>(stripList)),
           },
-          summary: { changed, failed },
+          summary: { changed, failed: failedPaths, fuzzy: [] },
           patch: { cleanedHead: firstKB(cleaned, 4) },
           attempts: {
             git: {
               tried: result.tried,
               rejects: newRejects.length,
               lastCode: result.lastCode,
+            },
+            jsdiff: {
+              okFiles: js.okFiles,
+              failedFiles: failedPaths,
             },
           },
         });
@@ -252,7 +285,7 @@ export const registerPatch = (cli: Command): Command => {
       console.log(
         `stan: patch ${check ? 'check failed' : 'failed'} (tried: ${result.tried.join(
           ', ',
-        )})`,
+        )}, jsdiff ok: ${js.okFiles.length.toString()}, failed: ${js.failed.length.toString()})`,
       );
     },
   );

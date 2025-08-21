@@ -1,0 +1,9 @@
+diff a/src/stan/patch/feedback.ts b/src/stan/patch/feedback.ts	(rejected hunks)
+@@ -74,5 +74,5 @@ export const copyToClipboard = async (text: string): Promise<void> => {
+     await clipboardy.write(text);
+   } catch {
+     // best-effort
+   }
+-};
++};
+\ No newline at end of file

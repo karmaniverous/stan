@@ -13,15 +13,29 @@ Purpose
 
 Current plan (remaining)
 
-- P0 — CLI refactors (business logic out of adapters)
-  - Snap: extract a service (create/replace snapshot, undo/redo/set/info), keep CLI thin. Tests: keep adapter smoke tests + add focused unit tests for the service.
-  - Init: extract a service (config write, .gitignore, docs copy + .docs.meta.json, optional snapshot). Keep CLI as an adapter.
+- P0 — Robust patch handling (remaining polish)
+  - FEEDBACK envelope: include concise stderr summary (already in logs) directly in the clipboard envelope (partially done).
+  - Optional DMP fallback after jsdiff (deferred).
+- P1 — Preflight/version UX
+  - Preflight drift nudge (TTY vs non-TTY behavior).
+  - `stan -v` prints version + doc baseline info (already implemented).
+- P2 — Housekeeping
+  - Windows EBUSY on sandbox/patch directory teardown in one patch test: add best‑effort retry/backoff if it recurs.
 
-- Housekeeping
-  - Windows EBUSY on sandbox/patch directory teardown in one patch test: add best‑effort retry/backoff on rm in the test helper if it recurs.
+Completed (since last update)
+
+- CLI refactors (business logic out of adapters)
+  - DONE: Snap — extracted handlers (undo/redo/set/info/snap) to src/stan/snap/handlers.ts. Tests continue to import registerSnap unchanged.
+  - DONE: Init — extracted docs/gitignore/prompts/services under src/stan/init/\*. CLI remains a thin adapter and continues to export performInit for tests.
+- Diff/snapshot policy and artifacts
+  - Always-on diff with archives; snapshot policy implemented.
+- Patch pipeline
+  - Clean/extract from prose; tolerant git apply with -p1/-p0 and --recount; jsdiff fallback with EOL preservation; FEEDBACK clipboard + .debug/attempts.json; rejects relocation under .stan/patch/.
+- Archive classifier
+  - Binary exclusion; large text call-outs; write archive.warnings.txt; include in archives.
 
 Notes
 
-- Run module layout now complies with the TypeScript module index guideline (src/stan/run/index.ts replaces src/stan/run.ts).
+- Module SRP: new code follows the “directory module + index” guideline; CLI adapters remain thin.
 - Termination rule: if the original full archive is no longer in the context window, halt and resume in a fresh chat with the latest archives (state is preserved under <stanPath>/system).
 - Policies, architecture, and testing guidance live in <stanPath>/system/stan.system.md.

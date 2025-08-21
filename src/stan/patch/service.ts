@@ -244,7 +244,8 @@ export const runPatch = async (
   }
 
   // FEEDBACK bundle to clipboard (self-identifying)
-  try {
+  // Build the envelope first so we can still copy to clipboard even if file IO fails.
+  {
     const changed = pathsFromPatch(cleaned);
     const failedPaths = js.failed.map((f) => f.path);
     const anyOk = js.okFiles.length > 0;
@@ -298,7 +299,7 @@ export const runPatch = async (
       attempts: {
         git: {
           tried: result.tried,
-          rejects: 0,
+          rejects: 0, // count not required in envelope
           lastCode: result.lastCode,
         },
         jsdiff: {
@@ -310,20 +311,35 @@ export const runPatch = async (
       diagnostics,
     });
 
+    // Try to write the feedback file; log outcome regardless.
     const debugDir = path.join(path.dirname(patchAbs), '.debug');
-    await mkdir(debugDir, { recursive: true });
-    const fbPath = path.join(debugDir, 'feedback.txt');
-    await writeFile(fbPath, envelope, 'utf8');
-    const fbAbs = fbPath.replace(/\\/g, '/');
-    console.log(`stan: wrote patch feedback -> ${fbAbs}`);
+    let fbAbs = '';
+    try {
+      await mkdir(debugDir, { recursive: true });
+      const fbPath = path.join(debugDir, 'feedback.txt');
+      await writeFile(fbPath, envelope, 'utf8');
+      fbAbs = fbPath.replace(/\\/g, '/');
+      console.log(`stan: wrote patch feedback -> ${fbAbs}`);
+    } catch (e) {
+      console.error('stan: failed to write patch feedback file', e);
+    }
+
+    // Clipboard copy is best-effort and independent of file write.
     try {
       await copyToClipboard(envelope);
-      console.log(`stan: copied patch feedback to clipboard -> ${fbAbs}`);
+      const loc = fbAbs || '<clipboard only>';
+      console.log(`stan: copied patch feedback to clipboard -> ${loc}`);
     } catch {
-      console.error(`stan: clipboard copy failed; feedback saved -> ${fbAbs}`);
+      if (fbAbs) {
+        console.error(
+          `stan: clipboard copy failed; feedback saved -> ${fbAbs}`,
+        );
+      } else {
+        console.error(
+          'stan: clipboard copy failed; feedback envelope not saved to file',
+        );
+      }
     }
-  } catch {
-    // best-effort
   }
 
   // Move any new *.rej files into <stanPath>/patch/rejects-<ts>/

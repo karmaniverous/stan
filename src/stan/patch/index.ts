@@ -5,15 +5,18 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+
 import type { Command } from 'commander';
+
 import { applyCliSafety } from '@/cli/stan/cli-utils';
+
+import { utcStamp } from '../util/time';
 import { ApplyResult, buildApplyAttempts, runGitApply } from './apply';
 import { detectAndCleanPatch } from './clean';
 import { resolvePatchContext } from './context';
 import { buildFeedbackEnvelope, copyToClipboard } from './feedback';
 import { applyWithJsDiff } from './jsdiff';
 import { listRejFiles, moveRejFilesToRefactors } from './rejects';
-import { utcStamp } from '../util/time';
 
 type PatchSource =
   | { kind: 'clipboard' }

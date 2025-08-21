@@ -11,6 +11,7 @@ import { Command } from 'commander';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { registerPatch } from '@/stan/patch';
 import { registerSnap } from '@/stan/snap';
+import { printVersionInfo } from '@/stan/version';
 
 import { applyCliSafety } from './cli-utils';
 import { performInit, registerInit } from './init';
@@ -24,7 +25,8 @@ export const makeCli = (): Command => {
     .description(
       'Generate reproducible STAN artifacts for AI-assisted development',
     )
-    .option('-d, --debug', 'enable verbose debug logging');
+    .option('-d, --debug', 'enable verbose debug logging')
+    .option('-v, --version', 'print version and baseline-docs status');
 
   // Root-level help footer: show available script keys
   cli.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
@@ -52,11 +54,18 @@ export const makeCli = (): Command => {
   registerPatch(cli);
 
   // Root action:
+  // - If -v/--version: print extended version info and return.
   // - If config is missing: run interactive init (not forced) and create a snapshot.
   // - If config exists: print help page (no exit).
   cli.action(async () => {
-    if (cli.opts<{ debug?: boolean }>().debug) {
-      process.env.STAN_DEBUG = '1';
+    const opts = cli.opts<{ debug?: boolean; version?: boolean }>();
+    if (opts.debug) process.env.STAN_DEBUG = '1';
+
+    if (opts.version) {
+      const vmod = await import('@/stan/version');
+      const info = await vmod.getVersionInfo(process.cwd());
+      printVersionInfo(info);
+      return;
     }
 
     const cwd = process.cwd();
@@ -65,7 +74,6 @@ export const makeCli = (): Command => {
 
     if (!hasConfig) {
       await performInit(cli, { cwd, force: false });
-      // performInit prints its own messages and writes the snapshot.
       return;
     }
 

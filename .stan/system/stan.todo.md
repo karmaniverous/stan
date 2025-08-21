@@ -67,6 +67,9 @@ Done
   • stan -v/--version prints STAN version, Node version, repo root, stanPath, doc baseline status (inSync), last docs version (if present)
 - P1 Preflight wiring:
   • preflightDocsAndVersion is called at run start (non‑blocking); unit test added
+- Type/lint cleanup:
+  • Fixed ESLint no-empty by adding debug-only logging in src/stan/run.ts preflight catch.
+  • Resolved TypeScript generics/typing in src/stan/preflight.run.test.ts so typecheck/docs pass.
 
 Partially done / scaffolding present
 
@@ -97,7 +100,7 @@ P0 — Robust patch handling (clipboard-driven FEEDBACK loop)
   • A whitespace/EOL-drift patch applies via jsdiff engine (when git apply fails) preserving original EOL per file (done)
   • With --check, no repo files are changed and a .sandbox/<ts>/ is written; older sandboxes are pruned (done)
   • No basename/fuzzy path matching in default mode; path/strip fixes regenerated in next diff (exists)
-  • Tests cover engines, pipeline orchestration, reporter, and clipboard write (mocks) (partially done; jsdiff path covered)
+  • Tests cover engines, pipeline orchestration, reporter, and clipboard write (partially done; jsdiff path covered)
 
 P2 — Version awareness metadata on init
 

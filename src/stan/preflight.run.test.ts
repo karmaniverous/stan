@@ -5,13 +5,12 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock preflight to capture calls
-const preflightSpy = vi.fn<[_cwd: string], Promise<void>>(() =>
+const preflightSpy = vi.fn<(cwd: string) => Promise<void>>(() =>
   Promise.resolve(),
 );
 vi.mock('./preflight', () => ({
   __esModule: true,
-  preflightDocsAndVersion: (...args: unknown[]) =>
-    preflightSpy(args[0] as string),
+  preflightDocsAndVersion: (cwd: string) => preflightSpy(cwd),
 }));
 
 import type { ContextConfig } from './config';

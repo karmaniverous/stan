@@ -169,7 +169,11 @@ export const runSelected = async (
   // Preflight docs/version (non-blocking; best-effort)
   try {
     await preflightDocsAndVersion(cwd);
-  } catch {}
+  } catch (e) {
+    if (process.env.STAN_DEBUG === '1') {
+      console.error('stan: preflight failed', e);
+    }
+  }
   // ensure directory tree
   await ensureOutputDir(cwd, config.stanPath, Boolean(behavior.keep));
   const dirs = makeStanDirs(cwd, config.stanPath);

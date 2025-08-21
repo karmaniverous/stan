@@ -8,7 +8,7 @@ import { diagnosePatchWithFs, parseUnifiedDiff } from './parse';
 
 describe('diagnosePatchWithFs (filesystem-backed diagnostics)', () => {
   let dir: string;
-  const chToTmp = async () => {
+  const chToTmp = () => {
     try {
       process.chdir(os.tmpdir());
     } catch {
@@ -26,7 +26,7 @@ describe('diagnosePatchWithFs (filesystem-backed diagnostics)', () => {
   });
 
   afterEach(async () => {
-    await chToTmp();
+    chToTmp();
     await rm(dir, { recursive: true, force: true });
   });
 

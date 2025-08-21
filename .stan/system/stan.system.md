@@ -272,9 +272,11 @@ If info is insufficient to proceed without critical assumptions, abort and clari
   - Write global requirements and cross‑cutting concerns to `/<stanPath>/system/stan.project.md`.
   - Clean up previous requirements comments that do not meet these guidelines.
 
-## Refactor Log Entries (`/<stanPath>/refactors`)
+## MANDATORY Refactor Log Entries (`/<stanPath>/refactors`)
 
-To preserve context across chat threads, maintain a short, structured refactor log under `/<stanPath>/refactors/`.
+To preserve context across chat threads, the assistant MUST maintain a short, structured refactor log under
+`/<stanPath>/refactors/`. This is REQUIRED for every response that introduces any code or doc change
+in the repository.
 
 - For any response that includes code changes, create one new Markdown file that accounts for ALL changes made in that response:
   - File name: `refactors/YYYYMMDD-HHMMSS-short-slug.md`
@@ -288,6 +290,8 @@ To preserve context across chat threads, maintain a short, structured refactor l
   - `Links:` PR/commit refs, CI artifacts, or STAN artifact names if relevant
   - `Next:` 1–2 follow‑ups (optional)
 - Keep entries human‑ and machine‑scannable; do not paste large diffs. Link to artifacts instead of duplicating content.
+- If a response updates multiple files, there MUST be exactly one new refactor entry covering that response’s changes.
+- If a response proposes code patches without a new refactor entry, the assistant MUST stop and add the entry before proceeding.
 
 # Response Format (MANDATORY)
 

@@ -2,7 +2,6 @@
  * "stan patch" subcommand: apply a patch from clipboard / file / inline input.
  * Follows the TS module layout guideline: module entry lives at src/stan/patch/index.ts.
  */
-import { existsSync } from 'node:fs';
 import {
   mkdir,
   readdir,
@@ -24,7 +23,7 @@ import { resolvePatchContext } from './context';
 import { buildFeedbackEnvelope, copyToClipboard } from './feedback';
 import { applyWithJsDiff } from './jsdiff';
 import { diagnosePatchWithFs, parseUnifiedDiff } from './parse';
-import { listRejFiles, moveRejFilesToRefactors } from './rejects';
+import { listRejFiles, moveRejFilesToPatchWorkspace } from './rejects';
 
 type PatchSource =
   | { kind: 'clipboard' }
@@ -43,7 +42,11 @@ const readFromClipboard = async (): Promise<string> => {
 
 const ensureParentDir = async (p: string): Promise<void> => {
   const dir = path.dirname(p);
-  if (!existsSync(dir)) await mkdir(dir, { recursive: true });
+  try {
+    await mkdir(dir, { recursive: true });
+  } catch {
+    // best-effort
+  }
 };
 
 const firstKB = (s: string, kb = 4): string =>
@@ -98,7 +101,7 @@ export const registerPatch = (cli: Command): Command => {
   const sub = cli
     .command('patch')
     .description(
-      'Apply a git patch from clipboard (default) or a file (with -f). Accepts unified diff.',
+      'Apply a git patch from clipboard (default), a file (-f), or argument.',
     )
     .argument('[input]', 'Patch data (unified diff)')
     .option('-f, --file [filename]', 'Read patch from file as source')
@@ -127,7 +130,7 @@ export const registerPatch = (cli: Command): Command => {
         source = { kind: 'clipboard' };
       }
 
-      let raw: string;
+      let raw = '';
 
       if (source.kind === 'clipboard') {
         console.log('stan: patch source: clipboard');
@@ -212,22 +215,6 @@ export const registerPatch = (cli: Command): Command => {
         return;
       }
 
-      // Move any new *.rej files into <stanPath>/refactors/patch-rejects-<ts>/
-      let newRejects: string[] = [];
-      try {
-        const postRej = await listRejFiles(cwd);
-        const preSet = new Set(preRej);
-        newRejects = postRej.filter((r) => !preSet.has(r));
-        const movedTo = await moveRejFilesToRefactors(cwd, newRejects);
-        if (movedTo) {
-          console.log(
-            `stan: moved ${newRejects.length.toString()} reject file(s) -> ${movedTo}`,
-          );
-        }
-      } catch {
-        // best-effort
-      }
-
       // Diagnostics bundle
       try {
         const debugDir = path.join(path.dirname(patchAbs), '.debug');
@@ -237,17 +224,19 @@ export const registerPatch = (cli: Command): Command => {
         const gitAttempts = result.captures.map((c) => ({
           label: c.label,
           code: c.code,
-          stderrBytes: Buffer.byteLength(c.stderr, 'utf8'),
-          stdoutBytes: Buffer.byteLength(c.stdout, 'utf8'),
+          stderrBytes: Buffer.byteLength(c.stderr ?? '', 'utf8'),
+          stdoutBytes: Buffer.byteLength(c.stdout ?? '', 'utf8'),
         }));
+
         const jsAttempts = {
           okFiles: js.okFiles,
           failedFiles: js.failed.map((f) => f.path),
           sandboxRoot: sandboxRoot ?? null,
         };
 
+        const attemptsPath = path.join(debugDir, 'attempts.json');
         await writeFile(
-          path.join(debugDir, 'attempts.json'),
+          attemptsPath,
           JSON.stringify({ git: gitAttempts, jsdiff: jsAttempts }, null, 2),
           'utf8',
         );
@@ -265,11 +254,11 @@ export const registerPatch = (cli: Command): Command => {
             'utf8',
           );
         }
-        console.log(
-          `stan: wrote patch diagnostics -> ${path
-            .relative(cwd, debugDir)
-            .replace(/\\/g, '/')}`,
-        );
+
+        const attemptsRel = path
+          .relative(cwd, attemptsPath)
+          .replace(/\\/g, '/');
+        console.log(`stan: wrote patch diagnostics -> ${attemptsRel}`);
       } catch {
         // best-effort
       }
@@ -296,7 +285,8 @@ export const registerPatch = (cli: Command): Command => {
         } catch {
           // ignore
         }
-        // FS-backed per-file diagnostics from parse (limit to 10 for chat)
+
+        // FS-backed diagnostics from parse (limit to 10 for chat)
         const diagnostics = diagnosePatchWithFs(cwd, parsed).slice(0, 10);
 
         type Strip = 'p1' | 'p0';
@@ -328,7 +318,7 @@ export const registerPatch = (cli: Command): Command => {
           attempts: {
             git: {
               tried: result.tried,
-              rejects: newRejects.length,
+              rejects: 0, // concrete *.rej moved below; count not required in envelope
               lastCode: result.lastCode,
             },
             jsdiff: {
@@ -339,25 +329,19 @@ export const registerPatch = (cli: Command): Command => {
           lastErrorSnippet,
           diagnostics,
         });
-        // Always write FEEDBACK to debug as a fallback for environments without clipboard.
+
+        const debugDir = path.join(path.dirname(patchAbs), '.debug');
+        await mkdir(debugDir, { recursive: true });
+        const fbPath = path.join(debugDir, 'feedback.txt');
+        await writeFile(fbPath, envelope, 'utf8');
+        const fbRel = path.relative(cwd, fbPath).replace(/\\/g, '/');
+        console.log(`stan: wrote patch feedback -> ${fbRel}`);
         try {
-          const debugDir = path.join(path.dirname(patchAbs), '.debug');
-          await mkdir(debugDir, { recursive: true });
-          const fbPath = path.join(debugDir, 'feedback.txt');
-          await writeFile(fbPath, envelope, 'utf8');
-          console.log(
-            `stan: wrote patch feedback -> ${path
-              .relative(cwd, fbPath)
-              .replace(/\\/g, '/')}`,
-          );
+          await copyToClipboard(envelope);
+          console.log(`stan: copied patch feedback to clipboard -> ${fbRel}`);
         } catch {
           // best-effort
         }
-        // Best-effort copy to clipboard
-        await copyToClipboard(envelope);
-        console.log(
-          'stan: copied patch feedback to clipboard (BEGIN_STAN_PATCH_FEEDBACK v1)',
-        );
       } catch {
         // best-effort
       }
@@ -372,6 +356,22 @@ export const registerPatch = (cli: Command): Command => {
           .trim()
           .slice(0, 200);
         if (snippet) console.log(`stan: last error: ${snippet}`);
+      }
+
+      // Move any new *.rej files into <stanPath>/patch/rejects-<ts>/
+      let newRejects: string[] = [];
+      try {
+        const postRej = await listRejFiles(cwd);
+        const preSet = new Set(preRej);
+        newRejects = postRej.filter((r) => !preSet.has(r));
+        const movedTo = await moveRejFilesToPatchWorkspace(cwd, newRejects);
+        if (movedTo) {
+          console.log(
+            `stan: moved ${newRejects.length.toString()} reject file(s) -> ${movedTo}`,
+          );
+        }
+      } catch {
+        // best-effort
       }
 
       console.log(

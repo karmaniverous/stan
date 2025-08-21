@@ -21,7 +21,10 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.test.ts', 'src/test/**', '**/*.d.ts'],
     },
-    setupFiles: [resolve(rootDir, 'src/test/setup.ts')],
+    setupFiles: [
+      resolve(rootDir, 'src/test/setup.ts'),
+      resolve(rootDir, 'src/test/mock-tar.ts'),
+    ],
     testTimeout: 15000,
     hookTimeout: 10000,
   },

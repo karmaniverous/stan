@@ -1,0 +1,68 @@
+diff a/src/stan/patch/index.ts b/src/stan/patch/index.ts	(rejected hunks)
+@@ -1,29 +1,22 @@
+ /* src/cli/stan/patch (module index)
+  * "stan patch" subcommand: apply a patch from clipboard / file / inline input.
+  * Follows the TS module layout guideline: module entry lives at src/stan/patch/index.ts.
+  */
+-import { existsSync } from 'node:fs';
+-import {
+-  mkdir,
+-  readdir,
+-  readFile,
+-  rm,
+-  stat,
+-  writeFile,
+-} from 'node:fs/promises';
++import { existsSync } from 'node:fs';
++import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+ import path from 'node:path';
+ 
+ import type { Command } from 'commander';
+ 
+ import { applyCliSafety } from '@/cli/stan/cli-utils';
+ 
+ import { utcStamp } from '../util/time';
+ import { ApplyResult, buildApplyAttempts, runGitApply } from './apply';
+ import { detectAndCleanPatch } from './clean';
+ import { resolvePatchContext } from './context';
+ import { buildFeedbackEnvelope, copyToClipboard } from './feedback';
+ import { applyWithJsDiff } from './jsdiff';
+-import { listRejFiles, moveRejFilesToRefactors } from './rejects';
++import { listRejFiles, moveRejFilesToRefactors } from './rejects';
+  
+ type PatchSource =
+   | { kind: 'clipboard' }
+   | { kind: 'file'; filePath: string }
+   | { kind: 'argument'; text: string };
+@@ -207,10 +200,14 @@ export const registerPatch = (cli: Command): Command => {
+         }
+       } catch {
+         // best-effort
+       }
+ 
+-      console.log(`stan: wrote patch diagnostics -> ${path
+-        .relative(cwd, debugDir)
+-        .replace(/\\/g, '/')}`);
++      // Point to concrete diagnostics artifacts for easy navigation.
++      const attemptsRel = path
++        .relative(cwd, path.join(debugDir, 'attempts.json'))
++        .replace(/\\/g, '/');
++      console.log(`stan: wrote patch diagnostics -> ${attemptsRel}`);
+@@ -302,9 +307,9 @@ export const registerPatch = (cli: Command): Command => {
+       }
+ 
+       // Move any new *.rej files into <stanPath>/patch/rejects-<ts>/
+       let newRejects: string[] = [];
+       try {
+         const postRej = await listRejFiles(cwd);
+         const preSet = new Set(preRej);
+         newRejects = postRej.filter((r) => !preSet.has(r));
+         const movedTo = await moveRejFilesToRefactors(cwd, newRejects);
+         if (movedTo) {
+           console.log(
+             `stan: moved ${newRejects.length.toString()} reject file(s) -> ${movedTo}`,
+           );
+         }
+       } catch {
+         // best-effort
+       }

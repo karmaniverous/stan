@@ -1,0 +1,35 @@
+diff a/src/stan/patch/rejects.ts b/src/stan/patch/rejects.ts	(rejected hunks)
+@@ -23,28 +23,28 @@ export const listRejFiles = async (root: string): Promise<string[]> => {
+   await walk('');
+   return out;
+ };
+ 
+-export const moveRejFilesToRefactors = async (
++/** Move newly created *.rej files into the patch workspace under <stanPath>/patch/rejects-<UTC>/. */
++export const moveRejFilesToPatchWorkspace = async (
+   cwd: string,
+   rels: string[],
+ ): Promise<string | null> => {
+   if (!rels.length) return null;
+ 
+   const cfgPath = findConfigPathSync(cwd);
+   const baseCwd = cfgPath ? path.dirname(cfgPath) : cwd;
+ 
+   let stanPath = '.stan';
+   try {
+     const cfg = await loadConfig(baseCwd);
+     stanPath = cfg.stanPath;
+   } catch {
+     // default
+   }
+ 
+   const dirs = makeStanDirs(baseCwd, stanPath);
+-  const batch = `patch-rejects-${utcStamp()}`;
+-  const destRoot = path.join(dirs.rootAbs, 'refactors', batch);
++  const batch = `rejects-${utcStamp()}`;
++  const destRoot = path.join(dirs.patchAbs, batch);
+   await mkdir(destRoot, { recursive: true });
+ 
+   for (const rel of rels) {
+     const srcAbs = path.join(baseCwd, rel);
+     const destAbs = path.join(destRoot, rel);

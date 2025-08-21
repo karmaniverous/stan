@@ -27,7 +27,8 @@ export const listRejFiles = async (root: string): Promise<string[]> => {
   return out;
 };
 
-export const moveRejFilesToRefactors = async (
+/** Move newly created *.rej files into the patch workspace under <stanPath>/patch/rejects-<UTC>/. */
+export const moveRejFilesToPatchWorkspace = async (
   cwd: string,
   rels: string[],
 ): Promise<string | null> => {
@@ -45,8 +46,8 @@ export const moveRejFilesToRefactors = async (
   }
 
   const dirs = makeStanDirs(baseCwd, stanPath);
-  const batch = `patch-rejects-${utcStamp()}`;
-  const destRoot = path.join(dirs.rootAbs, 'refactors', batch);
+  const batch = `rejects-${utcStamp()}`;
+  const destRoot = path.join(dirs.patchAbs, batch);
   await mkdir(destRoot, { recursive: true });
 
   for (const rel of rels) {

@@ -114,8 +114,7 @@ export const getVersionInfo = async (cwd: string): Promise<VersionInfo> => {
   const docsMeta = await readJson<{ version?: string }>(docsMetaPath);
 
   const isDevModuleRepo =
-    !!moduleRoot &&
-    path.resolve(moduleRoot) === path.resolve(repoRoot);
+    !!moduleRoot && path.resolve(moduleRoot) === path.resolve(repoRoot);
 
   return {
     packageVersion,

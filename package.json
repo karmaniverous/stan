@@ -10,6 +10,7 @@
     "clipboardy": "^4.0.0",
     "commander": "^14.0.0",
     "diff": "^8.0.2",
+    "diff-match-patch": "^1.0.5",
     "ignore": "^7.0.5",
     "inquirer": "^12.9.3",
     "istextorbinary": "^9.5.0",

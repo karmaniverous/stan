@@ -61,6 +61,7 @@ Done
   • Sandbox retention: after --check runs, prune <stanPath>/patch/.sandbox to keep only the latest few (default 5)
   • Test-only Prettier suppression for jsdiff test to avoid line‑ending churn in CI
   • Parse/resolver (initial): parse unified diff, derive strip candidates (p1 vs p0), and include basic per-file diagnostics in FEEDBACK (missing a/b prefixes, may require --recount).
+  • Resolver (FS-backed): check path existence under repo and include "path not found" and exists: yes/no in diagnostics.
 - FS filtering:
   • Includes/excludes with glob support; .gitignore respected; deterministic deny/allow rules
 - Build/docs packaging:

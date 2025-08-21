@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { diagnosePatch, parseUnifiedDiff } from './parse';
 
 describe('parseUnifiedDiff (strip candidates and diagnostics)', () => {

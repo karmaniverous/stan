@@ -20,10 +20,10 @@ import { applyCliSafety } from '@/cli/stan/cli-utils';
 import { utcStamp } from '../util/time';
 import { ApplyResult, buildApplyAttempts, runGitApply } from './apply';
 import { detectAndCleanPatch } from './clean';
-import { diagnosePatch, parseUnifiedDiff } from './parse';
 import { resolvePatchContext } from './context';
 import { buildFeedbackEnvelope, copyToClipboard } from './feedback';
 import { applyWithJsDiff } from './jsdiff';
+import { diagnosePatchWithFs, parseUnifiedDiff } from './parse';
 import { listRejFiles, moveRejFilesToRefactors } from './rejects';
 
 type PatchSource =
@@ -172,7 +172,8 @@ export const registerPatch = (cli: Command): Command => {
 
       const check = Boolean(opts?.check);
       const attempts = parsed.stripCandidates.flatMap((p) =>
-        buildApplyAttempts(check, p, !check));
+        buildApplyAttempts(check, p, !check),
+      );
 
       // Track *.rej files created during attempts
       const preRej = await listRejFiles(cwd);
@@ -295,8 +296,8 @@ export const registerPatch = (cli: Command): Command => {
         } catch {
           // ignore
         }
-        // Basic per-file diagnostics from parse (limit to 10 for chat)
-        const diagnostics = diagnosePatch(parsed).slice(0, 10);
+        // FS-backed per-file diagnostics from parse (limit to 10 for chat)
+        const diagnostics = diagnosePatchWithFs(cwd, parsed).slice(0, 10);
 
         type Strip = 'p1' | 'p0';
         const stripList: Strip[] = attempts.map((a) =>

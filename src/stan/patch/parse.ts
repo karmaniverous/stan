@@ -1,9 +1,10 @@
 // src/stan/patch/parse.ts
-import { parsePatch, type StructuredPatch } from 'diff';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const stripAB = (
-  p?: string | null,
-): { path?: string; hadAB: boolean } => {
+import { parsePatch } from 'diff';
+
+const stripAB = (p?: string | null): { path?: string; hadAB: boolean } => {
   if (!p) return { path: undefined, hadAB: false };
   const hadAB = /^a\/|^b\//.test(p);
   const path = p.replace(/^a\//, '').replace(/^b\//, '').trim();
@@ -27,7 +28,7 @@ export type ParsedDiffInfo = {
 
 /** Parse a cleaned unified diff and derive strip candidates (p1 preferred when a/ b/ prefixes present). */
 export const parseUnifiedDiff = (cleaned: string): ParsedDiffInfo => {
-  const patches = parsePatch(cleaned) as StructuredPatch[];
+  const patches = parsePatch(cleaned);
   const files: ParsedFilePatch[] = patches.map((p) => {
     const a = stripAB(p.oldFileName ?? null);
     const b = stripAB(p.newFileName ?? null);
@@ -63,6 +64,27 @@ export const diagnosePatch = (info: ParsedDiffInfo): FileDiagnostic[] => {
     if (!f.hasABPrefixes) causes.push('missing a/b prefixes');
     if (f.hunks > 0) causes.push('may require --recount (context drift)');
     const details: string[] = [`hunks: ${f.hunks.toString()}`];
+    return { file, causes, details };
+  });
+};
+
+/** FS-backed diagnostics: checks existence of target files under cwd. */
+export const diagnosePatchWithFs = (
+  cwd: string,
+  info: ParsedDiffInfo,
+): FileDiagnostic[] => {
+  return info.files.map((f) => {
+    const file = f.newPath ?? f.oldPath ?? '(unknown)';
+    const abs = resolve(cwd, file);
+    const exists = existsSync(abs);
+    const causes: string[] = [];
+    if (!exists) causes.push('path not found');
+    if (!f.hasABPrefixes) causes.push('missing a/b prefixes');
+    if (f.hunks > 0) causes.push('may require --recount (context drift)');
+    const details: string[] = [
+      `exists: ${exists ? 'yes' : 'no'}`,
+      `hunks: ${f.hunks.toString()}`,
+    ];
     return { file, causes, details };
   });
 };

@@ -27,6 +27,7 @@ Plan management policy (to avoid context loss)
 - This file is the canonical plan. The assistant must keep it current and small enough to remain readable.
 - Plan updates are delivered as patches to this file (Full Listing + Patch) with a matching refactor note under .stan/refactors/.
 - The plan may summarize or link to prior decisions; it should not re-litigate settled requirements unless requirements changed.
+- Termination rule (context window exhaustion): If a full archive was uploaded earlier in this chat and is no longer present in the current context window, consider the thread exhausted and terminate the chat. Resume in a new chat by attaching the latest archives; STAN’s in‑repo state under <stanPath>/system enables safe resumption.
 
 Baseline (current requirements override older plan)
 

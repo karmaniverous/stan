@@ -12,6 +12,7 @@ import { applyCliSafety } from '@/cli/stan/cli-utils';
 import { ApplyResult, buildApplyAttempts, runGitApply } from './patch/apply';
 import { detectAndCleanPatch } from './patch/clean';
 import { resolvePatchContext } from './patch/context';
+import { buildFeedbackEnvelope, copyToClipboard } from './patch/feedback';
 import { listRejFiles, moveRejFilesToRefactors } from './patch/rejects';
 
 type PatchSource =
@@ -34,6 +35,20 @@ const ensureParentDir = async (p: string): Promise<void> => {
   if (!existsSync(dir)) await mkdir(dir, { recursive: true });
 };
 
+const firstKB = (s: string, kb = 4): string =>
+  s.length <= kb * 1024 ? s : s.slice(0, kb * 1024);
+
+const pathsFromPatch = (cleaned: string): string[] => {
+  const out: string[] = [];
+  const re = /^diff --git a\/(.+?) b\/\1/gm;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(cleaned))) {
+    const p = m[1]?.trim();
+    if (p && !out.includes(p)) out.push(p);
+  }
+  return out;
+};
+
 export const registerPatch = (cli: Command): Command => {
   applyCliSafety(cli);
 
@@ -53,7 +68,7 @@ export const registerPatch = (cli: Command): Command => {
       inputMaybe?: string,
       opts?: { file?: string | boolean; check?: boolean },
     ) => {
-      const { cwd, patchAbs, patchRel } = await resolvePatchContext(
+      const { cwd, stanPath, patchAbs, patchRel } = await resolvePatchContext(
         process.cwd(),
       );
 
@@ -131,14 +146,15 @@ export const registerPatch = (cli: Command): Command => {
       }
 
       // Move any new *.rej files into <stanPath>/refactors/patch-rejects-<ts>/
+      let newRejects: string[] = [];
       try {
         const postRej = await listRejFiles(cwd);
         const preSet = new Set(preRej);
-        const newOnes = postRej.filter((r) => !preSet.has(r));
-        const movedTo = await moveRejFilesToRefactors(cwd, newOnes);
+        newRejects = postRej.filter((r) => !preSet.has(r));
+        const movedTo = await moveRejFilesToRefactors(cwd, newRejects);
         if (movedTo) {
           console.log(
-            `stan: moved ${newOnes.length.toString()} reject file(s) -> ${movedTo}`,
+            `stan: moved ${newRejects.length.toString()} reject file(s) -> ${movedTo}`,
           );
         }
       } catch {
@@ -181,6 +197,53 @@ export const registerPatch = (cli: Command): Command => {
           `stan: wrote patch diagnostics -> ${path
             .relative(cwd, debugDir)
             .replace(/\\/g, '/')}`,
+        );
+      } catch {
+        // best-effort
+      }
+
+      // FEEDBACK bundle to clipboard (self-identifying)
+      try {
+        const changed = pathsFromPatch(cleaned);
+        const failed = [...changed]; // default assumption for failure path
+        const envelope = buildFeedbackEnvelope({
+          repo: {
+            // best-effort package name from repo root
+            name: (() => {
+              try {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-var-requires
+                const pkg = require(path.join(cwd, 'package.json')) as {
+                  name?: string;
+                };
+                return pkg?.name;
+              } catch {
+                return undefined;
+              }
+            })(),
+            stanPath,
+          },
+          status: {
+            overall: check ? 'check' : 'failed',
+            enginesTried: ['git'],
+            stripTried: Array.from(
+              new Set(
+                attempts.map((a) => (a.strip === 1 ? 'p1' : 'p0') as const),
+              ),
+            ),
+          },
+          summary: { changed, failed },
+          patch: { cleanedHead: firstKB(cleaned, 4) },
+          attempts: {
+            git: {
+              tried: result.tried,
+              rejects: newRejects.length,
+              lastCode: result.lastCode,
+            },
+          },
+        });
+        await copyToClipboard(envelope);
+        console.log(
+          'stan: copied patch feedback to clipboard (BEGIN_STAN_PATCH_FEEDBACK v1)',
         );
       } catch {
         // best-effort

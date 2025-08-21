@@ -1,0 +1,18 @@
+diff a/src/stan/patch.ts b/src/stan/patch.ts	(rejected hunks)
+@@ -12,8 +12,10 @@ import { applyCliSafety } from '@/cli/stan/cli-utils';
+ 
+ import { ApplyResult, buildApplyAttempts, runGitApply } from './patch/apply';
+ import { detectAndCleanPatch } from './patch/clean';
+-import { resolvePatchContext } from './patch/context';
++import { resolvePatchContext } from './patch/context';
++import { buildFeedbackEnvelope, copyToClipboard } from './patch/feedback';
+ import { listRejFiles, moveRejFilesToRefactors } from './patch/rejects';
++ 
+ type PatchSource =
+   | { kind: 'clipboard' }
+   | { kind: 'file'; filePath: string }
+@@ -51,7 +68,7 @@ export const registerPatch = (cli: Command): Command => {
+       inputMaybe?: string,
+       opts?: { file?: string | boolean; check?: boolean },
+     ) => {
+-      const { cwd, patchAbs, patchRel } = await resolvePatchContext(

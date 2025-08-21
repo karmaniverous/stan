@@ -7,6 +7,7 @@ export const resolvePatchContext = async (
   cwd0: string,
 ): Promise<{
   cwd: string;
+  stanPath: string;
   patchAbs: string;
   patchRel: string;
 }> => {
@@ -23,5 +24,5 @@ export const resolvePatchContext = async (
   const dirs = makeStanDirs(cwd, stanPath);
   const patchAbs = path.join(dirs.patchAbs, '.patch');
   const patchRel = path.relative(cwd, patchAbs).replace(/\\/g, '/');
-  return { cwd, patchAbs, patchRel };
+  return { cwd, stanPath, patchAbs, patchRel };
 };

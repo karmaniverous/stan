@@ -4,7 +4,7 @@
  * - Flag large text (by size and/or LOC) without excluding it.
  * - Generate a warnings body for <stanPath>/output/archive.warnings.txt.
  */
-import { readFile, stat } from 'node:fs/promises';
+import { open, readFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const LARGE_SIZE_BYTES = 1 * 1024 * 1024; // 1 MB
@@ -12,48 +12,28 @@ const LARGE_LOC = 3000;
 
 const toPosix = (p: string): string => p.replace(/\\/g, '/');
 
-const loadIsBinaryFn = async (): Promise<
-  | ((
-      file: string | Buffer,
-      opts: unknown,
-      cb: (err: unknown, result?: boolean) => void,
-    ) => void)
-  | null
-> => {
+/**
+ * Fast, robust binary detector: read the first few KB and
+ * treat the file as binary if it contains any NUL (0x00) byte.
+ * This avoids callback-based detection and eliminates test hangs.
+ */
+const isLikelyBinary = async (abs: string): Promise<boolean> => {
   try {
-    const anyMod = (await import('istextorbinary')) as unknown as {
-      isBinary?: (
-        file: string | Buffer,
-        opts: unknown,
-        cb: (err: unknown, result?: boolean) => void,
-      ) => void;
-      default?: {
-        isBinary?: (
-          file: string | Buffer,
-          opts: unknown,
-          cb: (err: unknown, result?: boolean) => void,
-        ) => void;
-      };
-    };
-    const fn = anyMod.isBinary ?? anyMod.default?.isBinary;
-    return typeof fn === 'function' ? fn : null;
-  } catch {
-    return null;
-  }
-};
-
-const isBinaryPath = async (abs: string): Promise<boolean> => {
-  const fn = await loadIsBinaryFn();
-  if (!fn) return false;
-  return await new Promise<boolean>((resolveP) => {
+    const fh = await open(abs, 'r');
     try {
-      fn(abs, null as unknown as object, (_err, result) =>
-        resolveP(Boolean(result)),
-      );
-    } catch {
-      resolveP(false);
+      const buf = Buffer.allocUnsafe(8192);
+      const { bytesRead } = await fh.read(buf, 0, buf.length, 0);
+      for (let i = 0; i < bytesRead; i += 1) {
+        if (buf[i] === 0) return true;
+      }
+      return false;
+    } finally {
+      await fh.close().catch(() => void 0);
     }
-  });
+  } catch {
+    // If we cannot open/read, classify as text to avoid over-exclusion
+    return false;
+  }
 };
 
 const countLines = (body: string): number => {
@@ -99,7 +79,7 @@ export const classifyForArchive = async (
       // Binary?
       let bin = false;
       try {
-        bin = await isBinaryPath(abs);
+        bin = await isLikelyBinary(abs);
       } catch {
         bin = false;
       }

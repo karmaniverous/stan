@@ -128,6 +128,7 @@ stan run [options]
   - `-q, --sequential`: run scripts sequentially in config order. Requires `-s` or `-x`.
 - Archives & outputs
   - `-a, --archive`: after scripts run (or immediately if selection is empty), write `archive.tar` and `archive.diff.tar`.
+    - STAN also writes `stan/output/archive.warnings.txt` that lists excluded binary files and large text files; this file is included in the archives.
   - `-c, --combine`: include script outputs inside the archives and do not keep them on disk. Implies `--archive` and requires `-s` or `-x`. Conflicts with `--keep`.
   - `-k, --keep`: do not clear the output directory before running. Conflicts with `--combine`.
 
@@ -165,7 +166,13 @@ stan patch "diff --git a/x b/x
 
 Behavior details:
 
-- Canonical workspace: cleaned input is written to `<stanPath>/patch/.patch`; diagnostics go to `<stanPath>/patch/.debug/`. Any newly created `*.rej` files are moved to `<stanPath>/refactors/patch-rejects-<UTC timestamp>/`.
+- Canonical workspace:
+  - Cleaned input is written to `<stanPath>/patch/.patch`.
+  - Diagnostics live under `<stanPath>/patch/.debug/`:
+    - `cleaned.patch` — the cleaned unified diff that was applied/checked.
+    - `attempts.json` — summary of each apply attempt (git/jsdiff), plus
+      per‑attempt `*.stderr.txt` and `*.stdout.txt`.
+  - Any newly created `*.rej` files are moved to `<stanPath>/patch/rejects/<UTC timestamp>/` (paths preserved).
 - Detection: If clipboard/file content looks like base64 and decodes to a unified diff (e.g., contains `diff --git`, `---`, `+++`, `@@`), it will be decoded. Otherwise, the text is treated as a raw unified diff.
 - Cleanups: code fences/banners removed, zero‑width characters stripped, line endings normalized to LF, and a final newline ensured. Whitespace within lines is preserved.
 - Application strategy: tries `git apply` with tolerant settings over both strip levels:
@@ -173,6 +180,14 @@ Behavior details:
   - `--3way --ignore-whitespace --recount -p1`
   - `--reject --whitespace=nowarn --recount -p1`
   - If needed, repeats with `-p0` in the same order.
+- Feedback (failed/partial/check):
+  - On failure, partial success, or `--check`, STAN builds a compact FEEDBACK envelope and:
+    - saves it to `<stanPath>/patch/.debug/feedback.txt`, and
+    - copies it to the clipboard.
+  - The console will log:
+    - `stan: wrote patch feedback -> <path>`
+    - `stan: copied patch feedback to clipboard -> <path>` (or `<clipboard only>` if the file write failed)
+  - Paste this FEEDBACK back into chat verbatim to get a corrected patch tailored to the failure.
 - Windows note: Passing very large base64 as an inline command-line argument can exceed the ~32K character limit. Clipboard default or `-f` are recommended for large patches.
 
 ### `stan snap`
@@ -217,6 +232,7 @@ Troubleshooting:
   - your archive contains `<stanPath>/system/stan.system.md` (default `stan/system/stan.system.md`),
   - your `stan.config.yml|json` is present and has the correct `stanPath`, or
   - attach a raw file named exactly `stan.system.md` as a separate file.
+  - When `--archive` runs, STAN writes `stan/output/archive.warnings.txt` listing excluded binaries and large text files; this file is included in the archives and can help you refine `includes`/`excludes`.
 
 ---
 

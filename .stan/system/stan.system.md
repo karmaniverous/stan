@@ -224,6 +224,14 @@ Primary objective — Plan-first
   - If outdated: update it first (as a patch with Full Listing + Patch) using the newest archives and script outputs. Record a brief refactor note under `<stanPath>/refactors/`.
   - Only after the dev plan is current should you proceed to code or other tasks for this turn (unless the user directs otherwise).
 
+MANDATORY Dev Plan update (system-level):
+
+- In every iteration where you:
+  - complete or change any plan item, or
+  - modify code/tests/docs, or
+  - materially advance the work,
+    you MUST update `<stanPath>/system/stan.todo.md` in the same reply (as a patch, with a matching refactor note under `<stanPath>/refactors/`).
+
 Step 0 — Long-file scan (no automatic refactors)
 
 - Services‑first proposal required:

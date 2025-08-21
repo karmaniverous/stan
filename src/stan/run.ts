@@ -18,6 +18,7 @@ import type { ContextConfig } from './config';
 import { ensureOutputDir } from './config';
 import { createArchiveDiff } from './diff';
 import { makeStanDirs } from './paths';
+import { preflightDocsAndVersion } from './preflight';
 
 export type Selection = string[] | null;
 export type ExecutionMode = 'concurrent' | 'sequential';
@@ -165,6 +166,10 @@ export const runSelected = async (
 ): Promise<string[]> => {
   const behavior: RunBehavior = behaviorMaybe ?? {};
 
+  // Preflight docs/version (non-blocking; best-effort)
+  try {
+    await preflightDocsAndVersion(cwd);
+  } catch {}
   // ensure directory tree
   await ensureOutputDir(cwd, config.stanPath, Boolean(behavior.keep));
   const dirs = makeStanDirs(cwd, config.stanPath);

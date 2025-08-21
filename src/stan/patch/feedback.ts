@@ -20,6 +20,8 @@ export type FeedbackEnvelope = {
     jsdiff?: { okFiles?: string[]; failedFiles?: string[] };
     dmp?: { okFiles?: string[] };
   };
+  /** Optional, short human-readable stderr excerpt from the last failing git-apply attempt. */
+  lastErrorSnippet?: string;
 };
 
 /** Build a BEGIN_STAN_PATCH_FEEDBACK v1 packet as plain text. */
@@ -51,6 +53,9 @@ export const buildFeedbackEnvelope = (e: FeedbackEnvelope): string => {
       cleanedHead: e.patch.cleanedHead,
     })}`,
   );
+  if (e.lastErrorSnippet && e.lastErrorSnippet.length) {
+    lines.push(`lastErrorSnippet: ${JSON.stringify(e.lastErrorSnippet)}`);
+  }
   lines.push(
     `attempts: ${JSON.stringify({
       git: e.attempts.git,

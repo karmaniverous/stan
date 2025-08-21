@@ -303,6 +303,18 @@ export const registerPatch = (cli: Command): Command => {
           a.strip === 1 ? 'p1' : 'p0',
         );
 
+        // Short last-error snippet from the final git-apply attempt
+        let lastErrorSnippet = '';
+        if (result.captures.length > 0) {
+          const last = result.captures[result.captures.length - 1];
+          lastErrorSnippet = (last.stderr ?? '')
+            .split(/\r?\n/)
+            .slice(0, 2)
+            .join(' ')
+            .trim()
+            .slice(0, 200);
+        }
+
         const envelope = buildFeedbackEnvelope({
           repo: { name: repoName, stanPath },
           status: {
@@ -323,6 +335,7 @@ export const registerPatch = (cli: Command): Command => {
               failedFiles: failedPaths,
             },
           },
+          lastErrorSnippet,
         });
         await copyToClipboard(envelope);
         console.log(

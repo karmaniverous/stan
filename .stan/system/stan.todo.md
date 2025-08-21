@@ -57,6 +57,7 @@ Done
 - Patch (P0 progress this turn):
   • jsdiff fallback engine integrated (diff v8 API); whitespace/EOL‑tolerant apply; preserves CRLF; unit test stabilized and passing
   • Reporter polish: attempts.json carries both git attempt captures and jsdiff results (okFiles, failedFiles, sandboxRoot); on total failure (non‑debug), prints a concise last‑error snippet from git apply
+  • FEEDBACK envelope: now includes a lastErrorSnippet (concise stderr excerpt) for faster triage
   • Sandbox retention: after --check runs, prune <stanPath>/patch/.sandbox to keep only the latest few (default 5)
   • Test-only Prettier suppression for jsdiff test to avoid line‑ending churn in CI
 - FS filtering:

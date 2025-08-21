@@ -11,6 +11,7 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 - “system prompt” → `<stanPath>/system/stan.system.md`
 - “project prompt” → `<stanPath>/system/stan.project.md`
 - “bootloader” → `<stanPath>/system/stan.bootloader.md`
+- “development plan” (aliases: “dev plan”, “implementation plan”, “todo list”) → `<stanPath>/system/stan.todo.md`
 
 # Design‑first lifecycle (always prefer design before code)
 
@@ -24,12 +25,12 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
      • STAN repo (`@karmaniverous/stan`): update the system prompt (s`tan.system.md`) only for repo‑agnostic concerns.
    - These prompt updates are “requirements” and follow normal listing/patch/refactor rules.
 
-3. Iterate on requirements until convergence
+3. Iterate requirements until convergence
    - The user may commit changes and provide a new archive diff & script outputs, or accept the requirements and ask to proceed to code.
 
 4. Implementation and code iteration
    - Produce code, iterate until scripts (lint/test/build/typecheck) pass.
-   - If requirements change mid‑flight, stop coding and return to step 1.
+   - If requirements change mid‑flight, stop coding and return to design.
 
 # Cardinal Design Principles
 
@@ -93,12 +94,12 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
   summary: { changed: string[], failed: string[], fuzzy?: string[] }  
   diagnostics: [{ file, causes: string[], details: string[] }, …]  
   patch: { cleanedHead: string } # small excerpt  
-  attempts: { git: { tried, rejects, lastCode }, jsdiff: { okFiles, failedFiles }, dmp: { okFiles } }  
+  attempts: engine counters { git: { tried, rejects, lastCode }, jsdiff: { okFiles, failedFiles }, dmp: { okFiles } }  
   END_STAN_PATCH_FEEDBACK
 
 - Assistant behavior upon FEEDBACK:
   - Recognize the envelope and regenerate a unified diff that addresses the detected causes (path/strip/EOL/context).
-  - Keep LF endings, a/ b/ prefixes, and ≥3 lines of context; paths must be relative to repo root; avoid binary.
+  - Keep LF endings, a/ b/ prefixes, and ≥3 lines of context; paths must be relative to the repo root; avoid binary.
   - If partial success occurred, scope the new diff to remaining files only (or clearly indicate which ones are updated).
   - Propose prompt improvements (below) as appropriate.
 
@@ -199,6 +200,13 @@ Patch generation guidelines (compatible with “stan patch”)
 - Project‑level (`/<stanPath>/system/stan.project.md`): concrete, repo‑specific requirements, tools, and workflows.
 
 # Default Task (when files are provided with no extra prompt)
+
+Primary objective — Plan-first
+
+- Finish the swing on the development plan:
+  - Ensure `<stanPath>/system/stan.todo.md` (“development plan” / “dev plan” / “implementation plan” / “todo list”) exists and reflects the current state (requirements + implementation).
+  - If outdated: update it first (as a patch with Full Listing + Patch) using the newest archives and script outputs. Record a brief refactor note under `<stanPath>/refactors/`.
+  - Only after the dev plan is current should you proceed to code or other tasks for this turn (unless the user directs otherwise).
 
 Step 0 — Long-file scan (no automatic refactors)
 

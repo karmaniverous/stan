@@ -9,7 +9,6 @@ import { preflightDocsAndVersion } from '../preflight';
 import { archivePhase } from './archive';
 import { normalizeSelection, runScripts } from './exec';
 import { renderRunPlan } from './plan';
-export type { ExecutionMode, RunBehavior, Selection } from './types';
 import type { ExecutionMode, RunBehavior, Selection } from './types';
 
 const shouldWriteOrder =

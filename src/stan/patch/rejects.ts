@@ -46,8 +46,8 @@ export const moveRejFilesToPatchWorkspace = async (
   }
 
   const dirs = makeStanDirs(baseCwd, stanPath);
-  const batch = `rejects-${utcStamp()}`;
-  const destRoot = path.join(dirs.patchAbs, batch);
+  const batch = utcStamp();
+  const destRoot = path.join(dirs.patchAbs, 'rejects', batch);
   await mkdir(destRoot, { recursive: true });
 
   for (const rel of rels) {

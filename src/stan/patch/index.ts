@@ -3,7 +3,14 @@
  * Follows the TS module layout guideline: module entry lives at src/stan/patch/index.ts.
  */
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import path from 'node:path';
 
 import type { Command } from 'commander';
@@ -50,6 +57,38 @@ const pathsFromPatch = (cleaned: string): string[] => {
     if (p && !out.includes(p)) out.push(p);
   }
   return out;
+};
+
+const pruneSandboxDirs = async (
+  sandboxRoot: string,
+  keep = 5,
+): Promise<void> => {
+  try {
+    const parent = path.dirname(sandboxRoot);
+    const entries = await readdir(parent, { withFileTypes: true });
+    const dirs = entries
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .filter((n) => n !== path.basename(sandboxRoot));
+    const stats = await Promise.all(
+      dirs.map(async (d) => {
+        const full = path.join(parent, d);
+        try {
+          const s = await stat(full);
+          return { name: d, mtimeMs: s.mtimeMs, full };
+        } catch {
+          return { name: d, mtimeMs: 0, full };
+        }
+      }),
+    );
+    stats.sort((a, b) => b.mtimeMs - a.mtimeMs);
+    const toDelete = stats.slice(keep);
+    await Promise.all(
+      toDelete.map((s) => rm(s.full, { recursive: true, force: true })),
+    );
+  } catch {
+    // best-effort
+  }
 };
 
 export const registerPatch = (cli: Command): Command => {
@@ -160,6 +199,11 @@ export const registerPatch = (cli: Command): Command => {
         sandboxRoot,
       });
 
+      if (check && sandboxRoot) {
+        // keep only the latest few sandboxes
+        await pruneSandboxDirs(sandboxRoot, 5);
+      }
+
       if (js.okFiles.length > 0 && js.failed.length === 0) {
         console.log(
           check
@@ -190,20 +234,25 @@ export const registerPatch = (cli: Command): Command => {
         const debugDir = path.join(path.dirname(patchAbs), '.debug');
         await mkdir(debugDir, { recursive: true });
         await writeFile(path.join(debugDir, 'cleaned.patch'), cleaned, 'utf8');
+
+        const gitAttempts = result.captures.map((c) => ({
+          label: c.label,
+          code: c.code,
+          stderrBytes: Buffer.byteLength(c.stderr, 'utf8'),
+          stdoutBytes: Buffer.byteLength(c.stdout, 'utf8'),
+        }));
+        const jsAttempts = {
+          okFiles: js.okFiles,
+          failedFiles: js.failed.map((f) => f.path),
+          sandboxRoot: sandboxRoot ?? null,
+        };
+
         await writeFile(
           path.join(debugDir, 'attempts.json'),
-          JSON.stringify(
-            result.captures.map((c) => ({
-              label: c.label,
-              code: c.code,
-              stderrBytes: Buffer.byteLength(c.stderr, 'utf8'),
-              stdoutBytes: Buffer.byteLength(c.stdout, 'utf8'),
-            })),
-            null,
-            2,
-          ),
+          JSON.stringify({ git: gitAttempts, jsdiff: jsAttempts }, null, 2),
           'utf8',
         );
+
         for (const c of result.captures) {
           const safe = c.label.replace(/[^a-z0-9.-]/gi, '_');
           await writeFile(
@@ -281,6 +330,18 @@ export const registerPatch = (cli: Command): Command => {
         );
       } catch {
         // best-effort
+      }
+
+      // Print brief last-error context when completely failed and not in debug
+      if (process.env.STAN_DEBUG !== '1' && result.captures.length > 0) {
+        const last = result.captures[result.captures.length - 1];
+        const snippet = (last.stderr ?? '')
+          .split(/\r?\n/)
+          .slice(0, 2)
+          .join(' ')
+          .trim()
+          .slice(0, 200);
+        if (snippet) console.log(`stan: last error: ${snippet}`);
       }
 
       console.log(

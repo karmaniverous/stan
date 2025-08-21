@@ -176,7 +176,7 @@ export const resolveStanPath = async (cwd: string): Promise<string> => {
 
 /** Ensure stanPath exists and manage output/diff subdirs.
  * - Always ensure <stanPath>/output and <stanPath>/diff exist.
- * - When keep===false, copy output/archive.tar -> diff/archive.prev.tar (if present),
+ * - When keep===false, copy output/archive.tar -\> diff/archive.prev.tar (if present),
  *   then clear ONLY the output directory.
  */
 export const ensureOutputDir = async (

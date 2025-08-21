@@ -137,6 +137,6 @@ export const printVersionInfo = (v: VersionInfo): void => {
     }, baseline: ${v.systemPrompt.baselineExists ? 'yes' : 'no'})`,
     `docs last installed: ${v.docsMeta?.version ?? 'unknown'}`,
   ];
-  // eslint-disable-next-line no-console
+
   console.log(lines.join('\n'));
 };

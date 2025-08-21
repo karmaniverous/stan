@@ -37,8 +37,8 @@ const configOrder = (config: ContextConfig): string[] =>
  * Normalize selection to config order.
  * - When selection is null/undefined, return all config keys.
  * - When selection exists:
- *   - [] => run nothing
- *   - non-empty => order by config order
+ *   - [] =\> run nothing
+ *   - non-empty =\> order by config order
  */
 const normalizeSelection = (
   selection: Selection | undefined | null,

@@ -9,12 +9,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('./apply', () => ({
   __esModule: true,
   buildApplyAttempts: () => [],
-  runGitApply: () => Promise.resolve({
-    ok: false,
-    tried: ['3way-nowarn-p1', '3way-ignore-p1', 'reject-nowarn-p1'],
-    lastCode: 1,
-    captures: [],
-  }),
+  runGitApply: () =>
+    Promise.resolve({
+      ok: false,
+      tried: ['3way-nowarn-p1', '3way-ignore-p1', 'reject-nowarn-p1'],
+      lastCode: 1,
+      captures: [],
+    }),
 }));
 
 import { registerPatch } from '@/stan/patch';

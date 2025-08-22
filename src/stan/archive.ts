@@ -103,7 +103,6 @@ export const createArchive = async (
         filter: (p: string) =>
           !(
             isUnder(`${stanPath}/diff`, p) ||
-            isUnder(`${stanPath}/refactors`, p) ||
             p === `${stanPath}/output/archive.tar` ||
             p === `${stanPath}/output/archive.diff.tar` ||
             p === `${stanPath}/output/archive.warnings.txt`
@@ -112,7 +111,7 @@ export const createArchive = async (
       filesToPack,
     );
   } else {
-    // Enforce hard excludes even in non-combine mode (defense-in-depth).
+    // No refactors directory is created anymore; no special-case filter needed for it.
     await tar.create(
       {
         file: archivePath,
@@ -120,7 +119,6 @@ export const createArchive = async (
         filter: (p: string) =>
           !(
             isUnder(`${stanPath}/diff`, p) ||
-            isUnder(`${stanPath}/refactors`, p) ||
             p === `${stanPath}/output/archive.tar` ||
             p === `${stanPath}/output/archive.diff.tar` ||
             p === `${stanPath}/output/archive.warnings.txt`

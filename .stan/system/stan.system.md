@@ -297,26 +297,20 @@ If info is insufficient to proceed without critical assumptions, abort and clari
   - Write global requirements and cross‑cutting concerns to `/<stanPath>/system/stan.project.md`.
   - Clean up previous requirements comments that do not meet these guidelines.
 
-## MANDATORY Refactor Log Entries (`/<stanPath>/refactors`)
+## Commit message output (replaces refactor-note files)
 
-To preserve context across chat threads, the assistant MUST maintain a short, structured refactor log under
-`/<stanPath>/refactors/`. This is REQUIRED for every response that introduces any code or doc change
-in the repository.
-
-- For any response that includes code changes, create one new Markdown file that accounts for ALL changes made in that response:
-  - File name: `refactors/YYYYMMDD-HHMMSS-short-slug.md`
-    - UTC time; `short-slug` ≤ 4 words, kebab‑case.
-- Content template (keep it brief; ≈ 10–20 lines):
-  - `# Refactor: <short title>`
-  - `When:` UTC timestamp
-  - `Why:` 1–2 sentences describing the problem/requirement
-  - `What changed:` bullet list of key files/decisions
-  - `Tests/Lint:` summary (pass/fail; notable warnings)
-  - `Links:` PR/commit refs, CI artifacts, or STAN artifact names if relevant
-  - `Next:` 1–2 follow‑ups (optional)
-- Keep entries human‑ and machine‑scannable; do not paste large diffs. Link to artifacts instead of duplicating content.
-- If a response updates multiple files, there MUST be exactly one new refactor entry covering that response’s changes.
-- If a response proposes code patches without a new refactor entry, the assistant MUST stop and add the entry before proceeding.
+- The assistant MUST NOT create or persist refactor-note files under
+  `<stanPath>/refactors/`.
+- At the end of any change set, the assistant MUST output a commit
+  message instead of a refactor-note file.
+  - Subject line: max 50 characters (concise summary).
+  - Body: hard-wrapped at 72 columns.
+  - Recommended structure:
+    - “When: <UTC timestamp>”
+    - “Why: <short reason>”
+    - “What changed:” bulleted file list with terse notes
+- When patches are impractical, provide Full Listings for changed files,
+  followed by the commit message. Do not emit unified diffs in that mode.
 
 # Response Format (MANDATORY)
 

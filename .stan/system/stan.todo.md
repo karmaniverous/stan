@@ -23,25 +23,6 @@ Plan management policy
 
 Current plan (remaining)
 
-- P0 — Remove refactor-note persistence (this turn)
-  - Stop creating or populating <stanPath>/refactors entirely.
-  - Remove code paths that reference <stanPath>/refactors (writers,
-    cleaners, or special-case handling).
-  - Replace “refactor note” output with a commit message emitted in
-    chat after each change set (≤ 50 char subject; 72-col wrapped
-    body).
-  - Update documentation to reflect the commit-message workflow.
-
-- P0 — Archive sanity (related)
-  - Rely on the absence of <stanPath>/refactors; do not add or keep
-    special-purpose excludes for it in archivers.
-  - Verify that both non-combine and combine runs (`stan run -a` and
-    `stan run -a -c`) never show refactor files in
-    <stanPath>/output/archive.tar or archive.diff.tar (since they will
-    not exist).
-  - Adjust/trim any lingering, now-irrelevant code comments and tests
-    that assumed refactor-note persistence.
-
 - P0 — Patch pipeline (ongoing)
   - FEEDBACK envelope: keep concise last-error snippet (present).
   - jsdiff fallback: stable (present); optional DMP deferred.
@@ -62,6 +43,15 @@ Completed (since last update)
 - Docs: Added “Getting started” to README, including guidance to exclude
   `<stanPath>` (default `.stan`) from ESLint (flat config ignores).
 
+- P0 — Removed refactor-note persistence
+  - No `<stanPath>/refactors` directory is created or referenced by code.
+  - Commit‑message workflow is documented in the system prompt; no “refactor
+    note” files are written anywhere.
+
+- P0 — Archive sanity verification
+  - Archivers contain no refactor‑specific excludes.
+  - Combine and non‑combine modes produce archives without any refactor
+    artifacts (confirmed by code/tests).
 
 - CLI refactors (services-first; adapters thin)
   - Snap handlers split; init/patch split; run split into services +
@@ -73,7 +63,7 @@ Completed (since last update)
   - Clean/extract from prose; tolerant git apply with p1/p0 and
     --recount; jsdiff fallback with CRLF preservation; FEEDBACK
     clipboard + .debug/attempts.json; rejects relocated under
-    <stanPath>/patch/.
+    <stanPath>/patch/>.
 - Archive classifier
   - Binary exclusion; large text call-outs; archive warnings log to
     console (no output file).

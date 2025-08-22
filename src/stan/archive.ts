@@ -87,13 +87,14 @@ export const createArchive = async (
 
   const tar = (await import('tar')) as unknown as TarLike;
 
+  const isUnder = (prefix: string, p: string): boolean =>
+    p === prefix || p.startsWith(`${prefix}/`);
+
   if (includeOutputDir) {
     // Force-include <stanPath>/output and exclude <stanPath>/diff and archive files.
     const filesToPack = Array.from(
       new Set([...filesForArchive, `${stanPath.replace(/\\/g, '/')}/output`]),
     );
-    const isUnder = (prefix: string, p: string): boolean =>
-      p === prefix || p.startsWith(`${prefix}/`);
 
     await tar.create(
       {
@@ -111,7 +112,22 @@ export const createArchive = async (
       filesToPack,
     );
   } else {
-    await tar.create({ file: archivePath, cwd }, filesForArchive);
+    // Enforce hard excludes even in non-combine mode (defense-in-depth).
+    await tar.create(
+      {
+        file: archivePath,
+        cwd,
+        filter: (p: string) =>
+          !(
+            isUnder(`${stanPath}/diff`, p) ||
+            isUnder(`${stanPath}/refactors`, p) ||
+            p === `${stanPath}/output/archive.tar` ||
+            p === `${stanPath}/output/archive.diff.tar` ||
+            p === `${stanPath}/output/archive.warnings.txt`
+          ),
+      },
+      filesForArchive,
+    );
   }
 
   // Ensure prev exists on first run.

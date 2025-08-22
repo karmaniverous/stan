@@ -59,6 +59,10 @@ Current plan (remaining)
 
 Completed (since last update)
 
+- Docs: Added “Getting started” to README, including guidance to exclude
+  `<stanPath>` (default `.stan`) from ESLint (flat config ignores).
+
+
 - CLI refactors (services-first; adapters thin)
   - Snap handlers split; init/patch split; run split into services +
     pure plan rendering.

@@ -50,6 +50,27 @@ stan --version
 stan --help
 ```
 
+## Getting started
+
+1. Initialize STAN in your repo (creates `stan.config.yml` and scaffolds docs):
+
+```
+stan init
+```
+
+2. Exclude the STAN workspace from linters/tools.
+
+- ESLint (flat config): ensure your `ignores` include `<stanPath>/**`
+  (default `.stan/**`). The template in this repo’s `eslint.config.js` already
+  contains `'.stan/**'` so lints focus on your source, not STAN artifacts.
+- The same principle applies to other analyzers you use (formatters, type
+  checkers that scan the whole tree, etc.).
+
+3. Follow the Quickstart below to run scripts and (optionally) produce archives.
+
+Tip: If you change `stanPath` in `stan.config.*`, update your ESLint ignores
+accordingly so the new folder stays out of scope.
+
 ## Quickstart
 
 1. Initialize config

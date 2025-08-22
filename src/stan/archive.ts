@@ -102,8 +102,10 @@ export const createArchive = async (
         filter: (p: string) =>
           !(
             isUnder(`${stanPath}/diff`, p) ||
+            isUnder(`${stanPath}/refactors`, p) ||
             p === `${stanPath}/output/archive.tar` ||
-            p === `${stanPath}/output/archive.diff.tar`
+            p === `${stanPath}/output/archive.diff.tar` ||
+            p === `${stanPath}/output/archive.warnings.txt`
           ),
       },
       filesToPack,

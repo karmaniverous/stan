@@ -138,10 +138,7 @@ export const runPatch = async (
   // Detect & clean (unified diff only), tolerant to surrounding prose
   const cleaned = detectAndCleanPatch(raw);
 
-  // Parse for strip candidates and basic diagnostics
-  const parsed = parseUnifiedDiff(cleaned);
-
-  // Write cleaned content to canonical path <stanPath>/patch/.patch
+  // Write cleaned content to canonical path <stanPath>/patch/.patch (always try before parsing)
   try {
     await ensureParentDir(patchAbs);
     await writeFile(patchAbs, cleaned, 'utf8');
@@ -150,10 +147,19 @@ export const runPatch = async (
     return;
   }
 
+  // Parse for strip candidates (must not prevent diagnostics from being written)
+  let parsed: ReturnType<typeof parseUnifiedDiff> | null = null;
+  try {
+    parsed = parseUnifiedDiff(cleaned);
+  } catch {
+    parsed = null; // proceed with a safe fallback
+  }
+
   console.log(`stan: applying patch "${patchRel}"`);
 
   const check = Boolean(opts?.check);
-  const attempts = parsed.stripCandidates.flatMap((p) =>
+  const stripOrder = parsed?.stripCandidates ?? [1, 0];
+  const attempts = stripOrder.flatMap((p) =>
     buildApplyAttempts(check, p, !check),
   );
 
@@ -173,12 +179,33 @@ export const runPatch = async (
     ? path.join(path.dirname(patchAbs), '.sandbox', utcStamp())
     : undefined;
 
-  const js = await applyWithJsDiff({
-    cwd,
-    cleaned,
-    check,
-    sandboxRoot,
-  });
+  // Build changed-path candidates for diagnostics if jsdiff throws
+  const changedFromHeaders = pathsFromPatch(cleaned);
+
+  let js: {
+    okFiles: string[];
+    failed: Array<{ path: string; reason: string }>;
+    sandboxRoot?: string;
+  } | null = null;
+
+  try {
+    js = await applyWithJsDiff({
+      cwd,
+      cleaned,
+      check,
+      sandboxRoot,
+    });
+  } catch {
+    // On catastrophic jsdiff failure, synthesize a failure report so diagnostics can still be written
+    js = {
+      okFiles: [],
+      failed: changedFromHeaders.map((p) => ({
+        path: p,
+        reason: 'jsdiff error',
+      })),
+      sandboxRoot,
+    };
+  }
 
   if (check && sandboxRoot) {
     // keep only the latest few sandboxes
@@ -194,7 +221,7 @@ export const runPatch = async (
     return;
   }
 
-  // Diagnostics bundle
+  // Diagnostics bundle — MUST succeed even when parse/jsdiff failed earlier
   try {
     const debugDir = path.join(path.dirname(patchAbs), '.debug');
     await mkdir(debugDir, { recursive: true });
@@ -240,22 +267,15 @@ export const runPatch = async (
       `stan: wrote patch diagnostics -> ${attemptsRel} (per-attempt logs under ${debugRel}/)`,
     );
   } catch {
-    // best-effort
+    // best-effort, but we intentionally do not abort
   }
 
-  // FEEDBACK bundle to clipboard (self-identifying)
-  // Build the envelope first so we can still copy to clipboard even if file IO fails.
+  // FEEDBACK bundle (must still be generated for triage)
   {
-    const changed = pathsFromPatch(cleaned);
+    const changed = changedFromHeaders;
     const failedPaths = js.failed.map((f) => f.path);
     const anyOk = js.okFiles.length > 0;
-    const overall = check
-      ? anyOk
-        ? 'check'
-        : 'check'
-      : anyOk
-        ? 'partial'
-        : 'failed';
+    const overall = check ? 'check' : anyOk ? 'partial' : 'failed';
 
     // Best-effort repo name from package.json (no require())
     let repoName: string | undefined;
@@ -268,7 +288,9 @@ export const runPatch = async (
     }
 
     // FS-backed diagnostics from parse (limit to 10 for chat)
-    const diagnostics = diagnosePatchWithFs(cwd, parsed).slice(0, 10);
+    const diagnostics = parsed
+      ? diagnosePatchWithFs(cwd, parsed).slice(0, 10)
+      : [];
 
     type Strip = 'p1' | 'p0';
     const stripList: Strip[] = attempts.map((a) =>
@@ -299,7 +321,7 @@ export const runPatch = async (
       attempts: {
         git: {
           tried: result.tried,
-          rejects: 0, // count not required in envelope
+          rejects: 0, // concrete *.rej moved below; count not required in envelope
           lastCode: result.lastCode,
         },
         jsdiff: {
@@ -311,7 +333,6 @@ export const runPatch = async (
       diagnostics,
     });
 
-    // Try to write the feedback file; log outcome regardless.
     const debugDir = path.join(path.dirname(patchAbs), '.debug');
     let fbAbs = '';
     try {

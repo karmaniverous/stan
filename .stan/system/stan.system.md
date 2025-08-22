@@ -181,6 +181,31 @@ Patch generation guidelines (compatible with “stan patch”)
 - Renames: prefer delete+add (two hunks) unless a simple `diff --git` rename applies cleanly.
 - Binary: do not include binary patches.
 
+Hunk hygiene (jsdiff‑compatible; REQUIRED)
+
+- Every hunk body line MUST begin with one of:
+  - a single space “ ” for unchanged context,
+  - “+” for additions, or
+  - “-” for deletions.
+    Never place raw code/text lines (e.g., “ ),”) inside a hunk without a leading marker.
+- Hunk headers and counts:
+  - Use a valid header `@@ -<oldStart>,<oldLines> <newStart>,<newLines> @@`.
+  - The body MUST contain exactly the number of lines implied by the header:
+    • oldLines = count of “ ” + “-” lines,
+    • newLines = count of “ ” + “+” lines.
+  - Do not start a new `@@` header until the previous hunk body is complete.
+- File grouping:
+  - For each changed file, include one or more hunks under a single “diff --git … / --- … / +++ …” group.
+  - Do not interleave hunks from different files; start a new `diff --git` block for the next file.
+- Paths and strip:
+  - Prefer `a/<path>` and `b/<path>` prefixes (p1). STAN will also try p0 automatically.
+  - Paths must use POSIX separators “/” and be repo‑relative.
+- Fences and prose:
+  - Do not place markdown text, banners, or unfenced prose inside the diff. Keep the diff payload pure unified‑diff.
+  - When presenting in chat, wrap the diff in a fence; the fence must not appear inside the diff body.
+- Line endings:
+  - Normalize to LF (`\n`) in the patch. STAN handles CRLF translation when applying.
+
 # Archives & preflight (binary/large files; baseline/version awareness)
 
 - Binary exclusion:

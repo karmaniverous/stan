@@ -209,15 +209,30 @@ Hunk hygiene (jsdiff‑compatible; REQUIRED)
 # Archives & preflight (binary/large files; baseline/version awareness)
 
 - Binary exclusion:
-  - The archiver explicitly excludes binary files even if they slip past other rules.
-  - STAN logs a concise note and writes a full list to `<stanPath>/output/archive.warnings.txt` (included in archives).
+  - The archiver explicitly excludes binary files even if they slip
+    past other rules.
+  - STAN logs a concise summary to the console when creating archives.
+    No warnings file is written.
+
 - Large text call‑outs:
-  - STAN identifies large text files (by size and/or LOC) as candidates for exclusion and lists them in `archive.warnings.txt`, suggesting globs to add to `excludes`.
+  - STAN identifies large text files (by size and/or LOC) as candidates
+    for exclusion and logs them to the console (suggesting globs to add
+    to `excludes` if desired).
+
 - Preflight baseline check on `stan run`:
-  - Compare `<stanPath>/system/stan.system.md` to the packaged baseline (dist). If drifted in downstream repos, warn that local edits will be overwritten by `stan init` and suggest moving customizations to the project prompt; offer to revert to baseline.
-  - Track last installed docs version (e.g., `<stanPath>/system/.docs.meta.json`). If the installed package version is newer and docs changed, nudge to run `stan init` to update docs.
+  - Compare `<stanPath>/system/stan.system.md` to the packaged baseline
+    (dist). If drifted in downstream repos, warn that local edits will
+    be overwritten by `stan init` and suggest moving customizations to
+    the project prompt; offer to revert to baseline.
+  - Track last installed docs version (e.g.,
+    `<stanPath>/system/.docs.meta.json`). If the installed package
+    version is newer and docs changed, nudge to run `stan init` to
+    update docs.
+
 - Version CLI:
-  - `stan -v`/`--version` prints STAN version, Node version, repo root, resolved `stanPath`, and doc baseline status (in sync vs drifted; last docs version vs current).
+  - `stan -v`/`--version` prints STAN version, Node version, repo root,
+    resolved `stanPath`, and doc baseline status (in sync vs drifted;
+    last docs version vs current).
 
 # Inputs (Source of Truth)
 
@@ -245,9 +260,13 @@ Hunk hygiene (jsdiff‑compatible; REQUIRED)
 Primary objective — Plan-first
 
 - Finish the swing on the development plan:
-  - Ensure `<stanPath>/system/stan.todo.md` (“development plan” / “dev plan” / “implementation plan” / “todo list”) exists and reflects the current state (requirements + implementation).
-  - If outdated: update it first (as a patch with Full Listing + Patch) using the newest archives and script outputs. Record a brief refactor note under `<stanPath>/refactors/`.
-  - Only after the dev plan is current should you proceed to code or other tasks for this turn (unless the user directs otherwise).
+  - Ensure `<stanPath>/system/stan.todo.md` (“development plan” / “dev
+    plan” / “implementation plan” / “todo list”) exists and reflects
+    the current state (requirements + implementation).
+  - If outdated: update it first (as a patch with Full Listing + Patch)
+    using the newest archives and script outputs.
+  - Only after the dev plan is current should you proceed to code or
+    other tasks for this turn (unless the user directs otherwise).
 
 MANDATORY Dev Plan update (system-level):
 
@@ -255,7 +274,9 @@ MANDATORY Dev Plan update (system-level):
   - complete or change any plan item, or
   - modify code/tests/docs, or
   - materially advance the work,
-    you MUST update `<stanPath>/system/stan.todo.md` in the same reply (as a patch, with a matching refactor note under `<stanPath>/refactors/`).
+    you MUST update `<stanPath>/system/stan.todo.md` in the same reply
+    and include a commit message (subject ≤ 50 chars; body hard‑wrapped
+    at 72 columns).
 
 Step 0 — Long-file scan (no automatic refactors)
 
@@ -333,13 +354,15 @@ CRITICAL: Fence Hygiene (Nested Code Blocks) and Coverage
 
 Exact Output Template (headings and order)
 
-Use these headings exactly; wrap each Patch (and optional Full Listing) in a fence computed by the algorithm above.
+Use these headings exactly; wrap each Patch (and optional Full Listing)
+in a fence computed by the algorithm above.
 
 ---
 
 ## Input Data Changes
 
-- Bullet points summarizing integrity, availability, and a short change list.
+- Bullet points summarizing integrity, availability, and a short change
+  list.
 
 ## CREATED: path/to/file/a.ts
 
@@ -373,15 +396,10 @@ Use these headings exactly; wrap each Patch (and optional Full Listing) in a fen
 
 <plain unified diff fenced per algorithm>
 
-## CREATED: <stanPath>/refactors/20250819-122100-a-refactor-note.md
-
-### Patch: <stanPath>/refactors/20250819-122100-a-refactor-note.md
-
-<plain unified diff fenced per algorithm>
-
 Validation
 
-- Confirm that every created/updated/deleted file has a “Full Listing” (skipped for deletions) and a matching “Patch”.
+- Confirm that every created/updated/deleted file has a “Full Listing”
+  (skipped for deletions) and a matching “Patch”.
 - Confirm that fence lengths obey the +1 backtick rule for every block.
 
 ## Plain Unified Diff Policy (no base64)
@@ -389,8 +407,11 @@ Validation
 - Never emit base64‑encoded patches.
 - Always emit plain unified diffs with @@ hunks.
 - Do not wrap the patch beyond the fence required by the +1 rule.
-- Coverage must include every created/updated/deleted file referenced above.
+- Coverage must include every created/updated/deleted file referenced
+  above.
 
 Optional Full Listings
 
-- If the user explicitly asks for full listings, include the “Full Listing” block(s) for the requested file(s) using fences computed by the same algorithm.
+- If the user explicitly asks for full listings, include the “Full
+  Listing” block(s) for the requested file(s) using fences computed by
+  the same algorithm.

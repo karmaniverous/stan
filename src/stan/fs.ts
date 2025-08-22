@@ -106,8 +106,6 @@ export const filterFiles = async (
     ...excludes.map(toMatcher),
     // always exclude <stanPath>/diff
     (f) => matchesPrefix(f, `${stanRel}/diff`),
-    // exclude STAN refactors (internal logs) from archives by default
-    (f) => matchesPrefix(f, `${stanRel}/refactors`),
   ];
 
   if (!includeOutputDir) {

@@ -13,6 +13,13 @@ Purpose
 
 Current plan (remaining)
 
+- P0 — Patch discipline and warnings UX
+  - Ensure all assistant‑generated patches are valid unified diffs (proper line markers and hunk counts).
+  - Archive warnings UX: do not write `archive.warnings.txt`; log console summary instead.
+    • Code: remove warnings file write/inclusion; print `stan: archive warnings` + body.
+    • Tests: update classifier behavior test to remove warnings-file assertion.
+  - (Optional) Reduce archive noise by excluding `.stan/refactors/**` via internal filters (no config change).
+
 - P0 — Robust patch handling (remaining polish)
   - FEEDBACK envelope: include concise stderr summary (already in logs) directly in the clipboard envelope (partially done).
   - Optional DMP fallback after jsdiff (deferred).

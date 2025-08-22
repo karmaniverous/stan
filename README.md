@@ -128,7 +128,7 @@ stan run [options]
   - `-q, --sequential`: run scripts sequentially in config order. Requires `-s` or `-x`.
 - Archives & outputs
   - `-a, --archive`: after scripts run (or immediately if selection is empty), write `archive.tar` and `archive.diff.tar`.
-    - STAN also writes `stan/output/archive.warnings.txt` that lists excluded binary files and large text files; this file is included in the archives.
+    - STAN logs a summary of excluded binary files and large text files to the console at archive time.
   - `-c, --combine`: include script outputs inside the archives and do not keep them on disk. Implies `--archive` and requires `-s` or `-x`. Conflicts with `--keep`.
   - `-k, --keep`: do not clear the output directory before running. Conflicts with `--combine`.
 
@@ -232,7 +232,7 @@ Troubleshooting:
   - your archive contains `<stanPath>/system/stan.system.md` (default `stan/system/stan.system.md`),
   - your `stan.config.yml|json` is present and has the correct `stanPath`, or
   - attach a raw file named exactly `stan.system.md` as a separate file.
-  - When `--archive` runs, STAN writes `stan/output/archive.warnings.txt` listing excluded binaries and large text files; this file is included in the archives and can help you refine `includes`/`excludes`.
+  - When `--archive` runs, STAN prints a console summary of excluded binaries and large text files to help you refine `includes`/`excludes`.
 
 ---
 

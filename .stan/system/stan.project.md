@@ -86,3 +86,4 @@ If this file experiences significant structural changes, update
 
 - At the start of `stan run`, print a concise plan.
 - For each script/archive action, log `stan: start "<key>"` and `stan: done "<key>" -> <path>"`.
+- Archive warnings: do not write a warnings file. Print a console summary of excluded binaries and large text files when creating archives

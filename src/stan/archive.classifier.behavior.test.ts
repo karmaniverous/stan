@@ -34,12 +34,14 @@ vi.mock('tar', () => ({
   },
 }));
 
-describe('createArchive integrates classifier (excludes binaries, includes warnings)', () => {
+describe('createArchive integrates classifier (excludes binaries, logs warnings)', () => {
   let dir: string;
+  let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), 'stan-arch-class-'));
     calls.length = 0;
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(async () => {
@@ -47,7 +49,7 @@ describe('createArchive integrates classifier (excludes binaries, includes warni
     vi.restoreAllMocks();
   });
 
-  it('non-combine: excludes binaries and includes archive.warnings.txt explicitly', async () => {
+  it('non-combine: excludes binaries and logs archive warnings to console', async () => {
     const out = 'out';
     // Prepare a few files in repo root
     await writeFile(
@@ -63,13 +65,14 @@ describe('createArchive integrates classifier (excludes binaries, includes warni
     const regCall = calls.find((c) => c.file.endsWith('archive.tar'));
     expect(regCall).toBeTruthy();
     const files = regCall?.files ?? [];
-    // warnings file included
-    expect(files).toEqual(
-      expect.arrayContaining([`${out}/output/archive.warnings.txt`]),
-    );
+
     // binary excluded
     expect(files).not.toEqual(expect.arrayContaining(['binary.bin']));
     // text included
     expect(files).toEqual(expect.arrayContaining(['small.txt', 'big.txt']));
+    // warnings logged to console
+    const logged = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
+    expect(logged).toMatch(/archive warnings/);
+    expect(logged).toMatch(/Binary files excluded|Large text files/);
   });
 });

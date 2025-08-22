@@ -6,10 +6,10 @@ excludes:
   - package-lock.json
   - '*.local'
 scripts:
+  typecheck: npm run typecheck
+  lint: npm run lint:fix
+  test: npm run test
   build: npm run stan:build
   docs: npm run stan:docs
   knip: npm run knip
-  lint: npm run lint:fix
-  test: npm run test
-  typecheck: npm run typecheck
 

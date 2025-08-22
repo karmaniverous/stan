@@ -4,45 +4,82 @@ When updated: 2025-08-22 (UTC)
 
 ALIASES
 
-- “development plan” / “dev plan” / “implementation plan” / “todo list” → <stanPath>/system/stan.todo.md
+- “development plan” / “dev plan” / “implementation plan” / “todo list”
+  → <stanPath>/system/stan.todo.md
 
 Purpose
 
-- Single source of truth for the current development plan across chat threads.
-- The assistant updates this document as code/design advances (remove completed items).
+- Single source of truth for the current development plan across chat
+  threads.
+- The assistant updates this document as code/design advances (remove
+  completed items).
+
+Plan management policy
+
+- No refactor-note files are to be written or persisted under
+  <stanPath>/refactors.
+- At the end of any change set, the assistant provides a commit message
+  (first line ≤ 50 chars; body wrapped at 72).
 
 Current plan (remaining)
 
-- P0 — Patch discipline and warnings UX
-  - Ensure all assistant‑generated patches are valid unified diffs (proper line markers and hunk counts).
-  - Archive warnings UX: do not write `archive.warnings.txt`; log console summary instead.
-    • Code: remove warnings file write/inclusion; print `stan: archive warnings` + body.
-    • Tests: update classifier behavior test to remove warnings-file assertion.
-  - (Optional) Reduce archive noise by excluding `.stan/refactors/**` via internal filters (no config change).
+- P0 — Remove refactor-note persistence (this turn)
+  - Stop creating or populating <stanPath>/refactors entirely.
+  - Remove code paths that reference <stanPath>/refactors (writers,
+    cleaners, or special-case handling).
+  - Replace “refactor note” output with a commit message emitted in
+    chat after each change set (≤ 50 char subject; 72-col wrapped
+    body).
+  - Update documentation to reflect the commit-message workflow.
 
-- P0 — Robust patch handling (remaining polish)
-  - FEEDBACK envelope: include concise stderr summary (already in logs) directly in the clipboard envelope (partially done).
-  - Optional DMP fallback after jsdiff (deferred).
+- P0 — Archive sanity (related)
+  - Rely on the absence of <stanPath>/refactors; do not add or keep
+    special-purpose excludes for it in archivers.
+  - Verify that both non-combine and combine runs (`stan run -a` and
+    `stan run -a -c`) never show refactor files in
+    <stanPath>/output/archive.tar or archive.diff.tar (since they will
+    not exist).
+  - Adjust/trim any lingering, now-irrelevant code comments and tests
+    that assumed refactor-note persistence.
+
+- P0 — Patch pipeline (ongoing)
+  - FEEDBACK envelope: keep concise last-error snippet (present).
+  - jsdiff fallback: stable (present); optional DMP deferred.
+  - Sandbox retention: bounded (present).
+
 - P1 — Preflight/version UX
   - Preflight drift nudge (TTY vs non-TTY behavior).
-  - `stan -v` prints version + doc baseline info (already implemented).
+  - `stan -v` prints version + doc baseline info (present).
+
 - P2 — Housekeeping
-  - Windows EBUSY on sandbox/patch directory teardown in one patch test: add best‑effort retry/backoff if it recurs.
+  - Windows EBUSY mitigation remains (temporary cwd + retries where
+    needed).
+  - Keep archive warnings console-only (present).
+  - Ensure new code follows SRP and 300‑LOC guidance.
 
 Completed (since last update)
 
-- CLI refactors (business logic out of adapters)
-  - DONE: Snap — extracted handlers (undo/redo/set/info/snap) to src/stan/snap/handlers.ts. Tests continue to import registerSnap unchanged.
-  - DONE: Init — extracted docs/gitignore/prompts/services under src/stan/init/\*. CLI remains a thin adapter and continues to export performInit for tests.
+- CLI refactors (services-first; adapters thin)
+  - Snap handlers split; init/patch split; run split into services +
+    pure plan rendering.
 - Diff/snapshot policy and artifacts
-  - Always-on diff with archives; snapshot policy implemented.
-- Patch pipeline
-  - Clean/extract from prose; tolerant git apply with -p1/-p0 and --recount; jsdiff fallback with EOL preservation; FEEDBACK clipboard + .debug/attempts.json; rejects relocation under .stan/patch/.
+  - Always-on diff with archives; snapshot policy implemented; snap
+    history with undo/redo/set/info.
+- Patch pipeline robustness
+  - Clean/extract from prose; tolerant git apply with p1/p0 and
+    --recount; jsdiff fallback with CRLF preservation; FEEDBACK
+    clipboard + .debug/attempts.json; rejects relocated under
+    <stanPath>/patch/.
 - Archive classifier
-  - Binary exclusion; large text call-outs; write archive.warnings.txt; include in archives.
+  - Binary exclusion; large text call-outs; archive warnings log to
+    console (no output file).
 
 Notes
 
-- Module SRP: new code follows the “directory module + index” guideline; CLI adapters remain thin.
-- Termination rule: if the original full archive is no longer in the context window, halt and resume in a fresh chat with the latest archives (state is preserved under <stanPath>/system).
-- Policies, architecture, and testing guidance live in <stanPath>/system/stan.system.md.
+- Module SRP: new code follows the “directory module + index” pattern;
+  CLI adapters remain thin.
+- Termination rule: if the original full archive is no longer in the
+  context window, halt and resume in a fresh chat with the latest
+  archives (state is preserved under <stanPath>/system).
+- Policies, architecture, and testing guidance live in
+  <stanPath>/system/stan.system.md.

@@ -6,9 +6,10 @@
 
 import { getVersionInfo } from './version';
 
-/** Run preflight and print warnings (non-interactive). */
+/** Run preflight and print warnings (TTY-aware). */
 export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
   const v = await getVersionInfo(cwd);
+  const isInteractive = Boolean((process.stdout as unknown as { isTTY?: boolean })?.isTTY);
 
   // Suppress drift warnings in these cases:
   // - developing STAN itself (module root == repo root),
@@ -23,15 +24,22 @@ export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
       process.env.STAN_FORCE_DRIFT_WARN !== '1');
 
   if (!suppressDrift) {
-    console.warn(
-      'stan: warning: local system prompt differs from packaged baseline.',
-    );
-    console.warn(
-      '      Edits in downstream repos will be overwritten by `stan init`.',
-    );
-    console.warn(
-      '      Move customizations to <stanPath>/system/stan.project.md instead.',
-    );
+    if (isInteractive) {
+      console.warn(
+        'stan: warning: local system prompt differs from packaged baseline.',
+      );
+      console.warn(
+        '      Edits in downstream repos will be overwritten by `stan init`.',
+      );
+      console.warn(
+        '      Move customizations to <stanPath>/system/stan.project.md instead.',
+      );
+    } else {
+      // Non‑TTY: concise, single-line notice suitable for logs/CI
+      console.warn(
+        'stan: warning: system prompt drift detected; run `stan init` to update (non‑TTY)',
+      );
+    }
   }
 
   // Post-upgrade nudge when packaged docs changed (based on recorded install version)
@@ -39,10 +47,17 @@ export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
     const prev = v.docsMeta.version;
     const cur = v.packageVersion;
     if (prev !== cur) {
-      console.log(
-        `stan: docs baseline has changed since last install (${prev} -> ${cur}).`,
-      );
-      console.log('      Run `stan init` to update prompts in your repo.');
+      if (isInteractive) {
+        console.log(
+          `stan: docs baseline has changed since last install (${prev} -> ${cur}).`,
+        );
+        console.log('      Run `stan init` to update prompts in your repo.');
+      } else {
+        // Non‑TTY: concise, single-line nudge
+        console.log(
+          `stan: docs baseline changed ${prev} -> ${cur}; run \`stan init\` to update`,
+        );
+      }
     }
   }
 };

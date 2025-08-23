@@ -29,7 +29,6 @@ Current plan (remaining)
   - Sandbox retention: bounded (present).
 
 - P1 — Preflight/version UX
-  - Preflight drift nudge (TTY vs non-TTY behavior).
   - `stan -v` prints version + doc baseline info (present).
 
 - P2 — Housekeeping
@@ -52,6 +51,10 @@ Completed (since last update)
   - Archivers contain no refactor‑specific excludes.
   - Combine and non‑combine modes produce archives without any refactor
     artifacts (confirmed by code/tests).
+
+- P1 — Preflight drift nudge (TTY vs non-TTY)
+  - TTY: multi‑line guidance about drift and where to place edits.
+  - Non‑TTY: concise single‑line notices suitable for CI/logs.
 
 - CLI refactors (services-first; adapters thin)
   - Snap handlers split; init/patch split; run split into services +

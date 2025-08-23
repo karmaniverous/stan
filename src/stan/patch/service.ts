@@ -11,6 +11,7 @@ import {
 } from 'node:fs/promises';
 import path from 'node:path';
 
+import { runGit } from '../snap/git';
 import { utcStamp } from '../util/time';
 import { ApplyResult, buildApplyAttempts, runGitApply } from './apply';
 import { detectAndCleanPatch } from './clean';
@@ -100,6 +101,33 @@ const seemsUnifiedDiff = (t: string): boolean =>
     /^\+\+\+\s+(?:b\/|\S)/m.test(t) &&
     /^@@\s+-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s+@@/m.test(t));
 
+// Warn if any of the touched files appear staged (index contains them).
+const maybeWarnStaged = async (
+  cwd: string,
+  touchedRel: string[],
+): Promise<void> => {
+  if (!touchedRel.length) return;
+  try {
+    const res = await runGit(cwd, ['diff', '--cached', '--name-only', '-z']);
+    if (res.code !== 0) return;
+    const staged = res.stdout
+      .split('\u0000')
+      .filter((s) => s.length > 0)
+      .map((s) => s.replace(/\\/g, '/'));
+    const touched = touchedRel.map((s) => s.replace(/\\/g, '/'));
+    const overlap = touched.filter((p) => staged.includes(p));
+    if (overlap.length > 0) {
+      console.warn(
+        `stan: warning: ${overlap.length.toString()} patched file(s) appear staged; STAN does not stage automatically.\n` +
+          `      To unstage: git restore --staged ${overlap
+            .map((p) => (p.includes(' ') ? `"${p}"` : p))
+            .join(' ')}`,
+      );
+    }
+  } catch {
+    // best-effort
+  }
+};
 export const runPatch = async (
   cwd0: string,
   inputMaybe?: string,
@@ -147,6 +175,8 @@ export const runPatch = async (
 
   // Detect & clean (unified diff only), tolerant to surrounding prose
   const cleaned = detectAndCleanPatch(raw);
+  // Collect touched-file candidates from headers (for diagnostics and staged check)
+  const changedFromHeaders = pathsFromPatch(cleaned);
 
   // Early input sanity checks
   if (isFeedbackEnvelope(cleaned)) {
@@ -197,6 +227,8 @@ export const runPatch = async (
   const result: ApplyResult = await runGitApply(cwd, patchAbs, attempts);
 
   if (result.ok) {
+    // Warn if any of the patched files appear staged
+    await maybeWarnStaged(cwd, changedFromHeaders);
     console.log(check ? 'stan: patch check passed' : 'stan: patch applied');
     return;
   }
@@ -240,6 +272,9 @@ export const runPatch = async (
   }
 
   if (js.okFiles.length > 0 && js.failed.length === 0) {
+    // Prefer the concrete jsdiff okFiles list; fall back to headers if empty
+    const touched = js.okFiles.length > 0 ? js.okFiles : changedFromHeaders;
+    await maybeWarnStaged(cwd, touched);
     console.log(check ? 'stan: patch check passed' : 'stan: patch applied');
     return;
   }
@@ -339,7 +374,7 @@ export const runPatch = async (
         enginesTried: ['git', 'jsdiff'],
         stripTried: Array.from(new Set<Strip>(stripList)),
       },
-      summary: { changed, failed: failedPaths, fuzzy: [] },
+      summary: { changed: changedFromHeaders, failed: failedPaths, fuzzy: [] },
       patch: { cleanedHead: firstKB(cleaned, 4) },
       attempts: {
         git: {

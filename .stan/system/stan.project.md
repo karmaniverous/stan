@@ -6,6 +6,24 @@ General, repo‑agnostic standards live in `/stan.system.md`.
 If this file experiences significant structural changes, update
 `/stan.project.template.md` to match so `stan init` scaffolds remain current.
 
+## Documentation conventions (requirements vs plan)
+
+- This file (stan.project.md) is the canonical home for durable, repo‑specific
+  requirements, policies, and standards that should persist over time.
+- The development plan (stan.todo.md) is a short‑lived, actionable plan that
+  describes how we intend to move from the current state to the desired state.
+  It should remain concise and focused on what’s next.
+- When we discover cross‑cutting rules, rename conventions, guardrails, or
+  recurring decisions that apply going forward, promote them here (project
+  prompt). Keep stan.todo.md focused on the remaining steps to implement or
+  adopt those rules.
+- Dev plan hygiene:
+  - Keep only a short “Completed (recent)” list (e.g., last 3–5 items or last
+    2 weeks) and prune older entries during routine updates.
+  - Rely on Git history and release notes for long‑term record of completed work.
+  - When a completed item establishes a durable policy, capture that policy
+    here (project prompt) and remove it from “Completed” in the dev plan.
+
 ## Build
 
 - Rollup builds:
@@ -86,4 +104,4 @@ If this file experiences significant structural changes, update
 
 - At the start of `stan run`, print a concise plan.
 - For each script/archive action, log `stan: start "<key>"` and `stan: done "<key>" -> <path>"`.
-- Archive warnings: do not write a warnings file. Print a console summary of excluded binaries and large text files when creating archives
+- Archive warnings: do not write a warnings file. Print a console summary of excluded binaries and large text files when creating archives.

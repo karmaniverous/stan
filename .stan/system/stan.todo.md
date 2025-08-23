@@ -20,6 +20,12 @@ Plan management policy
   <stanPath>/refactors.
 - At the end of any change set, the assistant provides a commit message
   (first line ≤ 50 chars; body wrapped at 72).
+- Completed retention:
+  - Keep only a short “Completed (recent)” list (e.g., last 3–5 items or last
+    2 weeks). Prune older entries during routine updates.
+  - Rely on Git history for the long‑term record of completed work.
+  - When a completed item establishes a durable policy, promote that policy
+    to stan.project.md and remove it from “Completed”.
 
 Current plan (remaining)
 
@@ -51,64 +57,20 @@ Current plan (remaining)
     • Clipboard: file path is always printed; if copy fails, clear message with saved path.  
     • (Optional) STAN_NO_CLIPBOARD env toggle docs if added.
 
-Completed (since last update)
+Completed (recent)
 
-- P0 — Patching DX (#1–#3)
-  - Worktree‑only applies: removed any index‑verified/staging behavior; tolerant git apply across p1→p0, then jsdiff fallback.
-  - Unified success log: “stan: patch applied” (no staged/unstaged wording).
-  - Early input sanity checks:
-    • Abort for BEGIN_STAN_PATCH_FEEDBACK envelopes with clear guidance.  
-    • Abort non‑diff inputs with helpful message describing expected headers.
-  - Terminal status on early aborts:
-    • Log “stan: patch failed” so CLI tests/UX receive a terminal status line.
-  - Clipboard feedback logging:
-    • On success: “stan: copied patch feedback to clipboard.”  
-    • On failure: “stan: clipboard copy failed; feedback saved -> <path>”.  
-    • FEEDBACK content is not printed to console.
-  - Test alignment: jsdiff fallback test updated to consume unified success log.
-
-- Docs: Added “Getting started” to README, including guidance to exclude
-  `<stanPath>` (default `.stan`) from ESLint (flat config ignores).
-
-- Archive classifier
-  - Binary exclusion; large text call-outs; archive warnings log to
-    console (no output file).
-
-- Diff/snapshot policy and artifacts
-  - Always-on diff with archives; snapshot policy implemented; snap
-    history with undo/redo/set/info.
-
-- Preflight/version UX
-  - `stan -v` prints version + doc baseline info; preflight drift warnings (TTY vs non‑TTY)
-    implemented and tested.
-
-- Lint/exports cleanup
-  - Removed redundant default exports (kept named exports) to resolve
-    knip duplicate-exports warnings in:
-    • src/stan/patch/run/diagnostics.ts  
-    • src/stan/patch/run/feedback.ts  
-    • src/stan/patch/run/pipeline.ts  
-    • src/stan/patch/run/source.ts
-
-- Run modules tests
-  - Added unit tests for:
-    • src/stan/patch/run/source.test.ts  
-    • src/stan/patch/run/pipeline.test.ts  
-    • src/stan/patch/run/diagnostics.test.ts  
-    • src/stan/patch/run/feedback.test.ts
-
-- Service smoke test
-  - Added src/stan/patch/service.smoke.test.ts to validate runPatch
-    success path and logging (“stan: patch applied”).
+- Graceful jsdiff parse errors
+  - applyWithJsDiff no longer throws on invalid/unparseable diffs; returns a failure outcome
+    so the pipeline can generate diagnostics/FEEDBACK instead of crashing.
 
 - Clipboard fallback logging
   - copyToClipboard now reports success/failure; persistFeedbackAndClipboard logs
     “copied to clipboard” on success and “clipboard copy failed; feedback saved -> <path>”
     on failure. Tests cover both paths.
 
-- Graceful jsdiff parse errors
-  - applyWithJsDiff no longer throws on invalid/unparseable diffs; returns a failure outcome
-    so the pipeline can generate diagnostics/FEEDBACK instead of crashing.
+- Service smoke test
+  - Added src/stan/patch/service.smoke.test.ts to validate runPatch
+    success path and logging (“stan: patch applied”).
 
 Notes
 

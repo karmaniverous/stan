@@ -18,7 +18,11 @@ describe('persistFeedbackAndClipboard', () => {
 
   beforeEach(async () => {
     dir = await mkdtemp(path.join(tmpdir(), 'stan-fb-'));
-    await writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'pkg' }), 'utf8');
+    await writeFile(
+      path.join(dir, 'package.json'),
+      JSON.stringify({ name: 'pkg' }),
+      'utf8',
+    );
   });
 
   afterEach(async () => {

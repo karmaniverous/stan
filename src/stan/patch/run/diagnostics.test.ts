@@ -45,13 +45,24 @@ describe('writePatchDiagnostics', () => {
     });
 
     expect(out.attemptsRel.endsWith('attempts.json')).toBe(true);
-    expect(await exists(path.join(dir, out.debugRel, 'cleaned.patch'))).toBe(true);
+    expect(await exists(path.join(dir, out.debugRel, 'cleaned.patch'))).toBe(
+      true,
+    );
 
     const attempts = JSON.parse(
       await readFile(path.join(dir, out.attemptsRel), 'utf8'),
     ) as {
-      git: Array<{ label: string; code: number; stderrBytes: number; stdoutBytes: number }>;
-      jsdiff: { okFiles: string[]; failedFiles: string[]; sandboxRoot: string | null };
+      git: Array<{
+        label: string;
+        code: number;
+        stderrBytes: number;
+        stdoutBytes: number;
+      }>;
+      jsdiff: {
+        okFiles: string[];
+        failedFiles: string[];
+        sandboxRoot: string | null;
+      };
     };
 
     expect(attempts.git.length).toBe(2);
@@ -63,10 +74,14 @@ describe('writePatchDiagnostics', () => {
     const safe = (s: string) => s.replace(/[^a-z0-9.-]/gi, '_');
     for (const g of attempts.git) {
       expect(
-        await exists(path.join(dir, out.debugRel, `${safe(g.label)}.stderr.txt`)),
+        await exists(
+          path.join(dir, out.debugRel, `${safe(g.label)}.stderr.txt`),
+        ),
       ).toBe(true);
       expect(
-        await exists(path.join(dir, out.debugRel, `${safe(g.label)}.stdout.txt`)),
+        await exists(
+          path.join(dir, out.debugRel, `${safe(g.label)}.stdout.txt`),
+        ),
       ).toBe(true);
     }
   });

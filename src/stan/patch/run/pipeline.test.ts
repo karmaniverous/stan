@@ -9,9 +9,18 @@ let gitResult: {
   ok: boolean;
   tried: string[];
   lastCode: number;
-  captures: Array<{ label: string; code: number; stdout: string; stderr: string }>;
+  captures: Array<{
+    label: string;
+    code: number;
+    stdout: string;
+    stderr: string;
+  }>;
 };
-let jsResult: { okFiles: string[]; failed: Array<{ path: string; reason: string }>; sandboxRoot?: string | null };
+let jsResult: {
+  okFiles: string[];
+  failed: Array<{ path: string; reason: string }>;
+  sandboxRoot?: string | null;
+};
 
 vi.mock('../apply', () => ({
   __esModule: true,
@@ -69,7 +78,11 @@ describe('applyPatchPipeline (git path and jsdiff fallback)', () => {
 
   it('returns not ok when both git and jsdiff fail or are partial', async () => {
     gitResult = { ok: false, tried: ['t1'], lastCode: 1, captures: [] };
-    jsResult = { okFiles: [], failed: [{ path: 'x', reason: 'fail' }], sandboxRoot: null };
+    jsResult = {
+      okFiles: [],
+      failed: [{ path: 'x', reason: 'fail' }],
+      sandboxRoot: null,
+    };
 
     const { applyPatchPipeline } = await import('./pipeline');
     const out = await applyPatchPipeline({

@@ -1,5 +1,7 @@
 # STAN — STAN Tames Autoregressive Nonsense
 
+![The STAN Loop](https://github.com/karmaniverous/stan/raw/main/assets/stan-loop.png)
+
 🎲 A tip of the hat to Stanisław Ulam.
 
 In 1946, while recovering from illness and noodling over card games, Ulam helped ignite the Monte Carlo method—random sampling to tackle hard, deterministic problems.

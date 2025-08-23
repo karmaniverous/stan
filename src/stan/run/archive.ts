@@ -2,6 +2,8 @@
 import { readdir, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { cyan, green } from '@/stan/util/color';
+
 import { createArchive } from '../archive';
 import type { ContextConfig } from '../config';
 import { createArchiveDiff } from '../diff';

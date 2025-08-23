@@ -4,6 +4,8 @@
  * - Nudge to run `stan init` after upgrades when packaged docs changed.
  */
 
+import { dim, yellow } from '@/stan/util/color';
+
 import { getVersionInfo } from './version';
 
 /** Run preflight and print warnings (TTY-aware). */
@@ -28,13 +30,19 @@ export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
   if (!suppressDrift) {
     if (isInteractive) {
       console.warn(
-        'stan: warning: local system prompt differs from packaged baseline.',
+        yellow(
+          'stan: warning: local system prompt differs from packaged baseline.',
+        ),
       );
       console.warn(
-        '      Edits in downstream repos will be overwritten by `stan init`.',
+        dim(
+          '      Edits in downstream repos will be overwritten by `stan init`.',
+        ),
       );
       console.warn(
-        '      Move customizations to <stanPath>/system/stan.project.md instead.',
+        dim(
+          '      Move customizations to <stanPath>/system/stan.project.md instead.',
+        ),
       );
     } else {
       // Non‑TTY: concise, single-line notice suitable for logs/CI
@@ -53,7 +61,9 @@ export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
         console.log(
           `stan: docs baseline has changed since last install (${prev} -> ${cur}).`,
         );
-        console.log('      Run `stan init` to update prompts in your repo.');
+        console.log(
+          dim('      Run `stan init` to update prompts in your repo.'),
+        );
       } else {
         // Non‑TTY: concise, single-line nudge
         console.log(

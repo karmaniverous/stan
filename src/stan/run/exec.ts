@@ -4,6 +4,8 @@ import { createWriteStream } from 'node:fs';
 import { appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { cyan, green } from '@/stan/util/color';
+
 import type { ContextConfig } from '../config';
 import type { ExecutionMode, Selection } from './types';
 
@@ -44,7 +46,7 @@ export const runOne = async (
   cmd: string,
   orderFile?: string,
 ): Promise<string> => {
-  console.log(`stan: start "${key}"`);
+  console.log(`stan: start "${cyan(key)}"`);
   const outFile = resolve(outAbs, `${key}.txt`);
   const child = spawn(cmd, { cwd, shell: true, windowsHide: true });
 
@@ -70,7 +72,9 @@ export const runOne = async (
   if (orderFile) {
     await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
   }
-  console.log(`stan: done "${key}" -> ${outRel}/${key}.txt`);
+  console.log(
+    `stan: ${green('done')} "${cyan(key)}" -> ${cyan(`${outRel}/${key}.txt`)}`,
+  );
   return outFile;
 };
 

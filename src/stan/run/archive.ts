@@ -47,15 +47,19 @@ export const archivePhase = async (args: {
   const { cwd, config, includeOutputs } = args;
   const dirs = makeStanDirs(cwd, config.stanPath);
 
-  console.log('stan: start "archive"');
+  console.log(`stan: start "${cyan('archive')}"`);
   const archivePath = await createArchive(cwd, config.stanPath, {
     includeOutputDir: includeOutputs,
     includes: config.includes ?? [],
     excludes: config.excludes ?? [],
   });
-  console.log(`stan: done "archive" -> ${archivePath.replace(/\\/g, '/')}`);
+  console.log(
+    `stan: ${green('done')} "${cyan('archive')}" -> ${cyan(
+      archivePath.replace(/\\/g, '/'),
+    )}`,
+  );
 
-  console.log('stan: start "archive (diff)"');
+  console.log(`stan: start "${cyan('archive (diff)')}"`);
   const { diffPath } = await createArchiveDiff({
     cwd,
     stanPath: config.stanPath,
@@ -65,7 +69,11 @@ export const archivePhase = async (args: {
     updateSnapshot: 'createIfMissing',
     includeOutputDirInDiff: includeOutputs,
   });
-  console.log(`stan: done "archive (diff)" -> ${diffPath.replace(/\\/g, '/')}`);
+  console.log(
+    `stan: ${green('done')} "${cyan('archive (diff)')}" -> ${cyan(
+      diffPath.replace(/\\/g, '/'),
+    )}`,
+  );
 
   if (includeOutputs) {
     await cleanupOutputsAfterCombine(dirs.outputAbs);

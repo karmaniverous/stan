@@ -12,12 +12,17 @@ import { cyan, red, yellow } from '@/stan/util/color';
 const isDeleted = (cwd: string, rel: string): boolean =>
   !existsSync(path.resolve(cwd, rel));
 
+// In tests, avoid spawning editors which can keep directories locked on Windows.
+const isTest = process.env.NODE_ENV === 'test';
+const allowOpenInTests = process.env.STAN_FORCE_OPEN === '1';
+
 /** Spawn the configured command for each file; best-effort and non-blocking. */
 export const openFilesInEditor = (args: {
   cwd: string;
   files: string[];
   openCommand?: string | null | undefined; // e.g., "code -g {file}"
 }): void => {
+  if (isTest && !allowOpenInTests) return;
   const { cwd, files, openCommand } = args;
   const safeFiles = files.filter((f) => !isDeleted(cwd, f));
   if (!safeFiles.length) return;

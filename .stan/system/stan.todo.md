@@ -97,6 +97,10 @@ Completed (since last update)
     • src/stan/patch/run/diagnostics.test.ts  
     • src/stan/patch/run/feedback.test.ts
 
+- Service smoke test
+  - Added src/stan/patch/service.smoke.test.ts to validate runPatch
+    success path and logging (“stan: patch applied”).
+
 Notes
 
 - Module SRP: service split remains the next step to get service.ts under 300 LOC.

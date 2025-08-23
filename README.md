@@ -1,10 +1,8 @@
 # STAN — STAN Tames Autoregressive Nonsense
 
-![The STAN Loop](https://github.com/karmaniverous/stan/raw/main/assets/stan-loop.png)
+![STAN Loop](https://github.com/karmaniverous/stan/raw/main/assets/stan-loop.png)
 
-🎲 A tip of the hat to Stanisław Ulam.
-
-In 1946, while recovering from illness and noodling over card games, Ulam helped ignite the Monte Carlo method—random sampling to tackle hard, deterministic problems.
+In 1946, while recovering from illness and noodling over card games, Stanisław Ulam helped ignite the Monte Carlo method—random sampling to tackle hard, deterministic problems.
 
 STAN produces a single source of truth for AI‑assisted development: a tarball of your repo plus deterministic outputs from your build/test/lint/typecheck scripts.
 
@@ -12,20 +10,91 @@ You get portable, auditable, reproducible context—locally and in CI.
 
 Because a freaking chatbot shouldn’t gaslight your code.
 
+---
+
+## The STAN Loop
+
+The diagram above shows the three‑stage loop that makes STAN predictable and fast to work with. Each stage ends with one command—keep the loop light and repeat until done.
+
+### 1) Build & Snapshot
+
+- Edit code
+- Review outputs
+- Run: `stan run`
+
+What happens:
+
+- `stan run` executes your configured scripts (lint/test/typecheck/build) and writes clean, deterministic text outputs to `<stanPath>/output/*.txt`.
+- With `-a/--archive`, it also writes `archive.tar` plus `archive.diff.tar` (diff vs last snapshot).
+- With `-c/--combine`, those outputs are placed inside the archives and removed on disk.
+- A multi‑line “run plan” is printed: mode, output location, script selection, archive/combine/keep flags.
+- Preflight checks may warn if your local system prompt diverges from the packaged baseline and nudge you to run `stan init` after upgrades.
+
+Pro tips:
+
+- Use `-s/--scripts` or `-x/--except-scripts` for targeted runs; `-q/--sequential` preserves config order for debugging.
+- Use `-d/--debug` to stream through stdout/stderr during script execution.
+- Use `-b/--boring` in CI to disable color.
+
+### 2) Share & Baseline
+
+- Attach archives + notes
+- State requirements
+- Run: `stan snap`
+
+What happens:
+
+- Drop the outputs and/or archives into your chat (and include a short requirements note).
+- `stan snap` records the current file content snapshot under `<stanPath>/diff/.archive.snapshot.json`, keeping a bounded history with undo/redo/set/info commands.
+- If you had archives in `<stanPath>/output`, they are copied into the diff archives folder alongside the snapshot for traceability.
+
+Pro tips:
+
+- Always attach `<stanPath>/output/archive.tar` to a new thread; your assistant isn’t guessing from memory.
+- Use `archive.diff.tar` for subsequent updates in the same thread.
+- The bootloader (`<stanPath>/system/stan.bootloader.md`) makes assistants integrity‑check tars and load the real system prompt from `<stanPath>/system/stan.system.md` before proceeding.
+
+### 3) Discuss & Patch
+
+- Iterate to solution
+- Get patches + commit
+- Run: `stan patch`
+
+What happens:
+
+- Discuss the requirements and converge on a solution. STAN returns plain unified diffs and a commit message.
+- Run `stan patch` to apply the patch locally:
+  - Cleans the text, writes `<stanPath>/patch/.patch`, and attempts to apply:
+    1. `git apply` across tolerant settings and strip levels (p1→p0),
+    2. falls back to a jsdiff engine for placement when necessary.
+  - After success (non‑`--check`), opens the modified files in your editor (configurable).
+  - If a patch fails, builds a compact FEEDBACK packet and opens target files to speed manual edits; the packet is also copied to your clipboard when possible.
+- Repeat the loop until done.
+
+Pro tips:
+
+- Use `stan patch --check` to validate only (no file changes).
+- Use `stan patch -f <file>` to apply from a file source; omit to read from clipboard; pass a diff as a single argument for quick tests.
+
+---
+
 ## Why STAN?
 
 - One archive (on demand). With `-a/--archive`, `archive.tar` captures the exact files to read—no surprises.
 - Structured logs. `stan/test.txt`, `stan/lint.txt`, `stan/typecheck.txt`, `stan/build.txt` are consistent and easy to diff.
-- Always-on diffs (when archiving). Whenever you use `-a`, STAN writes `stan/archive.diff.tar` for changed files—no extra ceremony. First time? The diff equals the full set (sensible defaults, zero ceremony).
+- Always‑on diffs (when archiving). Whenever you use `-a`, STAN writes `archive.diff.tar` for changed files—no extra ceremony. First time? The diff equals the full set (sensible defaults, zero ceremony).
 - Snapshot with intent. Normal runs create a snapshot only when missing; use `stan snap` when you want to reset or replace it. Your diffs stay meaningful.
-- Patch on tap. Got a suggested patch from an AI or teammate? Save it and run `stan patch` to apply it safely at your repo root.
+- Patch on tap. Got a suggested patch? Paste it or pass a file and run `stan patch` to apply it safely at your repo root. Failures produce a FEEDBACK packet so you can ask for a corrected patch.
 - Simpler combine. With `-a -c`, script outputs live inside the archives (not on disk). No separate “combined artifact” to maintain.
+- Preflight guardrails. When your downstream system prompt drifts from the packaged baseline, STAN nudges you to update via `stan init`.
 
 Backronym bonus: Sample • Tar • Analyze • Narrate — STAN Tames Autoregressive Nonsense.
 
+---
+
 ## Install
 
-Global install (recommended for CLI usage):
+Global (recommended for CLI usage):
 
 ```
 npm i -g @karmaniverous/stan
@@ -35,15 +104,11 @@ pnpm add -g @karmaniverous/stan
 yarn global add @karmaniverous/stan
 ```
 
-Then run the CLI as `stan ...` from any project.
-
 Local (dev) install (optional):
 
 ```
 npm i -D @karmaniverous/stan
 ```
-
-The CLI installs as `stan`.
 
 Verify:
 
@@ -51,6 +116,8 @@ Verify:
 stan --version
 stan --help
 ```
+
+---
 
 ## Getting started
 
@@ -60,32 +127,24 @@ stan --help
 stan init
 ```
 
-2. Exclude the STAN workspace from linters/tools.
+2. Exclude the STAN workspace from analyzers.
 
-- ESLint (flat config): ensure your `ignores` include `<stanPath>/**`
-  (default `.stan/**`). The template in this repo’s `eslint.config.js` already
-  contains `'.stan/**'` so lints focus on your source, not STAN artifacts.
-- The same principle applies to other analyzers you use (formatters, type
-  checkers that scan the whole tree, etc.).
+- ESLint (flat config): ensure `ignores` include `<stanPath>/**` (default `.stan/**`).
+- Do the same for formatters/typecheckers that scan the whole tree.
 
-3. Follow the Quickstart below to run scripts and (optionally) produce archives.
+3. Run the loop (see “The STAN loop” above).
 
-Tip: If you change `stanPath` in `stan.config.*`, update your ESLint ignores
-accordingly so the new folder stays out of scope.
+- Build & Snapshot: `stan run` (optionally `-a` and `-c`).
+- Share & Baseline: attach archives + requirements, then `stan snap`.
+- Discuss & Patch: iterate in chat, then `stan patch`.
 
-## Quickstart
+Tip: If you change `stanPath` in `stan.config.*`, update your ignores.
 
-1. Initialize config
+---
 
-```
-stan init
-```
+## Configuration
 
-This scaffolds `stan.config.yml` (or JSON) with an output path (default `stan/`) and a script map.
-
-2. Check the config
-
-Example `stan.config.yml`:
+`stan.config.yml` example:
 
 ```
 stanPath: stan
@@ -98,88 +157,125 @@ scripts:
   typecheck: npm run typecheck
 ```
 
-3. Generate artifacts
+- `stanPath`: workspace folder (default `.stan`).
+- `includes`: allow‑list (globs) for archiving logic; overrides excludes when present.
+- `excludes`: deny‑list (globs) for archiving logic.
+- `scripts`: keys and commands to run under `stan run`.
+- Optional:
+  - `maxUndos`: number (default 10), retained snapshot history.
+  - `patchOpenCommand`: editor open command template (default `code -g {file}`).
 
-```
-# Run all configured scripts
-stan run -s
+---
 
-# Run selected scripts only (preserves order with -q)
-stan run -s test typecheck -q
-
-# Run all except <keys> (reduces from full set when -s absent)
-stan run -x lint
-
-# Reduce a selected set with -x
-stan run -s test typecheck -x test
-
-# Produce code archives (regular + diff) after running scripts
-stan run -a -s
-
-# Put script outputs INSIDE the archives (and do not keep them on disk)
-stan run -a -c -s
-```
-
-Tip: enable debug globally
-
-```
-# Global debug applies to all subcommands
-stan -d run -s
-```
-
-## Snapshot & Diff (the duo)
-
-- Always-on diffs (with `-a`): If you pass `-a/--archive`, STAN writes `stan/archive.diff.tar` containing only changed files since the last snapshot.
-- First-run behavior: No snapshot yet? Your diff equals the full set—simple and predictable.
-- Snapshot policy:
-  - Normal runs: Create a snapshot only if one does not exist.
-  - Explicit reset/update: Use `stan snap` to (re)write the snapshot on demand.
-- Previous full archive: STAN maintains `stan/diff/archive.prev.tar` for reference.
-
-## CLI
+## Run (build & snapshot)
 
 ```
 stan run [options]
 ```
 
-### Options
+Selection (one of -a, -s, or -x is required):
 
-- Selection (one of -a, -s, or -x is required)
-  - `-s, --scripts [keys...]`: run only these keys. If no keys are listed, all scripts run.
-  - `-x, --except-scripts <keys...>`: exclude these keys. If `-s` is present, reduces that set; otherwise reduces from the full set.
-- Execution mode
-  - `-q, --sequential`: run scripts sequentially in config order. Requires `-s` or `-x`.
-- Archives & outputs
-  - `-a, --archive`: after scripts run (or immediately if selection is empty), write `archive.tar` and `archive.diff.tar`.
-    - STAN logs a summary of excluded binary files and large text files to the console at archive time.
-  - `-c, --combine`: include script outputs inside the archives and do not keep them on disk. Implies `--archive` and requires `-s` or `-x`. Conflicts with `--keep`.
-  - `-k, --keep`: do not clear the output directory before running. Conflicts with `--combine`.
+- `-s, --scripts [keys...]`: run only these keys. If no keys listed, run all.
+- `-x, --except-scripts <keys...>`: exclude keys. If `-s` present, reduces that set; otherwise reduces from full set.
+- `-a, --archive`: write `archive.tar` and `archive.diff.tar` after scripts (or immediately if selection empty).
 
-Global:
+Execution & outputs:
 
-- `-d, --debug` (on `stan`): enable verbose debug logging for all subcommands.
-- `-b, --boring` (on `stan`): disable colorized output (useful for tests and CI).
+- `-q, --sequential`: preserve config order (requires `-s` or `-x`).
+- `-c, --combine`: include script outputs inside archives and remove from disk. Implies `--archive` and requires `-s` or `-x`. Conflicts with `--keep`.
+- `-k, --keep`: do not clear the output directory before running (conflicts with `--combine`).
 
-### stan patch
+Global flags:
 
-Apply a patch shared via chat or a file.
+- `-d, --debug`: verbose streaming of script stdout/stderr.
+- `-b, --boring`: disable colorized output (useful for CI).
+
+Behavior highlights:
+
+- Run plan: STAN prints a concise, multi‑line plan (mode, output, scripts, archive/combine/keep).
+- Archives:
+  - `archive.tar`: full file set filtered by includes/excludes/gitignore/stanPath rules.
+  - `archive.diff.tar`: only changed files vs the last recorded snapshot (first time equals full).
+- Classification at archive time:
+  - Binaries are excluded (summarized to console).
+  - Large text candidates are logged (with sizes/LOC), so you can refine excludes.
+- Previous archive copy: STAN preserves `diff/archive.prev.tar` for reference.
+
+---
+
+## Archiving & snapshot (share & baseline)
+
+### Snapshots
+
+- Diff snapshot file: `<stanPath>/diff/.archive.snapshot.json`.
+- Normal runs: create a snapshot only when one does not exist.
+- Explicit reset/update: use `stan snap` any time to replace the snapshot.
+
+### `stan snap` (and history)
+
+```
+stan snap
+stan snap undo
+stan snap redo
+stan snap set <index>
+stan snap info
+```
+
+- History:
+  - `snap`: write new snapshot; pushes history stack and clears redos.
+  - `undo`: move to previous entry and restore it.
+  - `redo`: move forward and restore it.
+  - `set <index>`: jump to a specific entry and restore it.
+  - `info`: lists newest→oldest, with local timestamps and markers.
+- Stash (optional):
+  - `stan snap -s` runs `git stash -u` before snapshot, attempts `stash pop` after.
+  - On stash failure: snapshot aborted (no change).
+- Archives at snap time:
+  - If `<stanPath>/output/archive*.tar` exist, they’re copied into `<stanPath>/diff/archives/` alongside the snapshot for traceability.
+- Retention:
+  - `maxUndos` (default 10) controls bounded history.
+
+---
+
+## Chat and bootloader (share & baseline)
+
+When you attach archives, include the system prompt bootloader:
+
+- Bootloader path (downstream repos): `<stanPath>/system/stan.bootloader.md`.
+- From the npm package for convenience: `node_modules/@karmaniverous/stan/dist/stan.bootloader.md` (we also ship `stan.system.md` and `stan.project.template.md` in `dist/`).
+
+How it works:
+
+- Integrity‑check tar(s): enumerate and verify each entry’s length matches header size.
+- Resolve repo root and `stanPath` from `stan.config.*`.
+- Load `<stanPath>/system/stan.system.md` as the active system prompt (mandatory override) and proceed under those rules.
+
+If missing:
+
+- The assistant should refuse to proceed and request a tar containing `<stanPath>/system/stan.system.md` or a file named exactly `stan.system.md`.
+
+---
+
+## Discuss & patch (discuss & patch)
+
+### `stan patch` (pipeline & FEEDBACK)
 
 Common flows:
 
 ```
-# Clean and apply a patch from the clipboard (default)
+# Apply from clipboard (default)
 stan patch
 
-# Validate a patch from the clipboard without changing files
+# Validate without changing files
 stan patch --check
 
-# Read a patch from a file (unified diff) and apply it
+# Read from a file (unified diff) and apply
 stan patch -f my.patch
 
 # Validate a patch file only
 stan patch -f my.patch --check
 
-# Alternatively, pass the diff inline as an argument (beware shell limits on very large diffs)
+# Pass a diff inline (watch shell limits on very large diffs)
 stan patch "diff --git a/x b/x
 --- a/x
 +++ b/x
@@ -188,130 +284,73 @@ stan patch "diff --git a/x b/x
 +new"
 ```
 
-Behavior details:
+What it does:
 
-- Canonical workspace:
-  - Cleaned input is written to `<stanPath>/patch/.patch`.
-  - Diagnostics live under `<stanPath>/patch/.debug/`:
-    - `cleaned.patch` — the cleaned unified diff that was applied/checked.
-    - `attempts.json` — summary of each apply attempt (git/jsdiff), plus
-      per‑attempt `*.stderr.txt` and `*.stdout.txt`.
-  - Any newly created `*.rej` files are moved to `<stanPath>/patch/rejects/<UTC timestamp>/` (paths preserved).
-- Detection: If clipboard/file content looks like base64 and decodes to a unified diff (e.g., contains `diff --git`, `---`, `+++`, `@@`), it will be decoded. Otherwise, the text is treated as a raw unified diff.
-- Cleanups: code fences/banners removed, zero‑width characters stripped, line endings normalized to LF, and a final newline ensured. Whitespace within lines is preserved.
-- Application strategy: tries `git apply` with tolerant settings over both strip levels:
-  - `--3way --whitespace=nowarn --recount -p1`
-  - `--3way --ignore-whitespace --recount -p1`
-  - `--reject --whitespace=nowarn --recount -p1`
-  - If needed, repeats with `-p0` in the same order.
-- Feedback (failed/partial/check):
-  - On failure, partial success, or `--check`, STAN builds a compact FEEDBACK envelope and:
-    - saves it to `<stanPath>/patch/.debug/feedback.txt`, and
-    - copies it to the clipboard.
-  - The console will log:
-    - `stan: wrote patch feedback -> <path>`
-    - `stan: copied patch feedback to clipboard`
-    - or `stan: clipboard copy failed; feedback saved -> <path>`
-  - Paste this FEEDBACK back into chat verbatim to get a corrected patch tailored to the failure.
-- Windows note: Passing very large base64 as an inline command-line argument can exceed the ~32K character limit. Clipboard default or `-f` are recommended for large patches.
+- Cleans input and writes canonical `<stanPath>/patch/.patch` (workspace).
+- Attempts to apply:
+  - `git apply` tolerant modes across `-p1` then `-p0`.
+  - jsdiff fallback for line‑wise placement when necessary.
+- After success (non‑`--check`):
+  - Opens modified files in your editor (configurable via `patchOpenCommand`, default `code -g {file}`).
+  - Prints a commit message (from the assistant) to use as your commit.
+- After failure or partial success:
+  - Writes diagnostics under `<stanPath>/patch/.debug/`:
+    - `cleaned.patch`, `attempts.json`, per‑attempt `*.stderr.txt`/`*.stdout.txt`.
+  - Produces a compact FEEDBACK envelope and copies it to clipboard when possible so you can paste back into chat for a corrected patch.
+  - Moves any new `*.rej` rejects to `<stanPath>/patch/rejects/<UTC timestamp>/`, preserving paths.
+  - Opens header‑derived target files to speed manual edits (non‑`--check`).
 
-### `stan snap`
+Sources and precedence:
 
-Explicitly (re)generate the diff snapshot—without writing an archive:
+- `[input]` argument > `-f <file>` > clipboard.
+- If the input looks like base64, STAN tries to decode it only if it yields a unified diff.
 
-```
-stan snap
-```
+Patch format expectations:
 
-Useful when you want to “re-baseline” diffs after intentional changes.
-
-## Bootloader (wire STAN into your AI agent)
-
-STAN ships a minimal “bootloader” system prompt that you can paste into the AI assistant you use (ChatGPT, Claude, a local agent, etc.). Its only job is to:
-
-- integrity‑check any attached tar archives,
-- locate `<stanPath>/system/stan.system.md` inside the latest artifact (using stanPath from `stan.config.*`), and
-- load that file as the governing system prompt for the rest of the conversation (refusing to proceed if it’s missing).
-
-Where to find it:
-
-- In your repo: `<stanPath>/system/stan.bootloader.md` (default: `stan/system/stan.bootloader.md`).
-- From the npm package: `node_modules/@karmaniverous/stan/dist/stan.bootloader.md` (we also ship `stan.system.md` and `stan.project.template.md` under `dist/` for convenience).
-
-How to use it:
-
-1. Generate artifacts with STAN:
-   - `stan run -a -s` (or select the scripts you need).
-   - This writes `stan/output/archive.tar` (and `archive.diff.tar`).
-
-2. In your AI tool, set the system prompt to the contents of `stan.bootloader.md`.
-
-3. Attach `archive.tar` (and `archive.diff.tar` if present). If you used `-c/--combine`, your script outputs are already inside those archives; otherwise you can attach the text logs too.
-
-4. State your request (e.g., “Fix the failing tests” or “Refactor X”).
-   - The bootloader will switch the AI to `stan.system.md` automatically.
-
-Troubleshooting:
-
-- If the AI reports that `stan/system/stan.system.md` is missing, ensure:
-  - your archive contains `<stanPath>/system/stan.system.md` (default `stan/system/stan.system.md`),
-  - your `stan.config.yml|json` is present and has the correct `stanPath`, or
-  - attach a raw file named exactly `stan.system.md` as a separate file.
-  - When `--archive` runs, STAN prints a console summary of excluded binaries and large text files to help you refine `includes`/`excludes`.
+- Plain unified diffs (no base64) with a/ and b/ prefixes and ≥3 lines of context per hunk.
+- LF endings in the patch; CRLF translation handled when applying.
 
 ---
 
-## Snap history, stash, and archives
+## Includes, excludes, and gitignore
 
-`snap` maintains a bounded history and can optionally stash before capturing:
+STAN determines the file set by:
 
-- History and navigation:
-  - `stan snap` — write a new snapshot (pushes history, clears redos).
-  - `stan snap undo` — move to the previous snapshot and restore it.
-  - `stan snap redo` — move forward in history and restore it.
-  - `stan snap set 0` — jump to a specific history index and restore it.
-  - `stan snap info` — show newest→oldest stack with local timestamps; marks the current index.
+- Your configured `includes` (allow‑list) and `excludes` (deny‑list) with glob support.
+- `.gitignore` semantics (via the `ignore` library).
+- Defaults:
+  - Excludes `node_modules/`, `.git/`, `<stanPath>/diff`, and `<stanPath>/output` (unless `--combine`/include‑outputs mode is active).
+  - Always includes `<stanPath>/patch` in archives for patch workflows.
 
-- Stash changes first:
-  - `stan snap -s` — runs `git stash -u` before snapshot; after success, attempts `git stash pop`.
-    - If `stash -u` fails: snapshot is aborted (no changes made).
-    - If `stash pop` fails: a warning is logged; the snapshot remains.
+---
 
-- Archive captures with the snapshot:
-  - If `stan/output/archive.tar` or `archive.diff.tar` exist at snap time, STAN copies them into `stan/diff/archives/` with the same timestamp stem as the snapshot (e.g., `archive-YYYYMMDD-HHMMSS.tar`).
-  - Snapshots are stored under `stan/diff/snapshots/` and the active snapshot lives at `stan/diff/.archive.snapshot.json`.
+## Preflight and version awareness
 
-- History depth:
-  - Defaults to 10 entries; override by adding `maxUndos: <n>` to `stan.config.*`.
+On `stan run`, preflight:
 
-Example session:
+- Warn if local system prompt differs from baseline.
+- Nudge to run `stan init` after upgrades if packaged docs changed since last install (tracked via `<stanPath>/system/.docs.meta.json`).
+
+Version printing:
 
 ```
-# Create baseline snapshot
-stan snap
-
-# Make intentional changes, then replace baseline and capture any current archives
-stan snap -s
-
-# Inspect and navigate history
-stan snap info
-stan snap undo
-stan snap redo
-stan snap set 0
+stan --version
 ```
 
-## Large-file guidance (300+ lines)
+Prints:
 
-To keep patches focused and modules testable, STAN flags any source file longer than 300 lines and requests a plan.
+- STAN version + Node version
+- Repo root + resolved `stanPath`
+- System prompt in‑sync status (local and baseline presence)
+- Last installed docs version
 
-What you’ll see:
+---
 
-- A list of long files (path + LOC).
-- For each file, either:
-  - a short outline for splitting it (proposed modules, responsibilities, and test strategy), or
-  - a documented reason to keep it long (e.g., generated code, cohesive DSL, or deliberate monolith with clear navigation).
+## Large files (> 300 LOC)
 
-Example checklist (assistant output):
+To keep patches focused and modules testable, STAN flags any source file longer than ~300 lines and asks for a plan.
+
+Assistant checklist example:
 
 ```
 Long files (>300 LOC) detected:
@@ -327,4 +366,86 @@ Long files (>300 LOC) detected:
    - Action: Add a README note and exclude from coverage thresholds
 ```
 
-No changes are made automatically; STAN waits for confirmation on which files to split before emitting patches.
+No changes are made automatically; the assistant waits for confirmation before emitting patches.
+
+---
+
+## Bootstrapping & scripts
+
+Handy scripts you might keep in `package.json`:
+
+- `stan:build`: build CLI and copy docs into `<stanPath>/dist` as needed.
+- `stan:docs`: generate docs (e.g., with typedoc).
+- `lint`, `test`, `typecheck`, `build`: whatever your toolchain uses; reference them in `stan.config.*`.
+
+---
+
+## Troubleshooting
+
+- “system prompt missing”: Ensure `<stanPath>/system/stan.system.md` is in the attached archive; otherwise add the file or attach it directly as `stan.system.md`.
+- Big archives: If you’re struggling with size, favor `archive.diff.tar` plus script outputs for iterations; the full archive’s only needed occasionally.
+- Windows command limits: For very large diffs, prefer clipboard or `-f` over inline argument input.
+- Clipboard in CI/tests: STAN skips clipboard writes during tests unless explicitly forced to avoid process hangs and file lock issues.
+
+---
+
+## Reference cheatsheet
+
+- Build & Snapshot
+  - `stan run -s` (run all configured scripts)
+  - `stan run -s test typecheck` (run selected)
+  - `stan run -x lint` (run all except lint)
+  - `stan run -a -s` (run then archive)
+  - `stan run -a -c -s` (archive with outputs inside)
+- Share & Baseline
+  - Attach `archive.tar` (+ `archive.diff.tar`) and outputs
+  - `stan snap` / `undo` / `redo` / `set <n>` / `info`
+- Discuss & Patch
+  - `stan patch` (clipboard)
+  - `stan patch -f some.patch` (from file)
+  - `stan patch --check` (validate only)
+
+---
+
+## Contributing
+
+- Keep the loop simple. Each stage ends with one command.
+- Favor small, testable modules; treat >300 LOC as design feedback.
+- Improve the project prompt (`<stanPath>/system/stan.project.md`) when repo‑specific policies evolve; downstream repos should avoid changing the system prompt (it is updated by `stan init` from the packaged baseline).
+
+---
+
+## License
+
+BSD‑3‑Clause
+
+---
+
+## Appendix: Files and layout
+
+By default (`stanPath: .stan`):
+
+- `.stan/system/` — prompts & templates
+  - `stan.system.md` — system prompt (governs assistant behavior)
+  - `stan.bootloader.md` — bootloader prompt for assistants
+  - `stan.project.template.md` — project prompt template
+  - `.docs.meta.json` — last installed docs version (for preflight nudges)
+- `.stan/output/` — run outputs and archives
+  - `*.txt` — deterministic script logs
+  - `archive.tar` — full archive
+  - `archive.diff.tar` — diff archive
+- `.stan/diff/` — snapshot & history
+  - `.archive.snapshot.json` — current snapshot
+  - `.snap.state.json` — history state
+  - `snapshots/` — retained snapshots
+  - `archives/` — archived artifacts captured at snap time
+  - `.stan_no_changes` — sentinel included when no diffs
+- `.stan/patch/` — patch workspace
+  - `.patch` — canonical cleaned patch file
+  - `.debug/` — attempts & logs, feedback.txt
+  - `rejects/<UTC>/...` — collected `*.rej` files
+
+Diagrams:
+
+- `diagrams/stan-loop.pu` — the simplified three‑stage PlantUML source
+- Render to `diagrams/stan-loop.svg` (or PNG) in CI/docs as desired.

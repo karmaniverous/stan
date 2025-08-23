@@ -106,6 +106,10 @@ Completed (since last update)
     “copied to clipboard” on success and “clipboard copy failed; feedback saved -> <path>”
     on failure. Tests cover both paths.
 
+- Graceful jsdiff parse errors
+  - applyWithJsDiff no longer throws on invalid/unparseable diffs; returns a failure outcome
+    so the pipeline can generate diagnostics/FEEDBACK instead of crashing.
+
 Notes
 
 - Module SRP: service split remains the next step to get service.ts under 300 LOC.

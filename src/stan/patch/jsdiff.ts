@@ -38,7 +38,18 @@ export const applyWithJsDiff = async (args: {
   sandboxRoot?: string;
 }): Promise<JsDiffOutcome> => {
   const { cwd, cleaned, check, sandboxRoot } = args;
-  const patches = parsePatch(cleaned);
+
+  let patches: ReturnType<typeof parsePatch>;
+  try {
+    patches = parsePatch(cleaned);
+  } catch {
+    // Gracefully handle invalid or non-unified diffs — never throw
+    return {
+      okFiles: [],
+      failed: [{ path: '(patch)', reason: 'invalid unified diff' }],
+      sandboxRoot,
+    };
+  }
   const okFiles: string[] = [];
   const failed: Array<{ path: string; reason: string }> = [];
 
@@ -66,15 +77,22 @@ export const applyWithJsDiff = async (args: {
     }
 
     // Whitespace/EOL tolerance for diff v8 API (compareLine signature changed)
-    const patched = applyPatch(original, p, {
-      compareLine: (
-        _lineNumber: number,
-        line: string,
-        _operation: string,
-        patchContent: string,
-      ): boolean => normForCompare(line) === normForCompare(patchContent),
-      fuzzFactor: 0,
-    });
+    let patched: string | false;
+    try {
+      patched = applyPatch(original, p, {
+        compareLine: (
+          _lineNumber: number,
+          line: string,
+          _operation: string,
+          patchContent: string,
+        ): boolean => normForCompare(line) === normForCompare(patchContent),
+        fuzzFactor: 0,
+      });
+    } catch {
+      // Any internal jsdiff error is treated as a placement failure
+      failed.push({ path: rel, reason: 'unable to parse or place hunk(s)' });
+      continue;
+    }
 
     if (patched === false || typeof patched !== 'string') {
       failed.push({ path: rel, reason: 'unable to place hunk(s)' });

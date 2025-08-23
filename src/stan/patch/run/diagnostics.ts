@@ -1,8 +1,9 @@
 /* src/stan/patch/run/diagnostics.ts
  * Persist cleaned.patch, attempts.json, and per-attempt stderr/stdout logs.
  */
-import path from 'node:path';
 import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
 import type { ApplyResult } from '../apply';
 import type { JsDiffOutcome } from '../jsdiff';
 
@@ -58,5 +59,3 @@ export const writePatchDiagnostics = async (args: {
   const debugRel = path.relative(cwd, debugDir).replace(/\\/g, '/');
   return { attemptsRel, debugRel };
 };
-
-export default writePatchDiagnostics;

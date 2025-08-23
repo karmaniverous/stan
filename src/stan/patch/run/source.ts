@@ -1,8 +1,8 @@
 /* src/stan/patch/run/source.ts
  * Resolve and read the patch source (clipboard, file, or argument).
  */
-import path from 'node:path';
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 export type PatchSourceKind = 'clipboard' | 'file' | 'argument';
 
@@ -35,8 +35,7 @@ export const readPatchSource = async (
   }
   if (Object.prototype.hasOwnProperty.call(opts ?? {}, 'file')) {
     const opt = (opts as { file?: string | boolean }).file;
-    const fileRel =
-      typeof opt === 'string' && opt.length > 0 ? opt : undefined;
+    const fileRel = typeof opt === 'string' && opt.length > 0 ? opt : undefined;
     if (!fileRel) {
       // Treat as clipboard when -f/--file present without a name
       return { kind: 'clipboard', raw: await readFromClipboard() };
@@ -51,5 +50,3 @@ export const readPatchSource = async (
   // Default: clipboard
   return { kind: 'clipboard', raw: await readFromClipboard() };
 };
-
-export default readPatchSource;

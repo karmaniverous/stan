@@ -82,6 +82,14 @@ Completed (since last update)
   - `stan -v` prints version + doc baseline info; preflight drift warnings (TTY vs non‑TTY)
     implemented and tested.
 
+- Lint/exports cleanup
+  - Removed redundant default exports (kept named exports) to resolve
+    knip duplicate-exports warnings in:
+    • src/stan/patch/run/diagnostics.ts  
+    • src/stan/patch/run/feedback.ts  
+    • src/stan/patch/run/pipeline.ts  
+    • src/stan/patch/run/source.ts
+
 Notes
 
 - Module SRP: service split remains the next step to get service.ts under 300 LOC.

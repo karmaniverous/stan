@@ -1,13 +1,14 @@
 /* src/stan/patch/run/feedback.ts
  * Build and persist FEEDBACK envelope; copy to clipboard with clear logging.
  */
-import path from 'node:path';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import type { ApplyResult } from '../apply';
+import { buildFeedbackEnvelope, copyToClipboard } from '../feedback';
+import type { JsDiffOutcome } from '../jsdiff';
 import type { ParsedDiffInfo } from '../parse';
 import { diagnosePatchWithFs } from '../parse';
-import type { ApplyResult } from '../apply';
-import type { JsDiffOutcome } from '../jsdiff';
-import { buildFeedbackEnvelope, copyToClipboard } from '../feedback';
 
 export const persistFeedbackAndClipboard = async (args: {
   cwd: string;
@@ -76,7 +77,9 @@ export const persistFeedbackAndClipboard = async (args: {
       stripTried: Array.from(new Set<Strip>(stripList)),
     },
     summary: { changed: changedFromHeaders, failed: failedPaths, fuzzy: [] },
-    patch: { cleanedHead: cleaned.slice(0, Math.min(4 * 1024, cleaned.length)) },
+    patch: {
+      cleanedHead: cleaned.slice(0, Math.min(4 * 1024, cleaned.length)),
+    },
     attempts: {
       git: {
         tried: result.tried,
@@ -103,5 +106,3 @@ export const persistFeedbackAndClipboard = async (args: {
   console.log('stan: copied patch feedback to clipboard');
   return fbAbs;
 };
-
-export default persistFeedbackAndClipboard;

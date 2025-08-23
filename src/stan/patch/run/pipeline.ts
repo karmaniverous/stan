@@ -45,5 +45,3 @@ export const applyPatchPipeline = async (args: {
 
   return { ok: false, result, js };
 };
-
-export default applyPatchPipeline;

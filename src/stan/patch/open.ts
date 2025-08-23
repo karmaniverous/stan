@@ -13,11 +13,11 @@ const isDeleted = (cwd: string, rel: string): boolean =>
   !existsSync(path.resolve(cwd, rel));
 
 /** Spawn the configured command for each file; best-effort and non-blocking. */
-export const openFilesInEditor = async (args: {
+export const openFilesInEditor = (args: {
   cwd: string;
   files: string[];
   openCommand?: string | null | undefined; // e.g., "code -g {file}"
-}): Promise<void> => {
+}): void => {
   const { cwd, files, openCommand } = args;
   const safeFiles = files.filter((f) => !isDeleted(cwd, f));
   if (!safeFiles.length) return;

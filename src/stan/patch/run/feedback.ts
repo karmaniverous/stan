@@ -4,6 +4,8 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { cyan, green, red, yellow } from '@/stan/util/color';
+
 import type { ApplyResult } from '../apply';
 import { buildFeedbackEnvelope, copyToClipboard } from '../feedback';
 import type { JsDiffOutcome } from '../jsdiff';
@@ -100,7 +102,7 @@ export const persistFeedbackAndClipboard = async (args: {
   const fbPath = path.join(debugDir, 'feedback.txt');
   await writeFile(fbPath, envelope, 'utf8');
   const fbAbs = fbPath.replace(/\\/g, '/');
-  console.log(`stan: wrote patch feedback -> ${fbAbs}`);
+  console.log(`${yellow('stan: wrote patch feedback')} -> ${cyan(fbAbs)}`);
 
   // Tolerate undefined returns from copy helpers as success.
   let copied = false;
@@ -111,9 +113,11 @@ export const persistFeedbackAndClipboard = async (args: {
     copied = false;
   }
   if (copied) {
-    console.log('stan: copied patch feedback to clipboard');
+    console.log(green('stan: copied patch feedback to clipboard'));
   } else {
-    console.log(`stan: clipboard copy failed; feedback saved -> ${fbAbs}`);
+    console.log(
+      `${red('stan: clipboard copy failed')}; feedback saved -> ${cyan(fbAbs)}`,
+    );
   }
   return fbAbs;
 };

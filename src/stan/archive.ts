@@ -14,6 +14,8 @@ import { existsSync } from 'node:fs';
 import { copyFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { yellow } from '@/stan/util/color';
+
 import { classifyForArchive } from './classifier';
 import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
 
@@ -82,7 +84,7 @@ export const createArchive = async (
   // Log warnings to console instead of writing a file.
   const trimmed = (warningsBody ?? '').trim();
   if (trimmed && trimmed !== 'No archive warnings.') {
-    console.log(`stan: archive warnings\n${trimmed}`);
+    console.log(`${yellow('stan: archive warnings')}\n${trimmed}`);
   }
 
   const tar = (await import('tar')) as unknown as TarLike;

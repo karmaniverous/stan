@@ -26,7 +26,10 @@ export const makeCli = (): Command => {
       'Generate reproducible STAN artifacts for AI-assisted development',
     )
     .option('-d, --debug', 'enable verbose debug logging')
-    .option('-b, --boring', 'disable colorized output (useful for tests/CI)')
+    .option(
+      '-b, --boring',
+      'disable all color and styling (useful for tests/CI)',
+    )
     .option('-v, --version', 'print version and baseline-docs status');
 
   // Root-level help footer: show available script keys
@@ -40,7 +43,9 @@ export const makeCli = (): Command => {
     try {
       const root = thisCommand.parent ?? thisCommand;
       const opts = (
-        root as unknown as { opts?: () => { debug?: boolean; boring?: boolean } }
+        root as unknown as {
+          opts?: () => { debug?: boolean; boring?: boolean };
+        }
       ).opts?.();
       if (opts?.debug) process.env.STAN_DEBUG = '1';
       if (opts?.boring) {
@@ -65,7 +70,11 @@ export const makeCli = (): Command => {
   // - If config is missing: run interactive init (not forced) and create a snapshot.
   // - If config exists: print help page (no exit).
   cli.action(async () => {
-    const opts = cli.opts<{ debug?: boolean; boring?: boolean; version?: boolean }>();
+    const opts = cli.opts<{
+      debug?: boolean;
+      boring?: boolean;
+      version?: boolean;
+    }>();
     if (opts.debug) process.env.STAN_DEBUG = '1';
     if (opts.boring) {
       process.env.STAN_BORING = '1';

@@ -1,4 +1,6 @@
 // src/stan/run/plan.ts
+import { bold } from '@/stan/util/color';
+
 import type { ContextConfig } from '../config';
 import { makeStanDirs } from '../paths';
 import type { ExecutionMode, RunBehavior, Selection } from './types';
@@ -21,7 +23,7 @@ export const renderRunPlan = (
   const dirs = makeStanDirs(cwd, config.stanPath);
 
   const lines = [
-    'STAN run plan',
+    bold('STAN run plan'),
     `mode: ${mode === 'sequential' ? 'sequential' : 'concurrent'}`,
     `output: ${dirs.outputRel}/`,
     `scripts: ${scripts.length ? scripts.join(', ') : 'none'}`,

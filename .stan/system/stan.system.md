@@ -40,6 +40,12 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 - 300‑line guidance applies to new and existing code.
   - Do not generate a single new module that exceeds ~300 LOC. If your proposed implementation would exceed this, return to design and propose a split plan instead of emitting monolithic code.
   - For unavoidable long files (rare), justify the exception in design and outline a follow‑up plan to modularize.
+- Enforcement
+  - Whenever a module exceeds ~300 LOC, either:
+    • propose and seek approval for a split (modules, responsibilities, tests), or
+    • justify keeping it long (rare, e.g., generated code).
+  - Record the split plan or justification in <stanPath>/system/stan.todo.md
+    (the dev plan) before making further changes to that module.
 - Favor composability and testability.
   - Smaller modules with clear responsibilities enable targeted unit tests and simpler refactors.
 
@@ -129,6 +135,14 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
   - Before building any non‑trivial module (e.g., interactive prompts/UIs,argument parsing, selection lists, archiving/diffing helpers, spinners),search npm and GitHub for actively‑maintained, battle‑tested libraries.
   - Present 1–3 viable candidates with trade‑offs and a short plan. Discuss and agree on an approach before writing custom code.
 
+System‑level lint policy (tool‑agnostic)
+
+- Evaluate rules before fixing; prioritize changes that improve clarity or prevent bugs over cosmetic churn.
+- Prefer local and targeted disables (at line or file scope) when a rule conflicts with intentional code structure.
+- Avoid busywork changes; do not rewrap/reorder solely to appease a formatter/linter unless clearly beneficial.
+- Be permissive in tests: allow looser typings and patterns that aid readability and test authoring (e.g., disabling require‑await, relaxed unsafe assignments in mocks).
+- Keep guidance resilient to specific engines (ESLint, Biome, etc.); the intent applies regardless of the chosen toolchain.
+
 # Context window exhaustion (termination rule)
 
 - The full archive is typically uploaded once at the beginning of a STAN chat and rarely re‑uploaded in the same thread.
@@ -196,10 +210,10 @@ Patch hygiene and separation (REQUIRED)
 - Present the commit message in a separate code fence, never inside the patch fence.
 - Ensure the patch ends with a final newline and contains no markdown fences (```), banners, or extraneous lines.
 - Before emitting, self‑check:
-  1) patch starts with `diff --git`,
-  2) no lines after the last hunk header/body other than a trailing newline,
-  3) hunks and counts are consistent,
-  4) paths consistently use `a/<path>` and `b/<path>` (p1).
+  1. patch starts with `diff --git`,
+  2. no lines after the last hunk header/body other than a trailing newline,
+  3. hunks and counts are consistent,
+  4. paths consistently use `a/<path>` and `b/<path>` (p1).
 
 Hunk hygiene (jsdiff‑compatible; REQUIRED)
 

@@ -1,76 +1,28 @@
 /* src/stan/patch/service.ts
  * Patch application service (no Commander). The CLI adapter delegates here.
  */
-import { mkdir, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { runGit } from '../snap/git';
+import { loadConfig } from '../config';
 import { detectAndCleanPatch } from './clean';
 import { resolvePatchContext } from './context';
+import { isFeedbackEnvelope, seemsUnifiedDiff } from './detect';
+import { maybeWarnStaged } from './git-status';
+import { pathsFromPatch } from './headers';
+import { openFilesInEditor } from './open';
 import { parseUnifiedDiff } from './parse';
 import { listRejFiles, moveRejFilesToPatchWorkspace } from './rejects';
 import { writePatchDiagnostics } from './run/diagnostics';
 import { persistFeedbackAndClipboard } from './run/feedback';
 import { applyPatchPipeline } from './run/pipeline';
 import { readPatchSource } from './run/source';
+import { ensureParentDir } from './util/fs';
 
-const ensureParentDir = async (p: string): Promise<void> => {
-  const dir = path.dirname(p);
-  try {
-    await mkdir(dir, { recursive: true });
-  } catch {
-    // best-effort
-  }
-};
-
-const pathsFromPatch = (cleaned: string): string[] => {
-  const out: string[] = [];
-  const re = /^diff --git a\/(.+?) b\/\1/gm;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(cleaned))) {
-    const p = m[1]?.trim();
-    if (p && !out.includes(p)) out.push(p);
-  }
-  return out;
-};
-
-// Early-input detection helpers
-const isFeedbackEnvelope = (s: string): boolean =>
-  /^\s*BEGIN[_ ]STAN[_ ]PATCH[_ ]FEEDBACK\b/i.test(s);
-
-const seemsUnifiedDiff = (t: string): boolean =>
-  /^diff --git /m.test(t) ||
-  (/^---\s+(?:a\/|\S)/m.test(t) &&
-    /^\+\+\+\s+(?:b\/|\S)/m.test(t) &&
-    /^@@\s+-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s+@@/m.test(t));
-
-// Warn if any of the touched files appear staged (index contains them).
-const maybeWarnStaged = async (
-  cwd: string,
-  touchedRel: string[],
-): Promise<void> => {
-  if (!touchedRel.length) return;
-  try {
-    const res = await runGit(cwd, ['diff', '--cached', '--name-only', '-z']);
-    if (res.code !== 0) return;
-    const staged = res.stdout
-      .split('\u0000')
-      .filter((s) => s.length > 0)
-      .map((s) => s.replace(/\\/g, '/'));
-    const touched = touchedRel.map((s) => s.replace(/\\/g, '/'));
-    const overlap = touched.filter((p) => staged.includes(p));
-    if (overlap.length > 0) {
-      console.warn(
-        `stan: warning: ${overlap.length.toString()} patched file(s) appear staged; STAN does not stage automatically.\n` +
-          `      To unstage: git restore --staged ${overlap
-            .map((p) => (p.includes(' ') ? `"${p}"` : p))
-            .join(' ')}`,
-      );
-    }
-  } catch {
-    // best-effort
-  }
-};
+// Early path helper
+const fileExists = (cwd: string, rel: string): boolean =>
+  existsSync(path.join(cwd, rel));
 
 export const runPatch = async (
   cwd0: string,
@@ -78,6 +30,15 @@ export const runPatch = async (
   opts?: { file?: string | boolean; check?: boolean },
 ): Promise<void> => {
   const { cwd, stanPath, patchAbs, patchRel } = await resolvePatchContext(cwd0);
+
+  // Resolve repo config (open command default lives here)
+  let patchOpenCommand: string | undefined;
+  try {
+    const cfg = await loadConfig(cwd);
+    patchOpenCommand = cfg.patchOpenCommand;
+  } catch {
+    patchOpenCommand = undefined;
+  }
 
   // Resolve and read source (with user-facing log)
   let raw = '';
@@ -112,7 +73,6 @@ export const runPatch = async (
     console.error(
       'stan: FEEDBACK detected; paste this into your AI to receive a corrected patch.',
     );
-    // Ensure terminal status for CLI tests/UX
     console.log('stan: patch failed');
     return;
   }
@@ -120,12 +80,11 @@ export const runPatch = async (
     console.error(
       'stan: input is not a unified diff; expected headers like "diff --git a/<path> b/<path>" with subsequent "---"/"+++" and "@@" hunks.',
     );
-    // Ensure terminal status for CLI tests/UX
     console.log('stan: patch failed');
     return;
   }
 
-  // Write cleaned content to canonical path <stanPath>/patch/.patch (always try before parsing)
+  // Write cleaned content to canonical path <stanPath>/patch/.patch
   try {
     await ensureParentDir(patchAbs);
     await writeFile(patchAbs, cleaned, 'utf8');
@@ -159,7 +118,23 @@ export const runPatch = async (
     const touched =
       js && js.okFiles.length > 0 ? js.okFiles : changedFromHeaders;
     await maybeWarnStaged(cwd, touched);
+
     console.log(check ? 'stan: patch check passed' : 'stan: patch applied');
+
+    // Open modified files (unless deleted) when not --check
+    if (!check) {
+      const candidates =
+        js && js.okFiles.length > 0 ? js.okFiles : changedFromHeaders;
+      const existing = candidates.filter((rel) => fileExists(cwd, rel));
+      if (existing.length) {
+        await openFilesInEditor({
+          cwd,
+          files: existing,
+          openCommand: patchOpenCommand ?? 'code -g {file}',
+        });
+      }
+    }
+
     return;
   }
 

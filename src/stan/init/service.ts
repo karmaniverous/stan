@@ -29,6 +29,7 @@ export const performInitService = async ({
     scripts: {} as ScriptMap,
     excludes: [],
     includes: [],
+    patchOpenCommand: 'code -g {file}',
   };
 
   let resetDiffNow = true;
@@ -56,11 +57,15 @@ export const performInitService = async ({
       includes: picked.includes,
       excludes: picked.excludes,
       scripts: picked.scripts,
+      patchOpenCommand: defaults?.patchOpenCommand ?? 'code -g {file}',
     };
     resetDiffNow = picked.resetDiff;
   } else {
     if (preserveScripts && defaults?.scripts) {
       config.scripts = { ...defaults.scripts };
+    }
+    if (defaults?.patchOpenCommand) {
+      config.patchOpenCommand = defaults.patchOpenCommand;
     }
   }
 

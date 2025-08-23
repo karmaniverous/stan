@@ -11,6 +11,7 @@
  *   - when keep===false, clear ONLY <stanPath>/output (preserve <stanPath>/diff).
  * - NEW: stanPath replaces outputPath (default '.stan').
  * - NEW: maxUndos?: number (default 10) for snapshot undo/redo retention.
+ * - NEW: patchOpenCommand?: string (default "code -g {file}") to open modified files after patch apply.
  */
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { copyFile, mkdir, readdir, readFile } from 'node:fs/promises';
@@ -32,10 +33,13 @@ export type ContextConfig = {
   excludes?: string[];
   /** Maximum retained snapshot "undos" (history depth for snap undo/redo); default 10. */
   maxUndos?: number;
+  /** Command template to open modified files after a successful patch. Default: "code -g {file}". */
+  patchOpenCommand?: string;
 };
 
 /** Public default stan path for consumers and internal use. */
 export const DEFAULT_STAN_PATH = '.stan';
+const DEFAULT_OPEN_COMMAND = 'code -g {file}';
 
 const normalizeMaxUndos = (v: unknown): number => {
   const n =
@@ -48,6 +52,9 @@ const normalizeMaxUndos = (v: unknown): number => {
   return n;
 };
 
+const asString = (v: unknown): string | undefined =>
+  typeof v === 'string' && v.trim().length ? v : undefined;
+
 const parseFile = async (abs: string): Promise<ContextConfig> => {
   const raw = await readFile(abs, 'utf8');
   const cfg = abs.endsWith('.json')
@@ -59,6 +66,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
+  const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
 
   if (typeof stanPath !== 'string' || stanPath.length === 0) {
     throw new Error('Invalid config: "stanPath" must be a non-empty string');
@@ -76,6 +84,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
     maxUndos: normalizeMaxUndos(maxUndos),
+    patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,
   };
 };
 
@@ -129,6 +138,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
+  const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
 
   if (typeof stanPath !== 'string' || stanPath.length === 0) {
     throw new Error('Invalid config: "stanPath" must be a non-empty string');
@@ -146,6 +156,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
     maxUndos: normalizeMaxUndos(maxUndos),
+    patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,
   };
 };
 
@@ -176,7 +187,7 @@ export const resolveStanPath = async (cwd: string): Promise<string> => {
 
 /** Ensure stanPath exists and manage output/diff subdirs.
  * - Always ensure <stanPath>/output and <stanPath>/diff exist.
- * - When keep===false, copy output/archive.tar -\> diff/archive.prev.tar (if present),
+ * - When keep===false, copy output/archive.tar -> diff/archive.prev.tar (if present),
  *   then clear ONLY the output directory.
  */
 export const ensureOutputDir = async (

@@ -9,7 +9,9 @@ import { getVersionInfo } from './version';
 /** Run preflight and print warnings (TTY-aware). */
 export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
   const v = await getVersionInfo(cwd);
-  const isInteractive = Boolean((process.stdout as unknown as { isTTY?: boolean })?.isTTY);
+  const isInteractive = Boolean(
+    (process.stdout as unknown as { isTTY?: boolean })?.isTTY,
+  );
 
   // Suppress drift warnings in these cases:
   // - developing STAN itself (module root == repo root),

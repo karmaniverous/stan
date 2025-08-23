@@ -127,7 +127,7 @@ export const runPatch = async (
         js && js.okFiles.length > 0 ? js.okFiles : changedFromHeaders;
       const existing = candidates.filter((rel) => fileExists(cwd, rel));
       if (existing.length) {
-        await openFilesInEditor({
+        openFilesInEditor({
           cwd,
           files: existing,
           openCommand: patchOpenCommand ?? 'code -g {file}',

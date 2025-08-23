@@ -45,6 +45,10 @@ Current plan (remaining)
 
 Completed (recent)
 
+- Lint fix (patch service)
+  - Removed unnecessary `await` before `openFilesInEditor` in
+    src/stan/patch/service.ts to satisfy @typescript-eslint/await-thenable.
+    No behavior change.
 - Global CLI flags
   - Added `-b/--boring` to disable colorized output (useful for tests and CI).
     Wired via environment (STAN_BORING/NO_COLOR/FORCE_COLOR) and documented in

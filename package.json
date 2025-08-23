@@ -148,6 +148,7 @@
     "lint:fix": "eslint --fix .",
     "release": "dotenvx run -f .env.local -- release-it",
     "release:pre": "dotenvx run -f .env.local -- release-it --no-git.requireBranch --github.prerelease --preRelease",
+    "relink": "npm uninstall -g @karmaniverous/stan && npm run build && npm link",
     "stan": "tsx src/cli/stan/stan.ts",
     "stan:build": "rimraf stan.dist && rollup --config stan.rollup.config.ts --configPlugin @rollup/plugin-typescript && rimraf stan.dist",
     "stan:docs": "typedoc --emit none",

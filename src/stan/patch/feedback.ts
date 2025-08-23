@@ -70,6 +70,14 @@ export const buildFeedbackEnvelope = (e: FeedbackEnvelope): string => {
 
 /** Copy text to system clipboard (best-effort); returns true on success, false on failure. */
 export const copyToClipboard = async (text: string): Promise<boolean> => {
+  // Test/CI guard: avoid flaky or blocking clipboard operations during tests unless explicitly forced.
+  // This matches the editor-open behavior and prevents Windows teardown issues (ENOTEMPTY/EBUSY).
+  if (
+    process.env.NODE_ENV === 'test' &&
+    process.env.STAN_FORCE_CLIPBOARD !== '1'
+  ) {
+    return false;
+  }
   try {
     const { default: clipboardy } = (await import('clipboardy')) as {
       default: { write: (t: string) => Promise<void> };

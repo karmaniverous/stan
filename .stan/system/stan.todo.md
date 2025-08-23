@@ -49,6 +49,10 @@ Completed (recent)
   - When a patch fails (non‑--check), open the target file(s) derived from
     headers to aid manual fixes.
 
+- FEEDBACK clipboard (test guard)
+  - Skip clipboard writes under NODE_ENV=test unless STAN_FORCE_CLIPBOARD=1,
+    preventing hangs and Windows teardown errors in CI.
+
 - Lint fix (patch service)
   - Removed unnecessary `await` before `openFilesInEditor` in
     src/stan/patch/service.ts to satisfy @typescript-eslint/await-thenable.

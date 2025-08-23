@@ -394,6 +394,12 @@ If info is insufficient to proceed without critical assumptions, abort and clari
 
 ## Commit message output (replaces refactor-note files)
 
+- MANDATORY: Commit message MUST be wrapped in a fenced code block.
+  - Use a plain triple-backtick fence (or longer per the fence hygiene rule if needed).
+  - Do not annotate with a language tag; the block must contain only the commit message text.
+  - Emit the commit message once, at the end of the reply.
+  - This rule applies to every change set, regardless of size.
+
 - The assistant MUST NOT create or persist refactor-note files under
   `<stanPath>/refactors/`.
 - At the end of any change set, the assistant MUST output a commit
@@ -404,6 +410,8 @@ If info is insufficient to proceed without critical assumptions, abort and clari
     - “When: <UTC timestamp>”
     - “Why: <short reason>”
     - “What changed:” bulleted file list with terse notes
+- The fenced commit message MUST be placed in a code block fence that
+  satisfies the +1 backtick rule (see Response Format).
 - When patches are impractical, provide Full Listings for changed files,
   followed by the commit message. Do not emit unified diffs in that mode.
 
@@ -432,6 +440,13 @@ Use these headings exactly; wrap each Patch (and optional Full Listing)
 in a fence computed by the algorithm above.
 
 ---
+
+Commit Message (MANDATORY; fenced code block)
+
+- Output the commit message at the end of the reply wrapped in a fenced
+  code block. Do not annotate with a language tag. Apply the +1 backtick
+  rule. The block contains only the commit message (subject + body), no
+  surrounding prose.
 
 ## Input Data Changes
 

@@ -27,6 +27,10 @@ Plan management policy
   - When a completed item establishes a durable policy, promote that policy
     to stan.project.md and remove it from “Completed”.
 
+Near-term exploration
+
+- After patch “open files”: explore returning terminal focus (CLI) cross‑platform (macOS open -g, Windows start/min/VSC integration). Defer until feasibility is clear.
+
 Current plan (remaining)
 
 - A) Patch service thin‑out (ensure SRP; keep orchestrator lean)

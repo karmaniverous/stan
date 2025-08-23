@@ -159,8 +159,9 @@ export const runPatch = async (
 
   const check = Boolean(opts?.check);
   const stripOrder = parsed?.stripCandidates ?? [1, 0];
+  // DX: apply to working tree only (no index/staging mode)
   const attempts = stripOrder.flatMap((p) =>
-    buildApplyAttempts(check, p, !check),
+    buildApplyAttempts(check, p, false),
   );
 
   // Track *.rej files created during attempts
@@ -168,9 +169,7 @@ export const runPatch = async (
   const result: ApplyResult = await runGitApply(cwd, patchAbs, attempts);
 
   if (result.ok) {
-    console.log(
-      check ? 'stan: patch check passed' : 'stan: patch applied (staged)',
-    );
+    console.log(check ? 'stan: patch check passed' : 'stan: patch applied');
     return;
   }
 
@@ -345,11 +344,10 @@ export const runPatch = async (
       console.error('stan: failed to write patch feedback file', e);
     }
 
-    // Clipboard copy is best-effort and independent of file write.
+    // Clipboard copy is best-effort; on failure, just report it.
     try {
       await copyToClipboard(envelope);
-      const loc = fbAbs || '<clipboard only>';
-      console.log(`stan: copied patch feedback to clipboard -> ${loc}`);
+      console.log('stan: copied patch feedback to clipboard');
     } catch {
       if (fbAbs) {
         console.error(
@@ -357,7 +355,7 @@ export const runPatch = async (
         );
       } else {
         console.error(
-          'stan: clipboard copy failed; feedback envelope not saved to file',
+          'stan: clipboard copy failed; feedback not saved to file',
         );
       }
     }

@@ -73,6 +73,9 @@ export default [
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
+      // Tests/mocks often return Promises or use async wrappers without awaits.
+      // Avoid busywork fixes; require-await adds little value in tests.
+      '@typescript-eslint/require-await': 'off',
     },
   },
 

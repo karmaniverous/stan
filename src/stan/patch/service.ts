@@ -153,12 +153,16 @@ export const runPatch = async (
     console.error(
       'stan: FEEDBACK detected; paste this into your AI to receive a corrected patch.',
     );
+    // Ensure terminal status for CLI tests/UX
+    console.log('stan: patch failed');
     return;
   }
   if (!seemsUnifiedDiff(cleaned)) {
     console.error(
       'stan: input is not a unified diff; expected headers like "diff --git a/<path> b/<path>" with subsequent "---"/"+++" and "@@" hunks.',
     );
+    // Ensure terminal status for CLI tests/UX
+    console.log('stan: patch failed');
     return;
   }
 

@@ -59,6 +59,8 @@ Completed (since last update)
   - Early input sanity checks:
     • Abort for BEGIN_STAN_PATCH_FEEDBACK envelopes with clear guidance.  
     • Abort non‑diff inputs with helpful message describing expected headers.
+  - Terminal status on early aborts:
+    • Log “stan: patch failed” so CLI tests/UX receive a terminal status line.
   - Clipboard feedback logging:
     • On success: “stan: copied patch feedback to clipboard.”  
     • On failure: “stan: clipboard copy failed; feedback saved -> <path>”.  

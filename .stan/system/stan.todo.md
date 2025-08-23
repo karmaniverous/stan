@@ -31,23 +31,19 @@ Near-term exploration
 
 - After patch “open files”: explore returning terminal focus (CLI) cross‑platform (macOS open -g, Windows start/min/VSC integration). Defer until feasibility is clear.
 
-Current plan (remaining)
-
-- A) Patch service thin‑out (ensure SRP; keep orchestrator lean)
-  - Extract remaining helpers from src/stan/patch/service.ts into focused modules:
-    • patch/git-status.ts — maybeWarnStaged (index overlap warning)  
-    • patch/detect.ts — isFeedbackEnvelope, seemsUnifiedDiff  
-    • patch/util/fs.ts — ensureParentDir  
-    • patch/headers.ts — pathsFromPatch (header‑derived candidates)
-  - Keep service.ts as orchestration only (wire read→clean→parse→apply→diagnose→feedback).
-  - Tests: extend existing suites minimally to cover new modules’ surfaces (smoke in service stays).
-  - Acceptance: service.ts ~≤200 LOC; all tests green; no behavior changes.
-
 - Low priority: Investigate sporadic patch failures on long Markdown files (e.g., .stan/system/stan.todo.md)
   - Observation: patch application is reliable overall; when failures occur they are more likely on very long Markdown files.
   - Status: low priority; no immediate action. Track frequency; later consider chunked updates or increased context for Markdown diffs.
 
 Completed (recent)
+
+- Patch service thin‑out (SRP; orchestrator only)
+  - Audit: src/stan/patch/service.ts serves as a lean orchestrator (~200 LOC),
+    delegating to focused helpers already present:
+    detect.ts, headers.ts, git-status.ts, util/fs.ts, and run/{source,pipeline,
+    diagnostics,feedback}. Tests are green; no behavior changes observed.
+  - Outcome meets acceptance: small orchestrator, helpers extracted, behavior
+    unchanged.
 
 - Open target files on patch failure
   - When a patch fails (non‑--check), open the target file(s) derived from

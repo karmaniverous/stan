@@ -43,6 +43,10 @@ Current plan (remaining)
   - Tests: extend existing suites minimally to cover new modules’ surfaces (smoke in service stays).
   - Acceptance: service.ts ~≤200 LOC; all tests green; no behavior changes.
 
+- Low priority: Investigate sporadic patch failures on long Markdown files (e.g., .stan/system/stan.todo.md)
+  - Observation: patch application is reliable overall; when failures occur they are more likely on very long Markdown files.
+  - Status: low priority; no immediate action. Track frequency; later consider chunked updates or increased context for Markdown diffs.
+
 Completed (recent)
 
 - Open target files on patch failure

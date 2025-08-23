@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-22 (UTC)
+When updated: 2025-08-23 (UTC)
 
 ALIASES
 
@@ -23,58 +23,66 @@ Plan management policy
 
 Current plan (remaining)
 
-- P0 — Patch pipeline (ongoing)
-  - FEEDBACK envelope: keep concise last-error snippet (present).
-  - jsdiff fallback: stable (present); optional DMP deferred.
-  - Sandbox retention: bounded (present).
+- A) Patch module split and tests
+  - Split src/stan/patch/service.ts (>300 LOC) into focused modules:
+    • src/stan/patch/run/source.ts — resolve source (clipboard/file/arg) + read  
+    • src/stan/patch/run/pipeline.ts — worktree git‑apply attempts + jsdiff fallback  
+    • src/stan/patch/run/diagnostics.ts — write attempts.json and per‑attempt logs  
+    • src/stan/patch/run/feedback.ts — build/persist FEEDBACK + clipboard log
+  - Keep service.ts as thin orchestration only.
+  - Add tests:
+    • run/source.test.ts — source precedence, error handling  
+    • run/pipeline.test.ts — untracked and modified‑but‑unstaged files; capture failures  
+    • run/diagnostics.test.ts — attempts.json + per‑attempt logs  
+    • run/feedback.test.ts — FEEDBACK write + clipboard logging (success/failure)
+  - Update service smoke test to validate orchestration/logs; keep suite green.
 
-- P1 — Preflight/version UX
-  - `stan -v` prints version + doc baseline info (present).
+- B) ESLint and prompt updates
+  - ESLint: Confirm @typescript-eslint/require-await is OFF for **/\*.test.ts(x), unchanged for src/**.
+  - System prompt:
+    • Add system‑level lint policy (tool‑agnostic).  
+    • Add explicit “Enforcement” under the 300‑line guidance:
+    − When a module exceeds ~300 LOC, propose a split or justify exceptions; record in the dev plan.
 
-- P2 — Housekeeping
-  - Windows EBUSY mitigation remains (temporary cwd + retries where
-    needed).
-  - Keep archive warnings console-only (present).
-  - Ensure new code follows SRP and 300‑LOC guidance.
+- C) Docs/help
+  - Update stan patch help/README:
+    • Unified diffs only; FEEDBACK is for the AI loop, not for stan patch apply.  
+    • Worktree applies only; git index is never required.  
+    • Clipboard: file path is always printed; if copy fails, clear message with saved path.  
+    • (Optional) STAN_NO_CLIPBOARD env toggle docs if added.
 
 Completed (since last update)
+
+- P0 — Patching DX (#1–#3)
+  - Worktree‑only applies: removed any index‑verified/staging behavior; tolerant git apply across p1→p0, then jsdiff fallback.
+  - Unified success log: “stan: patch applied” (no staged/unstaged wording).
+  - Early input sanity checks:
+    • Abort for BEGIN_STAN_PATCH_FEEDBACK envelopes with clear guidance.  
+    • Abort non‑diff inputs with helpful message describing expected headers.
+  - Clipboard feedback logging:
+    • On success: “stan: copied patch feedback to clipboard.”  
+    • On failure: “stan: clipboard copy failed; feedback saved -> <path>”.  
+    • FEEDBACK content is not printed to console.
+  - Test alignment: jsdiff fallback test updated to consume unified success log.
 
 - Docs: Added “Getting started” to README, including guidance to exclude
   `<stanPath>` (default `.stan`) from ESLint (flat config ignores).
 
-- P0 — Removed refactor-note persistence
-  - No `<stanPath>/refactors` directory is created or referenced by code.
-  - Commit‑message workflow is documented in the system prompt; no “refactor
-    note” files are written anywhere.
-
-- P0 — Archive sanity verification
-  - Archivers contain no refactor‑specific excludes.
-  - Combine and non‑combine modes produce archives without any refactor
-    artifacts (confirmed by code/tests).
-
-- P1 — Preflight drift nudge (TTY vs non-TTY)
-  - TTY: multi‑line guidance about drift and where to place edits.
-  - Non‑TTY: concise single‑line notices suitable for CI/logs.
-
-- CLI refactors (services-first; adapters thin)
-  - Snap handlers split; init/patch split; run split into services +
-    pure plan rendering.
-- Diff/snapshot policy and artifacts
-  - Always-on diff with archives; snapshot policy implemented; snap
-    history with undo/redo/set/info.
-- Patch pipeline robustness
-  - Clean/extract from prose; tolerant git apply with p1/p0 and
-    --recount; jsdiff fallback with CRLF preservation; FEEDBACK
-    clipboard + .debug/attempts.json; rejects relocated under
-    <stanPath>/patch/>.
 - Archive classifier
   - Binary exclusion; large text call-outs; archive warnings log to
     console (no output file).
 
+- Diff/snapshot policy and artifacts
+  - Always-on diff with archives; snapshot policy implemented; snap
+    history with undo/redo/set/info.
+
+- Preflight/version UX
+  - `stan -v` prints version + doc baseline info; preflight drift warnings (TTY vs non‑TTY)
+    implemented and tested.
+
 Notes
 
-- Module SRP: new code follows the “directory module + index” pattern;
-  CLI adapters remain thin.
+- Module SRP: service split remains the next step to get service.ts under 300 LOC.
 - Termination rule: if the original full archive is no longer in the
   context window, halt and resume in a fresh chat with the latest
   archives (state is preserved under <stanPath>/system).

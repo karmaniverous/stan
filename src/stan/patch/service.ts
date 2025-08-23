@@ -90,6 +90,16 @@ const pruneSandboxDirs = async (
   }
 };
 
+// Early-input detection helpers
+const isFeedbackEnvelope = (s: string): boolean =>
+  /^\s*BEGIN[_ ]STAN[_ ]PATCH[_ ]FEEDBACK\b/i.test(s);
+
+const seemsUnifiedDiff = (t: string): boolean =>
+  /^diff --git /m.test(t) ||
+  (/^---\s+(?:a\/|\S)/m.test(t) &&
+    /^\+\+\+\s+(?:b\/|\S)/m.test(t) &&
+    /^@@\s+-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s+@@/m.test(t));
+
 export const runPatch = async (
   cwd0: string,
   inputMaybe?: string,
@@ -138,6 +148,20 @@ export const runPatch = async (
   // Detect & clean (unified diff only), tolerant to surrounding prose
   const cleaned = detectAndCleanPatch(raw);
 
+  // Early input sanity checks
+  if (isFeedbackEnvelope(cleaned)) {
+    console.error(
+      'stan: FEEDBACK detected; paste this into your AI to receive a corrected patch.',
+    );
+    return;
+  }
+  if (!seemsUnifiedDiff(cleaned)) {
+    console.error(
+      'stan: input is not a unified diff; expected headers like "diff --git a/<path> b/<path>" with subsequent "---"/"+++" and "@@" hunks.',
+    );
+    return;
+  }
+
   // Write cleaned content to canonical path <stanPath>/patch/.patch (always try before parsing)
   try {
     await ensureParentDir(patchAbs);
@@ -158,8 +182,8 @@ export const runPatch = async (
   console.log(`stan: applying patch "${patchRel}"`);
 
   const check = Boolean(opts?.check);
-  const stripOrder = parsed?.stripCandidates ?? [1, 0];
-  // DX: apply to working tree only (no index/staging mode)
+  // DX: always try p1 then p0; worktree only (no index/staging mode)
+  const stripOrder: number[] = [1, 0];
   const attempts = stripOrder.flatMap((p) =>
     buildApplyAttempts(check, p, false),
   );
@@ -212,11 +236,7 @@ export const runPatch = async (
   }
 
   if (js.okFiles.length > 0 && js.failed.length === 0) {
-    console.log(
-      check
-        ? 'stan: patch check passed (jsdiff)'
-        : 'stan: patch applied via jsdiff (unstaged)',
-    );
+    console.log(check ? 'stan: patch check passed' : 'stan: patch applied');
     return;
   }
 
@@ -344,7 +364,7 @@ export const runPatch = async (
       console.error('stan: failed to write patch feedback file', e);
     }
 
-    // Clipboard copy is best-effort; on failure, just report it.
+    // Clipboard copy is best-effort; on failure, report saved path.
     try {
       await copyToClipboard(envelope);
       console.log('stan: copied patch feedback to clipboard');

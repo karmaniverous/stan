@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import chalk from 'chalk';
+import { cyan, red, yellow } from '@/stan/util/color';
 
 const isDeleted = (cwd: string, rel: string): boolean =>
   !existsSync(path.resolve(cwd, rel));
@@ -24,7 +24,7 @@ export const openFilesInEditor = (args: {
 
   if (!openCommand || !openCommand.includes('{file}')) {
     console.log(
-      chalk.yellow(
+      yellow(
         'stan: no open command configured; run `stan init` and set patchOpenCommand (e.g., "code -g {file}")',
       ),
     );
@@ -42,10 +42,10 @@ export const openFilesInEditor = (args: {
         detached: true,
       });
       child.unref();
-      console.log(`stan: open -> ${chalk.cyan(rel)}`);
+      console.log(`stan: open -> ${cyan(rel)}`);
     } catch {
       console.log(
-        chalk.red(
+        red(
           `stan: open failed for ${rel}; run \`stan init\` to configure patchOpenCommand`,
         ),
       );

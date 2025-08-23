@@ -41,6 +41,11 @@ Current plan (remaining)
 
 Completed (recent)
 
+- Global CLI flags
+  - Added `-b/--boring` to disable colorized output (useful for tests and CI).
+    Wired via environment (STAN_BORING/NO_COLOR/FORCE_COLOR) and documented in
+    README. Color usage routed through a small util.
+
 - Patch split & tests
   - The split into run/{source,pipeline,diagnostics,feedback}.ts exists and tests are green.
 

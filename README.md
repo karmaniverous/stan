@@ -156,6 +156,7 @@ stan run [options]
 Global:
 
 - `-d, --debug` (on `stan`): enable verbose debug logging for all subcommands.
+- `-b, --boring` (on `stan`): disable colorized output (useful for tests and CI).
 
 ### stan patch
 

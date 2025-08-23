@@ -57,6 +57,10 @@ Completed (recent)
   - Skip clipboard writes under NODE_ENV=test unless STAN_FORCE_CLIPBOARD=1,
     preventing hangs and Windows teardown errors in CI.
 
+- Project prompt: document patch editor‑open behavior
+  - Added success/failure editor‑open details and configuration pointers to
+    `.stan/system/stan.project.md` under the “stan patch” section.
+
 - Lint fix (patch service)
   - Removed unnecessary `await` before `openFilesInEditor` in
     src/stan/patch/service.ts to satisfy @typescript-eslint/await-thenable.

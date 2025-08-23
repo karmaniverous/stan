@@ -207,7 +207,8 @@ Behavior details:
     - copies it to the clipboard.
   - The console will log:
     - `stan: wrote patch feedback -> <path>`
-    - `stan: copied patch feedback to clipboard -> <path>` (or `<clipboard only>` if the file write failed)
+    - `stan: copied patch feedback to clipboard`
+    - or `stan: clipboard copy failed; feedback saved -> <path>`
   - Paste this FEEDBACK back into chat verbatim to get a corrected patch tailored to the failure.
 - Windows note: Passing very large base64 as an inline command-line argument can exceed the ~32K character limit. Clipboard default or `-f` are recommended for large patches.
 

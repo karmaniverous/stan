@@ -41,7 +41,7 @@ describe('writePatchDiagnostics', () => {
           { label: 't2', code: 1, stdout: '', stderr: '' },
         ],
       },
-      js: { okFiles: [], failed: [], sandboxRoot: null },
+      js: { okFiles: [], failed: [] },
     });
 
     expect(out.attemptsRel.endsWith('attempts.json')).toBe(true);

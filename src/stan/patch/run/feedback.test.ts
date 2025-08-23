@@ -40,7 +40,7 @@ describe('persistFeedbackAndClipboard', () => {
       cleaned: 'CLEAN',
       parsed: null,
       result: { ok: false, tried: ['t'], lastCode: 1, captures: [] },
-      js: { okFiles: [], failed: [], sandboxRoot: null },
+      js: { okFiles: [], failed: [] },
       changedFromHeaders: ['x.ts'],
       check: false,
     });

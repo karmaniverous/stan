@@ -40,11 +40,13 @@ export const readPatchSource = async (
       // Treat as clipboard when -f/--file present without a name
       return { kind: 'clipboard', raw: await readFromClipboard() };
     }
-    const raw = await readFile(repoJoin(cwd, fileRel), 'utf8');
+    const absFile = repoJoin(cwd, fileRel);
+    const raw = await readFile(absFile, 'utf8');
     return {
       kind: 'file',
       raw,
-      filePathRel: path.relative(cwd, fileRel).replace(/\\/g, '/'),
+      // Ensure the path is relative to cwd even if fileRel included segments
+      filePathRel: path.relative(cwd, absFile).replace(/\\/g, '/'),
     };
   }
   // Default: clipboard

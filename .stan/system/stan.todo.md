@@ -101,6 +101,11 @@ Completed (since last update)
   - Added src/stan/patch/service.smoke.test.ts to validate runPatch
     success path and logging (“stan: patch applied”).
 
+- Clipboard fallback logging
+  - copyToClipboard now reports success/failure; persistFeedbackAndClipboard logs
+    “copied to clipboard” on success and “clipboard copy failed; feedback saved -> <path>”
+    on failure. Tests cover both paths.
+
 Notes
 
 - Module SRP: service split remains the next step to get service.ts under 300 LOC.

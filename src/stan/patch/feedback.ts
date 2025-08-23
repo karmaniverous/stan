@@ -68,14 +68,15 @@ export const buildFeedbackEnvelope = (e: FeedbackEnvelope): string => {
   return lines.join('\n');
 };
 
-/** Copy text to system clipboard (best-effort; no throw). */
-export const copyToClipboard = async (text: string): Promise<void> => {
+/** Copy text to system clipboard (best-effort); returns true on success, false on failure. */
+export const copyToClipboard = async (text: string): Promise<boolean> => {
   try {
     const { default: clipboardy } = (await import('clipboardy')) as {
       default: { write: (t: string) => Promise<void> };
     };
     await clipboardy.write(text);
+    return true;
   } catch {
-    // best-effort
+    return false;
   }
 };

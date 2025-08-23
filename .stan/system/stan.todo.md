@@ -43,42 +43,40 @@ Current plan (remaining)
     • run/feedback.test.ts — FEEDBACK write + clipboard logging (success/failure)
   - Update service smoke test to validate orchestration/logs; keep suite green.
 
-- B) ESLint and prompt updates
-  - ESLint: Confirm @typescript-eslint/require-await is OFF for **/\*.test.ts(x), unchanged for src/**.
-  - System prompt:
-    • Add system‑level lint policy (tool‑agnostic).  
-    • Add explicit “Enforcement” under the 300‑line guidance:
-    − When a module exceeds ~300 LOC, propose a split or justify exceptions; record in the dev plan.
-
-- C) Docs/help
-  - Update stan patch help/README:
-    • Unified diffs only; FEEDBACK is for the AI loop, not for stan patch apply.  
-    • Worktree applies only; git index is never required.  
-    • Clipboard: file path is always printed; if copy fails, clear message with saved path.  
-    • (Optional) STAN_NO_CLIPBOARD env toggle docs if added.
-
 Completed (recent)
 
-- Graceful jsdiff parse errors
-  - applyWithJsDiff no longer throws on invalid/unparseable diffs; returns a failure outcome
-    so the pipeline can generate diagnostics/FEEDBACK instead of crashing.
+- Prompt & lint emphasis
+  - Confirmed @typescript-eslint/require-await is OFF for tests; no change needed for src/\*\*.
+  - System prompt already contained doc conventions and pruning policy.
 
-- Clipboard fallback logging
-  - copyToClipboard now reports success/failure; persistFeedbackAndClipboard logs
-    “copied to clipboard” on success and “clipboard copy failed; feedback saved -> <path>”
-    on failure. Tests cover both paths.
+- Docs/help (FEEDBACK logs)
+  - README updated to match console messages:
+    • copied: “stan: copied patch feedback to clipboard”
+    • failure: “stan: clipboard copy failed; feedback saved -> <path>”
 
-- Service smoke test
-  - Added src/stan/patch/service.smoke.test.ts to validate runPatch
-    success path and logging (“stan: patch applied”).
+- Snap split
+  - Extracted context/history/snap-run; handlers is a thin re-export.
+
+- Snap split tidy
+  - Removed unused variable in snap/history.ts (handleInfo) to satisfy ESLint.
 
 - Test fixes (jsdiff + feedback copy)
   - jsdiff fallback now classifies empty/nameless parse results as “invalid unified diff”.
   - FEEDBACK clipboard path treats undefined copy result as success; logs
     “stan: copied patch feedback to clipboard”.
 
-- Snap split tidy
-  - Removed unused variable in snap/history.ts (handleInfo) to satisfy ESLint.
+- Service smoke test
+  - Added src/stan/patch/service.smoke.test.ts to validate runPatch
+    success path and logging (“stan: patch applied”).
+
+- Clipboard fallback logging
+  - copyToClipboard now reports success/failure; persistFeedbackAndClipboard logs
+    “copied to clipboard” on success and “clipboard copy failed; feedback saved -> <path>”
+    on failure. Tests cover both paths.
+
+- Graceful jsdiff parse errors
+  - applyWithJsDiff no longer throws on invalid/unparseable diffs; returns a failure outcome
+    so the pipeline can generate diagnostics/FEEDBACK instead of crashing.
 
 Notes
 

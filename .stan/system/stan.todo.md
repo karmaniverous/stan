@@ -45,6 +45,12 @@ Completed (recent)
   - Outcome meets acceptance: small orchestrator, helpers extracted, behavior
     unchanged.
 
+- Docs: Simplified loop diagram & path update
+  - Replaced the detailed diagram with a three‑stage state diagram focused on
+    the core loop (“Build & Snapshot” → “Share & Baseline” → “Discuss & Patch”).
+  - Moved source to diagrams/stan-loop.pu and updated README to reference
+    diagrams/stan-loop.svg.
+
 - Open target files on patch failure
   - When a patch fails (non‑--check), open the target file(s) derived from
     headers to aid manual fixes.

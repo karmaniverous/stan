@@ -189,6 +189,18 @@ export const runPatch = async (
     // best-effort
   }
 
+  // Open target files even when the patch fails (unless --check)
+  if (!check) {
+    const existing = changedFromHeaders.filter((rel) => fileExists(cwd, rel));
+    if (existing.length) {
+      openFilesInEditor({
+        cwd,
+        files: existing,
+        openCommand: patchOpenCommand ?? 'code -g {file}',
+      });
+    }
+  }
+
   console.log(
     `stan: patch ${check ? 'check failed' : 'failed'} (tried: ${result.tried.join(
       ', ',

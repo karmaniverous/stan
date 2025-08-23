@@ -45,6 +45,10 @@ Current plan (remaining)
 
 Completed (recent)
 
+- Open target files on patch failure
+  - When a patch fails (non‑--check), open the target file(s) derived from
+    headers to aid manual fixes.
+
 - Lint fix (patch service)
   - Removed unnecessary `await` before `openFilesInEditor` in
     src/stan/patch/service.ts to satisfy @typescript-eslint/await-thenable.

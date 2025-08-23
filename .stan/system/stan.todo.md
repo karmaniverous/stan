@@ -90,6 +90,13 @@ Completed (since last update)
     • src/stan/patch/run/pipeline.ts  
     • src/stan/patch/run/source.ts
 
+- Run modules tests
+  - Added unit tests for:
+    • src/stan/patch/run/source.test.ts  
+    • src/stan/patch/run/pipeline.test.ts  
+    • src/stan/patch/run/diagnostics.test.ts  
+    • src/stan/patch/run/feedback.test.ts
+
 Notes
 
 - Module SRP: service split remains the next step to get service.ts under 300 LOC.

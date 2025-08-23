@@ -77,6 +77,9 @@ Completed (recent)
   - FEEDBACK clipboard path treats undefined copy result as success; logs
     “stan: copied patch feedback to clipboard”.
 
+- Snap split tidy
+  - Removed unused variable in snap/history.ts (handleInfo) to satisfy ESLint.
+
 Notes
 
 - Module SRP: service split remains the next step to get service.ts under 300 LOC.

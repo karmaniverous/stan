@@ -123,7 +123,7 @@ export const handleSet = async (indexArg: string): Promise<void> => {
 
 export const handleInfo = async (): Promise<void> => {
   const { cwd, stanPath, maxUndos } = await resolveContext(process.cwd());
-  const { diffDir, statePath } = getStatePaths(cwd, stanPath);
+  const { statePath } = getStatePaths(cwd, stanPath);
 
   const st = await ensureState(statePath, maxUndos);
   const undos = Math.max(0, st.index);

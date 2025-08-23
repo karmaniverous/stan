@@ -4,9 +4,9 @@
 import { writeArchiveSnapshot } from '../diff';
 import { utcStamp } from '../util/time';
 import { captureSnapshotAndArchives } from './capture';
+import { resolveContext } from './context';
 import { runGit } from './git';
 import { ensureDirs } from './shared';
-import { resolveContext } from './context';
 
 export const handleSnap = async (opts?: { stash?: boolean }): Promise<void> => {
   const { cwd, stanPath, maxUndos } = await resolveContext(process.cwd());

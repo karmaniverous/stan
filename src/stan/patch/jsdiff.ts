@@ -50,6 +50,20 @@ export const applyWithJsDiff = async (args: {
       sandboxRoot,
     };
   }
+  // Treat empty or nameless parsed results as invalid unified diffs.
+  const hasNamed = patches.some((p) => {
+    const a = stripAB(p.oldFileName);
+    const b = stripAB(p.newFileName);
+    return Boolean((a && a.length) || (b && b.length));
+  });
+  if (!patches.length || !hasNamed) {
+    return {
+      okFiles: [],
+      failed: [{ path: '(patch)', reason: 'invalid unified diff' }],
+      sandboxRoot,
+    };
+  }
+
   const okFiles: string[] = [];
   const failed: Array<{ path: string; reason: string }> = [];
 

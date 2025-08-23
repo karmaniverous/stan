@@ -72,6 +72,11 @@ Completed (recent)
   - Added src/stan/patch/service.smoke.test.ts to validate runPatch
     success path and logging (“stan: patch applied”).
 
+- Test fixes (jsdiff + feedback copy)
+  - jsdiff fallback now classifies empty/nameless parse results as “invalid unified diff”.
+  - FEEDBACK clipboard path treats undefined copy result as success; logs
+    “stan: copied patch feedback to clipboard”.
+
 Notes
 
 - Module SRP: service split remains the next step to get service.ts under 300 LOC.

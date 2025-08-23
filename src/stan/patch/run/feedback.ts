@@ -102,7 +102,14 @@ export const persistFeedbackAndClipboard = async (args: {
   const fbAbs = fbPath.replace(/\\/g, '/');
   console.log(`stan: wrote patch feedback -> ${fbAbs}`);
 
-  const copied = await copyToClipboard(envelope);
+  // Tolerate undefined returns from copy helpers as success.
+  let copied = false;
+  try {
+    const res = await copyToClipboard(envelope);
+    copied = res !== false;
+  } catch {
+    copied = false;
+  }
   if (copied) {
     console.log('stan: copied patch feedback to clipboard');
   } else {

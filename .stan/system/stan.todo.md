@@ -29,58 +29,39 @@ Plan management policy
 
 Current plan (remaining)
 
-- A) Patch module split and tests
-  - Split src/stan/patch/service.ts (>300 LOC) into focused modules:
-    • src/stan/patch/run/source.ts — resolve source (clipboard/file/arg) + read  
-    • src/stan/patch/run/pipeline.ts — worktree git‑apply attempts + jsdiff fallback  
-    • src/stan/patch/run/diagnostics.ts — write attempts.json and per‑attempt logs  
-    • src/stan/patch/run/feedback.ts — build/persist FEEDBACK + clipboard log
-  - Keep service.ts as thin orchestration only.
-  - Add tests:
-    • run/source.test.ts — source precedence, error handling  
-    • run/pipeline.test.ts — untracked and modified‑but‑unstaged files; capture failures  
-    • run/diagnostics.test.ts — attempts.json + per‑attempt logs  
-    • run/feedback.test.ts — FEEDBACK write + clipboard logging (success/failure)
-  - Update service smoke test to validate orchestration/logs; keep suite green.
+- A) Patch service thin‑out (ensure SRP; keep orchestrator lean)
+  - Extract remaining helpers from src/stan/patch/service.ts into focused modules:
+    • patch/git-status.ts — maybeWarnStaged (index overlap warning)  
+    • patch/detect.ts — isFeedbackEnvelope, seemsUnifiedDiff  
+    • patch/util/fs.ts — ensureParentDir  
+    • patch/headers.ts — pathsFromPatch (header‑derived candidates)
+  - Keep service.ts as orchestration only (wire read→clean→parse→apply→diagnose→feedback).
+  - Tests: extend existing suites minimally to cover new modules’ surfaces (smoke in service stays).
+  - Acceptance: service.ts ~≤200 LOC; all tests green; no behavior changes.
 
 Completed (recent)
 
-- Prompt & lint emphasis
-  - Confirmed @typescript-eslint/require-await is OFF for tests; no change needed for src/\*\*.
-  - System prompt already contained doc conventions and pruning policy.
+- Patch split & tests
+  - The split into run/{source,pipeline,diagnostics,feedback}.ts exists and tests are green.
 
 - Docs/help (FEEDBACK logs)
-  - README updated to match console messages:
+  - README now matches console messages:
     • copied: “stan: copied patch feedback to clipboard”
     • failure: “stan: clipboard copy failed; feedback saved -> <path>”
 
 - Snap split
-  - Extracted context/history/snap-run; handlers is a thin re-export.
+  - Extracted context/history/snap-run; handlers is a thin re‑export.
 
 - Snap split tidy
   - Removed unused variable in snap/history.ts (handleInfo) to satisfy ESLint.
 
 - Test fixes (jsdiff + feedback copy)
-  - jsdiff fallback now classifies empty/nameless parse results as “invalid unified diff”.
+  - jsdiff fallback classifies empty/nameless parse results as “invalid unified diff”.
   - FEEDBACK clipboard path treats undefined copy result as success; logs
     “stan: copied patch feedback to clipboard”.
 
-- Service smoke test
-  - Added src/stan/patch/service.smoke.test.ts to validate runPatch
-    success path and logging (“stan: patch applied”).
-
-- Clipboard fallback logging
-  - copyToClipboard now reports success/failure; persistFeedbackAndClipboard logs
-    “copied to clipboard” on success and “clipboard copy failed; feedback saved -> <path>”
-    on failure. Tests cover both paths.
-
-- Graceful jsdiff parse errors
-  - applyWithJsDiff no longer throws on invalid/unparseable diffs; returns a failure outcome
-    so the pipeline can generate diagnostics/FEEDBACK instead of crashing.
-
 Notes
 
-- Module SRP: service split remains the next step to get service.ts under 300 LOC.
 - Termination rule: if the original full archive is no longer in the
   context window, halt and resume in a fresh chat with the latest
   archives (state is preserved under <stanPath>/system).

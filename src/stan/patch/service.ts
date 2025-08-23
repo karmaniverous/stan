@@ -128,6 +128,7 @@ const maybeWarnStaged = async (
     // best-effort
   }
 };
+
 export const runPatch = async (
   cwd0: string,
   inputMaybe?: string,
@@ -238,9 +239,6 @@ export const runPatch = async (
     ? path.join(path.dirname(patchAbs), '.sandbox', utcStamp())
     : undefined;
 
-  // Build changed-path candidates for diagnostics if jsdiff throws
-  const changedFromHeaders = pathsFromPatch(cleaned);
-
   let js: {
     okFiles: string[];
     failed: Array<{ path: string; reason: string }>;
@@ -330,7 +328,6 @@ export const runPatch = async (
 
   // FEEDBACK bundle (must still be generated for triage)
   {
-    const changed = changedFromHeaders;
     const failedPaths = js.failed.map((f) => f.path);
     const anyOk = js.okFiles.length > 0;
     const overall = check ? 'check' : anyOk ? 'partial' : 'failed';

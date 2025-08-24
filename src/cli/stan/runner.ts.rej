@@ -1,18 +1,16 @@
 diff a/src/cli/stan/runner.ts b/src/cli/stan/runner.ts	(rejected hunks)
-@@ -41,11 +41,11 @@ export const registerRun = (cli: Command): Command => {
-     }
+@@ -109,6 +104,14 @@ export const registerRun = (cli: Command): Command => {
+       config,
+     });
  
-     const isContextConfig = (
-       v: unknown,
--    ): v is { outputPath: string; scripts: Record<string, string> } =>
-+    ): v is { stanPath: string; scripts: Record<string, string> } =>
-       !!v &&
-       typeof v === 'object' &&
--      typeof (v as { outputPath?: unknown }).outputPath === 'string' &&
-+      typeof (v as { stanPath?: unknown }).stanPath === 'string' &&
-       typeof (v as { scripts?: unknown }).scripts === 'object';
- 
-     const config = isContextConfig(maybe)
-       ? maybe
--      : { outputPath: 'stan', scripts: {} as Record<string, string> };
-+      : { stanPath: 'stan', scripts: {} as Record<string, string> };
++    // Explicit conflict: -c with -A (Commander boolean semantics; enforce ourselves)
++    if (combine && noArchive) {
++      throw new CommanderError(
++        1,
++        'commander.conflictingOption',
++        "error: option '-c, --combine' cannot be used with option '-A, --no-archive'",
++      );
++    }
+     const allKeys = Object.keys(config.scripts);
+     let selection = derived.selection;
+     if (noScripts) selection = [];

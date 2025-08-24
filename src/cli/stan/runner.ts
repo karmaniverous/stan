@@ -27,11 +27,7 @@ export const registerRun = (cli: Command): Command => {
     .option('-q, --sequential', 'run sequentially in config order')
     // Legacy explicit archive flag; archiving is now ON by default.
     .option('-a, --archive', 'create archive.tar and archive.diff.tar')
-    .addOption(
-      new Option('-A, --no-archive', 'do not create archives').conflicts(
-        'archive',
-      ),
-    )
+    .addOption(new Option('-A, --no-archive', 'do not create archives'))
     .addOption(
       new Option('-S, --no-scripts', 'do not run scripts').conflicts([
         'scripts',
@@ -116,7 +112,7 @@ export const registerRun = (cli: Command): Command => {
       config,
     });
 
-    // Explicit conflict: -c with -A (Commander does not understand booleans here by default)
+    // Explicit conflict: -c with -A (Commander boolean semantics; enforce ourselves)
     if (combine && noArchive) {
       throw new CommanderError(
         1,
@@ -124,16 +120,19 @@ export const registerRun = (cli: Command): Command => {
         "error: option '-c, --combine' cannot be used with option '-A, --no-archive'",
       );
     }
+
     const allKeys = Object.keys(config.scripts);
     let selection = derived.selection;
     if (noScripts) selection = [];
     else if (!scriptsProvided && !exceptProvided) selection = [...allKeys];
 
     const mode = sequential ? 'sequential' : 'concurrent';
+    // Archive default: ON unless -A given; -a overrides -A when both present.
+    const archive = archiveFlag ? true : !noArchive;
     const behavior = {
       combine,
       keep,
-      archive: !noArchive,
+      archive,
     };
 
     const planBody = renderRunPlan(runCwd, {

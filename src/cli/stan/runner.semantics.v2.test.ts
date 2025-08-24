@@ -37,7 +37,8 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
     } catch {
       // ignore
     }
-    runSpy.mockReset();
+    // Reset recorded calls for test isolation
+    recorded.length = 0;
   });
 
   afterEach(async () => {

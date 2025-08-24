@@ -33,7 +33,9 @@ import { registerPatch } from '@/cli/stan/patch';
 
 const hasTerminalStatus = (logs: string[]): boolean =>
   logs.some((l) =>
-    /stan:\s+patch\s+(applied|failed|check passed|check failed)/i.test(l),
+    /(?:^|\s)(?:✔|\[OK\]|✖|\[FAIL\])\s+patch\s+(applied|failed|check passed|check failed)/i.test(
+      l,
+    ),
   );
 
 describe('patch subcommand (clipboard and file modes)', () => {

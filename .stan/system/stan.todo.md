@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-23 (UTC)
+When updated: 2025-08-24 (UTC)
 
 ALIASES
 
@@ -24,8 +24,8 @@ Plan management policy
   - Keep only a short “Completed (recent)” list (e.g., last 3–5 items or last
     2 weeks). Prune older entries during routine updates.
   - Rely on Git history for the long‑term record of completed work.
-  - When a completed item establishes a durable policy, promote that policy
-    to stan.project.md and remove it from “Completed”.
+  - When a completed item establishes a durable policy, capture that policy
+    here (project prompt) and remove it from “Completed”.
 
 Near-term exploration
 
@@ -36,6 +36,21 @@ Near-term exploration
   - Status: low priority; no immediate action. Track frequency; later consider chunked updates or increased context for Markdown diffs.
 
 Completed (recent)
+
+- CLI: new stan run semantics (default scripts+archive) + flags
+  - Added -p/--plan to print run plan and exit 0 (no side effects).
+  - Added -S/--no-scripts (opt out of scripts) with conflicts vs -s/-x.
+  - Added -A/--no-archive (opt out of archives) with conflicts vs -a and -c.
+  - Removed the old “one of -a/-s/-x required” guard (breaking; pre‑1.0 OK).
+  - Defaults: no flags → run all scripts, write archives.
+  - Tests: new CLI semantics tests; plan-only path; conflict handling.
+
+- Patch UX: status banners + compact summary
+  - Introduced a tiny status helper (TTY vs BORING):
+    • success: ✔ / [OK], failure: ✖ / [FAIL], partial: △ / [PARTIAL].
+  - service.ts now prints status lines and a compact summary on failure:
+    “tried: …; jsdiff ok: N, failed: M”.
+  - Updated CLI patch tests to match the new status lines.
 
 - Patch service thin‑out (SRP; orchestrator only)
   - Audit: src/stan/patch/service.ts serves as a lean orchestrator (~200 LOC),
@@ -63,38 +78,17 @@ Completed (recent)
   - Added success/failure editor‑open details and configuration pointers to
     `.stan/system/stan.project.md` under the “stan patch” section.
 
-- Lint fix (patch service)
-  - Removed unnecessary `await` before `openFilesInEditor` in
-    src/stan/patch/service.ts to satisfy @typescript-eslint/await-thenable.
-    No behavior change.
-- Global CLI flags
-  - Added `-b/--boring` to disable colorized output (useful for tests and CI).
-    Wired via environment (STAN_BORING/NO_COLOR/FORCE_COLOR) and documented in
-    README. Color usage routed through a small util.
+Open (low priority)
 
-- Patch split & tests
-  - The split into run/{source,pipeline,diagnostics,feedback}.ts exists and tests are green.
+- Investigate rare patch failures on very long Markdown files (e.g., dev plan)
+  - Track frequency; consider chunked updates or higher context margins later.
 
-- Docs/help (FEEDBACK logs)
-  - README now matches console messages:
-    • copied: “stan: copied patch feedback to clipboard”
-    • failure: “stan: clipboard copy failed; feedback saved -> <path>”
+Next up (high value)
 
-- Snap split
-  - Extracted context/history/snap-run; handlers is a thin re‑export.
+- README and CLI help updates
+  - Refresh “Run” documentation to reflect new defaults (-p/-S/-A; default archiving; removed old guard).
+  - Update examples in README and any CLI help footers if needed.
 
-- Snap split tidy
-  - Removed unused variable in snap/history.ts (handleInfo) to satisfy ESLint.
-
-- Test fixes (jsdiff + feedback copy)
-  - jsdiff fallback classifies empty/nameless parse results as “invalid unified diff”.
-  - FEEDBACK clipboard path treats undefined copy result as success; logs
-    “stan: copied patch feedback to clipboard”.
-
-Notes
-
-- Termination rule: if the original full archive is no longer in the
-  context window, halt and resume in a fresh chat with the latest
-  archives (state is preserved under <stanPath>/system).
-- Policies, architecture, and testing guidance live in
-  <stanPath>/system/stan.system.md.
+- Console styling follow-through
+  - Consider applying bracketed/colored tags consistently to FEEDBACK and diagnostics logs.
+  - Extend status helper coverage where appropriate.

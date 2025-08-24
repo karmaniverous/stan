@@ -1,5 +1,11 @@
 {
   "author": "Jason Williscroft",
+  "auto-changelog": {
+    "output": "CHANGELOG.md",
+    "unreleased": true,
+    "commitLimit": false,
+    "hideCredit": true
+  },
   "bin": {
     "stan": "./dist/cli/stan.js"
   },
@@ -142,6 +148,7 @@
     "bootstrap:test": "npm run test > .stan/output/test.txt 2>&1",
     "bootstrap:typecheck": "npm run typecheck > .stan/output/typecheck.txt 2>&1",
     "build": "rimraf dist && rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
+    "changelog": "auto-changelog",
     "docs": "typedoc",
     "knip": "knip",
     "lint": "eslint .",

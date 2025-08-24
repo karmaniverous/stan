@@ -7,6 +7,7 @@ import { Command, Option } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { runSelected } from '@/stan/run';
+import { renderRunPlan } from '@/stan/run/plan';
 
 import { applyCliSafety } from './cli-utils';
 import { deriveRunInvocation } from './run-args';
@@ -24,7 +25,20 @@ export const registerRun = (cli: Command): Command => {
       'script keys to exclude (reduces from --scripts or from full set)',
     )
     .option('-q, --sequential', 'run sequentially in config order')
+    // Legacy explicit archive flag; archiving is now ON by default.
     .option('-a, --archive', 'create archive.tar and archive.diff.tar')
+    .addOption(
+      new Option('-A, --no-archive', 'do not create archives').conflicts(
+        'archive',
+      ),
+    )
+    .addOption(
+      new Option('-S, --no-scripts', 'do not run scripts').conflicts([
+        'scripts',
+        'exceptScripts',
+      ]),
+    )
+    .option('-p, --plan', 'print run plan and exit (no side effects)')
     .option('-k, --keep', 'keep (do not clear) the output directory');
 
   applyCliSafety(cmd);
@@ -34,7 +48,7 @@ export const registerRun = (cli: Command): Command => {
     'include script outputs inside archives and do not keep them on disk',
   )
     .implies({ archive: true })
-    .conflicts('keep');
+    .conflicts(['keep', 'noArchive']);
 
   cmd.addOption(combineOpt);
 
@@ -82,37 +96,13 @@ export const registerRun = (cli: Command): Command => {
     );
     const exceptOpt = (opts as { exceptScripts?: unknown }).exceptScripts;
 
-    const archive = Boolean((opts as { archive?: unknown }).archive);
+    const archiveFlag = Boolean((opts as { archive?: unknown }).archive);
+    const noArchive = Boolean((opts as { noArchive?: unknown }).noArchive);
     const combine = Boolean((opts as { combine?: unknown }).combine);
     const sequential = Boolean((opts as { sequential?: unknown }).sequential);
-
-    const exceptKeys = Array.isArray(exceptOpt)
-      ? (exceptOpt as unknown[]).flatMap((x) =>
-          typeof x === 'string' ? [x] : [],
-        )
-      : [];
-
-    if (!(archive || scriptsProvided || exceptProvided)) {
-      console.error(
-        'stan: one of -a/--archive, -s/--scripts, or -x/--except-scripts is required',
-      );
-      console.log(renderAvailableScriptsHelp(runCwd));
-      return;
-    }
-
-    if (exceptProvided && exceptKeys.length === 0) {
-      console.error('stan: -x/--except-scripts requires at least one key');
-      console.log(renderAvailableScriptsHelp(runCwd));
-      return;
-    }
-
-    if ((sequential || combine) && !(scriptsProvided || exceptProvided)) {
-      console.error(
-        'stan: -q/--sequential and -c/--combine require -s/--scripts or -x/--except-scripts',
-      );
-      console.log(renderAvailableScriptsHelp(runCwd));
-      return;
-    }
+    const keep = Boolean((opts as { keep?: unknown }).keep);
+    const noScripts = Boolean((opts as { noScripts?: unknown }).noScripts);
+    const planOnly = Boolean((opts as { plan?: unknown }).plan);
 
     const derived = deriveRunInvocation({
       scriptsProvided,
@@ -121,18 +111,44 @@ export const registerRun = (cli: Command): Command => {
       exceptOpt,
       sequential,
       combine,
-      keep: (opts as { keep?: unknown }).keep,
-      archive,
+      keep,
+      archive: archiveFlag,
       config,
     });
 
-    await runSelected(
-      runCwd,
+    const allKeys = Object.keys(config.scripts);
+    let selection = derived.selection;
+    if (noScripts) selection = [];
+    else if (!scriptsProvided && !exceptProvided) selection = [...allKeys];
+
+    const mode = sequential ? 'sequential' : 'concurrent';
+    const behavior = {
+      combine,
+      keep,
+      archive: noArchive ? false : true || archiveFlag,
+    };
+
+    const planBody = renderRunPlan(runCwd, {
+      selection,
       config,
-      derived.selection,
-      derived.mode,
-      derived.behavior,
-    );
+      mode,
+      behavior,
+    });
+
+    if (noScripts && behavior.archive === false) {
+      console.log(
+        'stan: nothing to do; plan only (scripts disabled, archive disabled)',
+      );
+      console.log(planBody);
+      return;
+    }
+
+    if (planOnly) {
+      console.log(planBody);
+      return;
+    }
+
+    await runSelected(runCwd, config, selection, mode, behavior);
   });
 
   return cli;

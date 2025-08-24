@@ -5,6 +5,8 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { statusFail, statusOk } from '@/stan/util/status';
+
 import { loadConfig } from '../config';
 import { detectAndCleanPatch } from './clean';
 import { resolvePatchContext } from './context';
@@ -73,14 +75,14 @@ export const runPatch = async (
     console.error(
       'stan: FEEDBACK detected; paste this into your AI to receive a corrected patch.',
     );
-    console.log('stan: patch failed');
+    console.log(statusFail('patch failed'));
     return;
   }
   if (!seemsUnifiedDiff(cleaned)) {
     console.error(
       'stan: input is not a unified diff; expected headers like "diff --git a/<path> b/<path>" with subsequent "---"/"+++" and "@@" hunks.',
     );
-    console.log('stan: patch failed');
+    console.log(statusFail('patch failed'));
     return;
   }
 
@@ -119,7 +121,7 @@ export const runPatch = async (
       js && js.okFiles.length > 0 ? js.okFiles : changedFromHeaders;
     await maybeWarnStaged(cwd, touched);
 
-    console.log(check ? 'stan: patch check passed' : 'stan: patch applied');
+    console.log(statusOk(check ? 'patch check passed' : 'patch applied'));
 
     // Open modified files (unless deleted) when not --check
     if (!check) {
@@ -201,9 +203,8 @@ export const runPatch = async (
     }
   }
 
+  console.log(statusFail(check ? 'patch check failed' : 'patch failed'));
   console.log(
-    `stan: patch ${check ? 'check failed' : 'failed'} (tried: ${result.tried.join(
-      ', ',
-    )}, jsdiff ok: ${(js?.okFiles?.length ?? 0).toString()}, failed: ${(js?.failed?.length ?? 0).toString()})`,
+    `tried: ${result.tried.join(', ')}; jsdiff ok: ${(js?.okFiles?.length ?? 0).toString()}, failed: ${(js?.failed?.length ?? 0).toString()}`,
   );
 };

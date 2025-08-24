@@ -70,6 +70,6 @@ describe('jsdiff fallback applies patch and preserves EOL', () => {
     const body = await readFile(path.join(dir, rel), 'utf8');
     expect(body.includes('World!')).toBe(true);
     expect(/\r\n/.test(body)).toBe(true);
-    expect(logs.some((l) => /stan:\s+patch applied/i.test(l))).toBe(true);
+    expect(logs.some((l) => /patch applied/i.test(l))).toBe(true);
   });
 });

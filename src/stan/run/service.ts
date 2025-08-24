@@ -59,7 +59,13 @@ export const runSelected = async (
   // Build the run list:
   // - When selection is null/undefined, run all scripts in config order.
   // - When selection is provided (even empty), respect the provided order.
-  const toRun = selection == null ? Object.keys(config.scripts) : selection;
+  const selected = selection == null ? Object.keys(config.scripts) : selection;
+
+  // Filter to known script keys to avoid spawning undefined commands.
+  const toRun = selected.filter((k) =>
+    Object.prototype.hasOwnProperty.call(config.scripts, k),
+  );
+
   const created: string[] = [];
 
   // Run scripts only when selection non-empty

@@ -1,93 +1,36 @@
 diff a/src/cli/stan/runner.ts b/src/cli/stan/runner.ts	(rejected hunks)
-@@ -24,6 +24,12 @@ export const registerRun = (cli: Command): Command => {
-     .option(
-       '-x, --except-scripts <keys...>',
-       'script keys to exclude (reduces from --scripts or from full set)',
-     )
-     .option(
-       '-q, --sequential',
--      'run sequentially in config order',
-+      'run sequentially (with -s uses listed order; otherwise config order)',
-     )
-@@ -31,12 +37,7 @@ export const registerRun = (cli: Command): Command => {
-     .option('-a, --archive', 'create archive.tar and archive.diff.tar')
-     .addOption(new Option('-A, --no-archive', 'do not create archives'))
--    .addOption(
--      new Option('-S, --no-scripts', 'do not run scripts').conflicts([
--        'scripts',
--        'exceptScripts',
--      ]),
--    )
-+    .addOption(new Option('-S, --no-scripts', 'do not run scripts'))
-     .option('-p, --plan', 'print run plan and exit (no side effects)')
-     .option('-k, --keep', 'keep (do not clear) the output directory');
-@@ -92,29 +93,34 @@ export const registerRun = (cli: Command): Command => {
--    const scriptsProvided = Object.prototype.hasOwnProperty.call(
--      opts,
--      'scripts',
--    );
--    const scriptsOpt = (opts as { scripts?: unknown }).scripts;
--    const exceptProvided = Object.prototype.hasOwnProperty.call(
--      opts,
--      'exceptScripts',
--    );
--    const exceptOpt = (opts as { exceptScripts?: unknown }).exceptScripts;
-+    const scriptsOpt = (opts as { scripts?: unknown }).scripts;
-+    const exceptOpt = (opts as { exceptScripts?: unknown }).exceptScripts;
-+    const scriptsProvided =
-+      Array.isArray(scriptsOpt) || typeof scriptsOpt === 'string';
-+    const exceptProvided =
-+      Array.isArray(exceptOpt) && (exceptOpt as unknown[]).length > 0;
+@@ -40,6 +40,21 @@ export const registerRun = (cli: Command): Command => {
+   cmd.addOption(combineOpt);
  
--    const archiveFlag = Boolean((opts as { archive?: unknown }).archive);
--    const noArchive = Boolean((opts as { noArchive?: unknown }).noArchive);
-+    // Negated option -S sets scripts === false
-+    const noScripts = (opts as { scripts?: unknown }).scripts === false;
++  // Track raw presence of selection flags to detect conflicts reliably.
++  let sawNoScriptsFlag = false;
++  let sawScriptsFlag = false;
++  let sawExceptFlag = false;
++  cmd.on('option:no-scripts', () => {
++    sawNoScriptsFlag = true;
++  });
++  cmd.on('option:scripts', () => {
++    // Only fires for -s/--scripts, not -S.
++    sawScriptsFlag = true;
++  });
++  cmd.on('option:except-scripts', () => {
++    sawExceptFlag = true;
++  });
 +
-+    // Archive flags: -a => archive:true, -A => archive:false
-+    const archiveOpt = (opts as { archive?: unknown }).archive as
-+      | boolean
-+      | undefined;
-+    const archiveFlag = archiveOpt === true;
-+    const noArchiveFlag = archiveOpt === false;
+   cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
  
-     const combine = Boolean((opts as { combine?: unknown }).combine);
-     const sequential = Boolean((opts as { sequential?: unknown }).sequential);
-     const keep = Boolean((opts as { keep?: unknown }).keep);
--    const noScripts = Boolean((opts as { noScripts?: unknown }).noScripts);
+   cmd.action(async (options: Record<string, unknown>) => {
+@@ -99,11 +114,11 @@ export const registerRun = (cli: Command): Command => {
      const planOnly = Boolean((opts as { plan?: unknown }).plan);
  
--    // Manual conflict handling for options that Commander cannot infer safely:
+     // Manual conflict handling:
 -    // -S with -s or -x
 -    if (noScripts && (scriptsProvided || exceptProvided)) {
-+    // Manual conflict handling: -S with -s or -x
-+    if (noScripts && (scriptsProvided || exceptProvided)) {
++    // -S with -s or -x (detect by raw presence to handle last-wins semantics)
++    if (sawNoScriptsFlag && (sawScriptsFlag || sawExceptFlag)) {
        throw new CommanderError(
          1,
          'commander.conflictingOption',
          "error: option '-S, --no-scripts' cannot be used with option '-s, --scripts' or '-x, --except-scripts'",
        );
      }
-@@ -132,7 +138,7 @@ export const registerRun = (cli: Command): Command => {
--    if (combine && noArchive) {
-+    if (combine && noArchiveFlag) {
-       throw new CommanderError(
-         1,
-         'commander.conflictingOption',
-         "error: option '-c, --combine' cannot be used with option '-A, --no-archive'",
-       );
-     }
-@@ -144,13 +150,13 @@ export const registerRun = (cli: Command): Command => {
--    if (noScripts) selection = [];
-+    if (noScripts) selection = [];
-     else if (!scriptsProvided && !exceptProvided) selection = [...allKeys];
- 
-     const mode = sequential ? 'sequential' : 'concurrent';
-     // Archive default: ON unless -A given; -a overrides -A when both present.
--    const archive = archiveFlag ? true : !noArchive;
-+    const archive = archiveFlag ? true : !noArchiveFlag;
-     const behavior = {
-       combine,
-       keep,
-       archive,
-     };

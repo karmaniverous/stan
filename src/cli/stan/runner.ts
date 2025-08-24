@@ -46,6 +46,21 @@ export const registerRun = (cli: Command): Command => {
 
   cmd.addOption(combineOpt);
 
+  // Track raw presence of selection flags to detect conflicts reliably.
+  let sawNoScriptsFlag = false;
+  let sawScriptsFlag = false;
+  let sawExceptFlag = false;
+  cmd.on('option:no-scripts', () => {
+    sawNoScriptsFlag = true;
+  });
+  cmd.on('option:scripts', () => {
+    // Only fires for -s/--scripts, not -S.
+    sawScriptsFlag = true;
+  });
+  cmd.on('option:except-scripts', () => {
+    sawExceptFlag = true;
+  });
+
   cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
 
   cmd.action(async (options: Record<string, unknown>) => {
@@ -83,7 +98,7 @@ export const registerRun = (cli: Command): Command => {
     const scriptsOpt = (opts as { scripts?: unknown }).scripts;
     const exceptOpt = (opts as { exceptScripts?: unknown }).exceptScripts;
 
-    // Presence: -s seen when scripts is array (or string if single); -S maps to scripts=false.
+    // Presence: -s seen when scripts is array/string; -S sets scripts to false but also tracked via event.
     const scriptsProvided =
       Array.isArray(scriptsOpt) || typeof scriptsOpt === 'string';
     const exceptProvided =
@@ -106,8 +121,8 @@ export const registerRun = (cli: Command): Command => {
     const planOnly = Boolean((opts as { plan?: unknown }).plan);
 
     // Manual conflict handling:
-    // -S with -s or -x
-    if (noScripts && (scriptsProvided || exceptProvided)) {
+    // -S with -s or -x (detect by raw presence to handle last-wins semantics)
+    if (sawNoScriptsFlag && (sawScriptsFlag || sawExceptFlag)) {
       throw new CommanderError(
         1,
         'commander.conflictingOption',

@@ -3,7 +3,7 @@
  */
 import path from 'node:path';
 
-import { Command, Option } from 'commander';
+import { Command, CommanderError, Option } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { runSelected } from '@/stan/run';
@@ -48,7 +48,7 @@ export const registerRun = (cli: Command): Command => {
     'include script outputs inside archives and do not keep them on disk',
   )
     .implies({ archive: true })
-    .conflicts(['keep', 'noArchive']);
+    .conflicts(['keep']);
 
   cmd.addOption(combineOpt);
 
@@ -116,6 +116,14 @@ export const registerRun = (cli: Command): Command => {
       config,
     });
 
+    // Explicit conflict: -c with -A (Commander does not understand booleans here by default)
+    if (combine && noArchive) {
+      throw new CommanderError(
+        1,
+        'commander.conflictingOption',
+        "error: option '-c, --combine' cannot be used with option '-A, --no-archive'",
+      );
+    }
     const allKeys = Object.keys(config.scripts);
     let selection = derived.selection;
     if (noScripts) selection = [];

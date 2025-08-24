@@ -5,14 +5,17 @@ import path from 'node:path';
 import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Spy runSelected to avoid real execution
-const runSpy = vi.fn(async () => [] as string[]);
+// Record calls to runSelected to avoid type gymnastics and TS spread issues.
+const recorded: unknown[][] = [];
 vi.mock('@/stan/run', () => ({
   __esModule: true,
-  // Use any[] to allow spreading; TS disallows spreading unknown[].
-  runSelected: (...args: any[]) => runSpy(...args),
+  runSelected: (...args: unknown[]) => {
+    recorded.push(args);
+    return Promise.resolve([] as string[]);
+  },
 }));
 
+// CLI helpers
 import { applyCliSafety } from './cli-utils';
 import { registerRun } from './runner';
 
@@ -53,8 +56,8 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
     registerRun(cli);
     await cli.parseAsync(['node', 'stan', 'run'], { from: 'user' });
 
-    expect(runSpy).toHaveBeenCalledTimes(1);
-    const args = runSpy.mock.calls[0] as unknown[];
+    expect(recorded.length).toBe(1);
+    const args = recorded[0];
     // args: (cwd, config, selection, mode, behavior)
     const selection = args[2] as string[];
     const behavior = args[4] as { archive?: boolean };
@@ -75,7 +78,7 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
     await cli.parseAsync(['node', 'stan', 'run', '-p'], { from: 'user' });
 
     expect(logs.some((l) => /STAN run plan/i.test(l))).toBe(true);
-    expect(runSpy).not.toHaveBeenCalled();
+    expect(recorded.length).toBe(0);
   });
 
   it('-S -A -> nothing to do; prints plan and exits', async () => {
@@ -91,10 +94,10 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
 
     expect(logs.some((l) => /nothing to do; plan only/i.test(l))).toBe(true);
     expect(logs.some((l) => /STAN run plan/i.test(l))).toBe(true);
-    expect(runSpy).not.toHaveBeenCalled();
+    expect(recorded.length).toBe(0);
   });
 
-  it('-S conflicts with -s / -x (Commander optionConflict)', async () => {
+  it('-S conflicts with -s / -x (Commander conflictingOption)', async () => {
     const cli = new Command();
     applyCliSafety(cli);
     registerRun(cli);
@@ -102,15 +105,15 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
       cli.parseAsync(['node', 'stan', 'run', '-S', '-s', 'a'], {
         from: 'user',
       }),
-    ).rejects.toMatchObject({ code: 'commander.optionConflict' });
+    ).rejects.toMatchObject({ code: 'commander.conflictingOption' });
   });
 
-  it('-c conflicts with -A (Commander optionConflict)', async () => {
+  it('-c conflicts with -A (Commander conflictingOption)', async () => {
     const cli = new Command();
     applyCliSafety(cli);
     registerRun(cli);
     await expect(
       cli.parseAsync(['node', 'stan', 'run', '-A', '-c'], { from: 'user' }),
-    ).rejects.toMatchObject({ code: 'commander.optionConflict' });
+    ).rejects.toMatchObject({ code: 'commander.conflictingOption' });
   });
 });

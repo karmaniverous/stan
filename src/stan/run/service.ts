@@ -26,9 +26,10 @@ export const runSelected = async (
   // Preflight docs/version (non-blocking; best-effort)
   try {
     await preflightDocsAndVersion(cwd);
-  } catch (e) {
+  } catch (err) {
     if (process.env.STAN_DEBUG === '1') {
-      console.error('stan: preflight failed', e);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('stan: preflight failed', msg);
     }
   }
 
@@ -54,9 +55,6 @@ export const runSelected = async (
       await writeFile(orderFile, '', 'utf8');
     }
   }
-
-  const toRun = normalizeSelection(selection, config);
-  const created: string[] = [];
 
   // Build the run list:
   // - When selection is null/undefined, run all scripts in config order.

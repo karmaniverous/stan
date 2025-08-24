@@ -203,6 +203,7 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 - Every created, updated, or deleted file MUST be accompanied by a valid, plain unified diff patch in this chat. No exceptions.
 - Patches must target the exact files you show as full listings; patch coverage must match one‑for‑one with the set of changed files.
 - Never emit base64; always provide plain unified diffs.
+- Do not combine changes for multiple files in a single unified diff payload. Emit a separate Patch block per file (see Response Format).
 
 # CRITICAL: Layout
 
@@ -266,6 +267,7 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
   - Deletions: include `--- a/<path>` and `+++ /dev/null` (optionally `deleted file mode 100644`).
 - Renames: prefer delete+add (two hunks) unless a simple `diff --git` rename applies cleanly.
 - Binary: do not include binary patches.
+- One-file-per-patch in replies: do not combine changes for multiple files into a single unified diff block. Emit separate Patch blocks per file as required by Response Format.
 
 # Hunk hygiene (jsdiff‑compatible; REQUIRED)
 

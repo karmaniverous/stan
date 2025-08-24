@@ -79,20 +79,21 @@ export const registerRun = (cli: Command): Command => {
       ? maybe
       : { stanPath: 'stan', scripts: {} as Record<string, string> };
 
-    const scriptsProvided = Object.prototype.hasOwnProperty.call(
-      opts,
-      'scripts',
-    );
+    // Selection flags
     const scriptsOpt = (opts as { scripts?: unknown }).scripts;
-    const exceptProvided = Object.prototype.hasOwnProperty.call(
-      opts,
-      'exceptScripts',
-    );
     const exceptOpt = (opts as { exceptScripts?: unknown }).exceptScripts;
+
+    // Presence: -s seen when scripts is array (or string if single); -S maps to scripts=false.
+    const scriptsProvided =
+      Array.isArray(scriptsOpt) || typeof scriptsOpt === 'string';
+    const exceptProvided =
+      Array.isArray(exceptOpt) && (exceptOpt as unknown[]).length > 0;
+
+    // Negated option -S/--no-scripts => scripts === false
+    const noScripts = (opts as { scripts?: unknown }).scripts === false;
 
     // Archive flags:
     // -a sets { archive: true }, -A/--no-archive sets { archive: false }.
-    // There is no separate "noArchive" property.
     const archiveOpt = (opts as { archive?: unknown }).archive as
       | boolean
       | undefined;
@@ -102,15 +103,9 @@ export const registerRun = (cli: Command): Command => {
     const combine = Boolean((opts as { combine?: unknown }).combine);
     const sequential = Boolean((opts as { sequential?: unknown }).sequential);
     const keep = Boolean((opts as { keep?: unknown }).keep);
-    // Negated option -S/--no-scripts maps to the "scripts" option name with value false.
-    const scriptsVal = (opts as { scripts?: unknown }).scripts as
-      | string[]
-      | boolean
-      | undefined;
-    const noScripts = scriptsVal === false;
     const planOnly = Boolean((opts as { plan?: unknown }).plan);
 
-    // Manual conflict handling for options that Commander cannot infer safely:
+    // Manual conflict handling:
     // -S with -s or -x
     if (noScripts && (scriptsProvided || exceptProvided)) {
       throw new CommanderError(
@@ -119,6 +114,7 @@ export const registerRun = (cli: Command): Command => {
         "error: option '-S, --no-scripts' cannot be used with option '-s, --scripts' or '-x, --except-scripts'",
       );
     }
+
     const derived = deriveRunInvocation({
       scriptsProvided,
       scriptsOpt,
@@ -131,8 +127,7 @@ export const registerRun = (cli: Command): Command => {
       config,
     });
 
-    // Explicit conflict: -c with -A (combine present while archive explicitly negated).
-    // Note: -c implies { archive: true }, but if the user also supplied -A then we treat it as a conflict.
+    // Explicit conflict: -c with -A
     if (combine && noArchiveFlag) {
       throw new CommanderError(
         1,

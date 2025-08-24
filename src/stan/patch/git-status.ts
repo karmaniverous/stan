@@ -10,6 +10,8 @@ export const maybeWarnStaged = async (
   _touchedRel: string[],
 ): Promise<void> => {
   // Intentionally no-op.
+  // Keep async signature and satisfy lint require-await.
+  await Promise.resolve();
   // Mark parameters as used to satisfy no-unused-vars without changing signature.
   try {
     void _cwd;

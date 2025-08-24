@@ -36,7 +36,7 @@ describe('script execution', () => {
     expect(body.includes('123')).toBe(true);
   });
 
-  it('sequential mode runs in config order regardless of enumeration', async () => {
+  it('sequential mode: with -s preserves provided order; without -s uses config order', async () => {
     await writeFile(
       path.join(dir, 'a.js'),
       'process.stdout.write("A")',
@@ -55,7 +55,7 @@ describe('script execution', () => {
 
     await runSelected(dir, cfg1, ['b', 'a'], 'sequential');
     const order1 = await read(path.join(dir, 'out', 'output', 'order.txt'));
-    expect(order1).toBe('AB');
+    expect(order1).toBe('BA');
 
     // config order when not enumerated
     await runSelected(dir, cfg1, null, 'sequential');

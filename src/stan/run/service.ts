@@ -7,7 +7,7 @@ import { ensureOutputDir } from '../config';
 import { makeStanDirs } from '../paths';
 import { preflightDocsAndVersion } from '../preflight';
 import { archivePhase } from './archive';
-import { normalizeSelection, runScripts } from './exec';
+import { runScripts } from './exec';
 import { renderRunPlan } from './plan';
 import type { ExecutionMode, RunBehavior, Selection } from './types';
 
@@ -56,6 +56,12 @@ export const runSelected = async (
   }
 
   const toRun = normalizeSelection(selection, config);
+  const created: string[] = [];
+
+  // Build the run list:
+  // - When selection is null/undefined, run all scripts in config order.
+  // - When selection is provided (even empty), respect the provided order.
+  const toRun = selection == null ? Object.keys(config.scripts) : selection;
   const created: string[] = [];
 
   // Run scripts only when selection non-empty

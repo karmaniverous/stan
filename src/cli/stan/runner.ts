@@ -24,16 +24,14 @@ export const registerRun = (cli: Command): Command => {
       '-x, --except-scripts <keys...>',
       'script keys to exclude (reduces from --scripts or from full set)',
     )
-    .option('-q, --sequential', 'run sequentially in config order')
+    .option(
+      '-q, --sequential',
+      'run sequentially (with -s uses listed order; otherwise config order)',
+    )
     // Legacy explicit archive flag; archiving is now ON by default.
     .option('-a, --archive', 'create archive.tar and archive.diff.tar')
     .addOption(new Option('-A, --no-archive', 'do not create archives'))
-    .addOption(
-      new Option('-S, --no-scripts', 'do not run scripts').conflicts([
-        'scripts',
-        'exceptScripts',
-      ]),
-    )
+    .addOption(new Option('-S, --no-scripts', 'do not run scripts'))
     .option('-p, --plan', 'print run plan and exit (no side effects)')
     .option('-k, --keep', 'keep (do not clear) the output directory');
 
@@ -92,14 +90,35 @@ export const registerRun = (cli: Command): Command => {
     );
     const exceptOpt = (opts as { exceptScripts?: unknown }).exceptScripts;
 
-    const archiveFlag = Boolean((opts as { archive?: unknown }).archive);
-    const noArchive = Boolean((opts as { noArchive?: unknown }).noArchive);
+    // Archive flags:
+    // -a sets { archive: true }, -A/--no-archive sets { archive: false }.
+    // There is no separate "noArchive" property.
+    const archiveOpt = (opts as { archive?: unknown }).archive as
+      | boolean
+      | undefined;
+    const archiveFlag = archiveOpt === true;
+    const noArchiveFlag = archiveOpt === false;
+
     const combine = Boolean((opts as { combine?: unknown }).combine);
     const sequential = Boolean((opts as { sequential?: unknown }).sequential);
     const keep = Boolean((opts as { keep?: unknown }).keep);
-    const noScripts = Boolean((opts as { noScripts?: unknown }).noScripts);
+    // Negated option -S/--no-scripts maps to the "scripts" option name with value false.
+    const scriptsVal = (opts as { scripts?: unknown }).scripts as
+      | string[]
+      | boolean
+      | undefined;
+    const noScripts = scriptsVal === false;
     const planOnly = Boolean((opts as { plan?: unknown }).plan);
 
+    // Manual conflict handling for options that Commander cannot infer safely:
+    // -S with -s or -x
+    if (noScripts && (scriptsProvided || exceptProvided)) {
+      throw new CommanderError(
+        1,
+        'commander.conflictingOption',
+        "error: option '-S, --no-scripts' cannot be used with option '-s, --scripts' or '-x, --except-scripts'",
+      );
+    }
     const derived = deriveRunInvocation({
       scriptsProvided,
       scriptsOpt,
@@ -112,8 +131,9 @@ export const registerRun = (cli: Command): Command => {
       config,
     });
 
-    // Explicit conflict: -c with -A (Commander boolean semantics; enforce ourselves)
-    if (combine && noArchive) {
+    // Explicit conflict: -c with -A (combine present while archive explicitly negated).
+    // Note: -c implies { archive: true }, but if the user also supplied -A then we treat it as a conflict.
+    if (combine && noArchiveFlag) {
       throw new CommanderError(
         1,
         'commander.conflictingOption',
@@ -128,7 +148,7 @@ export const registerRun = (cli: Command): Command => {
 
     const mode = sequential ? 'sequential' : 'concurrent';
     // Archive default: ON unless -A given; -a overrides -A when both present.
-    const archive = archiveFlag ? true : !noArchive;
+    const archive = archiveFlag ? true : !noArchiveFlag;
     const behavior = {
       combine,
       keep,

@@ -10,4 +10,11 @@ export const maybeWarnStaged = async (
   _touchedRel: string[],
 ): Promise<void> => {
   // Intentionally no-op.
+  // Mark parameters as used to satisfy no-unused-vars without changing signature.
+  try {
+    void _cwd;
+    void _touchedRel;
+  } catch {
+    // ignore
+  }
 };

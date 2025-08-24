@@ -173,17 +173,25 @@ scripts:
 stan run [options]
 ```
 
-Selection (one of -a, -s, or -x is required):
+Defaults:
+
+- No flags: run all configured scripts and create `archive.tar` and `archive.diff.tar`.
+- Use `-A/--no-archive` to skip creating archives.
+- Use `-S/--no-scripts` to skip running scripts (together with `-A` prints the plan only).
+
+Selection:
 
 - `-s, --scripts [keys...]`: run only these keys. If no keys listed, run all.
 - `-x, --except-scripts <keys...>`: exclude keys. If `-s` present, reduces that set; otherwise reduces from full set.
-- `-a, --archive`: write `archive.tar` and `archive.diff.tar` after scripts (or immediately if selection empty).
 
 Execution & outputs:
 
-- `-q, --sequential`: preserve config order (requires `-s` or `-x`).
+- `-q, --sequential`: run sequentially. With `-s`, preserves the listed order; without `-s`, uses config order.
 - `-c, --combine`: include script outputs inside archives and remove from disk. Implies `--archive` and requires `-s` or `-x`. Conflicts with `--keep`.
 - `-k, --keep`: do not clear the output directory before running (conflicts with `--combine`).
+- `-A, --no-archive`: do not create archives (overrides the default).
+- `-S, --no-scripts`: do not run scripts (conflicts with `-s`/`-x`).
+- `-p, --plan`: print the run plan and exit (no side effects).
 
 Global flags:
 
@@ -392,11 +400,12 @@ Handy scripts you might keep in `package.json`:
 ## Reference cheatsheet
 
 - Build & Snapshot
-  - `stan run -s` (run all configured scripts)
+  - `stan run` (run all configured scripts and archive - default)
+  - `stan run -p` (print plan; no side effects)
+  - `stan run -S -A` (nothing to do; print plan)
   - `stan run -s test typecheck` (run selected)
   - `stan run -x lint` (run all except lint)
-  - `stan run -a -s` (run then archive)
-  - `stan run -a -c -s` (archive with outputs inside)
+  - `stan run -c -s` (include outputs inside archives and remove from disk)
 - Share & Baseline
   - Attach `archive.tar` (+ `archive.diff.tar`) and outputs
   - `stan snap` / `undo` / `redo` / `set <n>` / `info`

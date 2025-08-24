@@ -9,9 +9,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const runSpy = vi.fn(async () => [] as string[]);
 vi.mock('@/stan/run', () => ({
   __esModule: true,
-  runSelected: (...args: unknown[]) => runSpy(...args),
+  // Use any[] to allow spreading; TS disallows spreading unknown[].
+  runSelected: (...args: any[]) => runSpy(...args),
 }));
 
+import { applyCliSafety } from './cli-utils';
 import { registerRun } from './runner';
 
 describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
@@ -47,6 +49,7 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
 
   it('default (no flags): runs all scripts and archives', async () => {
     const cli = new Command();
+    applyCliSafety(cli);
     registerRun(cli);
     await cli.parseAsync(['node', 'stan', 'run'], { from: 'user' });
 
@@ -67,6 +70,7 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
     });
 
     const cli = new Command();
+    applyCliSafety(cli);
     registerRun(cli);
     await cli.parseAsync(['node', 'stan', 'run', '-p'], { from: 'user' });
 
@@ -81,6 +85,7 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
     });
 
     const cli = new Command();
+    applyCliSafety(cli);
     registerRun(cli);
     await cli.parseAsync(['node', 'stan', 'run', '-S', '-A'], { from: 'user' });
 
@@ -91,6 +96,7 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
 
   it('-S conflicts with -s / -x (Commander optionConflict)', async () => {
     const cli = new Command();
+    applyCliSafety(cli);
     registerRun(cli);
     await expect(
       cli.parseAsync(['node', 'stan', 'run', '-S', '-s', 'a'], {
@@ -101,6 +107,7 @@ describe('stan run new semantics (default scripts+archive, -p/-S/-A)', () => {
 
   it('-c conflicts with -A (Commander optionConflict)', async () => {
     const cli = new Command();
+    applyCliSafety(cli);
     registerRun(cli);
     await expect(
       cli.parseAsync(['node', 'stan', 'run', '-A', '-c'], { from: 'user' }),

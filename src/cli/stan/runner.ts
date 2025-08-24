@@ -125,7 +125,7 @@ export const registerRun = (cli: Command): Command => {
     const behavior = {
       combine,
       keep,
-      archive: noArchive ? false : true || archiveFlag,
+      archive: !noArchive,
     };
 
     const planBody = renderRunPlan(runCwd, {

@@ -57,7 +57,10 @@ describe('runPatch (service smoke test)', () => {
     await runPatch(dir, diff); // provide as argument; no clipboard or file reading
 
     const logs = logSpy.mock.calls.map((c) => String(c[0]));
-    expect(logs.some((l) => /stan:\s+patch applied/i.test(l))).toBe(true);
+    // Accept BORING or TTY banner forms
+    expect(logs.some((l) => /(?:✔|\[OK\])\s+patch applied/i.test(l))).toBe(
+      true,
+    );
 
     // Should not print error in success path
     const errs = errSpy.mock.calls.map((c) => String(c[0]));

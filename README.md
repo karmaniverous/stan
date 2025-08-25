@@ -1,6 +1,7 @@
 # STAN — STAN Tames Autoregressive Nonsense
 
-[![npm version](https://img.shields.io/npm/v/@karmaniverous/stan.svg)](https://www.npmjs.com/package/@karmaniverous/stan) <!-- TYPEDOC_EXCLUDE -->
+[![npm version](https://img.shields.io/npm/v/@karmaniverous/stan.svg)](https://www.npmjs.com/package/@karmaniverous/stan)
+[Node.js Version](https://img.shields.io/node/v/@karmaniverous/stan) <!-- TYPEDOC_EXCLUDE -->
 [![docs](https://img.shields.io/badge/docs-website-blue)](https://docs.karmanivero.us/stan)
 [![changelog](https://img.shields.io/badge/changelog-latest-blue.svg)](https://github.com/karmaniverous/stan/tree/main/CHANGELOG.md)<!-- /TYPEDOC_EXCLUDE -->
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://github.com/karmaniverous/stan/tree/main/LICENSE.md)

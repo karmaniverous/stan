@@ -4,8 +4,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock spawn before importing the module under test
-const calls: string[] = [];
+// Mock spawn before importing the module under testconst calls: string[] = [];
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>();
   return {
@@ -36,12 +35,17 @@ describe('openFilesInEditor — spawn behavior and guards', () => {
   afterEach(async () => {
     process.env = { ...envBackup };
     calls.length = 0;
+    // Leave the temp directory before removal to avoid Windows EBUSY
+    try {
+      process.chdir(tmpdir());
+    } catch {
+      // ignore
+    }
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
 
-  const load = async () => {
-    // Ensure open.ts is (re)loaded after mocks/env are set
+  const load = async () => {    // Ensure open.ts is (re)loaded after mocks/env are set
     vi.resetModules();
     const mod = await import('./open');
     return mod.openFilesInEditor;

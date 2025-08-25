@@ -370,7 +370,7 @@ Implementation guidance for this repo:
   - Use the FEEDBACK handshake (BEGIN_STAN_PATCH_FEEDBACK v1 … END_STAN_PATCH_FEEDBACK). Regenerate a corrected diff that applies cleanly.
   - Summarize in this chat and call out changes that should be folded back into the PROJECT prompt for downstream repos (or into this SYSTEM prompt for `@karmaniverous/stan`).
 
-# Patch generation guidelines (compatible with “stan patch”)
+# CRITICAL: Patch generation guidelines (compatible with “stan patch”)
 
 - Format: plain unified diff. Strongly prefer git-style headers:
   - Start hunks with `diff --git a/<path> b/<path>`, followed by `--- a/<path>` and `+++ b/<path>`.

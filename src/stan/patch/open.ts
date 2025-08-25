@@ -12,10 +12,6 @@ import { cyan, red, yellow } from '@/stan/util/color';
 const isDeleted = (cwd: string, rel: string): boolean =>
   !existsSync(path.resolve(cwd, rel));
 
-// In tests, avoid spawning editors which can keep directories locked on Windows.
-const isTest = process.env.NODE_ENV === 'test';
-const allowOpenInTests = process.env.STAN_FORCE_OPEN === '1';
-
 /**
  * Open modified files in the configured editor.
  *
@@ -34,7 +30,6 @@ export const openFilesInEditor = (args: {
   files: string[];
   openCommand?: string | null | undefined; // e.g., "code -g {file}"
 }): void => {
-  if (isTest && !allowOpenInTests) return;
   const { cwd, files, openCommand } = args;
   const safeFiles = files.filter((f) => !isDeleted(cwd, f));
   if (!safeFiles.length) return;
@@ -45,6 +40,15 @@ export const openFilesInEditor = (args: {
         'stan: no open command configured; run `stan init` and set patchOpenCommand (e.g., "code -g {file}")',
       ),
     );
+    return;
+  }
+
+  // In tests, avoid spawning editors which can keep directories locked on Windows,
+  // unless explicitly forced via STAN_FORCE_OPEN=1. Evaluate dynamically so tests
+  // can set the env after import.
+  const isTest = process.env.NODE_ENV === 'test';
+  const allowOpenInTests = process.env.STAN_FORCE_OPEN === '1';
+  if (isTest && !allowOpenInTests) {
     return;
   }
 

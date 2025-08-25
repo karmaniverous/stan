@@ -45,6 +45,10 @@ Completed (recent)
     help, version, patch/open.
   - Outcome: TypeDoc/ESLint surface warnings only (formatting), no errors.
 
+- TSDoc hygiene fix pass (warnings → zero)
+  - Normalized @param tags with hyphen, avoided dotted names, escaped “>”.
+  - Result: TypeDoc and ESLint TSDoc clean (no warnings).
+
 - Patch UX: remove staged-files warning
   - Disabled the staged-overlap warning (no-op helper). Warning added noise and
     did not materially improve outcomes.
@@ -80,14 +84,10 @@ Open (low priority)
 
 Next up (high value)
 
-- TSDoc hygiene fix pass (warnings → zero)
-  - Fix ESLint/tsdoc “missing hyphen after @param name” across:
-    • config.ts, fs.ts, run/{exec,plan,service}.ts, help.ts, version.ts, patch/open.ts, diff.ts
-  - Avoid dotted @param names (TypeDoc doesn’t accept args.cwd):
-    • Prefer documenting the object parameter itself, e.g., “@param args - object with …”.
-    • Optionally describe fields in prose bullets instead of @param dotted names.
-  - Escape `>` where needed in prose to avoid HTML-tag warnings.
-  - Keep comments concise and behavioral; avoid restating type info already present in signatures.
+- TSDoc Phase 2: internal helpers and small utilities
+  - Add concise TSDoc (or header rationale) for internal helpers where missing.
+  - Keep comments brief and behavioral; avoid repeating type information.
+  - Maintain zero-warning policy for TSDoc lint/TypeDoc.
 
 - Always-on prompt checks (assistant loop)
   - At every turn, the assistant should check:
@@ -99,7 +99,7 @@ Next up (high value)
 
 - README and CLI help polish
   - Confirm CLI examples align with new flags semantics.
-  - Add a short “TSDoc warnings” tip pointing to the hygiene rules above.
+  - Keep the new “API docs and TSDoc” section current as rules evolve.
 
 Notes: Patch generation learnings (process)
 

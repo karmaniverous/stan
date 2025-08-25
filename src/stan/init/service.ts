@@ -10,6 +10,18 @@ import { ensureDocs } from './docs';
 import { ensureStanGitignore } from './gitignore';
 import { promptForConfig, readPackageJsonScripts } from './prompts';
 
+/**
+ * Initialize or update STAN configuration and workspace assets.
+ *
+ * Behavior:
+ * - Resolves defaults from an existing config when present.
+ * - In interactive mode, prompts for stanPath, includes/excludes, and scripts.
+ * - Writes `stan.config.yml`, ensures `.gitignore` entries, and ships docs.
+ * - Optionally resets the diff snapshot.
+ *
+ * @param opts - Options `{ cwd, force, preserveScripts }`.
+ * @returns Absolute path to the written `stan.config.yml`, or `null` on failure.
+ */
 export const performInitService = async ({
   cwd = process.cwd(),
   force = false,

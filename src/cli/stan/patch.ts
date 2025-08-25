@@ -7,6 +7,12 @@ import { runPatch } from '@/stan/patch/service';
 
 import { applyCliSafety } from './cli-utils';
 
+/**
+ * Register the `patch` subcommand on the provided root CLI.
+ *
+ * @param cli - Commander root command.
+ * @returns The same root command for chaining.
+ */
 export const registerPatch = (cli: Command): Command => {
   applyCliSafety(cli);
 

@@ -12,6 +12,12 @@ import { renderRunPlan } from '@/stan/run/plan';
 import { applyCliSafety } from './cli-utils';
 import { deriveRunInvocation } from './run-args';
 
+/**
+ * Register the `run` subcommand on the provided root CLI.
+ *
+ * @param cli - Commander root command.
+ * @returns The same root command for chaining.
+ */
 export const registerRun = (cli: Command): Command => {
   const cmd = cli
     .command('run')

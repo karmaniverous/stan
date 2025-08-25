@@ -14,9 +14,14 @@ import {
 
 import { applyCliSafety } from './cli-utils';
 
+/**
+ * Register the `snap` subcommand on the provided root CLI.
+ *
+ * @param cli - Commander root command.
+ * @returns The same root command for chaining.
+ */
 export const registerSnap = (cli: Commander): Command => {
   applyCliSafety(cli);
-
   const sub = cli
     .command('snap')
     .description(

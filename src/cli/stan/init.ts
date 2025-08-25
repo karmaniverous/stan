@@ -10,6 +10,12 @@ import { performInitService } from '@/stan/init/service';
 
 import { applyCliSafety } from './cli-utils';
 
+/**
+ * Register the `init` subcommand on the provided root CLI.
+ *
+ * @param cli - Commander root command.
+ * @returns The same root command for chaining.
+ */
 export const performInit = (
   cli: Command,
   opts: { cwd?: string; force?: boolean; preserveScripts?: boolean },

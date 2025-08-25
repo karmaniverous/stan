@@ -38,10 +38,15 @@ const ensureState = async (
   return st;
 };
 
+/**
+ * Revert to the previous snapshot in the history stack.
+ * Restores `.archive.snapshot.json`, updates the state file, and logs a summary.
+ *
+ * @returns A promise that resolves when the operation completes.
+ */
 export const handleUndo = async (): Promise<void> => {
   const { cwd, stanPath, maxUndos } = await resolveContext(process.cwd());
   const { diffDir, statePath, snapPath } = getStatePaths(cwd, stanPath);
-
   const st = await ensureState(statePath, maxUndos);
   if (st.entries.length === 0 || st.index <= 0) {
     console.log('stan: nothing to undo');
@@ -66,10 +71,15 @@ export const handleUndo = async (): Promise<void> => {
   );
 };
 
+/**
+ * Advance to the next snapshot in the history stack.
+ * Restores `.archive.snapshot.json`, updates the state file, and logs a summary.
+ *
+ * @returns A promise that resolves when the operation completes.
+ */
 export const handleRedo = async (): Promise<void> => {
   const { cwd, stanPath, maxUndos } = await resolveContext(process.cwd());
   const { diffDir, statePath, snapPath } = getStatePaths(cwd, stanPath);
-
   const st = await ensureState(statePath, maxUndos);
   if (st.entries.length === 0 || st.index >= st.entries.length - 1) {
     console.log('stan: nothing to redo');
@@ -94,6 +104,14 @@ export const handleRedo = async (): Promise<void> => {
   );
 };
 
+/**
+ * Activate a specific snapshot by index and make it current.
+ * Overwrites the active `.archive.snapshot.json` with the selected entry
+ * and updates the state file.
+ *
+ * @param indexArg - Index string (0‑based) to select; must be within range.
+ * @returns A promise that resolves when the operation completes.
+ */
 export const handleSet = async (indexArg: string): Promise<void> => {
   const idx = Number.parseInt(indexArg, 10);
   if (!Number.isFinite(idx) || idx < 0) {
@@ -121,10 +139,14 @@ export const handleSet = async (indexArg: string): Promise<void> => {
   );
 };
 
+/**
+ * Print a summary of the snapshot stack with the current index highlighted.
+ *
+ * @returns A promise that resolves when printing is complete.
+ */
 export const handleInfo = async (): Promise<void> => {
   const { cwd, stanPath, maxUndos } = await resolveContext(process.cwd());
   const { statePath } = getStatePaths(cwd, stanPath);
-
   const st = await ensureState(statePath, maxUndos);
   const undos = Math.max(0, st.index);
   const redos =

@@ -3,8 +3,7 @@
   "ignore": ["src/cli/stan/stan.ts"],
   "ignoreDependencies": [
     "@types/eslint__js",
-    "@types/eslint-config-prettier",
-    "auto-changelog"
+    "@types/eslint-config-prettier"
   ],
   "project": ["*/**", "!docs/**"],
   "rules": {

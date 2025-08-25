@@ -37,6 +37,8 @@ Near-term exploration
 
 Completed (recent)
 
+- Knip config: remove redundant ignoreDependencies entry ("auto-changelog").
+
 - Docs: README additions for “API docs and TSDoc” + “Contributing docs style”
   - Clarifies how to run docs generation and contributor TSDoc expectations.
 

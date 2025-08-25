@@ -1,391 +1,123 @@
 <!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><link rel="canonical" href="https://docs.karmanivero.us/stan/"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@karmaniverous/stan</title><meta name="description" content="Documentation for @karmaniverous/stan"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="https://github.com/karmaniverous/stan" class="title">@karmaniverous/stan</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>@karmaniverous/stan</h1></div><div class="tsd-panel tsd-typography"><h1 id="stan--stan-tames-autoregressive-nonsense" class="tsd-anchor-link">STAN — STAN Tames Autoregressive Nonsense<a href="#stan--stan-tames-autoregressive-nonsense" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1><p><img src="https://github.com/karmaniverous/stan/raw/main/assets/stan-loop.png" alt="STAN Loop"></p>
-<p>In 1946, while recovering from illness and noodling over card games, Stanisław Ulam helped ignite the Monte Carlo method—random sampling to tackle hard, deterministic problems.</p>
-<p>STAN produces a single source of truth for AI‑assisted development: a tarball of your repo plus deterministic outputs from your build/test/lint/typecheck scripts.</p>
+<p>STAN produces a single source of truth for AI‑assisted development: a tarball of your repo plus deterministic text outputs from your build/test/lint/typecheck scripts.</p>
 <p>You get portable, auditable, reproducible context—locally and in CI.</p>
 <p>Because a freaking chatbot shouldn’t gaslight your code.</p>
 <hr>
-<h2 id="the-stan-loop" class="tsd-anchor-link">The STAN Loop<a href="#the-stan-loop" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>The diagram above shows the three‑stage loop that makes STAN predictable and fast to work with. Each stage ends with one command—keep the loop light and repeat until done.</p>
-<h3 id="1-build--snapshot" class="tsd-anchor-link">1) Build &amp; Snapshot<a href="#1-build--snapshot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
-<li>Edit code</li>
-<li>Review outputs</li>
-<li>Run: <code>stan run</code></li>
-</ul>
-<p>What happens:</p>
-<ul>
-<li><code>stan run</code> executes your configured scripts (lint/test/typecheck/build) and writes clean, deterministic text outputs to <code>&lt;stanPath&gt;/output/*.txt</code>.</li>
-<li>With <code>-a/--archive</code>, it also writes <code>archive.tar</code> plus <code>archive.diff.tar</code> (diff vs last snapshot).</li>
-<li>With <code>-c/--combine</code>, those outputs are placed inside the archives and removed on disk.</li>
-<li>A multi‑line “run plan” is printed: mode, output location, script selection, archive/combine/keep flags.</li>
-<li>Preflight checks may warn if your local system prompt diverges from the packaged baseline and nudge you to run <code>stan init</code> after upgrades.</li>
-</ul>
-<p>Pro tips:</p>
-<ul>
-<li>Use <code>-s/--scripts</code> or <code>-x/--except-scripts</code> for targeted runs; <code>-q/--sequential</code> preserves config order for debugging.</li>
-<li>Use <code>-d/--debug</code> to stream through stdout/stderr during script execution.</li>
-<li>Use <code>-b/--boring</code> in CI to disable color.</li>
-</ul>
-<h3 id="2-share--baseline" class="tsd-anchor-link">2) Share &amp; Baseline<a href="#2-share--baseline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
-<li>Attach archives + notes</li>
-<li>State requirements</li>
-<li>Run: <code>stan snap</code></li>
-</ul>
-<p>What happens:</p>
-<ul>
-<li>Drop the outputs and/or archives into your chat (and include a short requirements note).</li>
-<li><code>stan snap</code> records the current file content snapshot under <code>&lt;stanPath&gt;/diff/.archive.snapshot.json</code>, keeping a bounded history with undo/redo/set/info commands.</li>
-<li>If you had archives in <code>&lt;stanPath&gt;/output</code>, they are copied into the diff archives folder alongside the snapshot for traceability.</li>
-</ul>
-<p>Pro tips:</p>
-<ul>
-<li>Always attach <code>&lt;stanPath&gt;/output/archive.tar</code> to a new thread; your assistant isn’t guessing from memory.</li>
-<li>Use <code>archive.diff.tar</code> for subsequent updates in the same thread.</li>
-<li>The bootloader (<code>&lt;stanPath&gt;/system/stan.bootloader.md</code>) makes assistants integrity‑check tars and load the real system prompt from <code>&lt;stanPath&gt;/system/stan.system.md</code> before proceeding.</li>
-</ul>
-<h3 id="3-discuss--patch" class="tsd-anchor-link">3) Discuss &amp; Patch<a href="#3-discuss--patch" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
-<li>Iterate to solution</li>
-<li>Get patches + commit</li>
-<li>Run: <code>stan patch</code></li>
-</ul>
-<p>What happens:</p>
-<ul>
-<li>Discuss the requirements and converge on a solution. STAN returns plain unified diffs and a commit message.</li>
-<li>Run <code>stan patch</code> to apply the patch locally:
-<ul>
-<li>Cleans the text, writes <code>&lt;stanPath&gt;/patch/.patch</code>, and attempts to apply:
-<ol>
-<li><code>git apply</code> across tolerant settings and strip levels (p1→p0),</li>
-<li>falls back to a jsdiff engine for placement when necessary.</li>
+<h2 id="quick-start" class="tsd-anchor-link">Quick start<a href="#quick-start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ol>
+<li>Install</li>
 </ol>
-</li>
-<li>After success (non‑<code>--check</code>), opens the modified files in your editor (configurable).</li>
-<li>If a patch fails, builds a compact FEEDBACK packet and opens target files to speed manual edits; the packet is also copied to your clipboard when possible.</li>
-</ul>
-</li>
-<li>Repeat the loop until done.</li>
-</ul>
-<p>Pro tips:</p>
-<ul>
-<li>Use <code>stan patch --check</code> to validate only (no file changes).</li>
-<li>Use <code>stan patch -f &lt;file&gt;</code> to apply from a file source; omit to read from clipboard; pass a diff as a single argument for quick tests.</li>
-</ul>
-<hr>
-<h2 id="why-stan" class="tsd-anchor-link">Why STAN?<a href="#why-stan" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
-<li>One archive (on demand). With <code>-a/--archive</code>, <code>archive.tar</code> captures the exact files to read—no surprises.</li>
-<li>Structured logs. <code>stan/test.txt</code>, <code>stan/lint.txt</code>, <code>stan/typecheck.txt</code>, <code>stan/build.txt</code> are consistent and easy to diff.</li>
-<li>Always‑on diffs (when archiving). Whenever you use <code>-a</code>, STAN writes <code>archive.diff.tar</code> for changed files—no extra ceremony. First time? The diff equals the full set (sensible defaults, zero ceremony).</li>
-<li>Snapshot with intent. Normal runs create a snapshot only when missing; use <code>stan snap</code> when you want to reset or replace it. Your diffs stay meaningful.</li>
-<li>Patch on tap. Got a suggested patch? Paste it or pass a file and run <code>stan patch</code> to apply it safely at your repo root. Failures produce a FEEDBACK packet so you can ask for a corrected patch.</li>
-<li>Simpler combine. With <code>-a -c</code>, script outputs live inside the archives (not on disk). No separate “combined artifact” to maintain.</li>
-<li>Preflight guardrails. When your downstream system prompt drifts from the packaged baseline, STAN nudges you to update via <code>stan init</code>.</li>
-</ul>
-<p>Backronym bonus: Sample • Tar • Analyze • Narrate — STAN Tames Autoregressive Nonsense.</p>
-<hr>
-<h2 id="install" class="tsd-anchor-link">Install<a href="#install" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Global (recommended for CLI usage):</p>
 <pre><code><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">i</span><span class="hl-1"> -</span><span class="hl-0">g</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span><br/><span class="hl-1"># </span><span class="hl-0">or</span><br/><span class="hl-0">pnpm</span><span class="hl-1"> </span><span class="hl-0">add</span><span class="hl-1"> -</span><span class="hl-0">g</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span><br/><span class="hl-1"># </span><span class="hl-0">or</span><br/><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-0">global</span><span class="hl-1"> </span><span class="hl-0">add</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span>
 </code><button>Copy</button></pre>
 
-<p>Local (dev) install (optional):</p>
-<pre><code><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">i</span><span class="hl-1"> -</span><span class="hl-2">D</span><span class="hl-1"> @</span><span class="hl-0">karmaniverous</span><span class="hl-1">/</span><span class="hl-0">stan</span>
-</code><button>Copy</button></pre>
-
-<p>Verify:</p>
-<pre><code><span class="hl-0">stan</span><span class="hl-1"> --</span><span class="hl-0">version</span><br/><span class="hl-0">stan</span><span class="hl-1"> --</span><span class="hl-0">help</span>
-</code><button>Copy</button></pre>
-
-<hr>
-<h2 id="getting-started" class="tsd-anchor-link">Getting started<a href="#getting-started" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ol>
-<li>Initialize STAN in your repo (creates <code>stan.config.yml</code> and scaffolds docs):</li>
+<ol start="2">
+<li>Initialize in your repo</li>
 </ol>
 <pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">init</span>
 </code><button>Copy</button></pre>
 
-<ol start="2">
-<li>Exclude the STAN workspace from analyzers.</li>
-</ol>
 <ul>
-<li>ESLint (flat config): ensure <code>ignores</code> include <code>&lt;stanPath&gt;/**</code> (default <code>.stan/**</code>).</li>
-<li>Do the same for formatters/typecheckers that scan the whole tree.</li>
+<li>Creates stan.config.yml and scaffolds STAN docs under <stanPath> (default .stan).</li>
+<li>Adds sensible .gitignore entries for <stanPath> subfolders.</li>
 </ul>
 <ol start="3">
-<li>Run the loop (see “The STAN loop” above).</li>
+<li>Run the loop</li>
 </ol>
 <ul>
-<li>Build &amp; Snapshot: <code>stan run</code> (optionally <code>-a</code> and <code>-c</code>).</li>
-<li>Share &amp; Baseline: attach archives + requirements, then <code>stan snap</code>.</li>
-<li>Discuss &amp; Patch: iterate in chat, then <code>stan patch</code>.</li>
+<li>Build &amp; Snapshot</li>
 </ul>
-<p>Tip: If you change <code>stanPath</code> in <code>stan.config.*</code>, update your ignores.</p>
-<hr>
-<h2 id="configuration" class="tsd-anchor-link">Configuration<a href="#configuration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p><code>stan.config.yml</code> example:</p>
-<pre><code><span class="hl-3">stanPath</span><span class="hl-1">: </span><span class="hl-0">stan</span><br/><span class="hl-3">includes</span><span class="hl-1">: []</span><br/><span class="hl-3">excludes</span><span class="hl-1">: []</span><br/><span class="hl-3">scripts</span><span class="hl-1">:</span><br/><span class="hl-1">  </span><span class="hl-3">build</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-3">stan</span><span class="hl-1">:</span><span class="hl-0">build</span><br/><span class="hl-1">  </span><span class="hl-3">lint</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">lint</span><br/><span class="hl-1">  </span><span class="hl-3">test</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">test</span><br/><span class="hl-1">  </span><span class="hl-3">typecheck</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">typecheck</span>
+<pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span>
 </code><button>Copy</button></pre>
 
 <ul>
-<li><code>stanPath</code>: workspace folder (default <code>.stan</code>).</li>
-<li><code>includes</code>: allow‑list (globs) for archiving logic; overrides excludes when present.</li>
-<li><code>excludes</code>: deny‑list (globs) for archiving logic.</li>
-<li><code>scripts</code>: keys and commands to run under <code>stan run</code>.</li>
-<li>Optional:
+<li>Share &amp; Baseline</li>
+</ul>
+<p>Attach .stan/output/archive.tar (and archive.diff.tar if present) to your chat.</p>
+<p>Optionally run:</p>
+<pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span>
+</code><button>Copy</button></pre>
+
 <ul>
-<li><code>maxUndos</code>: number (default 10), retained snapshot history.</li>
-<li><code>patchOpenCommand</code>: editor open command template (default <code>code -g {file}</code>).</li>
+<li>Discuss &amp; Patch</li>
+</ul>
+<p>Iterate in chat. Apply suggested patches:</p>
+<pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span>
+</code><button>Copy</button></pre>
+
+<p>Use --check to validate without changing files, or -f <file> to read from a patch file.</p>
+<hr>
+<h2 id="why-stan" class="tsd-anchor-link">Why STAN?<a href="#why-stan" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>Reproducible context: one archive captures exactly the files to read.</li>
+<li>Structured outputs: test/lint/typecheck/build logs are deterministic and easy to diff.</li>
+<li>Always‑on diffs: with --archive, STAN writes archive.diff.tar for changed files automatically.</li>
+<li>Preflight guardrails: nudges you to update prompts when the baseline changes.</li>
+<li>Patch workflow: paste a unified diff or read from a file; STAN applies it safely and opens modified files in your editor.</li>
+</ul>
+<hr>
+<h2 id="configuration-stanconfigyml" class="tsd-anchor-link">Configuration (stan.config.yml)<a href="#configuration-stanconfigyml" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Minimal example:</p>
+<pre><code><span class="hl-2">stanPath</span><span class="hl-1">: .</span><span class="hl-0">stan</span><br/><span class="hl-2">includes</span><span class="hl-1">: []</span><br/><span class="hl-2">excludes</span><span class="hl-1">: []</span><br/><span class="hl-2">scripts</span><span class="hl-1">:</span><br/><span class="hl-1">  </span><span class="hl-2">build</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-2">stan</span><span class="hl-1">:</span><span class="hl-0">build</span><br/><span class="hl-1">  </span><span class="hl-2">lint</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">lint</span><br/><span class="hl-1">  </span><span class="hl-2">test</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">test</span><br/><span class="hl-1">  </span><span class="hl-2">typecheck</span><span class="hl-1">: </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">typecheck</span>
+</code><button>Copy</button></pre>
+
+<p>Optional:</p>
+<ul>
+<li>maxUndos: number of retained snapshot history entries (default 10).</li>
+<li>patchOpenCommand: editor open command (default: &quot;code -g {file}&quot;).</li>
+</ul>
+<hr>
+<h2 id="commands-at-a-glance" class="tsd-anchor-link">Commands at a glance<a href="#commands-at-a-glance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>Run (build &amp; snapshot)
+<ul>
+<li>Default: stan run              # runs all configured scripts and writes archives</li>
+<li>stan run -p                    # print plan only, no side effects</li>
+<li>stan run -S                    # do not run scripts (combine with -A/-p)</li>
+<li>stan run -A                    # do not create archives</li>
+<li>stan run -c -s test            # include outputs inside archives; remove on-disk outputs</li>
+<li>stan run -q -s lint test       # sequential run in provided order</li>
+<li>stan run -x test               # run all except “test”</li>
 </ul>
 </li>
-</ul>
-<hr>
-<h2 id="run-build--snapshot" class="tsd-anchor-link">Run (build &amp; snapshot)<a href="#run-build--snapshot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> [</span><span class="hl-0">options</span><span class="hl-1">]</span>
-</code><button>Copy</button></pre>
-
-<p>Selection (one of -a, -s, or -x is required):</p>
+<li>Snap (share &amp; baseline)
 <ul>
-<li><code>-s, --scripts [keys...]</code>: run only these keys. If no keys listed, run all.</li>
-<li><code>-x, --except-scripts &lt;keys...&gt;</code>: exclude keys. If <code>-s</code> present, reduces that set; otherwise reduces from full set.</li>
-<li><code>-a, --archive</code>: write <code>archive.tar</code> and <code>archive.diff.tar</code> after scripts (or immediately if selection empty).</li>
+<li>stan snap</li>
+<li>stan snap undo | redo | set <index> | info</li>
+<li>stan snap -s (stash before snap; pop after)</li>
 </ul>
-<p>Execution &amp; outputs:</p>
+</li>
+<li>Patch (discuss &amp; patch)
 <ul>
-<li><code>-q, --sequential</code>: preserve config order (requires <code>-s</code> or <code>-x</code>).</li>
-<li><code>-c, --combine</code>: include script outputs inside archives and remove from disk. Implies <code>--archive</code> and requires <code>-s</code> or <code>-x</code>. Conflicts with <code>--keep</code>.</li>
-<li><code>-k, --keep</code>: do not clear the output directory before running (conflicts with <code>--combine</code>).</li>
+<li>stan patch           # from clipboard (default)</li>
+<li>stan patch --check   # validate only</li>
+<li>stan patch -f file.patch</li>
+</ul>
+</li>
 </ul>
 <p>Global flags:</p>
 <ul>
-<li><code>-d, --debug</code>: verbose streaming of script stdout/stderr.</li>
-<li><code>-b, --boring</code>: disable colorized output (useful for CI).</li>
-</ul>
-<p>Behavior highlights:</p>
-<ul>
-<li>Run plan: STAN prints a concise, multi‑line plan (mode, output, scripts, archive/combine/keep).</li>
-<li>Archives:
-<ul>
-<li><code>archive.tar</code>: full file set filtered by includes/excludes/gitignore/stanPath rules.</li>
-<li><code>archive.diff.tar</code>: only changed files vs the last recorded snapshot (first time equals full).</li>
-</ul>
-</li>
-<li>Classification at archive time:
-<ul>
-<li>Binaries are excluded (summarized to console).</li>
-<li>Large text candidates are logged (with sizes/LOC), so you can refine excludes.</li>
-</ul>
-</li>
-<li>Previous archive copy: STAN preserves <code>diff/archive.prev.tar</code> for reference.</li>
+<li>-d/--debug (verbose streaming of script stdout/stderr)</li>
+<li>-b/--boring (disable color)</li>
 </ul>
 <hr>
-<h2 id="archiving--snapshot-share--baseline" class="tsd-anchor-link">Archiving &amp; snapshot (share &amp; baseline)<a href="#archiving--snapshot-share--baseline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="snapshots" class="tsd-anchor-link">Snapshots<a href="#snapshots" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
-<li>Diff snapshot file: <code>&lt;stanPath&gt;/diff/.archive.snapshot.json</code>.</li>
-<li>Normal runs: create a snapshot only when one does not exist.</li>
-<li>Explicit reset/update: use <code>stan snap</code> any time to replace the snapshot.</li>
-</ul>
-<h3 id="stan-snap-and-history" class="tsd-anchor-link"><code>stan snap</code> (and history)<a href="#stan-snap-and-history" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><span class="hl-1"> </span><span class="hl-0">undo</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><span class="hl-1"> </span><span class="hl-0">redo</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><span class="hl-1"> </span><span class="hl-0">set</span><span class="hl-1"> &lt;</span><span class="hl-0">index</span><span class="hl-1">&gt;</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">snap</span><span class="hl-1"> </span><span class="hl-0">info</span>
-</code><button>Copy</button></pre>
-
+<h2 id="documentation" class="tsd-anchor-link">Documentation<a href="#documentation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>API reference: <a href="https://docs.karmanivero.us/stan">https://docs.karmanivero.us/stan</a></li>
+<li>Guide and design notes (selected):
 <ul>
-<li>History:
-<ul>
-<li><code>snap</code>: write new snapshot; pushes history stack and clears redos.</li>
-<li><code>undo</code>: move to previous entry and restore it.</li>
-<li><code>redo</code>: move forward and restore it.</li>
-<li><code>set &lt;index&gt;</code>: jump to a specific entry and restore it.</li>
-<li><code>info</code>: lists newest→oldest, with local timestamps and markers.</li>
+<li>System &amp; project prompts live under <stanPath>/system/</li>
+<li>Response format, patch policy, and FEEDBACK handshake are codified in <a href="http://stan.system.md" target="_blank" class="external">stan.system.md</a> (assembled from parts)</li>
+<li>Development plan: <stanPath>/system/stan.todo.md</li>
 </ul>
 </li>
-<li>Stash (optional):
-<ul>
-<li><code>stan snap -s</code> runs <code>git stash -u</code> before snapshot, attempts <code>stash pop</code> after.</li>
-<li>On stash failure: snapshot aborted (no change).</li>
-</ul>
-</li>
-<li>Archives at snap time:
-<ul>
-<li>If <code>&lt;stanPath&gt;/output/archive*.tar</code> exist, they’re copied into <code>&lt;stanPath&gt;/diff/archives/</code> alongside the snapshot for traceability.</li>
-</ul>
-</li>
-<li>Retention:
-<ul>
-<li><code>maxUndos</code> (default 10) controls bounded history.</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h2 id="chat-and-bootloader-share--baseline" class="tsd-anchor-link">Chat and bootloader (share &amp; baseline)<a href="#chat-and-bootloader-share--baseline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>When you attach archives, include the system prompt bootloader:</p>
-<ul>
-<li>Bootloader path (downstream repos): <code>&lt;stanPath&gt;/system/stan.bootloader.md</code>.</li>
-<li>From the npm package for convenience: <code>node_modules/@karmaniverous/stan/dist/stan.bootloader.md</code> (we also ship <code>stan.system.md</code> and <code>stan.project.template.md</code> in <code>dist/</code>).</li>
-</ul>
-<p>How it works:</p>
-<ul>
-<li>Integrity‑check tar(s): enumerate and verify each entry’s length matches header size.</li>
-<li>Resolve repo root and <code>stanPath</code> from <code>stan.config.*</code>.</li>
-<li>Load <code>&lt;stanPath&gt;/system/stan.system.md</code> as the active system prompt (mandatory override) and proceed under those rules.</li>
-</ul>
-<p>If missing:</p>
-<ul>
-<li>The assistant should refuse to proceed and request a tar containing <code>&lt;stanPath&gt;/system/stan.system.md</code> or a file named exactly <code>stan.system.md</code>.</li>
-</ul>
-<hr>
-<h2 id="discuss--patch-discuss--patch" class="tsd-anchor-link">Discuss &amp; patch (discuss &amp; patch)<a href="#discuss--patch-discuss--patch" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="stan-patch-pipeline--feedback" class="tsd-anchor-link"><code>stan patch</code> (pipeline &amp; FEEDBACK)<a href="#stan-patch-pipeline--feedback" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Common flows:</p>
-<pre><code><span class="hl-1"># </span><span class="hl-0">Apply</span><span class="hl-1"> </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-4">clipboard</span><span class="hl-1"> (</span><span class="hl-0">default</span><span class="hl-1">)</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Validate</span><span class="hl-1"> </span><span class="hl-0">without</span><span class="hl-1"> </span><span class="hl-0">changing</span><span class="hl-1"> </span><span class="hl-0">files</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> --</span><span class="hl-0">check</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Read</span><span class="hl-1"> </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-4">file</span><span class="hl-1"> (</span><span class="hl-0">unified</span><span class="hl-1"> </span><span class="hl-0">diff</span><span class="hl-1">) </span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">apply</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> -</span><span class="hl-0">f</span><span class="hl-1"> </span><span class="hl-0">my</span><span class="hl-1">.</span><span class="hl-0">patch</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Validate</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> </span><span class="hl-0">file</span><span class="hl-1"> </span><span class="hl-0">only</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> -</span><span class="hl-0">f</span><span class="hl-1"> </span><span class="hl-0">my</span><span class="hl-1">.</span><span class="hl-0">patch</span><span class="hl-1"> --</span><span class="hl-0">check</span><br/><br/><span class="hl-1"># </span><span class="hl-0">Pass</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-0">diff</span><span class="hl-1"> </span><span class="hl-4">inline</span><span class="hl-1"> (</span><span class="hl-0">watch</span><span class="hl-1"> </span><span class="hl-0">shell</span><span class="hl-1"> </span><span class="hl-0">limits</span><span class="hl-1"> </span><span class="hl-0">on</span><span class="hl-1"> </span><span class="hl-0">very</span><span class="hl-1"> </span><span class="hl-0">large</span><span class="hl-1"> </span><span class="hl-0">diffs</span><span class="hl-1">)</span><br/><span class="hl-0">stan</span><span class="hl-1"> </span><span class="hl-0">patch</span><span class="hl-1"> </span><span class="hl-5">&quot;diff --git a/x b/</span><span class="hl-6">x</span><br/><span class="hl-1">--- </span><span class="hl-0">a</span><span class="hl-1">/</span><span class="hl-0">x</span><br/><span class="hl-1">+++ </span><span class="hl-0">b</span><span class="hl-1">/</span><span class="hl-0">x</span><br/><span class="hl-1">@@ -</span><span class="hl-7">1</span><span class="hl-1">,</span><span class="hl-7">1</span><span class="hl-1"> +</span><span class="hl-7">1</span><span class="hl-1">,</span><span class="hl-7">1</span><span class="hl-1"> @@</span><br/><span class="hl-1">-</span><span class="hl-0">old</span><br/><span class="hl-1">+</span><span class="hl-8">new</span><span class="hl-5">&quot;</span>
-</code><button>Copy</button></pre>
-
-<p>What it does:</p>
-<ul>
-<li>Cleans input and writes canonical <code>&lt;stanPath&gt;/patch/.patch</code> (workspace).</li>
-<li>Attempts to apply:
-<ul>
-<li><code>git apply</code> tolerant modes across <code>-p1</code> then <code>-p0</code>.</li>
-<li>jsdiff fallback for line‑wise placement when necessary.</li>
-</ul>
-</li>
-<li>After success (non‑<code>--check</code>):
-<ul>
-<li>Opens modified files in your editor (configurable via <code>patchOpenCommand</code>, default <code>code -g {file}</code>).</li>
-<li>Prints a commit message (from the assistant) to use as your commit.</li>
-</ul>
-</li>
-<li>After failure or partial success:
-<ul>
-<li>Writes diagnostics under <code>&lt;stanPath&gt;/patch/.debug/</code>:
-<ul>
-<li><code>cleaned.patch</code>, <code>attempts.json</code>, per‑attempt <code>*.stderr.txt</code>/<code>*.stdout.txt</code>.</li>
-</ul>
-</li>
-<li>Produces a compact FEEDBACK envelope and copies it to clipboard when possible so you can paste back into chat for a corrected patch.</li>
-<li>Moves any new <code>*.rej</code> rejects to <code>&lt;stanPath&gt;/patch/rejects/&lt;UTC timestamp&gt;/</code>, preserving paths.</li>
-<li>Opens header‑derived target files to speed manual edits (non‑<code>--check</code>).</li>
-</ul>
-</li>
-</ul>
-<p>Sources and precedence:</p>
-<ul>
-<li><code>[input]</code> argument &gt; <code>-f &lt;file&gt;</code> &gt; clipboard.</li>
-<li>If the input looks like base64, STAN tries to decode it only if it yields a unified diff.</li>
-</ul>
-<p>Patch format expectations:</p>
-<ul>
-<li>Plain unified diffs (no base64) with a/ and b/ prefixes and ≥3 lines of context per hunk.</li>
-<li>LF endings in the patch; CRLF translation handled when applying.</li>
-</ul>
-<hr>
-<h2 id="includes-excludes-and-gitignore" class="tsd-anchor-link">Includes, excludes, and gitignore<a href="#includes-excludes-and-gitignore" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>STAN determines the file set by:</p>
-<ul>
-<li>Your configured <code>includes</code> (allow‑list) and <code>excludes</code> (deny‑list) with glob support.</li>
-<li><code>.gitignore</code> semantics (via the <code>ignore</code> library).</li>
-<li>Defaults:
-<ul>
-<li>Excludes <code>node_modules/</code>, <code>.git/</code>, <code>&lt;stanPath&gt;/diff</code>, and <code>&lt;stanPath&gt;/output</code> (unless <code>--combine</code>/include‑outputs mode is active).</li>
-<li>Always includes <code>&lt;stanPath&gt;/patch</code> in archives for patch workflows.</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h2 id="preflight-and-version-awareness" class="tsd-anchor-link">Preflight and version awareness<a href="#preflight-and-version-awareness" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>On <code>stan run</code>, preflight:</p>
-<ul>
-<li>Warn if local system prompt differs from baseline.</li>
-<li>Nudge to run <code>stan init</code> after upgrades if packaged docs changed since last install (tracked via <code>&lt;stanPath&gt;/system/.docs.meta.json</code>).</li>
-</ul>
-<p>Version printing:</p>
-<pre><code><span class="hl-0">stan</span><span class="hl-1"> --</span><span class="hl-0">version</span>
-</code><button>Copy</button></pre>
-
-<p>Prints:</p>
-<ul>
-<li>STAN version + Node version</li>
-<li>Repo root + resolved <code>stanPath</code></li>
-<li>System prompt in‑sync status (local and baseline presence)</li>
-<li>Last installed docs version</li>
-</ul>
-<hr>
-<h2 id="large-files--300-loc" class="tsd-anchor-link">Large files (&gt; 300 LOC)<a href="#large-files--300-loc" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>To keep patches focused and modules testable, STAN flags any source file longer than ~300 lines and asks for a plan.</p>
-<p>Assistant checklist example:</p>
-<pre><code><span class="hl-0">Long</span><span class="hl-1"> </span><span class="hl-4">files</span><span class="hl-1"> (&gt;</span><span class="hl-7">300</span><span class="hl-1"> </span><span class="hl-2">LOC</span><span class="hl-1">) </span><span class="hl-3">detected</span><span class="hl-1">:</span><br/><span class="hl-7">1</span><span class="hl-1">) </span><span class="hl-0">src</span><span class="hl-1">/</span><span class="hl-0">feature</span><span class="hl-1">/</span><span class="hl-0">engine</span><span class="hl-1">.</span><span class="hl-0">ts</span><span class="hl-1"> — ~</span><span class="hl-7">512</span><span class="hl-1"> </span><span class="hl-2">LOC</span><br/><span class="hl-1">   - </span><span class="hl-3">Proposal</span><span class="hl-1">: </span><span class="hl-0">Split</span><span class="hl-1"> </span><span class="hl-0">into</span><br/><span class="hl-1">     • </span><span class="hl-0">engine</span><span class="hl-1">/</span><span class="hl-0">core</span><span class="hl-1">.</span><span class="hl-4">ts</span><span class="hl-1"> (</span><span class="hl-0">state</span><span class="hl-1"> + </span><span class="hl-0">lifecycle</span><span class="hl-1">)</span><br/><span class="hl-1">     • </span><span class="hl-0">engine</span><span class="hl-1">/</span><span class="hl-0">plugins</span><span class="hl-1">.</span><span class="hl-4">ts</span><span class="hl-1"> (</span><span class="hl-0">registry</span><span class="hl-1"> + </span><span class="hl-0">hooks</span><span class="hl-1">)</span><br/><span class="hl-1">     • </span><span class="hl-0">engine</span><span class="hl-1">/</span><span class="hl-0">runner</span><span class="hl-1">.</span><span class="hl-4">ts</span><span class="hl-1"> (</span><span class="hl-0">execution</span><span class="hl-1">, </span><span class="hl-0">error</span><span class="hl-1"> </span><span class="hl-0">boundaries</span><span class="hl-1">)</span><br/><span class="hl-1">   - </span><span class="hl-3">Tests</span><span class="hl-1">: </span><span class="hl-0">unit</span><span class="hl-1"> </span><span class="hl-0">per</span><span class="hl-1"> </span><span class="hl-9">module</span><span class="hl-1"> + </span><span class="hl-0">high</span><span class="hl-1">-</span><span class="hl-0">level</span><span class="hl-1"> </span><span class="hl-0">integration</span><br/><br/><span class="hl-7">2</span><span class="hl-1">) </span><span class="hl-0">src</span><span class="hl-1">/</span><span class="hl-0">vendor</span><span class="hl-1">/</span><span class="hl-0">sql</span><span class="hl-1">-</span><span class="hl-0">grammar</span><span class="hl-1">.</span><span class="hl-0">ts</span><span class="hl-1"> — ~</span><span class="hl-7">1</span><span class="hl-1">,</span><span class="hl-7">042</span><span class="hl-1"> </span><span class="hl-2">LOC</span><br/><span class="hl-1">   - </span><span class="hl-3">Decision</span><span class="hl-1">: </span><span class="hl-0">Keep</span><span class="hl-1"> </span><span class="hl-4">long</span><span class="hl-1"> (</span><span class="hl-0">generated</span><span class="hl-1"> </span><span class="hl-0">grammar</span><span class="hl-1">; </span><span class="hl-0">splitting</span><span class="hl-1"> </span><span class="hl-0">harms</span><span class="hl-1"> </span><span class="hl-0">maintainability</span><span class="hl-1">)</span><br/><span class="hl-1">   - </span><span class="hl-3">Action</span><span class="hl-1">: </span><span class="hl-0">Add</span><span class="hl-1"> </span><span class="hl-0">a</span><span class="hl-1"> </span><span class="hl-2">README</span><span class="hl-1"> </span><span class="hl-0">note</span><span class="hl-1"> </span><span class="hl-0">and</span><span class="hl-1"> </span><span class="hl-0">exclude</span><span class="hl-1"> </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-0">coverage</span><span class="hl-1"> </span><span class="hl-0">thresholds</span>
-</code><button>Copy</button></pre>
-
-<p>No changes are made automatically; the assistant waits for confirmation before emitting patches.</p>
-<hr>
-<h2 id="bootstrapping--scripts" class="tsd-anchor-link">Bootstrapping &amp; scripts<a href="#bootstrapping--scripts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Handy scripts you might keep in <code>package.json</code>:</p>
-<ul>
-<li><code>stan:build</code>: build CLI and copy docs into <code>&lt;stanPath&gt;/dist</code> as needed.</li>
-<li><code>stan:docs</code>: generate docs (e.g., with typedoc).</li>
-<li><code>lint</code>, <code>test</code>, <code>typecheck</code>, <code>build</code>: whatever your toolchain uses; reference them in <code>stan.config.*</code>.</li>
 </ul>
 <hr>
 <h2 id="troubleshooting" class="tsd-anchor-link">Troubleshooting<a href="#troubleshooting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
-<li>“system prompt missing”: Ensure <code>&lt;stanPath&gt;/system/stan.system.md</code> is in the attached archive; otherwise add the file or attach it directly as <code>stan.system.md</code>.</li>
-<li>Big archives: If you’re struggling with size, favor <code>archive.diff.tar</code> plus script outputs for iterations; the full archive’s only needed occasionally.</li>
-<li>Windows command limits: For very large diffs, prefer clipboard or <code>-f</code> over inline argument input.</li>
-<li>Clipboard in CI/tests: STAN skips clipboard writes during tests unless explicitly forced to avoid process hangs and file lock issues.</li>
-</ul>
-<hr>
-<h2 id="reference-cheatsheet" class="tsd-anchor-link">Reference cheatsheet<a href="#reference-cheatsheet" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
-<li>Build &amp; Snapshot
-<ul>
-<li><code>stan run -s</code> (run all configured scripts)</li>
-<li><code>stan run -s test typecheck</code> (run selected)</li>
-<li><code>stan run -x lint</code> (run all except lint)</li>
-<li><code>stan run -a -s</code> (run then archive)</li>
-<li><code>stan run -a -c -s</code> (archive with outputs inside)</li>
-</ul>
-</li>
-<li>Share &amp; Baseline
-<ul>
-<li>Attach <code>archive.tar</code> (+ <code>archive.diff.tar</code>) and outputs</li>
-<li><code>stan snap</code> / <code>undo</code> / <code>redo</code> / <code>set &lt;n&gt;</code> / <code>info</code></li>
-</ul>
-</li>
-<li>Discuss &amp; Patch
-<ul>
-<li><code>stan patch</code> (clipboard)</li>
-<li><code>stan patch -f some.patch</code> (from file)</li>
-<li><code>stan patch --check</code> (validate only)</li>
-</ul>
-</li>
+<li>“system prompt missing”: ensure <stanPath>/system/stan.system.md is included in the attached archive; otherwise attach it directly as <a href="http://stan.system.md" target="_blank" class="external">stan.system.md</a>.</li>
+<li>Patch failures: use --check to validate first; if a patch fails, STAN writes a compact FEEDBACK envelope and (when possible) copies it to your clipboard so you can get a corrected patch.</li>
+<li>Large files: STAN may flag very long source files (~300+ LOC) and ask for a split plan before proceeding.</li>
 </ul>
 <hr>
 <h2 id="contributing" class="tsd-anchor-link">Contributing<a href="#contributing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
 <li>Keep the loop simple. Each stage ends with one command.</li>
 <li>Favor small, testable modules; treat &gt;300 LOC as design feedback.</li>
-<li>Improve the project prompt (<code>&lt;stanPath&gt;/system/stan.project.md</code>) when repo‑specific policies evolve; downstream repos should avoid changing the system prompt (it is updated by <code>stan init</code> from the packaged baseline).</li>
+<li>Improve the project prompt (<stanPath>/system/stan.project.md) when repo‑specific policies evolve.</li>
 </ul>
 <hr>
 <h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>BSD‑3‑Clause</p>
-<hr>
-<h2 id="appendix-files-and-layout" class="tsd-anchor-link">Appendix: Files and layout<a href="#appendix-files-and-layout" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>By default (<code>stanPath: .stan</code>):</p>
-<ul>
-<li><code>.stan/system/</code> — prompts &amp; templates
-<ul>
-<li><code>stan.system.md</code> — system prompt (governs assistant behavior)</li>
-<li><code>stan.bootloader.md</code> — bootloader prompt for assistants</li>
-<li><code>stan.project.template.md</code> — project prompt template</li>
-<li><code>.docs.meta.json</code> — last installed docs version (for preflight nudges)</li>
-</ul>
-</li>
-<li><code>.stan/output/</code> — run outputs and archives
-<ul>
-<li><code>*.txt</code> — deterministic script logs</li>
-<li><code>archive.tar</code> — full archive</li>
-<li><code>archive.diff.tar</code> — diff archive</li>
-</ul>
-</li>
-<li><code>.stan/diff/</code> — snapshot &amp; history
-<ul>
-<li><code>.archive.snapshot.json</code> — current snapshot</li>
-<li><code>.snap.state.json</code> — history state</li>
-<li><code>snapshots/</code> — retained snapshots</li>
-<li><code>archives/</code> — archived artifacts captured at snap time</li>
-<li><code>.stan_no_changes</code> — sentinel included when no diffs</li>
-</ul>
-</li>
-<li><code>.stan/patch/</code> — patch workspace
-<ul>
-<li><code>.patch</code> — canonical cleaned patch file</li>
-<li><code>.debug/</code> — attempts &amp; logs, feedback.txt</li>
-<li><code>rejects/&lt;UTC&gt;/...</code> — collected <code>*.rej</code> files</li>
-</ul>
-</li>
-</ul>
-<p>Diagrams:</p>
-<ul>
-<li><code>diagrams/stan-loop.pu</code> — the simplified three‑stage PlantUML source</li>
-<li>Render to <code>diagrams/stan-loop.svg</code> (or PNG) in CI/docs as desired.</li>
-</ul>
-</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#stan--stan-tames-autoregressive-nonsense"><span>STAN — <wbr/>STAN <wbr/>Tames <wbr/>Autoregressive <wbr/>Nonsense</span></a><ul><li><a href="#the-stan-loop"><span>The <wbr/>STAN <wbr/>Loop</span></a></li><li><ul><li><a href="#1-build--snapshot"><span>1) <wbr/>Build &amp; <wbr/>Snapshot</span></a></li><li><a href="#2-share--baseline"><span>2) <wbr/>Share &amp; <wbr/>Baseline</span></a></li><li><a href="#3-discuss--patch"><span>3) <wbr/>Discuss &amp; <wbr/>Patch</span></a></li></ul></li><li><a href="#why-stan"><span>Why <wbr/>STAN?</span></a></li><li><a href="#install"><span>Install</span></a></li><li><a href="#getting-started"><span>Getting started</span></a></li><li><a href="#configuration"><span>Configuration</span></a></li><li><a href="#run-build--snapshot"><span>Run (build &amp; snapshot)</span></a></li><li><a href="#archiving--snapshot-share--baseline"><span>Archiving &amp; snapshot (share &amp; baseline)</span></a></li><li><ul><li><a href="#snapshots"><span>Snapshots</span></a></li><li><a href="#stan-snap-and-history"><span>stan snap (and history)</span></a></li></ul></li><li><a href="#chat-and-bootloader-share--baseline"><span>Chat and bootloader (share &amp; baseline)</span></a></li><li><a href="#discuss--patch-discuss--patch"><span>Discuss &amp; patch (discuss &amp; patch)</span></a></li><li><ul><li><a href="#stan-patch-pipeline--feedback"><span>stan patch (pipeline &amp; <wbr/>FEEDBACK)</span></a></li></ul></li><li><a href="#includes-excludes-and-gitignore"><span>Includes, excludes, and gitignore</span></a></li><li><a href="#preflight-and-version-awareness"><span>Preflight and version awareness</span></a></li><li><a href="#large-files--300-loc"><span>Large files (&gt; 300 <wbr/>LOC)</span></a></li><li><a href="#bootstrapping--scripts"><span>Bootstrapping &amp; scripts</span></a></li><li><a href="#troubleshooting"><span>Troubleshooting</span></a></li><li><a href="#reference-cheatsheet"><span>Reference cheatsheet</span></a></li><li><a href="#contributing"><span>Contributing</span></a></li><li><a href="#license"><span>License</span></a></li><li><a href="#appendix-files-and-layout"><span>Appendix: <wbr/>Files and layout</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">@karmaniverous/stan</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#stan--stan-tames-autoregressive-nonsense"><span>STAN — <wbr/>STAN <wbr/>Tames <wbr/>Autoregressive <wbr/>Nonsense</span></a><ul><li><a href="#quick-start"><span>Quick start</span></a></li><li><a href="#why-stan"><span>Why <wbr/>STAN?</span></a></li><li><a href="#configuration-stanconfigyml"><span>Configuration (stan.config.yml)</span></a></li><li><a href="#commands-at-a-glance"><span>Commands at a glance</span></a></li><li><a href="#documentation"><span>Documentation</span></a></li><li><a href="#troubleshooting"><span>Troubleshooting</span></a></li><li><a href="#contributing"><span>Contributing</span></a></li><li><a href="#license"><span>License</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">@karmaniverous/stan</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

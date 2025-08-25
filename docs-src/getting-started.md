@@ -29,11 +29,10 @@ stan init
 What this does:
 - Creates `stan.config.yml` with sensible defaults.
 - Ensures `.gitignore` entries for `.stan/output/`, `.stan/diff/`, `.stan/dist/`, and `.stan/patch/`.
-- Installs documentation under `.stan/system/` (including the project/system prompts).
+- Ensures documentation metadata under `.stan/system/` and creates required directories. The project prompt (`.stan/system/stan.project.md`) is created on demand by STAN when repo‑specific requirements emerge (no template is installed).
 - Writes an initial diff snapshot to `.stan/diff/.archive.snapshot.json`.
 
 You can re-run `stan init` safely. Use `--force` to accept defaults; otherwise you’ll be prompted.
-
 ## 3) Understand stan.config.yml
 
 Minimal example:

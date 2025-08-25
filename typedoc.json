@@ -25,9 +25,9 @@
     "./docs-src/archives-and-snapshots.md",
     "./CHANGELOG.md"
   ],
-  "navigationLinks": [
-    { "label": "GitHub", "url": "https://github.com/karmaniverous/stan" }
-  ],
+  "navigationLinks": {
+    "GitHub": "https://github.com/karmaniverous/stan"
+  },
   "replaceText": {
     "replacements": [
       {

@@ -135,10 +135,9 @@ Global flags:
   - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/archives-and-snapshots) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history.
 
 Additional references:
-- System & project prompts live under `<stanPath>/system/` in your repo.
+- System & project prompts live under `<stanPath>/system/` in your repo; the project prompt is created on demand by STAN (no template is installed).
 - Response format, patch policy, and FEEDBACK handshake are codified in `stan.system.md` (assembled from parts).
 - Development plan: `<stanPath>/system/stan.todo.md`.
-
 ---
 
 ## Troubleshooting

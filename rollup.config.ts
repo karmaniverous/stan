@@ -47,10 +47,6 @@ const copyDocsPlugin = (dest: string): Plugin => {
           src: path.join(fromSystem, 'stan.system.md'),
           dest: path.join(dest, 'stan.system.md'),
         },
-        {
-          src: path.join(fromSystem, 'stan.project.template.md'),
-          dest: path.join(dest, 'stan.project.template.md'),
-        },
       ];
       try {        await fs.ensureDir(dest);
         for (const c of candidates) {
@@ -62,7 +58,6 @@ const copyDocsPlugin = (dest: string): Plugin => {
     },
   };
 };
-
 const makePlugins = (minify: boolean, extras: Plugin[] = []): Plugin[] => {
   const base: Plugin[] = [
     alias,

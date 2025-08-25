@@ -3,11 +3,9 @@
 This file contains STAN (this repo) specific requirements and conventions.
 General, repo‑agnostic standards live in `/stan.system.md`.
 
-If this file experiences significant structural changes, update
-`/stan.project.template.md` to match so `stan init` scaffolds remain current.
+Note: The project prompt is created on demand when repo‑specific policies emerge. No template is installed or shipped by `stan init`.
 
 ## System prompt source layout & assembly (authoring in this repo)
-
 - Runtime invariant: downstream tools and assistants consume a single file
   `.stan/system/stan.system.md`. Do not change this invariant.
 - Source split: author the system prompt as ordered parts under

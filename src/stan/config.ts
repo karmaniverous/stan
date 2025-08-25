@@ -22,8 +22,14 @@ import YAML from 'yaml';
 
 import { makeStanDirs } from './paths';
 
+/** Map of script keys to shell commands invoked by `stan run`. */
 export type ScriptMap = Record<string, string>;
 
+/**
+ * Resolved STAN configuration.
+ * - Paths like stanPath/output and stanPath/diff are referred to without angle
+ *   brackets to avoid confusion with HTML-like tags in TSDoc.
+ */
 export type ContextConfig = {
   stanPath: string;
   scripts: ScriptMap;
@@ -33,7 +39,11 @@ export type ContextConfig = {
   excludes?: string[];
   /** Maximum retained snapshot "undos" (history depth for snap undo/redo); default 10. */
   maxUndos?: number;
-  /** Command template to open modified files after a successful patch. Default: "code -g {file}". */
+  /**
+   * Command template to open modified files after a successful patch.
+   * Tokens: `\{file\}` expands to a repo‑relative file path.
+   * Default: `code -g \{file\}`.
+   */
   patchOpenCommand?: string;
 };
 
@@ -101,7 +111,12 @@ const tryConfigHere = (dir: string): string | null => {
   return null;
 };
 
-/** Resolve the absolute path to the nearest stan.config.* starting from cwd. */
+/**
+ * Resolve the absolute path to the nearest `stan.config.*` starting from `cwd`.
+ *
+ * @param cwd Directory to start searching from.
+ * @returns Absolute path to the config file, or `null` if none found.
+ */
 export const findConfigPathSync = (cwd: string): string | null => {
   // direct in cwd
   const direct = tryConfigHere(cwd);
@@ -125,6 +140,12 @@ export const findConfigPathSync = (cwd: string): string | null => {
   return null;
 };
 
+/**
+ * Load and validate STAN configuration synchronously.
+ *
+ * @param cwd Repo root or any descendant; the nearest `stan.config.*` is used.
+ * @returns Parsed, validated {@link ContextConfig}.
+ */
 export const loadConfigSync = (cwd: string): ContextConfig => {
   const p = findConfigPathSync(cwd);
   if (!p) throw new Error('stan config not found');
@@ -160,13 +181,24 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   };
 };
 
+/**
+ * Load and validate STAN configuration (async).
+ *
+ * @param cwd Repo root or any descendant; the nearest `stan.config.*` is used.
+ * @returns Parsed, validated {@link ContextConfig}.
+ */
 export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
   const p = findConfigPathSync(cwd);
   if (!p) throw new Error('stan config not found');
   return parseFile(p);
 };
 
-/** Resolve stanPath for a cwd; falls back to DEFAULT_STAN_PATH when config is absent. */
+/**
+ * Resolve `stanPath` for a given `cwd`.
+ * Falls back to {@link DEFAULT_STAN_PATH} when no config is present.
+ *
+ * @param cwd Directory to search from.
+ */
 export const resolveStanPathSync = (cwd: string): string => {
   try {
     return loadConfigSync(cwd).stanPath;
@@ -175,7 +207,12 @@ export const resolveStanPathSync = (cwd: string): string => {
   }
 };
 
-/** Async variant of resolveStanPathSync. */
+/**
+ * Async variant of {@link resolveStanPathSync}.
+ *
+ * @param cwd Directory to search from.
+ * @returns Resolved stanPath or the default when no config exists.
+ */
 export const resolveStanPath = async (cwd: string): Promise<string> => {
   try {
     const cfg = await loadConfig(cwd);
@@ -185,10 +222,19 @@ export const resolveStanPath = async (cwd: string): Promise<string> => {
   }
 };
 
-/** Ensure stanPath exists and manage output/diff subdirs.
- * - Always ensure <stanPath>/output and <stanPath>/diff exist.
- * - When keep===false, copy output/archive.tar -> diff/archive.prev.tar (if present),
- *   then clear ONLY the output directory.
+/**
+ * Ensure the STAN workspace exists and manage output/diff subdirectories.
+ *
+ * Behavior:
+ * - Always ensure `stanPath/output` and `stanPath/diff` exist.
+ * - Also ensure `stanPath/patch` exists so archives can include it.
+ * - When `keep === false`, copy `output/archive.tar` to `diff/archive.prev.tar`
+ *   if present, then clear only the `output` directory.
+ *
+ * @param cwd Repo root.
+ * @param stanPath Workspace folder (e.g., `.stan`).
+ * @param keep When `true`, do not clear the output directory.
+ * @returns Absolute path to the workspace root (`stanPath`).
  */
 export const ensureOutputDir = async (
   cwd: string,

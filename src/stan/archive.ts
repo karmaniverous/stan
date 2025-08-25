@@ -30,13 +30,25 @@ type TarLike = {
   ) => Promise<void>;
 };
 
+/** Options to control archive creation. */
 export type CreateArchiveOptions = {
+  /** When true, include the `stanPath/output` directory inside the archive. */
   includeOutputDir?: boolean;
+  /**
+   * Archive file name. If provided without `.tar`, the suffix is added.
+   * Written to `stanPath/output/<fileName>`.
+   */
   fileName?: string;
+  /** Allow‑list globs; when provided, overrides excludes. */
   includes?: string[];
+  /**
+   * Deny‑list globs. Defaults include `.git`, `node_modules`, and STAN
+   * workspace rules. These are applied only when `includes` is empty.
+   */
   excludes?: string[];
 };
 
+/** Create `stanPath/output/archive.tar` (or custom file name) from the repo root. */
 export const createArchive = async (
   cwd: string,
   stanPath: string,

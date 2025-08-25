@@ -48,6 +48,12 @@ const sentinelPathFor = (diffDir: string): string =>
 /**
  * Compute (and optionally update) the snapshot file in <stanPath>/diff/.
  * Returns the absolute snapshot path.
+ *
+ * @param args.cwd Repo root.
+ * @param args.stanPath STAN workspace folder.
+ * @param args.includes Allow‑list globs (overrides excludes).
+ * @param args.excludes Deny‑list globs.
+ * @returns Absolute path to the `.archive.snapshot.json` file.
  */
 export const writeArchiveSnapshot = async ({
   cwd,
@@ -85,6 +91,15 @@ export const writeArchiveSnapshot = async ({
  * - When includeOutputDirInDiff === true, also include the entire <stanPath>/output tree
  *   (excluding <stanPath>/diff and the two archive files) regardless of change list length.
  * - Always include <stanPath>/patch in the diff archive.
+ *
+ * @param args.cwd Repo root.
+ * @param args.stanPath STAN workspace folder.
+ * @param args.baseName Base archive name (e.g., `archive` -> `archive.diff.tar`).
+ * @param args.includes Allow‑list globs (overrides excludes).
+ * @param args.excludes Deny‑list globs.
+ * @param args.updateSnapshot Controls when the snapshot file is replaced.
+ * @param args.includeOutputDirInDiff When true, include `stanPath/output` in the diff.
+ * @returns `{ diffPath }` absolute path to the diff archive.
  */
 export const createArchiveDiff = async ({
   cwd,

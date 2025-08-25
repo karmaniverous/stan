@@ -5,7 +5,16 @@ import type { ContextConfig } from '../config';
 import { makeStanDirs } from '../paths';
 import type { ExecutionMode, RunBehavior, Selection } from './types';
 
-/** Render a readable, multi-line summary of the run plan (pure). */
+/**
+ * Render a readable, multi‑line summary of the run plan (pure).
+ *
+ * @param cwd Repo root used only for `stanPath` path rendering.
+ * @param args.selection Explicit selection (may be `null` to indicate “all”).
+ * @param args.config Resolved configuration.
+ * @param args.mode Execution mode (`concurrent` or `sequential`).
+ * @param args.behavior Archive/combine/keep flags.
+ * @returns A human‑friendly summary printed by the CLI.
+ */
 export const renderRunPlan = (
   cwd: string,
   args: {

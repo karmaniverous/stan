@@ -14,6 +14,23 @@ import type { ExecutionMode, RunBehavior, Selection } from './types';
 const shouldWriteOrder =
   process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
 
+/**
+ * High‑level runner for `stan run`.
+ *
+ * Responsibilities:
+ * - Preflight docs/version (best‑effort).
+ * - Ensure output/diff directories.
+ * - Print the run plan.
+ * - Execute selected scripts (in the chosen mode).
+ * - Optionally create regular and diff archives (combine/keep behaviors).
+ *
+ * @param cwd Repo root for execution.
+ * @param config Resolved configuration.
+ * @param selection Explicit list of script keys (or `null` to run all).
+ * @param mode Execution mode (`concurrent` by default).
+ * @param behavior Archive/combine/keep flags.
+ * @returns Absolute paths to created artifacts (script outputs and/or archives).
+ */
 export const runSelected = async (
   cwd: string,
   config: ContextConfig,

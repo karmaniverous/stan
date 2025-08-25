@@ -11,7 +11,12 @@ import picomatch from 'picomatch';
 
 import { makeStanDirs } from './paths';
 
-/** Recursively enumerate files under `root`, returning posix-style relative paths. */
+/**
+ * Recursively enumerate files under `root`, returning POSIX-style
+ * relative paths (`/` separators, no leading `./`).
+ *
+ * @param root Absolute directory to walk.
+ */
 export const listFiles = async (root: string): Promise<string[]> => {
   const out: string[] = [];
   const stack: string[] = ['.'];
@@ -75,7 +80,21 @@ export type FilterOptions = {
   excludes?: string[];
 };
 
-/** Filter a list of relative paths according to includes/excludes/gitignore/output rules. */
+/**
+ * Filter a list of repo-relative paths according to:
+ * - `includes` (allow‑list globs) — when provided, overrides all denials,
+ * - `excludes` (deny‑list globs),
+ * - `.gitignore` semantics,
+ * - default denials (node_modules, .git),
+ * - STAN workspace rules (always exclude `stanPath/diff`; optionally exclude
+ *   `stanPath/output` unless `includeOutputDir` is true).
+ *
+ * Paths are compared using POSIX separators.
+ *
+ * @param files Repo‑relative paths to consider.
+ * @param options See {@link FilterOptions}.
+ * @returns Filtered list to include in archives/snapshots.
+ */
 export const filterFiles = async (
   files: string[],
   {
@@ -115,7 +134,14 @@ export const filterFiles = async (
   return files.filter((f) => !denyMatchers.some((m) => m(f)));
 };
 
-/** Ensure <stanPath>/output and <stanPath>/diff exist, returning their absolute paths. */
+/**
+ * Ensure `stanPath/output` and `stanPath/diff` exist (and `stanPath/patch` so
+ * patch payloads can be archived), returning their absolute paths.
+ *
+ * @param cwd Repo root.
+ * @param stanPath STAN workspace folder.
+ * @returns `{ outDir, diffDir }` absolute paths.
+ */
 export const ensureOutAndDiff = async (
   cwd: string,
   stanPath: string,

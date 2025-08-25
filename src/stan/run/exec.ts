@@ -38,6 +38,18 @@ export const normalizeSelection = (
   return all.filter((k) => requested.has(k));
 };
 
+/**
+ * Run a single configured script and write its combined stdout/stderr to
+ * `outRel/<key>.txt`.
+ *
+ * @param cwd Working directory for the child process.
+ * @param outAbs Absolute output directory.
+ * @param outRel Relative output directory (for logs).
+ * @param key Script key (for logs and filename).
+ * @param cmd Shell command to execute.
+ * @param orderFile Optional order file to append a single letter marker.
+ * @returns Absolute path to the generated output file.
+ */
 export const runOne = async (
   cwd: string,
   outAbs: string,
@@ -78,6 +90,18 @@ export const runOne = async (
   return outFile;
 };
 
+/**
+ * Run a set of scripts concurrently or sequentially.
+ *
+ * @param cwd Working directory for child processes.
+ * @param outAbs Absolute output directory.
+ * @param outRel Relative output directory (for logs).
+ * @param config Resolved configuration.
+ * @param toRun Keys to run (must be present in config).
+ * @param mode Execution mode.
+ * @param orderFile Optional order file path (when present, records execution order).
+ * @returns Absolute paths to generated output files.
+ */
 export const runScripts = async (
   cwd: string,
   outAbs: string,

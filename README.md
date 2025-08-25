@@ -1,3 +1,9 @@
+<!-- TYPEDOC_EXCLUDE -->
+
+> [API Documentation](https://karmaniverous.github.io/stan) • [CHANGELOG](https://github.com/karmaniverous/stan/tree/main/CHANGELOG.md)
+
+<!-- /TYPEDOC_EXCLUDE -->
+
 # STAN — STAN Tames Autoregressive Nonsense
 
 ![STAN Loop](https://github.com/karmaniverous/stan/raw/main/assets/stan-loop.png)

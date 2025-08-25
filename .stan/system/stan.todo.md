@@ -56,10 +56,14 @@ Near-term exploration
 
 Completed (recent)
 
+- TSDoc Phase 2: internal helpers and small utilities
+  - Added concise TSDoc across helpers (init/docs, init/gitignore, patch/rejects,
+    patch/apply, run/archive, cli/stan/index, help, util/color) and maintained
+    zero‑warning policy for TSDoc lint/TypeDoc.
+
 - Handoff policy
   - Codified cross‑thread handoff behavior in system prompt:
     self‑identifying code block, required sections, and trigger semantics.
-
 - Archive build assembles system monolith (dev repo only)
   - Updated archive phase to assemble .stan/system/stan.system.md from parts
     when running in @karmaniverous/stan; downstream repos continue to archive
@@ -145,15 +149,9 @@ Open (low priority)
 
 Next up (high value)
 
-- TSDoc Phase 2: internal helpers and small utilities
-  - Add concise TSDoc (or header rationale) for internal helpers where missing.
-  - Keep comments brief and behavioral; avoid repeating type information.
-  - Maintain zero‑warning policy for TSDoc lint/TypeDoc.
-
 - README trim
   - (Moved to Completed.)
 Notes: Patch generation learnings (process)
-
 - Prefer small, anchored hunks with a/ and b/ prefixes and ≥3 lines of context.
 - Avoid relying on index headers; target working tree content.
 - One file per diff block; repeat per file when multiple updates are needed.

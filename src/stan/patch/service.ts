@@ -8,6 +8,7 @@ import path from 'node:path';
 import { statusFail, statusOk } from '@/stan/util/status';
 
 import { loadConfig } from '../config';
+import { preflightDocsAndVersion } from '../preflight';
 import { detectAndCleanPatch } from './clean';
 import { resolvePatchContext } from './context';
 import { isFeedbackEnvelope, seemsUnifiedDiff } from './detect';
@@ -32,6 +33,16 @@ export const runPatch = async (
   opts?: { file?: string | boolean; check?: boolean },
 ): Promise<void> => {
   const { cwd, stanPath, patchAbs, patchRel } = await resolvePatchContext(cwd0);
+
+  // Preflight docs/version (non-blocking; best-effort)
+  try {
+    await preflightDocsAndVersion(cwd);
+  } catch (err) {
+    if (process.env.STAN_DEBUG === '1') {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('stan: preflight failed', msg);
+    }
+  }
 
   // Resolve repo config (open command default lives here)
   let patchOpenCommand: string | undefined;

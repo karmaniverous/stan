@@ -14,6 +14,9 @@ export const utcStamp = (): string => {
 /**
  * Convert a UTC stamp (YYYYMMDD-HHMMSS) to a local time string.
  * Falls back to the original stamp if parsing fails.
+ *
+ * @param ts - UTC stamp in the form YYYYMMDD-HHMMSS.
+ * @returns Local time string "YYYY-MM-DD HH:MM:SS", or the original input if parsing fails.
  */
 export const formatUtcStampLocal = (ts: string): string => {
   const m = ts.match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/);
@@ -31,6 +34,11 @@ export const formatUtcStampLocal = (ts: string): string => {
   return `${yyyy}-${MM}-${DD} ${HH}:${MMi}:${SS}`;
 };
 
-/** Extract base file name from a path (utility kept here for convenience). */
+/**
+ * Extract base file name from a path (utility kept here for convenience).
+ *
+ * @param p - Path whose base name should be returned.
+ * @returns Base name rendered with POSIX separators.
+ */
 export const fileNameOf = (p: string): string =>
   basename(p).replace(/\\/g, '/');

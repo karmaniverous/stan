@@ -8,7 +8,6 @@ ALIASES
   → <stanPath>/system/stan.todo.md
 
 Purpose
-
 - Single source of truth for the current development plan across chat
   threads.
 - The assistant updates this document as code/design advances (remove
@@ -34,7 +33,7 @@ Plan management policy
   - When a completed item establishes a durable policy, capture that policy
     here (project prompt) and remove it from “Completed”.
 
-Near-term exploration
+Next up (high value)
 
 - Patch reliability for Markdown/docs:
   - If git/jsdiff both fail and exactly one contiguous section is changed in a
@@ -48,22 +47,17 @@ Near-term exploration
     context window. Continue to emit robust patches with adequate context.
   - Require a “Commit Message” section header over the fenced commit text.
 
-- After patch “open files”: explore returning terminal focus (CLI) cross‑platform (macOS open -g, Windows start/min/VSC integration). Defer until feasibility is clear.
-
-- Low priority: Investigate sporadic patch failures on long Markdown files (e.g., .stan/system/stan.todo.md)
-  - Observation: patch application is reliable overall; when failures occur they are more likely on very long Markdown files.
-  - Status: low priority; no immediate action. Track frequency; later consider chunked updates or higher context margins.
-
 Completed (recent)
 
-- TSDoc Phase 2: internal helpers and small utilities
-  - Added concise TSDoc across helpers (init/docs, init/gitignore, patch/rejects,
-    patch/apply, run/archive, cli/stan/index, help, util/color) and maintained
-    zero‑warning policy for TSDoc lint/TypeDoc.
+- Handoff re‑trigger guard
+  - Prevent generating a new handoff when a prior handoff block is pasted;
+    treat it as input and proceed with the startup checklist unless explicitly
+    asked for a new handoff.
 
 - Handoff policy
   - Codified cross‑thread handoff behavior in system prompt:
-    self‑identifying code block, required sections, and trigger semantics.
+    self‑identifying code block, required sections, trigger semantics.
+
 - Archive build assembles system monolith (dev repo only)
   - Updated archive phase to assemble .stan/system/stan.system.md from parts
     when running in @karmaniverous/stan; downstream repos continue to archive
@@ -74,83 +68,35 @@ Completed (recent)
   - Shortened README to focus on value, quick start, and links to docs.
   - Moved deep/volatile details to the documentation site and prompts.  - Preserved install/usage essentials and troubleshooting pointers.
 
-- Always‑on prompt checks (assistant loop)  - Enshrined in system prompt as `.stan/system/parts/45-always-on-checks.md` (assembled into `stan.system.md`).
+- Always‑on prompt checks (assistant loop)
+  - Enshrined in system prompt as `.stan/system/parts/45-always-on-checks.md`
+    (assembled into `stan.system.md`).
   - CLI preflight already runs at the start of `stan run`, `stan snap`, and `stan patch`; no further tooling changes required at this time.
   - Assistant will, on every turn: (1) propose system‑prompt updates only in the STAN repo, (2) promote repo‑specific rules to `stan.project.md`, and (3) update `stan.todo.md` with each material change set.
 
-- Tests: fix Windows EBUSY in open.test.ts
-  - Ensure per‑test teardown chdirs to os.tmpdir() before removing temp dirs to avoid EBUSY.
-  - Restore missing `const calls: string[] = [];` in the spawn mock.
+DX / utility ideas (backlog)
 
-- System prompt split (incremental)
-  - Split monolith into ordered parts under `.stan/system/parts/`
-    (00-intro, 10-foundations, 20-intake, 30-critical-coverage-layout,
-    40-doc-and-feedback, 50-patch-policy, 60-archives-preflight, 70-default-and-reqs, 90-response-format) and enabled assembly via `gen:system`. Verified assembled monolith matches content.
+- CLI/automation:
+  - `stan run --plan --json` and `stan -v --json` for tool integration.
+  - `stan patch --check --report` to print an affected‑files/hunks summary.
+  - Optional progress timers per phase (scripts/archives) with totals.
+  - Archive summary line: file count, excluded binaries, large‑text flagged.
 
-- Patch engine hardening for docs
-  - git apply: add `--inaccurate-eof` to all attempts (p1→p0 variants). - jsdiff: allow minimal `fuzzFactor` for `.md` only to tolerate tiny reflows.
+- Patch ergonomics:
+  - Adaptive context: automatically widen context margins on git/jsdiff failure (re‑try with more context).
+  - Editor integration: open patched files at first changed line (from hunk);
+    support VS Code, Cursor, WebStorm templates via config tokens.
+  - Better rejects UX: on failure, surface the new `<stanPath>/patch/rejects/...` root path explicitly and offer a one‑liner to open it.
 
-- System prompt: add explicit “Commit Message” heading in the Response Format.
+- Snap/history:
+  - `stan snap info --json` for UI/CI consumers.
+  - Optional snapshot labels (names) to aid navigation.
+  - Always capture archives alongside snapshots when `--archive` ran since the last snap (configurable).
 
-- Infra: add system‑prompt assembly (parts -> monolith)
-  - Introduced gen-system.ts and wired it as prebuild. No content split yet;
-    supports incremental migration by adding `.stan/system/parts/*.md`.
+- Docs & guidance:
+  - FEEDBACK envelope “causes” mapping table in docs (path/strip/EOL/context) with suggested assistant remedies.
+  - Quick “what to attach” heuristics in CLI output when archives are missing.
 
-- Policy: README trim‑and‑link
-  - Documented in project prompt; keep README concise and move deep topics
-    to docs, linked from README.
-
-- Knip config: remove redundant ignoreDependencies entry ("auto-changelog").
-
-- Docs: README additions for “API docs and TSDoc” + “Contributing docs style”
-  - Clarifies how to run docs generation and contributor TSDoc expectations.
-
-- TSDoc Phase 1 on core APIs (no behavior changes)
-  - Added/expanded TSDoc for: config, fs, archive, diff, run plan/exec/service,
-    help, version, patch/open.
-  - Outcome: TypeDoc/ESLint surface warnings only (formatting), no errors.
-
-- TSDoc hygiene fix pass (warnings → zero)
-  - Normalized @param tags with hyphen, avoided dotted names, escaped “>”.
-  - Result: TypeDoc and ESLint TSDoc clean (no warnings).
-
-- Patch UX: remove staged-files warning
-  - Disabled the staged-overlap warning (no-op helper). Warning added noise and
-    did not materially improve outcomes.
-
-- CLI: new stan run semantics (default scripts+archive) + flags
-  - Added -p/--plan to print run plan and exit 0 (no side effects).
-  - Added -S/--no-scripts (opt out of scripts) with conflicts vs -s/-x.
-  - Added -A/--no-archive (opt out of archives); -a overrides -A when both present.
-  - Explicit conflict: -c with -A (runtime check).
-  - Defaults: no flags → run all scripts, write archives.
-  - Tests: semantics, plan-only path, conflicts; stabilized error codes.
-
-- Patch UX: status banners + compact summary
-  - Introduced a tiny status helper (TTY vs BORING):
-    • success: ✔ / [OK], failure: ✖ / [FAIL], partial: △ / [PARTIAL].
-  - service.ts prints status lines and a compact summary on failure.
-
-- Patch service thin‑out (SRP; orchestrator only)
-  - src/stan/patch/service.ts is a lean orchestrator; helpers handle the details.
-
-- Docs: Simplified loop diagram & path update
-
-- Open target files on patch failure
-
-- FEEDBACK clipboard (test guard)
-
-- Project prompt: document patch editor‑open behavior
-
-Open (low priority)
-
-- Investigate rare patch failures on very long Markdown files (e.g., dev plan)
-  - Track frequency; consider chunked updates or higher context margins later.
-
-Next up (high value)
-
-- README trim
-  - (Moved to Completed.)
 Notes: Patch generation learnings (process)
 - Prefer small, anchored hunks with a/ and b/ prefixes and ≥3 lines of context.
 - Avoid relying on index headers; target working tree content.

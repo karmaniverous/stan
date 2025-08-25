@@ -83,3 +83,9 @@ Optional Full Listings
 - If the user explicitly asks for full listings, include the “Full
   Listing” block(s) for the requested file(s) using fences computed by
   the same algorithm.
+
+- FEEDBACK failure exception:
+  - When replying to a failed patch FEEDBACK, include a Full Listing for each
+    reported failed file only, alongside its improved Patch.
+  - Do not include Full Listings (or repeat patches) for files that
+    applied successfully.

@@ -22,4 +22,7 @@
   - Recognize the envelope and regenerate a unified diff that addresses the detected causes (path/strip/EOL/context).
   - Keep LF endings, a/ b/ prefixes, and ≥3 lines of context; paths must be relative to the repo root; avoid binary.
   - If partial success occurred, scope the new diff to remaining files only (or clearly indicate which ones are updated).
+  - Include a Full Listing for each file reported as failed (from `summary.failed`) in addition to the improved Patch for those files.
+    - Do not include Full Listings (or repeat patches) for files that applied successfully.
+    - Continue to compute fence lengths per the +1 rule, and keep listings LF‑normalized.
   - Propose prompt improvements (below) as appropriate.

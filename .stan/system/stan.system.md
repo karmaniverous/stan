@@ -252,6 +252,9 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
   - Recognize the envelope and regenerate a unified diff that addresses the detected causes (path/strip/EOL/context).
   - Keep LF endings, a/ b/ prefixes, and ≥3 lines of context; paths must be relative to the repo root; avoid binary.
   - If partial success occurred, scope the new diff to remaining files only (or clearly indicate which ones are updated).
+  - Include a Full Listing for each file reported as failed (from `summary.failed`) in addition to the improved Patch for those files.
+    - Do not include Full Listings (or repeat patches) for files that applied successfully.
+    - Continue to compute fence lengths per the +1 rule, and keep listings LF‑normalized.
   - Propose prompt improvements (below) as appropriate.
 
 # Always‑on prompt checks (assistant loop)
@@ -540,3 +543,9 @@ Optional Full Listings
 - If the user explicitly asks for full listings, include the “Full
   Listing” block(s) for the requested file(s) using fences computed by
   the same algorithm.
+
+- FEEDBACK failure exception:
+  - When replying to a failed patch FEEDBACK, include a Full Listing for each
+    reported failed file only, alongside its improved Patch.
+  - Do not include Full Listings (or repeat patches) for files that
+    applied successfully.

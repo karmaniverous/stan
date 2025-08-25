@@ -13,6 +13,7 @@ import { createArchive } from '../archive';
 import type { ContextConfig } from '../config';
 import { createArchiveDiff } from '../diff';
 import { makeStanDirs } from '../paths';
+import { getVersionInfo } from '../version';
 
 /** Remove on-disk outputs after archiving when combine=true (preserve archives). */
 const cleanupOutputsAfterCombine = async (outAbs: string): Promise<void> => {
@@ -81,6 +82,39 @@ const preparePackagedSystemPrompt = async (
   };
 };
 
+/**
+ * Assemble <stanPath>/system/parts/*.md into <stanPath>/system/stan.system.md.
+ * Dev-repo only utility (not used for downstream consumers).
+ */
+const assembleSystemFromParts = async (
+  cwd: string,
+  stanPath: string,
+): Promise<void> => {
+  const sysRoot = path.resolve(cwd, stanPath, 'system');
+  const partsDir = path.join(sysRoot, 'parts');
+  await mkdir(sysRoot, { recursive: true });
+  if (!existsSync(partsDir)) return;
+
+  const entries = await readdir(partsDir, { withFileTypes: true });
+  const partFiles = entries
+    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.md'))
+    .map((e) => e.name)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+  if (partFiles.length === 0) return;
+
+  const toLF = (s: string) => s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const bodies: string[] = [];
+  for (const name of partFiles) {
+    const abs = path.join(partsDir, name);
+    const body = toLF(await readFile(abs, 'utf8')).trimEnd();
+    bodies.push(body);
+  }
+  const header = `<!-- GENERATED: assembled from ${stanPath}/system/parts; edit parts and run \`npm run gen:system\` -->\n`;
+  const assembled = header + bodies.join('\n\n') + '\n';
+  await writeFile(path.join(sysRoot, 'stan.system.md'), assembled, 'utf8');
+};
+
 /** Clear <stanPath>/patch contents after archiving (preserve the directory). */
 const cleanupPatchDirAfterArchive = async (
   cwd: string,
@@ -108,8 +142,19 @@ export const archivePhase = async (args: {
   const dirs = makeStanDirs(cwd, config.stanPath);
 
   console.log(`stan: start "${cyan('archive')}"`);
-  // Ensure the packaged system prompt is present during archiving (full archive).
-  const restore = await preparePackagedSystemPrompt(cwd, config.stanPath);
+  // In this repo, assemble the system monolith from parts before archiving.
+  const vinfo = await getVersionInfo(cwd);
+  let restore: () => Promise<void> = async () => {};
+  if (vinfo.isDevModuleRepo) {
+    try {
+      await assembleSystemFromParts(cwd, config.stanPath);
+    } catch {
+      // best-effort
+    }
+  } else {
+    // Ensure the packaged system prompt is present during archiving (full archive).
+    restore = await preparePackagedSystemPrompt(cwd, config.stanPath);
+  }
   let archivePath = '';
   let diffPath = '';
   try {
@@ -141,7 +186,7 @@ export const archivePhase = async (args: {
       )}`,
     );
   } finally {
-    // Remove/restore the ephemeral system prompt on disk.
+    // Remove/restore the ephemeral system prompt on disk (downstream only).
     await restore();
   }
 

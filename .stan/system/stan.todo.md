@@ -56,10 +56,13 @@ Near-term exploration
 
 Completed (recent)
 
+- Handoff policy
+  - Codified cross‑thread handoff behavior in system prompt:
+    self‑identifying code block, required sections, and trigger semantics.
+
 - README trim
   - Shortened README to focus on value, quick start, and links to docs.
-  - Moved deep/volatile details to the documentation site and prompts.
-  - Preserved install/usage essentials and troubleshooting pointers.
+  - Moved deep/volatile details to the documentation site and prompts.  - Preserved install/usage essentials and troubleshooting pointers.
 
 - Always‑on prompt checks (assistant loop)
   - Enshrined in system prompt as `.stan/system/parts/45-always-on-checks.md` (assembled into `stan.system.md`).

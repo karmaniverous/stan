@@ -21,8 +21,8 @@ vi.mock('node:child_process', async (importOriginal) => {
     },
   };
 });
-
-import { openFilesInEditor } from './open';
+// IMPORTANT: do NOT import './open' at module scope; we dynamically import it
+// after resetModules() inside each test to ensure the mock takes effect.
 
 describe('openFilesInEditor — spawn behavior and guards', () => {
   let dir: string;
@@ -40,10 +40,21 @@ describe('openFilesInEditor — spawn behavior and guards', () => {
     vi.restoreAllMocks();
   });
 
+  const load = async () => {
+    // Ensure open.ts is (re)loaded after mocks/env are set
+    vi.resetModules();
+    const mod = await import('./open');
+    return mod.openFilesInEditor;
+  };
+
   it('logs when no open command is configured', async () => {
     const rel = 'a.ts';
     await writeFile(path.join(dir, rel), 'export {};\n', 'utf8');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Import after establishing mock
+    const openFilesInEditor = await load();
+    await Promise.resolve(); // allow microtask scheduling if needed
 
     openFilesInEditor({ cwd: dir, files: [rel], openCommand: undefined });
 
@@ -57,9 +68,12 @@ describe('openFilesInEditor — spawn behavior and guards', () => {
     await writeFile(path.join(dir, existing), 'export const x=1;\n', 'utf8');
     const missing = 'missing.ts';
 
-    process.env.STAN_FORCE_OPEN = '1'; // allow spawn under NODE_ENV=test
+    // Ensure test gating permits spawn and mock intercepts it
+    process.env.NODE_ENV = 'test';
+    process.env.STAN_FORCE_OPEN = '1';
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
+    const openFilesInEditor = await load();
     openFilesInEditor({
       cwd: dir,
       files: [existing, missing],

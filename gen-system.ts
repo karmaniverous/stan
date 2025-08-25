@@ -1,15 +1,79 @@
 import { existsSync } from 'node:fs';
-import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import YAML from 'yaml';
 
-const HEADER =
-  '<!-- GENERATED: assembled from .stan/system/parts; edit parts and run `npm run gen:system` -->\n';
+/**
+ * Resolve the repository root (directory containing stan.config.* if present)
+ * and the configured stanPath. Falls back to ".stan" then "stan".
+ */
+const resolveRootAndStanPath = async (
+  cwd: string,
+): Promise<{ root: string; stanPath: string }> => {
+  const CONFIG_CANDIDATES = [
+    'stan.config.yml',
+    'stan.config.yaml',
+    'stan.config.json',
+  ];
+
+  const findConfigUp = (start: string): string | null => {
+    let cur = path.resolve(start);
+    const tried = new Set<string>();
+    // Ascend until filesystem root
+    // Guard against cycles via "tried"
+    for (;;) {
+      if (tried.has(cur)) break;
+      tried.add(cur);
+      for (const name of CONFIG_CANDIDATES) {
+        const p = path.join(cur, name);
+        if (existsSync(p)) return p;
+      }
+      const parent = path.dirname(cur);
+      if (parent === cur) break;
+      cur = parent;
+    }
+    return null;
+  };
+
+  const cfgPath = findConfigUp(cwd);
+  const root = cfgPath ? path.dirname(cfgPath) : path.resolve(cwd);
+
+  let stanPath = '.stan';
+  if (cfgPath) {
+    try {
+      const raw = await readFile(cfgPath, 'utf8');
+      const cfg = cfgPath.endsWith('.json')
+        ? (JSON.parse(raw) as { stanPath?: unknown })
+        : (YAML.parse(raw) as { stanPath?: unknown });
+      const fromCfg =
+        typeof cfg?.stanPath === 'string' && cfg.stanPath.trim().length
+          ? cfg.stanPath.trim()
+          : undefined;
+      if (fromCfg) stanPath = fromCfg;
+    } catch {
+      // best‑effort; keep fallback
+    }
+  }
+  // Secondary fallback to "stan" if someone prefers that layout
+  if (!stanPath || !stanPath.trim().length) stanPath = '.stan';
+  return { root, stanPath };
+};
+
+const headerFor = (stanPath: string): string =>
+  `<!-- GENERATED: assembled from ${stanPath}/system/parts; edit parts and run \`npm run gen:system\` -->\n`;
 
 const toLF = (s: string) => s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-/** Assemble .stan/system/parts/*.md (sorted) into stan.system.md. No-op if no parts exist. */
+/**
+ * Assemble <stanPath>/system/parts/*.md (sorted) into <stanPath>/system/stan.system.md.
+ * No‑op if the parts directory does not exist or contains no .md files.
+ *
+ * @returns Absolute path to the target monolith (whether written this run or not).
+ */
 export const assembleSystemPrompt = async (cwd: string): Promise<string> => {
-  const sysRoot = path.join(cwd, '.stan', 'system');
+  const { root, stanPath } = await resolveRootAndStanPath(cwd);
+
+  const sysRoot = path.join(root, stanPath, 'system');
   const partsDir = path.join(sysRoot, 'parts');
   const target = path.join(sysRoot, 'stan.system.md');
 
@@ -38,10 +102,13 @@ export const assembleSystemPrompt = async (cwd: string): Promise<string> => {
     const body = toLF(await readFile(abs, 'utf8')).trimEnd();
     bodies.push(body);
   }
-  // Separate parts with exactly one blank line
-  const assembled = HEADER + bodies.join('\n\n') + '\n';
+
+  // Separate parts with exactly one blank line; prepend dynamic header
+  const assembled = headerFor(stanPath) + bodies.join('\n\n') + '\n';
   await writeFile(target, assembled, 'utf8');
-  console.log(`stan: gen-system -> ${path.relative(cwd, target).replace(/\\/g, '/')}`);
+
+  const rel = path.relative(root, target).replace(/\\/g, '/');
+  console.log(`stan: gen-system -> ${rel}`);
   return target;
 };
 
@@ -56,6 +123,7 @@ const main = async (): Promise<void> => {
   }
 };
 
+// Execute only when invoked directly (e.g., `tsx gen-system.ts`)
 if (import.meta.url === `file://${path.resolve('gen-system.ts')}`) {
   void main();
 }

@@ -25,13 +25,13 @@
   ],
   "replaceText": {
     "replacements": [
-      {        "pattern": "<!-- TYPEDOC_EXCLUDE -->.*?<!-- /TYPEDOC_EXCLUDE -->",
+      {
+        "pattern": "<!-- TYPEDOC_EXCLUDE -->.*?<!-- /TYPEDOC_EXCLUDE -->",
         "flags": "gis",
         "replace": ""
       }
     ]
   },
   "searchInComments": true,
-  "searchInDocuments": true,
-  "titleLink": "https://github.com/karmaniverous/stan"
+  "searchInDocuments": true
 }

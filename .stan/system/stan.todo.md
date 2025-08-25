@@ -60,12 +60,17 @@ Completed (recent)
   - Codified cross‑thread handoff behavior in system prompt:
     self‑identifying code block, required sections, and trigger semantics.
 
+- Archive build assembles system monolith (dev repo only)
+  - Updated archive phase to assemble .stan/system/stan.system.md from parts
+    when running in @karmaniverous/stan; downstream repos continue to archive
+    the packaged baseline (unchanged). Avoids patching the monolith directly
+    while keeping archives reproducible.
+
 - README trim
   - Shortened README to focus on value, quick start, and links to docs.
   - Moved deep/volatile details to the documentation site and prompts.  - Preserved install/usage essentials and troubleshooting pointers.
 
-- Always‑on prompt checks (assistant loop)
-  - Enshrined in system prompt as `.stan/system/parts/45-always-on-checks.md` (assembled into `stan.system.md`).
+- Always‑on prompt checks (assistant loop)  - Enshrined in system prompt as `.stan/system/parts/45-always-on-checks.md` (assembled into `stan.system.md`).
   - CLI preflight already runs at the start of `stan run`, `stan snap`, and `stan patch`; no further tooling changes required at this time.
   - Assistant will, on every turn: (1) propose system‑prompt updates only in the STAN repo, (2) promote repo‑specific rules to `stan.project.md`, and (3) update `stan.todo.md` with each material change set.
 

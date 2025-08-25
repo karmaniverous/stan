@@ -51,13 +51,8 @@ const copyDocsPlugin = (dest: string): Plugin => {
           src: path.join(fromSystem, 'stan.project.template.md'),
           dest: path.join(dest, 'stan.project.template.md'),
         },
-        {
-          src: path.join(fromSystem, 'stan.bootloader.md'),
-          dest: path.join(dest, 'stan.bootloader.md'),
-        },
       ];
-      try {
-        await fs.ensureDir(dest);
+      try {        await fs.ensureDir(dest);
         for (const c of candidates) {
           if (await fs.pathExists(c.src)) await fs.copyFile(c.src, c.dest);
         }

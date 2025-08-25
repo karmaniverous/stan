@@ -3,7 +3,6 @@
 When updated: 2025-08-25 (UTC)
 
 ALIASES
-
 - “development plan” / “dev plan” / “implementation plan” / “todo list”
   → <stanPath>/system/stan.todo.md
 
@@ -60,9 +59,13 @@ Completed (recent)
   - Ensure per‑test teardown chdirs to os.tmpdir() before removing temp dirs to avoid EBUSY.
   - Restore missing `const calls: string[] = [];` in the spawn mock.
 
+- System prompt split (incremental)
+  - Split monolith into ordered parts under `.stan/system/parts/`
+    (00-intro, 10-foundations, 20-intake, 30-critical-coverage-layout,
+    40-doc-and-feedback, 50-patch-policy, 60-archives-preflight, 70-default-and-reqs, 90-response-format) and enabled assembly via `gen:system`. Verified assembled monolith matches content.
+
 - Patch engine hardening for docs
-  - git apply: add `--inaccurate-eof` to all attempts (p1→p0 variants).
-  - jsdiff: allow minimal `fuzzFactor` for `.md` only to tolerate tiny reflows.
+  - git apply: add `--inaccurate-eof` to all attempts (p1→p0 variants).  - jsdiff: allow minimal `fuzzFactor` for `.md` only to tolerate tiny reflows.
 
 - System prompt: add explicit “Commit Message” heading in the Response Format.
 
@@ -140,16 +143,9 @@ Next up (high value)
   - Confirm CLI examples align with new flags semantics.
   - Keep the new “API docs and TSDoc” section current as rules evolve.
 
-- System prompt split (incremental)
-  - Create initial parts for high‑churn sections:
-    • 20-intake.md, 30-response-format.md, 40-patch-policy.md
-  - Assemble via `npm run gen:system` and verify no content delta.
-  - Roll remaining sections into parts over time; keep a single runtime file.
-
 - README trim
   - Move detail to docs/ pages (CLI semantics, patch guide).
-  - Update README to link out and keep quick‑start focused.
-  - Ensure links are stable in the published docs site.
+  - Update README to link out and keep quick‑start focused.  - Ensure links are stable in the published docs site.
 
 Notes: Patch generation learnings (process)
 

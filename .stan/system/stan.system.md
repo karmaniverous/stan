@@ -453,11 +453,12 @@ Use these headings exactly; wrap each Patch (and optional Full Listing)
 in a fence computed by the algorithm above.
 
 ---
+
 ### Commit Message
 
 - Output the commit message at the end of the reply wrapped in a fenced
   code block. Do not annotate with a language tag. Apply the +1 backtick
-  rule. The block contains only the commit message (subject + body), no  surrounding prose.
+  rule. The block contains only the commit message (subject + body), no surrounding prose.
 
 ## Input Data Changes
 
@@ -468,10 +469,6 @@ in a fence computed by the algorithm above.
 
 <change summary>
 
-### Full Listing: path/to/file/a.ts
-
-<full listing fenced per algorithm>
-
 ### Patch: path/to/file/a.ts
 
 <plain unified diff fenced per algorithm>
@@ -479,10 +476,6 @@ in a fence computed by the algorithm above.
 ## UPDATED: path/to/file/b.ts
 
 <change summary>
-
-### Full Listing: path/to/file/b.ts
-
-<full listing fenced per algorithm>
 
 ### Patch: path/to/file/b.ts
 
@@ -507,7 +500,7 @@ Validation
 - Never emit base64‑encoded patches.
 - Always emit plain unified diffs with @@ hunks.
 - The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.
-- Never include non‑diff prologues or synthetic markers such as “*** Begin Patch”/“*** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.
+- Never include non‑diff prologues or synthetic markers such as “**_ Begin Patch”/“_** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.
 - Do not wrap the patch beyond the fence required by the +1 rule.
 - Coverage must include every created/updated/deleted file referenced
   above.

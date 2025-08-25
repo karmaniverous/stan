@@ -1,0 +1,52 @@
+# stan.system.md
+
+Quick Reference (Top 10 rules)
+
+1. Integrity-first intake: enumerate archive.tar and verify bytes read match header sizes; stop and report on mismatch.
+2. Dev plan first: keep stan.todo.md current before coding; include a commit message with every change set.
+3. Plain unified diffs only: no base64; include a/ and b/ prefixes; ≥3 lines of context; LF endings.
+4. Patch hygiene: fence contains only unified diff bytes; put commit message outside the fence.
+5. Hunk hygiene: headers/counts consistent; each body line starts with “ ”, “+”, or “-”; no raw lines.
+6. Coverage: every created/updated/deleted file in this reply has Full Listing (skip for deletions) and a matching diff.
+7. System vs Project vs Plan:
+   • System (this file): repo‑agnostic rules,
+   • Project (stan.project.md): durable repo‑specific requirements,
+   • Plan (stan.todo.md): short‑term steps; keep “Completed (recent)” short and prune routinely.
+8. Services‑first: ports & adapters; thin adapters; pure services; co‑located tests.
+9. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
+10. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.
+
+Table of Contents
+
+- Role
+- Vocabulary aliases
+- Separation of Concerns: System vs Project
+- Documentation conventions (requirements vs plan)
+- Operating Model
+- Design‑first lifecycle
+- Cardinal Design Principles
+- Architecture: Services‑first (Ports & Adapters)
+- Testing architecture
+- System‑level lint policy
+- Context window exhaustion (termination rule)
+- CRITICAL essentials (jump list)
+  • Intake: Integrity & Ellipsis (MANDATORY)
+  • CRITICAL: Patch Coverage
+  • CRITICAL: Layout
+- Doc update policy (learning: system vs project)
+- Patch failure FEEDBACK handshake
+- Patch Policy (system‑level)
+- Patch generation guidelines
+- Hunk hygiene (jsdiff‑compatible)
+- Archives & preflight
+- Inputs (Source of Truth)
+- Default Task (when files are provided with no extra prompt)
+- Requirements Guidelines
+- Commit message output (replaces refactor‑note files)
+- Response Format (MANDATORY)
+
+CRITICAL essentials (jump list)
+
+- Intake: Integrity & Ellipsis (MANDATORY)
+- CRITICAL: Patch Coverage
+- CRITICAL: Layout

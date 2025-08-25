@@ -24,13 +24,6 @@ in a fence computed by the algorithm above.
 
 ---
 
-Commit Message (MANDATORY; fenced code block)
-
-- Output the commit message at the end of the reply wrapped in a fenced
-  code block. Do not annotate with a language tag. Apply the +1 backtick
-  rule. The block contains only the commit message (subject + body), no
-  surrounding prose.
-
 ## Input Data Changes
 
 - Bullet points summarizing integrity, availability, and a short change
@@ -60,11 +53,20 @@ Commit Message (MANDATORY; fenced code block)
 
 <plain unified diff fenced per algorithm>
 
-Validation
+## Commit Message (MANDATORY; fenced code block)
+
+- Output the commit message at the end of the reply wrapped in a fenced
+  code block. Do not annotate with a language tag. Apply the +1 backtick
+  rule. The block contains only the commit message (subject + body), no
+  surrounding prose.
+
+## Validation
 
 - Confirm that every created/updated/deleted file has a “Full Listing”
   (skipped for deletions) and a matching “Patch”.
 - Confirm that fence lengths obey the +1 backtick rule for every block.
+
+---
 
 ## Plain Unified Diff Policy (no base64)
 

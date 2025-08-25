@@ -1,3 +1,4 @@
+<!-- GENERATED: assembled from .stan/system/parts; edit parts and run `npm run gen:system` -->
 # stan.system.md
 
 Quick Reference (Top 10 rules)
@@ -374,7 +375,7 @@ Step 0 — Long-file scan (no automatic refactors)
     • and, if applicable, other adapters (HTTP, worker, CI, GUI).
   - Adapters must remain thin: no business logic; no hidden behavior; pure mapping + presentation.
   - Do not emit code until these contracts and mappings are agreed.
-  - Apply SRP to modules AND services; if a single unit would exceed ~300 LOC, return to design and propose a split plan (modules, responsibilities, tests).
+  - Apply SRP to modules AND services; if a single unit would exceed ~300 LOC, return to design and propose a split plan (modules, responsibilities, tests) before generating code.
 
 - Test pairing check (new code):
   - For every new non‑trivial module you propose, include a paired `*.test.ts`. If you cannot, explain why in the module header comments and treat this as a design smell to resolve soon.
@@ -454,12 +455,6 @@ in a fence computed by the algorithm above.
 
 ---
 
-### Commit Message
-
-- Output the commit message at the end of the reply wrapped in a fenced
-  code block. Do not annotate with a language tag. Apply the +1 backtick
-  rule. The block contains only the commit message (subject + body), no surrounding prose.
-
 ## Input Data Changes
 
 - Bullet points summarizing integrity, availability, and a short change
@@ -489,11 +484,20 @@ in a fence computed by the algorithm above.
 
 <plain unified diff fenced per algorithm>
 
-Validation
+## Commit Message (MANDATORY; fenced code block)
+
+- Output the commit message at the end of the reply wrapped in a fenced
+  code block. Do not annotate with a language tag. Apply the +1 backtick
+  rule. The block contains only the commit message (subject + body), no
+  surrounding prose.
+
+## Validation
 
 - Confirm that every created/updated/deleted file has a “Full Listing”
   (skipped for deletions) and a matching “Patch”.
 - Confirm that fence lengths obey the +1 backtick rule for every block.
+
+---
 
 ## Plain Unified Diff Policy (no base64)
 

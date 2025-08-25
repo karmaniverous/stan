@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import YAML from 'yaml';
 
-/**
- * Resolve the repository root (directory containing stan.config.* if present)
+/** * Resolve the repository root (directory containing stan.config.* if present)
  * and the configured stanPath. Falls back to ".stan" then "stan".
  */
 const resolveRootAndStanPath = async (
@@ -81,24 +81,28 @@ export const assembleSystemPrompt = async (cwd: string): Promise<string> => {
 
   if (!existsSync(partsDir)) {
     // Nothing to do if parts folder hasn't been created yet.
+    const rel = path.relative(root, partsDir).replace(/\\/g, '/');
+    console.log(`stan: gen-system: skipped (no parts at ${rel})`);
     return target;
   }
 
   const entries = await readdir(partsDir, { withFileTypes: true });
-  const partFiles = entries
-    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.md'))
+  const partFiles = entries    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.md'))
     .map((e) => e.name)
     // numeric/lexicographic order by prefix, then name
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
   if (partFiles.length === 0) {
     // No parts present; leave existing monolith untouched.
+    const rel = path.relative(root, partsDir).replace(/\\/g, '/');
+    console.log(
+      `stan: gen-system: no *.md parts found in ${rel}; leaving monolith as-is`,
+    );
     return target;
   }
 
   const bodies: string[] = [];
-  for (const name of partFiles) {
-    const abs = path.join(partsDir, name);
+  for (const name of partFiles) {    const abs = path.join(partsDir, name);
     const body = toLF(await readFile(abs, 'utf8')).trimEnd();
     bodies.push(body);
   }
@@ -124,6 +128,7 @@ const main = async (): Promise<void> => {
 };
 
 // Execute only when invoked directly (e.g., `tsx gen-system.ts`)
-if (import.meta.url === `file://${path.resolve('gen-system.ts')}`) {
+const thisHref = pathToFileURL(path.resolve('gen-system.ts')).href;
+if (import.meta.url === thisHref) {
   void main();
 }

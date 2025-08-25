@@ -140,8 +140,6 @@
     "url": "git+https://github.com/karmaniverous/stan.git"
   },
   "scripts": {
-    "gen:system": "tsx gen-system.ts",
-    "prebuild": "npm run gen:system",
     "bootstrap": "concurrently -n typecheck,lint,test,build,docs -c auto \"npm:bootstrap:typecheck\" \"npm:bootstrap:lint\" \"npm:bootstrap:test\" \"npm:bootstrap:build\" \"npm:bootstrap:docs\" && npm run bootstrap:archive",
     "bootstrap:archive": "tsx bootstrap-archive.ts",
     "bootstrap:build": "npm run stan:build > .stan/output/build.txt 2>&1",
@@ -149,7 +147,7 @@
     "bootstrap:lint": "npm run lint > .stan/output/lint.txt 2>&1",
     "bootstrap:test": "npm run test > .stan/output/test.txt 2>&1",
     "bootstrap:typecheck": "npm run typecheck > .stan/output/typecheck.txt 2>&1",
-    "build": "rimraf dist && rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
+    "build": "tsx gen-system.ts && rimraf dist && rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
     "changelog": "auto-changelog",
     "docs": "typedoc",
     "knip": "knip",
@@ -159,7 +157,7 @@
     "release:pre": "dotenvx run -f .env.local -- release-it --no-git.requireBranch --github.prerelease --preRelease",
     "relink": "npm uninstall -g @karmaniverous/stan && npm run build && npm link",
     "stan": "tsx src/cli/stan/stan.ts",
-    "stan:build": "rimraf stan.dist && rollup --config stan.rollup.config.ts --configPlugin @rollup/plugin-typescript && rimraf stan.dist",
+    "stan:build": "tsx gen-system.ts && rimraf stan.dist && rollup --config stan.rollup.config.ts --configPlugin @rollup/plugin-typescript && rimraf stan.dist",
     "stan:docs": "typedoc --emit none",
     "test": "vitest --run --coverage",
     "typecheck": "tsc"

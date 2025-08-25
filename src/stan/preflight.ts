@@ -19,8 +19,10 @@ export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
   // - developing STAN itself (module root == repo root),
   // - explicitly suppressed via env,
   // - test environment (unless explicitly forced),
+  // - when no local system prompt exists (managed from package),
   // - or when already in sync.
   const suppressDrift =
+    !v.systemPrompt.localExists ||
     v.systemPrompt.inSync ||
     v.isDevModuleRepo ||
     process.env.STAN_SUPPRESS_DRIFT === '1' ||

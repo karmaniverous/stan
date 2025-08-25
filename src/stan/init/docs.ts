@@ -56,22 +56,8 @@ export const ensureDocs = async (
   await copyDoc(
     cwd,
     distRoot,
-    'stan.system.md',
-    path.join(stanPath, 'system', 'stan.system.md'),
-    true,
-  );
-  await copyDoc(
-    cwd,
-    distRoot,
     'stan.project.template.md',
     path.join(stanPath, 'system', 'stan.project.template.md'),
-    false,
-  );
-  await copyDoc(
-    cwd,
-    distRoot,
-    'stan.bootloader.md',
-    path.join(stanPath, 'system', 'stan.bootloader.md'),
     false,
   );
 

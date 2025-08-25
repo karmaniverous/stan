@@ -79,6 +79,7 @@ export const applyWithJsDiff = async (args: {
     const rel = candidate.replace(/^[./]+/, '');
     const abs = path.resolve(cwd, rel);
 
+    const isMd = /\.md$/i.test(rel);
     let original = '';
     let eolCRLF = false;
     try {
@@ -100,7 +101,7 @@ export const applyWithJsDiff = async (args: {
           _operation: string,
           patchContent: string,
         ): boolean => normForCompare(line) === normForCompare(patchContent),
-        fuzzFactor: 0,
+        fuzzFactor: isMd ? 1 : 0,
       });
     } catch {
       // Any internal jsdiff error is treated as a placement failure

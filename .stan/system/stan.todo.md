@@ -3,6 +3,7 @@
 When updated: 2025-08-25 (UTC)
 
 ALIASES
+
 - “development plan” / “dev plan” / “implementation plan” / “todo list”
   → <stanPath>/system/stan.todo.md
 
@@ -55,6 +56,11 @@ Near-term exploration
 
 Completed (recent)
 
+- Always‑on prompt checks (assistant loop)
+  - Enshrined in system prompt as `.stan/system/parts/45-always-on-checks.md` (assembled into `stan.system.md`).
+  - CLI preflight already runs at the start of `stan run`, `stan snap`, and `stan patch`; no further tooling changes required at this time.
+  - Assistant will, on every turn: (1) propose system‑prompt updates only in the STAN repo, (2) promote repo‑specific rules to `stan.project.md`, and (3) update `stan.todo.md` with each material change set.
+
 - Tests: fix Windows EBUSY in open.test.ts
   - Ensure per‑test teardown chdirs to os.tmpdir() before removing temp dirs to avoid EBUSY.
   - Restore missing `const calls: string[] = [];` in the spawn mock.
@@ -65,7 +71,7 @@ Completed (recent)
     40-doc-and-feedback, 50-patch-policy, 60-archives-preflight, 70-default-and-reqs, 90-response-format) and enabled assembly via `gen:system`. Verified assembled monolith matches content.
 
 - Patch engine hardening for docs
-  - git apply: add `--inaccurate-eof` to all attempts (p1→p0 variants).  - jsdiff: allow minimal `fuzzFactor` for `.md` only to tolerate tiny reflows.
+  - git apply: add `--inaccurate-eof` to all attempts (p1→p0 variants). - jsdiff: allow minimal `fuzzFactor` for `.md` only to tolerate tiny reflows.
 
 - System prompt: add explicit “Commit Message” heading in the Response Format.
 
@@ -131,21 +137,13 @@ Next up (high value)
   - Keep comments brief and behavioral; avoid repeating type information.
   - Maintain zero‑warning policy for TSDoc lint/TypeDoc.
 
-- Always‑on prompt checks (assistant loop)
-  - At every turn, the assistant should check:
-    • System prompt delta (only for @karmaniverous/stan).
-    • Project prompt: does a durable repo‑specific rule need to be promoted?
-    • Dev plan: update for every material change.
-  - Action: maintain this discipline in replies; expand CLI preflight to patch
-    command if we decide to automate checks in tooling as well.
-
 - README and CLI help polish
   - Confirm CLI examples align with new flags semantics.
   - Keep the new “API docs and TSDoc” section current as rules evolve.
 
 - README trim
   - Move detail to docs/ pages (CLI semantics, patch guide).
-  - Update README to link out and keep quick‑start focused.  - Ensure links are stable in the published docs site.
+  - Update README to link out and keep quick‑start focused. - Ensure links are stable in the published docs site.
 
 Notes: Patch generation learnings (process)
 

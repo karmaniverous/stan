@@ -150,7 +150,7 @@
   },
   "scripts": {
     "bootstrap": "concurrently -n typecheck,lint,test,build,docs -c auto \"npm:bootstrap:typecheck\" \"npm:bootstrap:lint\" \"npm:bootstrap:test\" \"npm:bootstrap:build\" \"npm:bootstrap:docs\" && npm run bootstrap:archive",
-    "bootstrap:archive": "tsx bootstrap-archive.ts",
+    "bootstrap:archive": "tsx gen-system.ts && tsx bootstrap-archive.ts",
     "bootstrap:build": "npm run stan:build > .stan/output/build.txt 2>&1",
     "bootstrap:docs": "npm run stan:docs > .stan/output/docs.txt 2>&1",
     "bootstrap:lint": "npm run lint > .stan/output/lint.txt 2>&1",

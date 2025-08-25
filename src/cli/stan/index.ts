@@ -17,7 +17,15 @@ import { registerPatch } from './patch';
 import { registerRun } from './runner';
 import { registerSnap } from './snap';
 
-/** Build the root CLI (no side effects; safe for tests). */
+/**
+ * Build the root CLI (`stan`) without side effects (safe for tests).
+ *
+ * Registers the `run`, `init`, `snap`, and `patch` subcommands, installs
+ * global `--debug` and `--boring` options, and renders the help footer
+ * with available script keys.
+ *
+ * @returns New Commander `Command` instance.
+ */
 export const makeCli = (): Command => {
   const cli = new Command();
   cli

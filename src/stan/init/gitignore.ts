@@ -5,6 +5,16 @@ import path from 'node:path';
 
 import { makeStanDirs } from '../paths';
 
+/**
+ * Ensure standard `.gitignore` entries for the STAN workspace.
+ *
+ * Adds the `output/`, `diff/`, `dist/`, and `patch/` subpaths under the resolved
+ * `stanPath` if they are not already present. Creates `.gitignore` when missing.
+ *
+ * @param cwd - Repository root directory.
+ * @param stanPath - STAN workspace folder (for example, ".stan").
+ * @returns Promise that resolves when `.gitignore` is updated or already correct.
+ */
 export const ensureStanGitignore = async (
   cwd: string,
   stanPath: string,

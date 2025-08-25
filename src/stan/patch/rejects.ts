@@ -5,6 +5,14 @@ import { findConfigPathSync, loadConfig } from '../config';
 import { makeStanDirs } from '../paths';
 import { utcStamp } from '../util/time';
 
+/**
+ * Recursively enumerate all `*.rej` files under a root, excluding `.git` and `node_modules`.
+ *
+ * Paths are returned repo‑relative to `root` with POSIX separators.
+ *
+ * @param root - Absolute directory to scan.
+ * @returns List of repo‑relative `*.rej` file paths.
+ */
 export const listRejFiles = async (root: string): Promise<string[]> => {
   const out: string[] = [];
   const walk = async (rel: string): Promise<void> => {
@@ -27,7 +35,14 @@ export const listRejFiles = async (root: string): Promise<string[]> => {
   return out;
 };
 
-/** Move newly created *.rej files into the patch workspace under <stanPath>/patch/rejects/<UTC>/. */
+/**
+ * Move newly created `*.rej` files into the patch workspace under
+ * `<stanPath>/patch/rejects/<UTC>/`, preserving relative paths.
+ *
+ * @param cwd - Repository root.
+ * @param rels - Repo‑relative reject file paths to move.
+ * @returns Repo‑relative destination root when files were moved; `null` when no files.
+ */
 export const moveRejFilesToPatchWorkspace = async (
   cwd: string,
   rels: string[],

@@ -6,6 +6,18 @@ import { fileURLToPath } from 'node:url';
 
 import { packageDirectorySync } from 'package-directory';
 
+/**
+ * Best‑effort copy of a documentation asset from the installed module into the repo.
+ *
+ * Creates the destination directory when needed. When `updateIfDifferent` is true,
+ * overwrites the destination only if the contents differ.
+ *
+ * @param cwd - Repository root (used to resolve `destRel`).
+ * @param moduleRoot - Absolute path to the module root that contains the source file.
+ * @param srcName - File name inside `moduleRoot` to copy.
+ * @param destRel - Repo‑relative destination path.
+ * @param updateIfDifferent - When true, overwrite only if contents differ.
+ */
 const copyDoc = async (
   cwd: string,
   moduleRoot: string,
@@ -43,6 +55,10 @@ const copyDoc = async (
 /**
  * Ensure <stanPath>/system contains the shipped docs and record package version
  * to <stanPath>/system/.docs.meta.json.
+ *
+ * @param cwd - Repository root.
+ * @param stanPath - STAN workspace folder (for example, ".stan").
+ * @returns Promise that resolves when the docs and metadata have been ensured.
  */
 export const ensureDocs = async (
   cwd: string,

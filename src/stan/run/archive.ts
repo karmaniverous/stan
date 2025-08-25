@@ -1,4 +1,3 @@
-// src/stan/run/archive.ts
 import { existsSync } from 'node:fs';
 import { readdir, rm } from 'node:fs/promises';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -15,7 +14,12 @@ import { createArchiveDiff } from '../diff';
 import { makeStanDirs } from '../paths';
 import { getVersionInfo } from '../version';
 
-/** Remove on-disk outputs after archiving when combine=true (preserve archives). */
+/**
+ * Remove on‑disk script outputs after combine mode archived them.
+ * Keeps `archive.tar` and `archive.diff.tar` in place.
+ *
+ * @param outAbs - Absolute path to `<stanPath>/output`.
+ */
 const cleanupOutputsAfterCombine = async (outAbs: string): Promise<void> => {
   const entries = await readdir(outAbs, { withFileTypes: true });
   const keepNames = new Set(['archive.tar', 'archive.diff.tar']);
@@ -43,8 +47,16 @@ const resolvePackagedSystemMonolith = (): string | null => {
 };
 
 /**
- * Write the packaged monolith to <stanPath>/system/stan.system.md for archiving,
- * and return a cleanup function that restores prior state (or removes the file).
+ * Write the packaged system prompt to `<stanPath>/system/stan.system.md` for
+ * the duration of archiving and return a cleanup function that restores previous
+ * state (or removes the file if it did not exist).
+ *
+ * Used for downstream repos so the full archive always contains a baseline
+ * system prompt even when local prompts are managed from the package.
+ *
+ * @param cwd - Repository root.
+ * @param stanPath - STAN workspace folder (for example, ".stan").
+ * @returns Async cleanup function to restore the original file state.
  */
 const preparePackagedSystemPrompt = async (
   cwd: string,
@@ -83,8 +95,14 @@ const preparePackagedSystemPrompt = async (
 };
 
 /**
- * Assemble <stanPath>/system/parts/*.md into <stanPath>/system/stan.system.md.
- * Dev-repo only utility (not used for downstream consumers).
+ * Dev‑only: assemble `.stan/system/parts/*.md` into `stan.system.md` before
+ * archiving. No‑ops when the parts directory is missing or empty.
+ *
+ * This keeps archives reproducible while authoring the prompt as parts
+ * in the STAN development repository.
+ *
+ * @param cwd - Repository root.
+ * @param stanPath - STAN workspace folder.
  */
 const assembleSystemFromParts = async (
   cwd: string,
@@ -115,7 +133,15 @@ const assembleSystemFromParts = async (
   await writeFile(path.join(sysRoot, 'stan.system.md'), assembled, 'utf8');
 };
 
-/** Clear <stanPath>/patch contents after archiving (preserve the directory). */
+/**
+ * Clear `<stanPath>/patch` contents after archiving (preserve the directory).
+ *
+ * Removes files under the patch workspace so subsequent archives include
+ * a clean patch directory while preserving the directory itself.
+ *
+ * @param cwd - Repository root.
+ * @param stanPath - STAN workspace folder.
+ */
 const cleanupPatchDirAfterArchive = async (
   cwd: string,
   stanPath: string,
@@ -133,6 +159,20 @@ const cleanupPatchDirAfterArchive = async (
   }
 };
 
+/**
+ * Run the archive phase and produce both regular and diff archives.
+ *
+ * - In the STAN dev repo, assembles the system monolith from parts before
+ *   archiving.
+ * - In downstream repos, temporarily writes the packaged baseline system
+ *   prompt for inclusion in the full archive and restores it afterwards.
+ *
+ * @param args - Object with:
+ *   - cwd: Repo root.
+ *   - config: Resolved STAN configuration.
+ *   - includeOutputs: When true, include `<stanPath>/output` inside archives.
+ * @returns `{ archivePath, diffPath }` absolute paths to the created archives.
+ */
 export const archivePhase = async (args: {
   cwd: string;
   config: ContextConfig;

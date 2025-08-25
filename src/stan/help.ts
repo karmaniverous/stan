@@ -1,15 +1,3 @@
-/**
- * REQUIREMENTS (current):
- * - Render a help footer listing available script keys from the discovered config.
- * - If config cannot be loaded, return an empty string.
- * - Output should include:
- *   - 'Available script keys:' + comma-separated list
- *   - 'Examples:' lines
- *
- * UPDATED:
- * - Examples now reflect new flags (-s/-x/-q).
- * - When STAN_DEBUG=1, log the reason config could not be loaded.
- */
 import { loadConfigSync } from './config';
 
 /**
@@ -17,6 +5,10 @@ import { loadConfigSync } from './config';
  *
  * @param cwd - Repo root (or descendant) used to locate `stan.config.*`.
  * @returns Multi‑line string (empty when config cannot be loaded).
+ *
+ * Notes:
+ * - Examples reflect the new flags (`-s`, `-x`, `-q`) and defaults (run all + archives).
+ * - When `STAN_DEBUG=1`, logs the reason configuration could not be loaded.
  */
 export const renderAvailableScriptsHelp = (cwd: string): string => {
   try {

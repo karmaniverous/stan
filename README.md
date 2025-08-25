@@ -128,23 +128,23 @@ Global flags:
 
 - [API reference](https://docs.karmanivero.us/stan)
 - Guides:
-  - [Getting Started](https://docs.karmanivero.us/stan/documents/getting-started) — Install the CLI, initialize a repo, attach archives in chat, and use the bootloader with TypingMind (GPT‑5, High reasoning, 128k tokens).
-  - [The STAN Loop](https://docs.karmanivero.us/stan/documents/the-stan-loop) — How Build & Snapshot → Share & Baseline → Discuss & Patch work together.
-  - [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/cli-examples) — Common flags and invocation patterns, including `-p`, `-S`, `-A`, and `-c`.
-  - [Patch Workflow & FEEDBACK](https://docs.karmanivero.us/stan/documents/patch-workflow) — Unified diff policy, FEEDBACK envelopes, and assistant expectations.
-  - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/archives-and-snapshots) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history.
+  - [Getting Started](https://docs.karmanivero.us/stan/documents/Getting_Started.html) — Install the CLI, initialize a repo, attach archives in chat, and use the bootloader with TypingMind (GPT‑5, High reasoning, 128k tokens).
+  - [The STAN Loop](https://docs.karmanivero.us/stan/documents/The_STAN_Loop.html) — How Build & Snapshot → Share & Baseline → Discuss & Patch work together.
+  - [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html) — Common flags and invocation patterns, including `-p`, `-S`, `-A`, and `-c`.
+  - [Patch Workflow & FEEDBACK](https://docs.karmanivero.us/stan/documents/Patch_Workflow___FEEDBACK.html) — Unified diff policy, FEEDBACK envelopes, and assistant expectations.
+  - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/Archives___Snapshots.html) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history.
 
 Additional references:
 
-- System & project prompts live under `<stanPath>/system/` in your repo; the project prompt is created on demand by STAN (no template is installed).
-- Response format, patch policy, and FEEDBACK handshake are codified in `stan.system.md` (assembled from parts).
-- Development plan: `<stanPath>/system/stan.todo.md`.
+- The following documents are maintained by STAN and live under `<stanPath>/system/` in your repo:
+  - `stan.project.md` contains your evolving project requirements.
+  - `stan-todo.md` contains your evolving development plan.
 - Case studies:
-  - [rrstack](https://docs.karmanivero.us/stan/documents/case-studies/rrstack) — how STAN enabled rapid development in a couple of days.
-- Comparison: [Why STAN Over Alternatives?](https://docs.karmanivero.us/stan/documents/why-stan-over-alternatives)
-- Tutorial: [Quickstart (End‑to‑End)](https://docs.karmanivero.us/stan/documents/tutorial-quickstart)
+  - [rrstack](https://docs.karmanivero.us/stan/documents/Case_Study_%E2%80%94_rrstack.html) — how STAN enabled rapid development in a couple of days.
+- Comparison: [Why STAN Over Alternatives?](https://docs.karmanivero.us/stan/documents/Why_STAN_Over_Alternatives_.html)
+- Tutorial: [Quickstart (End‑to‑End)](<https://docs.karmanivero.us/stan/documents/Tutorial_%E2%80%94_Quickstart_(End%E2%80%91to%E2%80%91End).html>)
 - FAQ: answers to common questions and pitfalls.
-- Contributing: [Dev Quickstart](https://docs.karmanivero.us/stan/documents/contributing)
+- Contributing: [Dev Quickstart](https://docs.karmanivero.us/stan/documents/Contributing_%E2%80%94_Dev_Quickstart.html)
 
 ---
 
@@ -158,7 +158,7 @@ Additional references:
 
 ## Contributing
 
-- See the [Contributing — Dev Quickstart](https://docs.karmanivero.us/stan/documents/contributing) for local setup and workflow tips.
+- See the [Contributing — Dev Quickstart](https://docs.karmanivero.us/stan/documents/Contributing_%E2%80%94_Dev_Quickstart.html) for local setup and workflow tips.
 
 - Keep the loop simple. Each stage ends with one command.
 - Favor small, testable modules; treat >300 LOC as design feedback.

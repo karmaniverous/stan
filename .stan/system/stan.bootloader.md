@@ -59,3 +59,10 @@ Example (happy path, single full archive):
 - Resolve repo root at tar root (“”).
 - Check “.stan/system/stan.system.md” (or “./.stan/system/stan.system.md”).
 - Load its contents and proceed under those system rules.
+
+Context mismatch (chat-level guard):
+
+- If artifacts attached in this turn appear to be from a different project than earlier in this thread (for example, package.json name differs or the top-level layout clearly changes), STOP and alert the user:
+  “Alert: New artifacts appear to be from a different project. If this is intentional, reply ‘confirm’ to continue with the new project; otherwise attach the correct archives.”
+- Do not proceed until the user explicitly confirms the new documents are correct.
+- If the user confirms, continue under the new project signature for subsequent turns.

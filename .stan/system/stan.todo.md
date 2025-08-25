@@ -56,6 +56,11 @@ Near-term exploration
 
 Completed (recent)
 
+- README trim
+  - Shortened README to focus on value, quick start, and links to docs.
+  - Moved deep/volatile details to the documentation site and prompts.
+  - Preserved install/usage essentials and troubleshooting pointers.
+
 - Always‑on prompt checks (assistant loop)
   - Enshrined in system prompt as `.stan/system/parts/45-always-on-checks.md` (assembled into `stan.system.md`).
   - CLI preflight already runs at the start of `stan run`, `stan snap`, and `stan patch`; no further tooling changes required at this time.
@@ -142,8 +147,7 @@ Next up (high value)
   - Keep the new “API docs and TSDoc” section current as rules evolve.
 
 - README trim
-  - Move detail to docs/ pages (CLI semantics, patch guide).
-  - Update README to link out and keep quick‑start focused. - Ensure links are stable in the published docs site.
+  - (Moved to Completed.)
 
 Notes: Patch generation learnings (process)
 

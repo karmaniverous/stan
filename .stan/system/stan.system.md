@@ -233,10 +233,9 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 Purpose
 
 - When the user asks for a “handoff” (or any request that effectively means “give me a handoff”), output a single, self‑contained code block they can paste into the first message of a fresh chat so STAN can resume with full context.
-- The handoff is for the assistant (STAN) in the next thread — do not include instructions aimed at the user. Keep it concise and deterministic.
+- The handoff is for the assistant (STAN) in the next thread — do not include instructions aimed at the user (e.g., what to attach). Keep it concise and deterministic.
 
 Triggering (override normal Response Format)
-
 - If the user says “handoff” explicitly, or their request clearly reduces to asking for a handoff, do not use the usual Response Format. Instead:
   - Output exactly one code block (no surrounding prose) containing the handoff.
   - The handoff must be self‑identifying and include the sections below.
@@ -248,35 +247,28 @@ Required structure (headings and order)
   - Prefer the package.json “name” (e.g., “@org/pkg”) or another obvious repo identifier.
 
 - Sections (in this order):
-  1) What to attach in the new thread
-     - Required:
-       - <stanPath>/output/archive.tar
-       - <stanPath>/output/archive.diff.tar (latest)
-     - Optional but helpful (deterministic):
-       - <stanPath>/output/test.txt
-       - <stanPath>/output/lint.txt
-       - <stanPath>/output/typecheck.txt
-       - <stanPath>/output/build.txt
-  2) Project signature (for mismatch guard)
+  1) Project signature (for mismatch guard)
      - package.json name
      - stanPath
      - Node version range or current (if known)
      - Primary docs location (e.g., “<stanPath>/system/”)
-  3) Current state (from last run)
+  2) Current state (from last run)
      - Summarize Build/Test/Lint/Typecheck/Docs/Knip status from the latest outputs, in one or two lines each.
      - Include any notable prompt baseline changes if detected (e.g., system prompt parts updated and monolith rebuilt).
-  4) Outstanding tasks / near‑term focus
+  3) Outstanding tasks / near‑term focus
      - Derive from <stanPath>/system/stan.todo.md (“Next up” or open items).
      - Keep actionable and short.
-  5) What to ask STAN first (paste this as the opening message)
-     - Include a ready‑to‑paste instruction block for the next thread that gets STAN moving (e.g., confirm repository signature, propose/validate any immediate patch, update the dev plan, and follow FEEDBACK rules on failure).
-     - Keep it unambiguous and repo‑specific if possible; otherwise provide a sensible default.
+  4) Assistant startup checklist (for the next thread)
+     - A concise checklist of assistant actions to perform on thread start, e.g.:
+       - Verify repository signature (package name, stanPath).
+       - Load artifacts from attached archives and validate prompt baseline.
+       - Execute immediate next steps from “Outstanding tasks” (or confirm no‑ops).
+       - Follow FEEDBACK rules on any patch failures.
   6) Reminders (policy)
      - Patches: plain unified diffs only; LF; include a/ and b/ prefixes; ≥3 lines of context.
      - FEEDBACK failures: include Full Listing for failed files only, plus the improved patch.
      - Long files (~300+ LOC): propose a split plan before large monolithic changes.
      - Context exhaustion: always start a fresh thread with the latest archives attached; STAN will refuse to proceed without the system prompt and artifacts.
-
 Derivation rules (populating fields)
 
 - Project signature:
@@ -293,11 +285,10 @@ Derivation rules (populating fields)
   - Prefer the “Next up” (or equivalent) items from <stanPath>/system/stan.todo.md.
   - If none are listed, include any obvious follow‑ups from current outputs (e.g., patch a known file, regenerate artifacts).
 
-- What to ask STAN first:
-  - Provide a concrete, copy‑ready instruction list that primes the next thread to verify signature, propose or validate an immediate patch if applicable, update the dev plan, and follow FEEDBACK rules on failure.
+- Assistant startup checklist:
+  - Provide a concrete, assistant‑oriented checklist that primes the next thread to verify signature, load artifacts, execute near‑term steps, and follow FEEDBACK rules on failure.
 
 Fence & formatting
-
 - Wrap the entire handoff in a single fenced code block.
 - Apply the fence hygiene rule (+1 over any inner backtick runs).
 - Do not include any extra prose outside the fence.

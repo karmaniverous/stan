@@ -14,8 +14,6 @@ You get portable, auditable, reproducible context—locally and in CI.
 
 Because a freaking chatbot shouldn’t gaslight your code.
 
-[![Flawed Data](https://imgs.xkcd.com/comics/flawed_data.png)](https://xkcd.com/2494/)
-
 ---
 
 ## Quick start

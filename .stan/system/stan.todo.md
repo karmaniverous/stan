@@ -37,6 +37,14 @@ Near-term exploration
 
 Completed (recent)
 
+- Infra: add system‑prompt assembly (parts -> monolith)
+  - Introduced gen-system.ts and wired it as prebuild. No content split yet;
+    supports incremental migration by adding `.stan/system/parts/*.md`.
+- Policy: README trim‑and‑link
+  - Documented in project prompt; keep README concise and move deep topics
+    to docs, linked from README.
+
+
 - Knip config: remove redundant ignoreDependencies entry ("auto-changelog").
 
 - Docs: README additions for “API docs and TSDoc” + “Contributing docs style”
@@ -102,6 +110,17 @@ Next up (high value)
 - README and CLI help polish
   - Confirm CLI examples align with new flags semantics.
   - Keep the new “API docs and TSDoc” section current as rules evolve.
+
+- System prompt split (incremental)
+  - Create initial parts for high‑churn sections:
+    • 20-intake.md, 30-response-format.md, 40-patch-policy.md
+  - Assemble via `npm run gen:system` and verify no content delta.
+  - Roll remaining sections into parts over time; keep a single runtime file.
+
+- README trim
+  - Move detail to docs/ pages (CLI semantics, patch guide).
+  - Update README to link out and keep quick‑start focused.
+  - Ensure links are stable in the published docs site.
 
 Notes: Patch generation learnings (process)
 

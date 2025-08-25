@@ -6,6 +6,35 @@ General, repo‑agnostic standards live in `/stan.system.md`.
 If this file experiences significant structural changes, update
 `/stan.project.template.md` to match so `stan init` scaffolds remain current.
 
+## System prompt source layout & assembly (authoring in this repo)
+
+- Runtime invariant: downstream tools and assistants consume a single file
+  `.stan/system/stan.system.md`. Do not change this invariant.
+- Source split: author the system prompt as ordered parts under
+  `.stan/system/parts/` (e.g., `00-role.md`, `20-intake.md`,
+  `30-response-format.md`, `40-patch-policy.md`, …). Filenames should
+  start with a numeric prefix to define order.
+- Generator: `npm run gen:system` (wired as `prebuild`) assembles parts
+  in numeric/lex order into `.stan/system/stan.system.md`, adding a
+  short generated header comment. It is a no‑op when no parts exist.
+- Editing policy:
+  - Do not hand‑edit the assembled monolith; update the relevant part(s)
+    and re‑generate.
+  - Incremental migration is okay — adding parts will override the
+    assembled monolith; leaving parts empty preserves the existing file.
+- Tests: `src/stan/system.gen.test.ts` exercises basic assembly behavior.
+
+## README authoring (trim‑and‑link)
+
+- README.md is the human front door. Keep it concise:
+  value proposition, install, quick start (STAN loop), key CLI examples,
+  and links to full documentation.
+- For deep or evolving sections (full CLI semantics, detailed patch
+  walk‑throughs, design essays), prefer the docs site (Typedoc pages or
+  dedicated markdown under `docs/`) and link from README.
+- Community edits should remain easy (single README.md at repo root).
+  Avoid generating README unless necessary.
+
 ## Documentation conventions (requirements vs plan)
 
 - This file (stan.project.md) is the canonical home for durable, repo‑specific

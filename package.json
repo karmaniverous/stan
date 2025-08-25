@@ -140,6 +140,8 @@
     "url": "git+https://github.com/karmaniverous/stan.git"
   },
   "scripts": {
+    "gen:system": "tsx gen-system.ts",
+    "prebuild": "npm run gen:system",
     "bootstrap": "concurrently -n typecheck,lint,test,build,docs -c auto \"npm:bootstrap:typecheck\" \"npm:bootstrap:lint\" \"npm:bootstrap:test\" \"npm:bootstrap:build\" \"npm:bootstrap:docs\" && npm run bootstrap:archive",
     "bootstrap:archive": "tsx bootstrap-archive.ts",
     "bootstrap:build": "npm run stan:build > .stan/output/build.txt 2>&1",

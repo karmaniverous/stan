@@ -1,14 +1,15 @@
-<!-- TYPEDOC_EXCLUDE -->
-
-> [API Documentation](https://karmaniverous.github.io/stan) • [CHANGELOG](https://github.com/karmaniverous/stan/tree/main/CHANGELOG.md)
-
-<!-- /TYPEDOC_EXCLUDE -->
-
 # STAN — STAN Tames Autoregressive Nonsense
 
 [![npm version](https://img.shields.io/npm/v/@karmaniverous/stan.svg)](https://www.npmjs.com/package/@karmaniverous/stan)
+
+<!-- TYPEDOC_EXCLUDE -->
+
 [![docs](https://img.shields.io/badge/docs-website-blue)](https://docs.karmanivero.us/stan)
-[![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](./LICENSE)
+[![changelog](https://img.shields.io/badge/changelog-latest-blue.svg)](https://github.com/karmaniverous/stan/tree/main/CHANGELOG.md)
+
+<!-- /TYPEDOC_EXCLUDE -->
+
+[![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://github.com/karmaniverous/stan/tree/main/LICENSE.md)
 
 ![STAN Loop](https://github.com/karmaniverous/stan/raw/main/assets/stan-loop.png)
 

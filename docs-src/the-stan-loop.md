@@ -30,10 +30,10 @@ Tips:
 
 Notes:
 - The bootloader system prompt ensures the correct `stan.system.md` is loaded from the archive (see Getting Started).
+- Starting a new thread? Ask STAN to generate a “handoff” block and paste it at the top of your new chat (see step 4 below).
 - If the system prompt appears to differ from the packaged baseline or docs were updated, CLI preflight prints a concise nudge.
 
 ## 3) Discuss & Patch
-
 - Iterate in chat to refine requirements and approach.
 - STAN generates plain unified diffs with adequate context (no base64).
 - Apply patches:
@@ -42,10 +42,26 @@ Notes:
   - `stan patch --check` (validate only; writes to sandbox).
 - On failure, STAN writes a compact FEEDBACK packet and (when possible) copies it to your clipboard—paste it back into chat to get a corrected diff.
 
+## 4) Handoff (start a new thread)
+
+Sometimes you need a fresh chat (for example, when the context window is exhausted or you’re switching clients). To preserve continuity without re‑explaining the project:
+
+1. In your current chat, ask STAN for a “handoff” (e.g., “handoff for next thread”).
+2. STAN returns a single self‑identifying code block that contains:
+   - Project signature (package name, stanPath, node range)
+   - Current state from the latest run (Build/Test/Lint/Typecheck/Docs/Knip)
+   - Outstanding tasks / near‑term focus
+   - Assistant startup checklist (what STAN should do first next thread)
+3. In the new chat:
+   - Paste the handoff block as the first message.
+   - Attach the latest `.stan/output/archive.tar` (and `archive.diff.tar` if present).
+   - STAN will verify the signature, load the prompt from the archive, and execute the startup checklist.
+
+Note: If you paste an existing handoff block into an ongoing chat, STAN treats it as input (it will not generate a new handoff unless you explicitly ask). 
+
 ## Rinse and repeat
 
 - Return to step 1 and continue until the feature is complete, CI is green, and the plan (`.stan/system/stan.todo.md`) is up‑to‑date.
-
 ## Why this loop?
 
 - Reproducible context: all inputs to the discussion are deterministic (source snapshot + text outputs).

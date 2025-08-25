@@ -45,7 +45,8 @@ describe('openFilesInEditor — spawn behavior and guards', () => {
     vi.restoreAllMocks();
   });
 
-  const load = async () => {    // Ensure open.ts is (re)loaded after mocks/env are set
+  const load = async () => {
+    // Ensure open.ts is (re)loaded after mocks/env are set
     vi.resetModules();
     const mod = await import('./open');
     return mod.openFilesInEditor;

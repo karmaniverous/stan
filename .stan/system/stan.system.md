@@ -508,6 +508,8 @@ Validation
 
 - Never emit base64‑encoded patches.
 - Always emit plain unified diffs with @@ hunks.
+- The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.
+- Never include non‑diff prologues or synthetic markers such as “*** Begin Patch”/“*** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.
 - Do not wrap the patch beyond the fence required by the +1 rule.
 - Coverage must include every created/updated/deleted file referenced
   above.

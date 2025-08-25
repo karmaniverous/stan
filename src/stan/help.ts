@@ -33,6 +33,9 @@ export const renderAvailableScriptsHelp = (cwd: string): string => {
       '  stan run -s',
       `  stan run -s ${example}`,
       `  stan run -q -x ${example}`,
+      '  stan run -A',
+      '  stan run -S -A -p',
+      `  stan run -c -s ${example}`,
       '',
     ].join('\n');
   } catch (e) {

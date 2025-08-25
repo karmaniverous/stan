@@ -1,7 +1,10 @@
+---
+title: Archives & Snapshots
+---
+
 # Archives & snapshots
 
 ## Artifacts
-
 - `<stanPath>/output/archive.tar` — full snapshot of repo files (excludes binaries).
 - `<stanPath>/output/archive.diff.tar` — changed files vs snapshot (always when archiving).
 - `*.txt` outputs — deterministic stdout/stderr from scripts.

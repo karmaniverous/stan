@@ -18,10 +18,15 @@
   "out": "./docs/",
   "plugin": ["typedoc-plugin-mdn-links", "typedoc-plugin-replace-text"],
   "projectDocuments": [
-    "./CHANGELOG.md",
+    "./docs-src/getting-started.md",
+    "./docs-src/the-stan-loop.md",
     "./docs-src/cli-examples.md",
     "./docs-src/patch-workflow.md",
-    "./docs-src/archives-and-snapshots.md"
+    "./docs-src/archives-and-snapshots.md",
+    "./CHANGELOG.md"
+  ],
+  "navigationLinks": [
+    { "label": "GitHub", "url": "https://github.com/karmaniverous/stan" }
   ],
   "replaceText": {
     "replacements": [

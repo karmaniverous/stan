@@ -1,7 +1,10 @@
+---
+title: CLI Usage & Examples
+---
+
 # CLI usage & examples
 
 ## Defaults
-
 The default run executes all configured scripts and writes regular and diff archives:
 
 ```

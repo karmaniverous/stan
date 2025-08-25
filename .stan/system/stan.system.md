@@ -236,7 +236,12 @@ Purpose
 - The handoff is for the assistant (STAN) in the next thread — do not include instructions aimed at the user (e.g., what to attach). Keep it concise and deterministic.
 
 Triggering (override normal Response Format)
-- If the user says “handoff” explicitly, or their request clearly reduces to asking for a handoff, do not use the usual Response Format. Instead:
+- Only trigger when the user explicitly asks you to produce a new handoff (e.g., “handoff”, “generate a new handoff”, “handoff for next thread”), or when their request unambiguously reduces to “give me a new handoff.”
+- Non‑trigger: If the user message contains a previously generated handoff block (a fenced code block whose first non‑blank line matches “Handoff — …”), treat it as input data for this thread, not as a request to generate another handoff. In this case:
+  - Do not emit a new handoff.
+  - Parse and use the pasted handoff to verify the project signature and proceed with the “Assistant startup checklist.”
+  - Only generate a new handoff if the user explicitly asks for one after that.
+- When a trigger is valid:
   - Output exactly one code block (no surrounding prose) containing the handoff.
   - The handoff must be self‑identifying and include the sections below.
 
@@ -245,7 +250,6 @@ Required structure (headings and order)
 - Title line (first line inside the fence):
   - “Handoff — <project> for next thread”
   - Prefer the package.json “name” (e.g., “@org/pkg”) or another obvious repo identifier.
-
 - Sections (in this order):
   1) Project signature (for mismatch guard)
      - package.json name
@@ -297,6 +301,7 @@ Notes
 
 - The handoff is additive and out‑of‑band relative to normal patching work. It does not by itself change repository files.
 - The handoff policy is repo‑agnostic; tailor the “What to ask STAN first” content to the current repository context when possible.
+- Recognition rule (for non‑trigger): Consider a “prior handoff block” to be any fenced code block whose first non‑blank line begins with “Handoff — ”. Its presence alone must not cause you to generate a new handoff; treat it as data and proceed with the startup checklist unless the user explicitly requests a new handoff.
 
 # Doc update policy (learning: system vs project)
 

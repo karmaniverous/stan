@@ -126,16 +126,22 @@ Global flags:
 
 ## Documentation
 
-- API reference: https://docs.karmanivero.us/stan
-- Guide and design notes (selected):
-  - System & project prompts live under <stanPath>/system/
-  - Response format, patch policy, and FEEDBACK handshake are codified in stan.system.md (assembled from parts)
-  - Development plan: <stanPath>/system/stan.todo.md
+- [API reference](https://docs.karmanivero.us/stan)
+- Guides:
+  - [Getting Started](https://docs.karmanivero.us/stan/documents/getting-started) — Install the CLI, initialize a repo, attach archives in chat, and use the bootloader with TypingMind (GPT‑5, High reasoning, 128k tokens).
+  - [The STAN Loop](https://docs.karmanivero.us/stan/documents/the-stan-loop) — How Build & Snapshot → Share & Baseline → Discuss & Patch work together.
+  - [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/cli-examples) — Common flags and invocation patterns, including `-p`, `-S`, `-A`, and `-c`.
+  - [Patch Workflow & FEEDBACK](https://docs.karmanivero.us/stan/documents/patch-workflow) — Unified diff policy, FEEDBACK envelopes, and assistant expectations.
+  - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/archives-and-snapshots) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history.
+
+Additional references:
+- System & project prompts live under `<stanPath>/system/` in your repo.
+- Response format, patch policy, and FEEDBACK handshake are codified in `stan.system.md` (assembled from parts).
+- Development plan: `<stanPath>/system/stan.todo.md`.
 
 ---
 
 ## Troubleshooting
-
 - “system prompt missing”: ensure <stanPath>/system/stan.system.md is included in the attached archive; otherwise attach it directly as stan.system.md.
 - Patch failures: use --check to validate first; if a patch fails, STAN writes a compact FEEDBACK envelope and (when possible) copies it to your clipboard so you can get a corrected patch.
 - Large files: STAN may flag very long source files (~300+ LOC) and ask for a split plan before proceeding.

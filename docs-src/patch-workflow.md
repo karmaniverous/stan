@@ -1,7 +1,10 @@
+---
+title: Patch Workflow & FEEDBACK
+---
+
 # Patch workflow & FEEDBACK
 
 ## Unified diffs only
-
 - Plain unified diffs with `diff --git`, `---/+++`, and `@@` hunks.
 - Paths relative to repo root, POSIX separators, prefer `a/` and `b/` prefixes.
 - ≥ 3 lines of context per hunk. LF endings; no base64.

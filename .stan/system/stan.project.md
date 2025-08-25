@@ -11,7 +11,7 @@ If this file experiences significant structural changes, update
 - Runtime invariant: downstream tools and assistants consume a single file
   `.stan/system/stan.system.md`. Do not change this invariant.
 - Source split: author the system prompt as ordered parts under
-  `.stan/system/parts/` (e.g., `00-role.md`, `20-intake.md`,
+  `.stan/system/parts/` (e.g., `00-intro.md`, `20-intake.md`,
   `30-response-format.md`, `40-patch-policy.md`, …). Filenames should
   start with a numeric prefix to define order.
 - Generator: `npm run gen:system` (wired as `prebuild`) assembles parts
@@ -89,7 +89,7 @@ If this file experiences significant structural changes, update
   - Patch source (clipboard/argument/file), target file path, applied/failed (or check passed/failed).
   - Write attempts and stderr/stdout sizes in `.debug/attempts.json`, plus per‑attempt stderr/stdout files.
 - Rejects:
-  - When `git apply` produces `*.rej` files, move any newly created rejects to `<stanPath>/refactors/patch-rejects-<UTC timestamp>/` preserving relative paths.
+  - When `git apply` produces `*.rej` files, move any newly created rejects under `<stanPath>/patch/rejects/<UTC>/`, preserving relative paths.
 
 ### stan snap
 
@@ -102,14 +102,23 @@ If this file experiences significant structural changes, update
 - History lives under `<stanPath>/diff`: `.snap.state.json`, `snapshots/`, and optional `archives/` captures.
 - Trimming: respect `maxUndos` (default 10).
 
-## Selection & Execution
+## Selection & Execution (current semantics)
 
-- One of `-a/--archive`, `-s/--scripts`, or `-x/--except-scripts` is required.
-- `-s, --scripts [keys...]` (optional variadic)
-  - If present with keys: run exactly those keys.
-  - If present with no keys: run all configured scripts.
-- `-x, --except-scripts <keys...>`: reduce from `-s` set or, if `-s` is absent, from the full set.
-- `-q, --sequential` requires `-s` or `-x`.
+- Defaults (no flags):
+  - Runs all configured scripts in config order (concurrent by default).
+  - Writes both `archive.tar` and `archive.diff.tar`.
+- Planning and toggles:
+  - `-p, --plan` prints the run plan and exits without side effects.
+  - `-S, --no-scripts` disables script execution.
+  - `-A, --no-archive` disables archives (default is ON unless explicitly negated).
+  - `-c, --combine` includes outputs inside archives and removes them on disk (implies `--archive`).
+  - `-q, --sequential` runs scripts sequentially (with `-s` preserves provided order; otherwise config order).
+- Selection:
+  - `-s, --scripts [keys...]` selects listed keys (if no keys are provided, selects all).
+  - `-x, --except-scripts <keys...>` excludes keys (reduces from `-s` when present; otherwise from full set).
+- Conflicts:
+  - `-S` conflicts with `-s`/`-x`.
+  - `-c` conflicts with `-A` (runtime check).
 
 ## Diff snapshot policy
 
@@ -125,9 +134,7 @@ If this file experiences significant structural changes, update
   - Clear this directory whenever a new archive is generated.
 - On patch failures:
   - Analyze failures for processing improvements (parsing, cleaning, tolerant apply strategies).
-  - Propose concrete code changes (and tests) to `src/stan/patch.ts` and related utilities.
-  - Prefer staging (`git apply --index`) when applying patches; do not stage for `--check`.
-  - Capture attempts and stderr in `.debug/` and attach a brief summary in chat.
+  - Propose concrete code changes (and tests) to `src/stan/patch/*` and related utilities.
 
 ## Logging
 

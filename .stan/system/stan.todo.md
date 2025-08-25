@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-24 (UTC)
+When updated: 2025-08-25 (UTC)
 
 ALIASES
 
@@ -37,6 +37,14 @@ Near-term exploration
 
 Completed (recent)
 
+- Docs: README additions for “API docs and TSDoc” + “Contributing docs style”
+  - Clarifies how to run docs generation and contributor TSDoc expectations.
+
+- TSDoc Phase 1 on core APIs (no behavior changes)
+  - Added/expanded TSDoc for: config, fs, archive, diff, run plan/exec/service,
+    help, version, patch/open.
+  - Outcome: TypeDoc/ESLint surface warnings only (formatting), no errors.
+
 - Patch UX: remove staged-files warning
   - Disabled the staged-overlap warning (no-op helper). Warning added noise and
     did not materially improve outcomes.
@@ -72,6 +80,15 @@ Open (low priority)
 
 Next up (high value)
 
+- TSDoc hygiene fix pass (warnings → zero)
+  - Fix ESLint/tsdoc “missing hyphen after @param name” across:
+    • config.ts, fs.ts, run/{exec,plan,service}.ts, help.ts, version.ts, patch/open.ts, diff.ts
+  - Avoid dotted @param names (TypeDoc doesn’t accept args.cwd):
+    • Prefer documenting the object parameter itself, e.g., “@param args - object with …”.
+    • Optionally describe fields in prose bullets instead of @param dotted names.
+  - Escape `>` where needed in prose to avoid HTML-tag warnings.
+  - Keep comments concise and behavioral; avoid restating type info already present in signatures.
+
 - Always-on prompt checks (assistant loop)
   - At every turn, the assistant should check:
     • System prompt delta (only for @karmaniverous/stan).
@@ -80,5 +97,13 @@ Next up (high value)
   - Action: maintain this discipline in replies; expand CLI preflight to patch
     command if we decide to automate checks in tooling as well.
 
-- README and CLI help updates
-  - Reflect new defaults (-p/-S/-A; default archiving; removed staged warning).
+- README and CLI help polish
+  - Confirm CLI examples align with new flags semantics.
+  - Add a short “TSDoc warnings” tip pointing to the hygiene rules above.
+
+Notes: Patch generation learnings (process)
+
+- Prefer small, anchored hunks with a/ and b/ prefixes and ≥3 lines of context.
+- Avoid relying on index headers; target working tree content.
+- One file per diff block; repeat per file when multiple updates are needed.
+- For large Markdown insertions, consider smaller appended blocks or fall back to Full Listing for wholesale rewrites.

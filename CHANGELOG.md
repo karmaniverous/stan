@@ -2,7 +2,22 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.3.1](https://github.com/karmaniverous/stan/compare/0.3.0...0.3.1)
+
+- docs: add quickstart tutorial, rrstack case study, comparison, contrib quickstart, and FAQ; wire into site and README [`588fcc8`](https://github.com/karmaniverous/stan/commit/588fcc83c36c6cafa0a5db1d63d7231ebcc1d5e1)
+- docs(contributing): clarify bootstrap scripts as dev fallback [`888eaa4`](https://github.com/karmaniverous/stan/commit/888eaa41ac4ab9ee62fdec242b85ec2bf9fa7459)
+- Add BSD 3-Clause License file [`4482940`](https://github.com/karmaniverous/stan/commit/448294007290e152b4ac4aa4187aa20ecdb4f1ed)
+- updated readme [`b1db737`](https://github.com/karmaniverous/stan/commit/b1db7379e4666eabc2b8d221126bbb4191f652d8)
+- updated readme [`f1042b8`](https://github.com/karmaniverous/stan/commit/f1042b87dcbdc36ff9692adfd9128cfe4da8bcbc)
+- updated readme [`5d969ca`](https://github.com/karmaniverous/stan/commit/5d969cac87dc04ed731db16036b8227f1c0ef1e6)
+- updated readme [`dc4823d`](https://github.com/karmaniverous/stan/commit/dc4823df12f56b4f0dd89a44a0b9b7de4578c62b)
+- updated readme [`c5ef2e0`](https://github.com/karmaniverous/stan/commit/c5ef2e052e096d3c13909bb87adcef23ed0bd8ac)
+- updated readme [`65d57ee`](https://github.com/karmaniverous/stan/commit/65d57ee82bc275d16eae59d592ccfaffbb508b6b)
+- updated readme [`eab0328`](https://github.com/karmaniverous/stan/commit/eab0328673a97671a4172ceb498653038010e625)
+
 #### [0.3.0](https://github.com/karmaniverous/stan/compare/0.2.0...0.3.0)
+
+> 25 August 2025
 
 - updated docs [`46c2523`](https://github.com/karmaniverous/stan/commit/46c25236cfe678d308a80110dbd9f89d9e673ae3)
 - feat(cli,patch): new stan run defaults (-p/-S/-A) + patch status banners [`b3f6fbe`](https://github.com/karmaniverous/stan/commit/b3f6fbea166a7708989dc23297aba705455de93e)
@@ -10,6 +25,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - README: trim and link out; update dev plan [`7926cbe`](https://github.com/karmaniverous/stan/commit/7926cbe0ce1afd0a496248425fa0163b74b930ac)
 - updated docs [`95d2846`](https://github.com/karmaniverous/stan/commit/95d2846a3e1cd5da7dfd1b888b92e62cf1f3e398)
 - docs(typedoc): add navigationLinks; introduce “Getting Started” and “The STAN Loop”; front‑matter titles; reorder docs; README links; project‑doc sync [`582fcb7`](https://github.com/karmaniverous/stan/commit/582fcb7cbf028c7ea8ca0f0c17ff0eb5f4bc53cd)
+- chore: release v0.3.0 [`9731192`](https://github.com/karmaniverous/stan/commit/973119203ee0484ccb1057e0fd80490d87d1f074)
 - When: 2025-08-25T00:00:00Z [`a0d8c15`](https://github.com/karmaniverous/stan/commit/a0d8c15a81973cfc877e57b26c780c18f704351f)
 - run/archive: generate system monolith in this repo only; avoid patching monolith [`ce8452d`](https://github.com/karmaniverous/stan/commit/ce8452df4f933a6494b075acdf88733e34514817)
 - docs: add TSDoc to core APIs and expand README docs guidance [`9839b8d`](https://github.com/karmaniverous/stan/commit/9839b8dbc0b46a6dbd9f791cc53362e24f091661)

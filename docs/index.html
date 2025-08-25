@@ -1,6 +1,6 @@
 <!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><link rel="canonical" href="https://docs.karmanivero.us/stan/"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@karmaniverous/stan</title><meta name="description" content="Documentation for @karmaniverous/stan"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">@karmaniverous/stan</a><div id="tsd-toolbar-links"><a href="https://github.com/karmaniverous/stan">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>@karmaniverous/stan</h1></div><div class="tsd-panel tsd-typography"><h1 id="stan--stan-tames-autoregressive-nonsense" class="tsd-anchor-link">STAN — STAN Tames Autoregressive Nonsense<a href="#stan--stan-tames-autoregressive-nonsense" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1><p><a href="https://www.npmjs.com/package/@karmaniverous/stan" target="_blank" class="external"><img src="https://img.shields.io/npm/v/@karmaniverous/stan.svg" alt="npm version"></a>
-<a href="https://docs.karmanivero.us/stan"><img src="https://img.shields.io/badge/docs-website-blue" alt="docs"></a>
-<a href="./LICENSE"><img src="https://img.shields.io/badge/license-BSD--3--Clause-blue.svg" alt="license"></a></p>
+<img src="https://img.shields.io/node/v/@karmaniverous/stan" alt="Node Current">
+<a href="https://github.com/karmaniverous/stan/tree/main/LICENSE.md" target="_blank" class="external"><img src="https://img.shields.io/badge/license-BSD--3--Clause-blue.svg" alt="license"></a></p>
 <p><img src="https://github.com/karmaniverous/stan/raw/main/assets/stan-loop.png" alt="STAN Loop"></p>
 <p>STAN produces a single source of truth for AI‑assisted development: a tarball of your repo plus deterministic text outputs from your build/test/lint/typecheck scripts.</p>
 <p>You get portable, auditable, reproducible context—locally and in CI.</p>
@@ -103,28 +103,31 @@
 <li><a href="https://docs.karmanivero.us/stan">API reference</a></li>
 <li>Guides:
 <ul>
-<li><a href="https://docs.karmanivero.us/stan/documents/getting-started">Getting Started</a> — Install the CLI, initialize a repo, attach archives in chat, and use the bootloader with TypingMind (GPT‑5, High reasoning, 128k tokens).</li>
-<li><a href="https://docs.karmanivero.us/stan/documents/the-stan-loop">The STAN Loop</a> — How Build &amp; Snapshot → Share &amp; Baseline → Discuss &amp; Patch work together.</li>
-<li><a href="https://docs.karmanivero.us/stan/documents/cli-examples">CLI Usage &amp; Examples</a> — Common flags and invocation patterns, including <code>-p</code>, <code>-S</code>, <code>-A</code>, and <code>-c</code>.</li>
-<li><a href="https://docs.karmanivero.us/stan/documents/patch-workflow">Patch Workflow &amp; FEEDBACK</a> — Unified diff policy, FEEDBACK envelopes, and assistant expectations.</li>
-<li><a href="https://docs.karmanivero.us/stan/documents/archives-and-snapshots">Archives &amp; Snapshots</a> — What goes into <code>archive.tar</code>/<code>archive.diff.tar</code>, combine mode, and snapshot history.</li>
+<li><a href="https://docs.karmanivero.us/stan/documents/Getting_Started.html">Getting Started</a> — Install the CLI, initialize a repo, attach archives in chat, and use the bootloader with TypingMind (GPT‑5, High reasoning, 128k tokens).</li>
+<li><a href="https://docs.karmanivero.us/stan/documents/The_STAN_Loop.html">The STAN Loop</a> — How Build &amp; Snapshot → Share &amp; Baseline → Discuss &amp; Patch work together.</li>
+<li><a href="https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html">CLI Usage &amp; Examples</a> — Common flags and invocation patterns, including <code>-p</code>, <code>-S</code>, <code>-A</code>, and <code>-c</code>.</li>
+<li><a href="https://docs.karmanivero.us/stan/documents/Patch_Workflow___FEEDBACK.html">Patch Workflow &amp; FEEDBACK</a> — Unified diff policy, FEEDBACK envelopes, and assistant expectations.</li>
+<li><a href="https://docs.karmanivero.us/stan/documents/Archives___Snapshots.html">Archives &amp; Snapshots</a> — What goes into <code>archive.tar</code>/<code>archive.diff.tar</code>, combine mode, and snapshot history.</li>
 </ul>
 </li>
 </ul>
 <p>Additional references:</p>
 <ul>
-<li>System &amp; project prompts live under <code>&lt;stanPath&gt;/system/</code> in your repo; the project prompt is created on demand by STAN (no template is installed).</li>
-<li>Response format, patch policy, and FEEDBACK handshake are codified in <code>stan.system.md</code> (assembled from parts).</li>
-<li>Development plan: <code>&lt;stanPath&gt;/system/stan.todo.md</code>.</li>
-<li>Case studies:
+<li>The following documents are maintained by STAN and live under <code>&lt;stanPath&gt;/system/</code> in your repo:
 <ul>
-<li><a href="https://docs.karmanivero.us/stan/documents/case-studies/rrstack">rrstack</a> — how STAN enabled rapid development in a couple of days.</li>
+<li><code>stan.project.md</code> contains your evolving project requirements.</li>
+<li><code>stan-todo.md</code> contains your evolving development plan.</li>
 </ul>
 </li>
-<li>Comparison: <a href="https://docs.karmanivero.us/stan/documents/why-stan-over-alternatives">Why STAN Over Alternatives?</a></li>
-<li>Tutorial: <a href="https://docs.karmanivero.us/stan/documents/tutorial-quickstart">Quickstart (End‑to‑End)</a></li>
+<li>Case studies:
+<ul>
+<li><a href="https://docs.karmanivero.us/stan/documents/Case_Study_%E2%80%94_rrstack.html">rrstack</a> — how STAN enabled rapid development in a couple of days.</li>
+</ul>
+</li>
+<li>Comparison: <a href="https://docs.karmanivero.us/stan/documents/Why_STAN_Over_Alternatives_.html">Why STAN Over Alternatives?</a></li>
+<li>Tutorial: <a href="https://docs.karmanivero.us/stan/documents/Tutorial_%E2%80%94_Quickstart_(End%E2%80%91to%E2%80%91End).html">Quickstart (End‑to‑End)</a></li>
 <li>FAQ: answers to common questions and pitfalls.</li>
-<li>Contributing: <a href="https://docs.karmanivero.us/stan/documents/contributing">Dev Quickstart</a></li>
+<li>Contributing: <a href="https://docs.karmanivero.us/stan/documents/Contributing_%E2%80%94_Dev_Quickstart.html">Dev Quickstart</a></li>
 </ul>
 <hr>
 <h2 id="troubleshooting" class="tsd-anchor-link">Troubleshooting<a href="#troubleshooting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
@@ -135,7 +138,7 @@
 <hr>
 <h2 id="contributing" class="tsd-anchor-link">Contributing<a href="#contributing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
 <li>
-<p>See the <a href="https://docs.karmanivero.us/stan/documents/contributing">Contributing — Dev Quickstart</a> for local setup and workflow tips.</p>
+<p>See the <a href="https://docs.karmanivero.us/stan/documents/Contributing_%E2%80%94_Dev_Quickstart.html">Contributing — Dev Quickstart</a> for local setup and workflow tips.</p>
 </li>
 <li>
 <p>Keep the loop simple. Each stage ends with one command.</p>

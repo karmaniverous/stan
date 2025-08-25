@@ -453,13 +453,11 @@ Use these headings exactly; wrap each Patch (and optional Full Listing)
 in a fence computed by the algorithm above.
 
 ---
-
-Commit Message (MANDATORY; fenced code block)
+### Commit Message
 
 - Output the commit message at the end of the reply wrapped in a fenced
   code block. Do not annotate with a language tag. Apply the +1 backtick
-  rule. The block contains only the commit message (subject + body), no
-  surrounding prose.
+  rule. The block contains only the commit message (subject + body), no  surrounding prose.
 
 ## Input Data Changes
 

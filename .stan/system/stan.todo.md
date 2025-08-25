@@ -14,6 +14,13 @@ Purpose
 - The assistant updates this document as code/design advances (remove
   completed items).
 
+Output & formatting policy
+
+- Full Listings are available on request and should not be emitted by default
+  (conserves context window).
+- Always include a “Commit Message” section header above the fenced commit text
+  at the end of replies.
+
 Plan management policy
 
 - No refactor-note files are to be written or persisted under
@@ -29,6 +36,18 @@ Plan management policy
 
 Near-term exploration
 
+- Patch reliability for Markdown/docs:
+  - If git/jsdiff both fail and exactly one contiguous section is changed in a
+    .md file, consider a safe, heading‑anchored section‑replacement fallback
+    (anchor on H2/H3 heading, replace through next same‑level heading).
+    Validate under --check/sandbox first; preserve whitespace; normalize EOL.
+    Ship only if demonstrably safe.
+
+- Assistant output discipline
+  - Keep Full Listings out of default replies (on‑request only) to preserve
+    context window. Continue to emit robust patches with adequate context.
+  - Require a “Commit Message” section header over the fenced commit text.
+
 - After patch “open files”: explore returning terminal focus (CLI) cross‑platform (macOS open -g, Windows start/min/VSC integration). Defer until feasibility is clear.
 
 - Low priority: Investigate sporadic patch failures on long Markdown files (e.g., .stan/system/stan.todo.md)
@@ -37,13 +56,23 @@ Near-term exploration
 
 Completed (recent)
 
+- Tests: fix Windows EBUSY in open.test.ts
+  - Ensure per‑test teardown chdirs to os.tmpdir() before removing temp dirs to avoid EBUSY.
+  - Restore missing `const calls: string[] = [];` in the spawn mock.
+
+- Patch engine hardening for docs
+  - git apply: add `--inaccurate-eof` to all attempts (p1→p0 variants).
+  - jsdiff: allow minimal `fuzzFactor` for `.md` only to tolerate tiny reflows.
+
+- System prompt: add explicit “Commit Message” heading in the Response Format.
+
 - Infra: add system‑prompt assembly (parts -> monolith)
   - Introduced gen-system.ts and wired it as prebuild. No content split yet;
     supports incremental migration by adding `.stan/system/parts/*.md`.
+
 - Policy: README trim‑and‑link
   - Documented in project prompt; keep README concise and move deep topics
     to docs, linked from README.
-
 
 - Knip config: remove redundant ignoreDependencies entry ("auto-changelog").
 
@@ -97,12 +126,12 @@ Next up (high value)
 - TSDoc Phase 2: internal helpers and small utilities
   - Add concise TSDoc (or header rationale) for internal helpers where missing.
   - Keep comments brief and behavioral; avoid repeating type information.
-  - Maintain zero-warning policy for TSDoc lint/TypeDoc.
+  - Maintain zero‑warning policy for TSDoc lint/TypeDoc.
 
-- Always-on prompt checks (assistant loop)
+- Always‑on prompt checks (assistant loop)
   - At every turn, the assistant should check:
     • System prompt delta (only for @karmaniverous/stan).
-    • Project prompt: does a durable repo-specific rule need to be promoted?
+    • Project prompt: does a durable repo‑specific rule need to be promoted?
     • Dev plan: update for every material change.
   - Action: maintain this discipline in replies; expand CLI preflight to patch
     command if we decide to automate checks in tooling as well.

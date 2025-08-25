@@ -49,10 +49,15 @@ Next up (high value)
 
 Completed (recent)
 
+- Docs site config (Typedoc): navigationLinks object; docs build passes.
+- Dist/init: stop shipping/copying prompt templates (ship only stan.system.md; init writes only .docs.meta.json and ensures directories).
+- Prompt policy alignment: clarify on‑demand project prompt; remove template/bootloader mentions in dist list; update project prompt header.
+- README/docs: reflect on‑demand project prompt; links verified; Getting Started updated.
+- Full suite green: lint, typecheck, tests, docs, knip, build.
+
 - Handoff re‑trigger guard
   - Prevent generating a new handoff when a prior handoff block is pasted;
-    treat it as input and proceed with the startup checklist unless explicitly
-    asked for a new handoff.
+    treat it as input and proceed with the startup checklist unless explicitly    asked for a new handoff.
 
 - Handoff policy
   - Codified cross‑thread handoff behavior in system prompt:

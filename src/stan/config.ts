@@ -114,7 +114,7 @@ const tryConfigHere = (dir: string): string | null => {
 /**
  * Resolve the absolute path to the nearest `stan.config.*` starting from `cwd`.
  *
- * @param cwd Directory to start searching from.
+ * @param cwd - Directory to start searching from.
  * @returns Absolute path to the config file, or `null` if none found.
  */
 export const findConfigPathSync = (cwd: string): string | null => {
@@ -143,7 +143,7 @@ export const findConfigPathSync = (cwd: string): string | null => {
 /**
  * Load and validate STAN configuration synchronously.
  *
- * @param cwd Repo root or any descendant; the nearest `stan.config.*` is used.
+ * @param cwd - Repo root or any descendant; the nearest `stan.config.*` is used.
  * @returns Parsed, validated {@link ContextConfig}.
  */
 export const loadConfigSync = (cwd: string): ContextConfig => {
@@ -184,7 +184,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
 /**
  * Load and validate STAN configuration (async).
  *
- * @param cwd Repo root or any descendant; the nearest `stan.config.*` is used.
+ * @param cwd - Repo root or any descendant; the nearest `stan.config.*` is used.
  * @returns Parsed, validated {@link ContextConfig}.
  */
 export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
@@ -197,7 +197,7 @@ export const loadConfig = async (cwd: string): Promise<ContextConfig> => {
  * Resolve `stanPath` for a given `cwd`.
  * Falls back to {@link DEFAULT_STAN_PATH} when no config is present.
  *
- * @param cwd Directory to search from.
+ * @param cwd - Directory to search from.
  */
 export const resolveStanPathSync = (cwd: string): string => {
   try {
@@ -210,7 +210,7 @@ export const resolveStanPathSync = (cwd: string): string => {
 /**
  * Async variant of {@link resolveStanPathSync}.
  *
- * @param cwd Directory to search from.
+ * @param cwd - Directory to search from.
  * @returns Resolved stanPath or the default when no config exists.
  */
 export const resolveStanPath = async (cwd: string): Promise<string> => {
@@ -231,9 +231,9 @@ export const resolveStanPath = async (cwd: string): Promise<string> => {
  * - When `keep === false`, copy `output/archive.tar` to `diff/archive.prev.tar`
  *   if present, then clear only the `output` directory.
  *
- * @param cwd Repo root.
- * @param stanPath Workspace folder (e.g., `.stan`).
- * @param keep When `true`, do not clear the output directory.
+ * @param cwd - Repo root.
+ * @param stanPath - Workspace folder (e.g., `.stan`).
+ * @param keep - When `true`, do not clear the output directory.
  * @returns Absolute path to the workspace root (`stanPath`).
  */
 export const ensureOutputDir = async (

@@ -24,9 +24,10 @@ const allowOpenInTests = process.env.STAN_FORCE_OPEN === '1';
  * - Skips entirely during tests unless `STAN_FORCE_OPEN=1`.
  * - Spawns detached processes; does not await completion.
  *
- * @param args.cwd Repo root used as the working directory.
- * @param args.files Repo‑relative file paths to open.
- * @param args.openCommand Command template containing `\{file\}` token.
+ * @param args - Object with:
+ *   - cwd: Repo root used as the working directory.
+ *   - files: Repo‑relative file paths to open.
+ *   - openCommand: Command template containing `\{file\}` token.
  */
 export const openFilesInEditor = (args: {
   cwd: string;

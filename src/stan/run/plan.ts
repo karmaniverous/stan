@@ -8,11 +8,12 @@ import type { ExecutionMode, RunBehavior, Selection } from './types';
 /**
  * Render a readable, multi‑line summary of the run plan (pure).
  *
- * @param cwd Repo root used only for `stanPath` path rendering.
- * @param args.selection Explicit selection (may be `null` to indicate “all”).
- * @param args.config Resolved configuration.
- * @param args.mode Execution mode (`concurrent` or `sequential`).
- * @param args.behavior Archive/combine/keep flags.
+ * @param cwd - Repo root used only for `stanPath` path rendering.
+ * @param args - Object with:
+ *   - selection: Explicit selection (may be `null` to indicate “all”).
+ *   - config: Resolved configuration.
+ *   - mode: Execution mode (`concurrent` or `sequential`).
+ *   - behavior: Archive/combine/keep flags.
  * @returns A human‑friendly summary printed by the CLI.
  */
 export const renderRunPlan = (

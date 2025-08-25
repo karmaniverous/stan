@@ -15,7 +15,7 @@ import { makeStanDirs } from './paths';
  * Recursively enumerate files under `root`, returning POSIX-style
  * relative paths (`/` separators, no leading `./`).
  *
- * @param root Absolute directory to walk.
+ * @param root - Absolute directory to walk.
  */
 export const listFiles = async (root: string): Promise<string[]> => {
   const out: string[] = [];
@@ -91,8 +91,8 @@ export type FilterOptions = {
  *
  * Paths are compared using POSIX separators.
  *
- * @param files Repo‑relative paths to consider.
- * @param options See {@link FilterOptions}.
+ * @param files - Repo‑relative paths to consider.
+ * @param options - See {@link FilterOptions}.
  * @returns Filtered list to include in archives/snapshots.
  */
 export const filterFiles = async (
@@ -138,8 +138,8 @@ export const filterFiles = async (
  * Ensure `stanPath/output` and `stanPath/diff` exist (and `stanPath/patch` so
  * patch payloads can be archived), returning their absolute paths.
  *
- * @param cwd Repo root.
- * @param stanPath STAN workspace folder.
+ * @param cwd - Repo root.
+ * @param stanPath - STAN workspace folder.
  * @returns `{ outDir, diffDir }` absolute paths.
  */
 export const ensureOutAndDiff = async (

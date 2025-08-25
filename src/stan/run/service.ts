@@ -24,11 +24,11 @@ const shouldWriteOrder =
  * - Execute selected scripts (in the chosen mode).
  * - Optionally create regular and diff archives (combine/keep behaviors).
  *
- * @param cwd Repo root for execution.
- * @param config Resolved configuration.
- * @param selection Explicit list of script keys (or `null` to run all).
- * @param mode Execution mode (`concurrent` by default).
- * @param behavior Archive/combine/keep flags.
+ * @param cwd - Repo root for execution.
+ * @param config - Resolved configuration.
+ * @param selection - Explicit list of script keys (or `null` to run all).
+ * @param mode - Execution mode (`concurrent` by default).
+ * @param behaviorMaybe - Archive/combine/keep flags.
  * @returns Absolute paths to created artifacts (script outputs and/or archives).
  */
 export const runSelected = async (

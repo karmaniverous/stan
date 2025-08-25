@@ -59,7 +59,7 @@ const readJson = async <T>(abs: string): Promise<T | null> => {
 /**
  * Collect version and baseline‑docs status for printing and preflight.
  *
- * @param cwd Repo root (or descendant).
+ * @param cwd - Repo root (or descendant).
  * @returns Version info including Node/package versions, resolved stanPath,
  *          whether this repo is the module’s own workspace, system prompt
  *          in‑sync flags, and last installed docs metadata.
@@ -144,7 +144,7 @@ export const getVersionInfo = async (cwd: string): Promise<VersionInfo> => {
 /**
  * Print a multi‑line human‑readable summary of version and docs status.
  *
- * @param v Result of {@link getVersionInfo}.
+ * @param v - Result of {@link getVersionInfo}.
  */
 export const printVersionInfo = (v: VersionInfo): void => {
   const lines = [

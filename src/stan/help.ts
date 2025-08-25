@@ -15,7 +15,7 @@ import { loadConfigSync } from './config';
 /**
  * Render a help footer that lists available script keys and examples.
  *
- * @param cwd Repo root (or descendant) used to locate `stan.config.*`.
+ * @param cwd - Repo root (or descendant) used to locate `stan.config.*`.
  * @returns Multi‑line string (empty when config cannot be loaded).
  */
 export const renderAvailableScriptsHelp = (cwd: string): string => {

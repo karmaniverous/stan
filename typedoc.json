@@ -4,6 +4,7 @@
     "bash",
     "console",
     "css",
+    "diff",
     "html",
     "javascript",
     "json",
@@ -23,6 +24,11 @@
     "./docs-src/cli-examples.md",
     "./docs-src/patch-workflow.md",
     "./docs-src/archives-and-snapshots.md",
+    "./docs-src/tutorial-quickstart.md",
+    "./docs-src/why-stan-over-alternatives.md",
+    "./docs-src/case-studies/rrstack.md",
+    "./docs-src/contributing.md",
+    "./docs-src/faq.md",
     "./CHANGELOG.md"
   ],
   "navigationLinks": {

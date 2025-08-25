@@ -8,6 +8,7 @@ ALIASES
   → <stanPath>/system/stan.todo.md
 
 Purpose
+
 - Single source of truth for the current development plan across chat
   threads.
 - The assistant updates this document as code/design advances (remove
@@ -47,6 +48,16 @@ Next up (high value)
     context window. Continue to emit robust patches with adequate context.
   - Require a “Commit Message” section header over the fenced commit text.
 
+- Docs compellingness (low‑effort wins)
+  - Add visuals (animated gif/terminal cast) in README for `stan init`, `stan run`, `stan patch`.
+  - Expand “Tutorial — Quickstart (End‑to‑End)” with copy‑paste commands and expected outputs.
+  - Case Studies: start with rrstack; invite community submissions.
+  - Comparison page: “Why STAN Over Alternatives?” with a simple table.
+  - Contributing — Dev Quickstart: local setup, commands, PR flow.
+  - FAQ: promote common answers (archives cadence, binary handling, unified diffs, CI).
+  - Add badges (npm, docs, license) to README for credibility.
+  - Link Roadmap (this file) prominently in README.
+
 Completed (recent)
 
 - Docs site config (Typedoc): navigationLinks object; docs build passes.
@@ -57,7 +68,7 @@ Completed (recent)
 
 - Handoff re‑trigger guard
   - Prevent generating a new handoff when a prior handoff block is pasted;
-    treat it as input and proceed with the startup checklist unless explicitly    asked for a new handoff.
+    treat it as input and proceed with the startup checklist unless explicitly asked for a new handoff.
 
 - Handoff policy
   - Codified cross‑thread handoff behavior in system prompt:
@@ -71,7 +82,7 @@ Completed (recent)
 
 - README trim
   - Shortened README to focus on value, quick start, and links to docs.
-  - Moved deep/volatile details to the documentation site and prompts.  - Preserved install/usage essentials and troubleshooting pointers.
+  - Moved deep/volatile details to the documentation site and prompts. - Preserved install/usage essentials and troubleshooting pointers.
 
 - Always‑on prompt checks (assistant loop)
   - Enshrined in system prompt as `.stan/system/parts/45-always-on-checks.md`
@@ -103,6 +114,7 @@ DX / utility ideas (backlog)
   - Quick “what to attach” heuristics in CLI output when archives are missing.
 
 Notes: Patch generation learnings (process)
+
 - Prefer small, anchored hunks with a/ and b/ prefixes and ≥3 lines of context.
 - Avoid relying on index headers; target working tree content.
 - One file per diff block; repeat per file when multiple updates are needed.

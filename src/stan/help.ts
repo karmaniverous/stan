@@ -26,15 +26,17 @@ export const renderAvailableScriptsHelp = (cwd: string): string => {
     const example = keys[0] ?? 'lint';
     return [
       '',
+      'Default: runs all scripts and writes archives.',
+      '',
       'Available script keys:',
       `  ${keys.join(', ')}`,
       '',
       'Examples:',
-      '  stan run -s',
+      '  stan run                  # all scripts, with archives',
       `  stan run -s ${example}`,
       `  stan run -q -x ${example}`,
-      '  stan run -A',
-      '  stan run -S -A -p',
+      '  stan run -A               # no archives',
+      '  stan run -S -A -p         # plan only, no scripts, no archives',
       `  stan run -c -s ${example}`,
       '',
     ].join('\n');

@@ -102,30 +102,31 @@ Optional:
 ## Commands at a glance
 
 - Run (build & snapshot)
-  - stan run
-  - stan run -p (print plan only)
-  - stan run -S (no scripts)
-  - stan run -A (no archives)
-  - stan run -c -s (include outputs inside archives and remove from disk)
+  - Default: stan run              # runs all configured scripts and writes archives
+  - stan run -p                    # print plan only, no side effects
+  - stan run -S                    # do not run scripts (combine with -A/-p)
+  - stan run -A                    # do not create archives
+  - stan run -c -s test            # include outputs inside archives; remove on-disk outputs
+  - stan run -q -s lint test       # sequential run in provided order
+  - stan run -x test               # run all except “test”
 - Snap (share & baseline)
   - stan snap
   - stan snap undo | redo | set <index> | info
   - stan snap -s (stash before snap; pop after)
 - Patch (discuss & patch)
-  - stan patch # from clipboard
-  - stan patch --check # validate only
+  - stan patch           # from clipboard (default)
+  - stan patch --check   # validate only
   - stan patch -f file.patch
 
 Global flags:
 
 - -d/--debug (verbose streaming of script stdout/stderr)
 - -b/--boring (disable color)
-
 ---
 
 ## Documentation
 
-- API reference: https://karmaniverous.github.io/stan
+- API reference: https://docs.karmanivero.us/stan
 - Guide and design notes (selected):
   - System & project prompts live under <stanPath>/system/
   - Response format, patch policy, and FEEDBACK handshake are codified in stan.system.md (assembled from parts)

@@ -17,11 +17,15 @@
   "hostedBaseUrl": "https://docs.karmanivero.us/stan",
   "out": "./docs/",
   "plugin": ["typedoc-plugin-mdn-links", "typedoc-plugin-replace-text"],
-  "projectDocuments": ["./CHANGELOG.md"],
+  "projectDocuments": [
+    "./CHANGELOG.md",
+    "./docs-src/cli-examples.md",
+    "./docs-src/patch-workflow.md",
+    "./docs-src/archives-and-snapshots.md"
+  ],
   "replaceText": {
     "replacements": [
-      {
-        "pattern": "<!-- TYPEDOC_EXCLUDE -->.*?<!-- /TYPEDOC_EXCLUDE -->",
+      {        "pattern": "<!-- TYPEDOC_EXCLUDE -->.*?<!-- /TYPEDOC_EXCLUDE -->",
         "flags": "gis",
         "replace": ""
       }

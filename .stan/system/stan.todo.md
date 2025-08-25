@@ -150,13 +150,8 @@ Next up (high value)
   - Keep comments brief and behavioral; avoid repeating type information.
   - Maintain zero‑warning policy for TSDoc lint/TypeDoc.
 
-- README and CLI help polish
-  - Confirm CLI examples align with new flags semantics.
-  - Keep the new “API docs and TSDoc” section current as rules evolve.
-
 - README trim
   - (Moved to Completed.)
-
 Notes: Patch generation learnings (process)
 
 - Prefer small, anchored hunks with a/ and b/ prefixes and ≥3 lines of context.

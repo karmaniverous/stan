@@ -16,6 +16,9 @@ Note: The project prompt is created on demand when repo‑specific policies emer
 - Generator: `npm run gen:system` (wired as `prebuild`) assembles parts
   in numeric/lex order into `.stan/system/stan.system.md`, adding a
   short generated header comment. It is a no‑op when no parts exist.
+- Distribution & archive injection:
+  - The published package includes `dist/stan.system.md`.
+  - During the archive phase in downstream repos, STAN temporarily writes the packaged monolith to `<stanPath>/system/stan.system.md` so full archives always contain a baseline prompt. Local monolith edits in downstream repos are ignored by archives and surfaced by CLI preflight. Propose downstream behavior changes in `<stanPath>/system/stan.project.md`.
 - Editing policy:
   - Do not hand‑edit the assembled monolith; update the relevant part(s)
     and re‑generate.
@@ -51,6 +54,15 @@ Note: The project prompt is created on demand when repo‑specific policies emer
   - Rely on Git history and release notes for long‑term record of completed work.
   - When a completed item establishes a durable policy, capture that policy
     here (project prompt) and remove it from “Completed” in the dev plan.
+
+## Prompt scope boundaries (system vs project)
+
+- The system prompt (`<stanPath>/system/stan.system.md`) is repo‑agnostic. Do not embed STAN‑repo‑only workflows there.
+- Use this project prompt to record STAN‑repo‑specific policy:
+  - How the system prompt is authored and assembled (parts → monolith).
+  - Distribution and archive behavior (packaged monolith injection).
+  - Any STAN‑repo maintenance or contribution guidance.
+- In downstream repos, assistants should treat `stan.system.md` as read‑only and propose behavior changes in `<stanPath>/system/stan.project.md`. CLI preflight will surface local monolith drift and `stan init` will update docs metadata.
 
 ## Build
 

@@ -2,8 +2,9 @@
  * CLI adapter for "stan snap" — Commander wiring only.
  */
 import type { Command } from 'commander';
-import { Command as Commander } from 'commander';
+import { Command as Commander, Option } from 'commander';
 
+import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import {
   handleInfo,
   handleRedo,
@@ -64,7 +65,7 @@ export const registerSnap = (cli: Commander): Command => {
       'stash changes (git stash -u) before snap and pop after',
     )
     .addOption(
-      new (require('commander').Option)(
+      new Option(
         '-S, --no-stash',
         'do not stash before snapshot (negated form)',
       ),
@@ -79,14 +80,11 @@ export const registerSnap = (cli: Commander): Command => {
         const fromCli = src.getOptionValueSource?.('stash') === 'cli';
         if (fromCli) stashFinal = Boolean(opts?.stash);
         else {
-          const { loadConfigSync, findConfigPathSync } =
-            require('@/stan/config') as typeof import('@/stan/config');
           const p = findConfigPathSync(process.cwd());
-          if (p)
-            stashFinal = Boolean(
-              loadConfigSync(process.cwd()).opts?.cliDefaults?.snap?.stash ??
-                false,
-            );
+          if (p) {
+            const cfg = loadConfigSync(process.cwd());
+            stashFinal = Boolean(cfg.opts?.cliDefaults?.snap?.stash ?? false);
+          }
         }
       } catch {
         /* ignore */

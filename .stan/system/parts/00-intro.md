@@ -42,7 +42,7 @@ Table of Contents
 - Inputs (Source of Truth)
 - Default Task (when files are provided with no extra prompt)
 - Requirements Guidelines
-- Commit message output (replaces refactor‑note files)
+- Commit message output
 - Response Format (MANDATORY)
 
 CRITICAL essentials (jump list)

@@ -8,6 +8,7 @@
 
 import { Command, Option } from 'commander';
 
+import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { printVersionInfo } from '@/stan/version';
 
@@ -59,8 +60,6 @@ export const makeCli = (): Command => {
       // Resolve config defaults
       let cfgDefaults: { debug?: boolean; boring?: boolean } = {};
       try {
-        const { loadConfigSync, findConfigPathSync } =
-          require('@/stan/config') as typeof import('@/stan/config');
         const cwd = process.cwd();
         const p = findConfigPathSync(cwd);
         if (p) {

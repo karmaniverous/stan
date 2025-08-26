@@ -173,8 +173,6 @@ export const registerRun = (cli: Command): Command => {
     }
 
     const allKeys = Object.keys(config.scripts);
-    const known = new Set(allKeys);
-
     // Explicit conflict: -c with -A
     if (combine && noArchiveFlag) {
       throw new CommanderError(
@@ -183,7 +181,6 @@ export const registerRun = (cli: Command): Command => {
         "error: option '-c, --combine' cannot be used with option '-A, --no-archive'",
       );
     }
-
     // Derive selection from flags first (to preserve -s order and -x semantics)
     const derived = deriveRunInvocation({
       scriptsProvided,

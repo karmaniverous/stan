@@ -43,7 +43,7 @@ Table of Contents
 - Inputs (Source of Truth)
 - Default Task (when files are provided with no extra prompt)
 - Requirements Guidelines
-- Commit message output (replaces refactor‑note files)
+- Commit message output
 - Response Format (MANDATORY)
 
 CRITICAL essentials (jump list)
@@ -519,7 +519,7 @@ If info is insufficient to proceed without critical assumptions, abort and clari
   - Write global requirements and cross‑cutting concerns to `/<stanPath>/system/stan.project.md`.
   - Clean up previous requirements comments that do not meet these guidelines.
 
-## Commit message output (replaces refactor-note files)
+## Commit message output
 
 - MANDATORY: Commit message MUST be wrapped in a fenced code block.
   - Use a plain triple-backtick fence (or longer per the fence hygiene rule if needed).
@@ -527,10 +527,8 @@ If info is insufficient to proceed without critical assumptions, abort and clari
   - Emit the commit message once, at the end of the reply.
   - This rule applies to every change set, regardless of size.
 
-- The assistant MUST NOT create or persist refactor-note files under
-  `<stanPath>/refactors/`.
 - At the end of any change set, the assistant MUST output a commit
-  message instead of a refactor-note file.
+  message.
   - Subject line: max 50 characters (concise summary).
   - Body: hard-wrapped at 72 columns.
   - Recommended structure:

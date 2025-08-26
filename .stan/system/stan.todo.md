@@ -23,8 +23,6 @@ Output & formatting policy
 
 Plan management policy
 
-- No refactor-note files are to be written or persisted under
-  <stanPath>/refactors.
 - At the end of any change set, the assistant provides a commit message
   (first line ≤ 50 chars; body wrapped at 72).
 - Completed retention:

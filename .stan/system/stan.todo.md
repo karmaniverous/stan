@@ -69,12 +69,15 @@ Completed (recent)
 - Hotfix: fix parse error in src/stan/config.ts by removing stray “\*/;” tokens
   after two JSDoc blocks (devMode, patchOpenCommand); unblocks build/lint/
   typecheck/tests ahead of Phase 1 decomposition.
+- CLI run: enforce parse‑time conflicts for -S with -s/-x using Commander
+  Option.conflicts so `parseAsync` rejects with code
+  `commander.conflictingOption` (fixes failing
+  runner.semantics.v2 test).
 
 DX / utility ideas (backlog)
 
 - CLI/automation:
-  - `stan run --plan --json` and `stan -v --json` for tool integration.
-  - `stan patch --check --report` to print an affected‑files/hunks summary.
+  - `stan run --plan --json` and `stan -v --json` for tool integration.  - `stan patch --check --report` to print an affected‑files/hunks summary.
   - Optional progress timers per phase (scripts/archives) with totals.
   - Archive summary line: file count, excluded binaries, large‑text flagged.
 

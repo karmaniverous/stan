@@ -41,7 +41,6 @@ export const registerRun = (cli: Command): Command => {
     '-x, --except-scripts <keys...>',
     'script keys to exclude (reduces from --scripts or from full set)',
   );
-
   // Mode flags
   const optSequential = new Option(
     '-q, --sequential',
@@ -79,13 +78,20 @@ export const registerRun = (cli: Command): Command => {
     'do not keep the output directory (negated form)',
   );
   const optNoScripts = new Option('-S, --no-scripts', 'do not run scripts');
+  // Parse-time conflicts: -S may not be combined with -s or -x.
+  // Commander resolves conflicts during parsing, causing parseAsync() to reject with
+  // code 'commander.conflictingOption', which our tests expect.
+  optNoScripts.conflicts(['scripts', 'except-scripts']);
+  // Also mark the reverse relationship for robustness across Commander versions.
+  // (These are benign if Commander resolves by attribute name.)
+  optScripts.conflicts('no-scripts');
+  optExcept.conflicts('no-scripts');
 
   // Plan
   const optPlan = new Option(
     '-p, --plan',
     'print run plan and exit (no side effects)',
   );
-
   // Add all options
   cmd
     .addOption(optScripts)
@@ -102,7 +108,6 @@ export const registerRun = (cli: Command): Command => {
     .addOption(optPlan);
 
   applyCliSafety(cmd);
-
   // Tag defaults (config overrides > built-ins)
   try {
     const p = findConfigPathSync(process.cwd());

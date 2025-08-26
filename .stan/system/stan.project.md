@@ -6,6 +6,7 @@ General, repo‑agnostic standards live in `/stan.system.md`.
 Note: The project prompt is created on demand when repo‑specific policies emerge. No template is installed or shipped by `stan init`.
 
 ## System prompt source layout & assembly (authoring in this repo)
+
 - Runtime invariant: downstream tools and assistants consume a single file
   `.stan/system/stan.system.md`. Do not change this invariant.
 - Source split: author the system prompt as ordered parts under
@@ -133,6 +134,19 @@ Note: The project prompt is created on demand when repo‑specific policies emer
 - On patch failures:
   - Analyze failures for processing improvements (parsing, cleaning, tolerant apply strategies).
   - Propose concrete code changes (and tests) to `src/stan/patch/*` and related utilities.
+
+## Archiving & snapshot selection semantics (includes/excludes)
+
+- Base selection:
+  - Apply `.gitignore` semantics, default denials (`node_modules`, `.git`), user `excludes`, and STAN workspace rules.
+  - Always exclude `<stanPath>/diff`; exclude `<stanPath>/output` unless the caller explicitly requests output inclusion (e.g., combine mode).
+
+- Additive includes:
+  - `includes` is an additive allow‑list: any file matching an `includes` glob is ADDED back to the base selection even if it would otherwise be excluded by `.gitignore`, user `excludes`, or default denials.
+  - Reserved exclusions still apply (diff is always excluded; output excluded unless explicitly included by combine behavior).
+
+- Order and determinism:
+  - Preserve deterministic ordering by constructing a union of the base selection with the additive allow‑list while maintaining stable file ordering.
 
 ## Logging
 

@@ -6,7 +6,6 @@
 - Do not combine changes for multiple files in a single unified diff payload. Emit a separate Patch block per file (see Response Format).
 
 # CRITICAL: Layout
-
 - stanPath (default: `.stan`) is the root for STAN operational assets:
   - `/<stanPath>/system`: policies (this file). The project prompt (`stan.project.md`) is created on demand by STAN when repo‑specific requirements emerge (no template is installed or shipped).
   - `/<stanPath>/output`: script outputs and `archive.tar`/`archive.diff.tar`
@@ -15,3 +14,11 @@
   - `/<stanPath>/patch`: canonical patch workspace (see Patch Policy)
 - Config key is `stanPath`.
 - Bootloader note: This repository includes a minimal bootloader prompt at `/<stanPath>/system/stan.bootloader.md` purely for convenience so a downstream AI can locate this file in attached artifacts. Once `stan.system.md` is loaded, the bootloader has no further role.
+
+## One‑patch‑per‑file (hard rule + validator)
+
+- HARD RULE: For N changed files, produce exactly N Patch blocks — one Patch fence per file. Never aggregate multiple files into one unified diff block.
+- Validators MUST fail the message composition if they detect:
+  - A single Patch block that includes more than one “diff --git” file header, or
+  - Any Patch block whose headers reference paths from more than one file.
+- When such a violation is detected, STOP and recompose with one Patch block per file.

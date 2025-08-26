@@ -68,8 +68,28 @@ in a fence computed by the algorithm above.
 
 ---
 
-## Plain Unified Diff Policy (no base64)
+## Post‑compose verification checklist (MUST PASS)
 
+Before sending a reply, verify all of the following:
+
+1) One‑patch‑per‑file
+   - There is exactly one Patch block per changed file.
+   - No Patch block contains more than one “diff --git a/<path> b/<path>”.
+
+2) Commit message isolation and position
+   - The “Commit Message (MANDATORY; fenced code block)” appears once, as the final section.
+   - The commit message fence is not inside any other fenced block.
+
+3) Fence hygiene (+1 rule)
+   - For every fenced block, the outer fence is strictly longer than any internal backtick run (minimum 3).
+   - Patches, optional Full Listings, and commit message all satisfy the +1 rule.
+
+4) Section headings
+   - Headings match the template exactly (names and order).
+
+If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
+
+## Plain Unified Diff Policy (no base64)
 - Never emit base64‑encoded patches.
 - Always emit plain unified diffs with @@ hunks.
 - The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.

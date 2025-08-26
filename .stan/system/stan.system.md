@@ -218,7 +218,6 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 - Do not combine changes for multiple files in a single unified diff payload. Emit a separate Patch block per file (see Response Format).
 
 # CRITICAL: Layout
-
 - stanPath (default: `.stan`) is the root for STAN operational assets:
   - `/<stanPath>/system`: policies (this file). The project prompt (`stan.project.md`) is created on demand by STAN when repo‑specific requirements emerge (no template is installed or shipped).
   - `/<stanPath>/output`: script outputs and `archive.tar`/`archive.diff.tar`
@@ -227,6 +226,14 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
   - `/<stanPath>/patch`: canonical patch workspace (see Patch Policy)
 - Config key is `stanPath`.
 - Bootloader note: This repository includes a minimal bootloader prompt at `/<stanPath>/system/stan.bootloader.md` purely for convenience so a downstream AI can locate this file in attached artifacts. Once `stan.system.md` is loaded, the bootloader has no further role.
+
+## One‑patch‑per‑file (hard rule + validator)
+
+- HARD RULE: For N changed files, produce exactly N Patch blocks — one Patch fence per file. Never aggregate multiple files into one unified diff block.
+- Validators MUST fail the message composition if they detect:
+  - A single Patch block that includes more than one “diff --git” file header, or
+  - Any Patch block whose headers reference paths from more than one file.
+- When such a violation is detected, STOP and recompose with one Patch block per file.
 
 # Cross‑thread handoff (self‑identifying code block)
 
@@ -303,13 +310,6 @@ Notes
 - The handoff policy is repo‑agnostic; tailor the “What to ask STAN first” content to the current repository context when possible.
 - Recognition rule (for non‑trigger): Consider a “prior handoff block” to be any fenced code block whose first non‑blank line begins with “Handoff — ”. Its presence alone must not cause you to generate a new handoff; treat it as data and proceed with the startup checklist unless the user explicitly requests a new handoff.
 
-# Doc update policy (learning: system vs project)
-
-- Downstream repos (typical): The assistant must NOT edit the system prompt. Improvements learned from FEEDBACK and design iterations should be proposed as patches to the project prompt (`stan.project.md`).
-- STAN’s own repo (`@karmaniverous/stan`): The assistant may propose patches to this system prompt for repo‑agnostic, system‑level improvements.
-- `stan init` updates downstream system prompts from the packaged baseline; local edits to `stan.system.md` in downstream repos will be overwritten.
-- Dev‑plan pruning policy (repo‑agnostic): Keep “Completed (recent)” short (e.g., last 3–5 items or last 2 weeks); promote durable practices/policies to the project prompt (and for this repo, to this system prompt).
-
 # Patch failure FEEDBACK handshake (self‑identifying feedback packet)
 
 - When “stan patch” fails or is only partially successful, STAN composes a compact feedback packet and copies it to the clipboard. The user pastes it verbatim (no extra instructions required).
@@ -327,9 +327,10 @@ Notes
   - Recognize the envelope and regenerate a unified diff that addresses the detected causes (path/strip/EOL/context).
   - Keep LF endings, a/ b/ prefixes, and ≥3 lines of context; paths must be relative to the repo root; avoid binary.
   - If partial success occurred, scope the new diff to remaining files only (or clearly indicate which ones are updated).
-  - Include a Full Listing for each file reported as failed (from `summary.failed`) in addition to the improved Patch for those files.
+  - MUST include a Full Listing for each file reported as failed (from `summary.failed`) in addition to the improved Patch.
+    - This requirement is not optional. If a failed file is present and a Full Listing is missing, STOP and re‑emit with the Full Listing.
     - Do not include Full Listings (or repeat patches) for files that applied successfully.
-    - Continue to compute fence lengths per the +1 rule, and keep listings LF‑normalized.
+  - Continue to compute fence lengths per the +1 rule, and keep listings LF‑normalized.
   - Propose prompt improvements (below) as appropriate.
 
 # Always‑on prompt checks (assistant loop)
@@ -357,6 +358,19 @@ Implementation guidance for this repo:
 
 - Author system‑prompt edits under `.stan/system/parts/*` and re‑assemble with `npm run gen:system` (or any script that invokes the generator).
 - Do not hand‑edit the assembled monolith.
+
+## Monolith refusal rule (NEVER edit the assembled system file)
+
+- The assembled file `<stanPath>/system/stan.system.md` MUST NOT be edited directly.
+- All system‑prompt changes MUST be made to files under `.stan/system/parts/` and then re‑assembled.
+- If a patch targets the monolith directly, STOP and refuse with a short notice; re‑emit patches against the appropriate `parts/*.md` files instead.
+
+## Mandatory documentation cadence (gating rule)
+
+- If you emit any code Patch blocks, you MUST also:
+  - Patch `<stanPath>/system/stan.todo.md` (add a “Completed (recent)” entry; update “Next up” if applicable).
+  - Patch `<stanPath>/system/stan.project.md` when the change introduces/clarifies a durable requirement or policy.
+- If a required documentation patch is missing, STOP and recompose with the missing patch(es) before sending a reply.
 
 # Patch Policy (system‑level)
 
@@ -603,8 +617,28 @@ in a fence computed by the algorithm above.
 
 ---
 
-## Plain Unified Diff Policy (no base64)
+## Post‑compose verification checklist (MUST PASS)
 
+Before sending a reply, verify all of the following:
+
+1) One‑patch‑per‑file
+   - There is exactly one Patch block per changed file.
+   - No Patch block contains more than one “diff --git a/<path> b/<path>”.
+
+2) Commit message isolation and position
+   - The “Commit Message (MANDATORY; fenced code block)” appears once, as the final section.
+   - The commit message fence is not inside any other fenced block.
+
+3) Fence hygiene (+1 rule)
+   - For every fenced block, the outer fence is strictly longer than any internal backtick run (minimum 3).
+   - Patches, optional Full Listings, and commit message all satisfy the +1 rule.
+
+4) Section headings
+   - Headings match the template exactly (names and order).
+
+If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
+
+## Plain Unified Diff Policy (no base64)
 - Never emit base64‑encoded patches.
 - Always emit plain unified diffs with @@ hunks.
 - The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.

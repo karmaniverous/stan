@@ -60,35 +60,16 @@ Next up (high value)
 
 Completed (recent)
 
-- Docs site config (Typedoc): navigationLinks object; docs build passes.
-- Dist/init: stop shipping/copying prompt templates (ship only stan.system.md; init writes only .docs.meta.json and ensures directories).
-- Prompt policy alignment: clarify on‑demand project prompt; remove template/bootloader mentions in dist list; update project prompt header.
-- README/docs: reflect on‑demand project prompt; links verified; Getting Started updated.
-- Full suite green: lint, typecheck, tests, docs, knip, build.
+- Archiving selection semantics + docs cadence enforcement
+  - feat(fs): make `includes` additive and able to override `.gitignore`/excludes for specific paths; preserve reserved exclusions; keep ordering deterministic.
+  - tests: extend fs.glob tests to cover additive includes even when .gitignore would exclude a match.
+  - docs(project): add “Archiving & snapshot selection semantics (includes/excludes)” to stan.project.md.
+  - docs(system): add a monolith refusal rule; strengthen FEEDBACK Full Listing requirement.
+  - docs(system): add a post‑compose verification checklist to enforce fence hygiene and commit isolation.
 
-- Handoff re‑trigger guard
-  - Prevent generating a new handoff when a prior handoff block is pasted;
-    treat it as input and proceed with the startup checklist unless explicitly asked for a new handoff.
+Next up (follow‑through)
 
-- Handoff policy
-  - Codified cross‑thread handoff behavior in system prompt:
-    self‑identifying code block, required sections, trigger semantics.
-
-- Archive build assembles system monolith (dev repo only)
-  - Updated archive phase to assemble .stan/system/stan.system.md from parts
-    when running in @karmaniverous/stan; downstream repos continue to archive
-    the packaged baseline (unchanged). Avoids patching the monolith directly
-    while keeping archives reproducible.
-
-- README trim
-  - Shortened README to focus on value, quick start, and links to docs.
-  - Moved deep/volatile details to the documentation site and prompts. - Preserved install/usage essentials and troubleshooting pointers.
-
-- Always‑on prompt checks (assistant loop)
-  - Enshrined in system prompt as `.stan/system/parts/45-always-on-checks.md`
-    (assembled into `stan.system.md`).
-  - CLI preflight already runs at the start of `stan run`, `stan snap`, and `stan patch`; no further tooling changes required at this time.
-  - Assistant will, on every turn: (1) propose system‑prompt updates only in the STAN repo, (2) promote repo‑specific rules to `stan.project.md`, and (3) update `stan.todo.md` with each material change set.
+- Public docs: surface the new additive‑includes rule in the website guide (“Archives & snapshots”) with a short example.
 
 DX / utility ideas (backlog)
 
@@ -100,14 +81,10 @@ DX / utility ideas (backlog)
 
 - Patch ergonomics:
   - Adaptive context: automatically widen context margins on git/jsdiff failure (re‑try with more context).
+  - Add a small preflight lint that flags aggregated multi‑file diffs before composing the final message.
   - Editor integration: open patched files at first changed line (from hunk);
     support VS Code, Cursor, WebStorm templates via config tokens.
   - Better rejects UX: on failure, surface the new `<stanPath>/patch/rejects/...` root path explicitly and offer a one‑liner to open it.
-
-- Snap/history:
-  - `stan snap info --json` for UI/CI consumers.
-  - Optional snapshot labels (names) to aid navigation.
-  - Always capture archives alongside snapshots when `--archive` ran since the last snap (configurable).
 
 - Docs & guidance:
   - FEEDBACK envelope “causes” mapping table in docs (path/strip/EOL/context) with suggested assistant remedies.

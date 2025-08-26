@@ -24,3 +24,15 @@ Implementation guidance for this repo:
 - Author system‑prompt edits under `.stan/system/parts/*` and re‑assemble with `npm run gen:system` (or any script that invokes the generator).
 - Do not hand‑edit the assembled monolith.
 
+## Monolith refusal rule (NEVER edit the assembled system file)
+
+- The assembled file `<stanPath>/system/stan.system.md` MUST NOT be edited directly.
+- All system‑prompt changes MUST be made to files under `.stan/system/parts/` and then re‑assembled.
+- If a patch targets the monolith directly, STOP and refuse with a short notice; re‑emit patches against the appropriate `parts/*.md` files instead.
+
+## Mandatory documentation cadence (gating rule)
+
+- If you emit any code Patch blocks, you MUST also:
+  - Patch `<stanPath>/system/stan.todo.md` (add a “Completed (recent)” entry; update “Next up” if applicable).
+  - Patch `<stanPath>/system/stan.project.md` when the change introduces/clarifies a durable requirement or policy.
+- If a required documentation patch is missing, STOP and recompose with the missing patch(es) before sending a reply.

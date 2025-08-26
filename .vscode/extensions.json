@@ -3,6 +3,7 @@
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "vitest.explorer",
-    "jebbs.plantuml"
+    "jebbs.plantuml",
+    "gruntfuggly.todo-tree"
   ]
 }

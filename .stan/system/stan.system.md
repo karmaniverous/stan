@@ -37,7 +37,7 @@ Table of Contents
 - Doc update policy (learning: system vs project)
 - Patch failure FEEDBACK handshake
 - Patch Policy (system‑level)
-- Patch generation guidelines
+- CRITICAL: Patch generation guidelines (compatible with “stan patch”)
 - Hunk hygiene (jsdiff‑compatible)
 - Archives & preflight
 - Inputs (Source of Truth)

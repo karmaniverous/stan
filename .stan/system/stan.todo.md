@@ -73,11 +73,18 @@ Completed (recent)
   Option.conflicts so `parseAsync` rejects with code
   `commander.conflictingOption` (fixes failing
   runner.semantics.v2 test).
+- System prompt: FEEDBACK robustness
+  - If FEEDBACK `summary.failed` contains only the placeholder “(patch)”, treat
+    `summary.changed` as the target set and include a Full Listing plus improved
+    Patch for each path.
+  - After a failed apply, consider widening unified‑diff context (e.g., 5–7 lines)
+    when regenerating the corrected diff to improve placement reliability.
 
 DX / utility ideas (backlog)
 
 - CLI/automation:
-  - `stan run --plan --json` and `stan -v --json` for tool integration.  - `stan patch --check --report` to print an affected‑files/hunks summary.
+  - `stan run --plan --json` and `stan -v --json` for tool integration.
+  - `stan patch --check --report` to print an affected‑files/hunks summary.
   - Optional progress timers per phase (scripts/archives) with totals.
   - Archive summary line: file count, excluded binaries, large‑text flagged.
 

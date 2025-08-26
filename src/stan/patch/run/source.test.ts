@@ -12,7 +12,6 @@ vi.mock('clipboardy', () => ({
 }));
 
 import { readPatchSource } from './source';
-
 describe('readPatchSource precedence and behaviors', () => {
   let dir: string;
 
@@ -56,6 +55,31 @@ describe('readPatchSource precedence and behaviors', () => {
 
   it('defaults to clipboard when no inputs provided', async () => {
     const res = await readPatchSource(dir);
+    expect(res.kind).toBe('clipboard');
+    expect(res.raw).toBe('CLIPBOARD_CONTENT');
+  });
+
+  it('uses default file from config when provided and not ignored', async () => {
+    const rel = 'def.patch';
+    const abs = path.join(dir, rel);
+    await writeFile(abs, 'DEFAULT_FILE_PATCH\n', 'utf8');
+    const res = await readPatchSource(dir, undefined, {
+      defaultFile: rel,
+    });
+    expect(res.kind).toBe('file');
+    expect(res.filePathRel).toBe(rel);
+    const body = await readFile(abs, 'utf8');
+    expect(res.raw).toBe(body);
+  });
+
+  it('ignores default file when ignoreDefaultFile=true (-F) and reads clipboard', async () => {
+    const rel = 'def.patch';
+    const abs = path.join(dir, rel);
+    await writeFile(abs, 'DEFAULT_FILE_PATCH\n', 'utf8');
+    const res = await readPatchSource(dir, undefined, {
+      defaultFile: rel,
+      ignoreDefaultFile: true,
+    });
     expect(res.kind).toBe('clipboard');
     expect(res.raw).toBe('CLIPBOARD_CONTENT');
   });

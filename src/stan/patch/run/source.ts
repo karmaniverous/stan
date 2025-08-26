@@ -27,7 +27,13 @@ const readFromClipboard = async (): Promise<string> => {
 export const readPatchSource = async (
   cwd: string,
   inputMaybe?: string,
-  opts?: { file?: string | boolean },
+  opts?: {
+    file?: string | boolean;
+    /** Default patch file path to use when no argument/-f provided and not ignored. */
+    defaultFile?: string | null | undefined;
+    /** When true, ignore configured default file (forces clipboard unless arg/-f given). */
+    ignoreDefaultFile?: boolean;
+  },
 ): Promise<PatchSourceResult> => {
   // Resolve source precedence (argument -> file flag -> clipboard)
   if (typeof inputMaybe === 'string' && inputMaybe.length > 0) {
@@ -49,6 +55,23 @@ export const readPatchSource = async (
       filePathRel: path.relative(cwd, absFile).replace(/\\/g, '/'),
     };
   }
-  // Default: clipboard
+  // -F/--no-file: ignore default file and use clipboard
+  if (opts?.ignoreDefaultFile) {
+    return { kind: 'clipboard', raw: await readFromClipboard() };
+  }
+  // Default file (from config) if present; else clipboard
+  const defaultFile =
+    typeof opts?.defaultFile === 'string' && opts.defaultFile.trim().length
+      ? opts.defaultFile.trim()
+      : undefined;
+  if (defaultFile) {
+    const abs = repoJoin(cwd, defaultFile);
+    const raw = await readFile(abs, 'utf8');
+    return {
+      kind: 'file',
+      raw,
+      filePathRel: path.relative(cwd, abs).replace(/\\/g, '/'),
+    };
+  }
   return { kind: 'clipboard', raw: await readFromClipboard() };
 };

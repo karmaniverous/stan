@@ -6,7 +6,7 @@
  * - Help for root should include available script keys from config.
  */
 
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { printVersionInfo } from '@/stan/version';
@@ -16,7 +16,6 @@ import { performInit, registerInit } from './init';
 import { registerPatch } from './patch';
 import { registerRun } from './runner';
 import { registerSnap } from './snap';
-
 /**
  * Build the root CLI (`stan`) without side effects (safe for tests).
  *
@@ -34,15 +33,16 @@ export const makeCli = (): Command => {
       'Generate reproducible STAN artifacts for AI-assisted development',
     )
     .option('-d, --debug', 'enable verbose debug logging')
+    .addOption(new Option('-D, --no-debug', 'disable verbose debug logging'))
     .option(
       '-b, --boring',
       'disable all color and styling (useful for tests/CI)',
     )
+    .addOption(new Option('-B, --no-boring', 'do not disable color/styling'))
     .option('-v, --version', 'print version and baseline-docs status');
 
   // Root-level help footer: show available script keys
   cli.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
-
   // Ensure tests never call process.exit() and argv normalization is consistent
   applyCliSafety(cli);
 
@@ -50,14 +50,49 @@ export const makeCli = (): Command => {
   cli.hook('preAction', (thisCommand) => {
     try {
       const root = thisCommand.parent ?? thisCommand;
-      const opts = (
-        root as unknown as {
-          opts?: () => { debug?: boolean; boring?: boolean };
+      const holder = root as unknown as {
+        opts?: () => { debug?: boolean; boring?: boolean };
+        getOptionValueSource?: (name: string) => string | undefined;
+      };
+      const opts = holder.opts?.() ?? {};
+
+      // Resolve config defaults
+      let cfgDefaults: { debug?: boolean; boring?: boolean } = {};
+      try {
+        const { loadConfigSync, findConfigPathSync } =
+          require('@/stan/config') as typeof import('@/stan/config');
+        const cwd = process.cwd();
+        const p = findConfigPathSync(cwd);
+        if (p) {
+          const cfg = loadConfigSync(cwd);
+          const cliDefs = cfg.opts?.cliDefaults;
+          cfgDefaults = {
+            debug:
+              typeof cliDefs?.debug === 'boolean' ? cliDefs.debug : undefined,
+            boring:
+              typeof cliDefs?.boring === 'boolean' ? cliDefs.boring : undefined,
+          };
         }
-      ).opts?.();
-      if (opts?.debug) process.env.STAN_DEBUG = '1';
-      if (opts?.boring) {
-        // Our color helpers consult STAN_BORING; many libs also honor FORCE_COLOR=0/NO_COLOR.
+      } catch {
+        // best-effort
+      }
+
+      const src = holder.getOptionValueSource?.bind(root);
+      const debugFromCli =
+        src && src('debug') === 'cli' ? Boolean(opts.debug) : undefined;
+      const boringFromCli =
+        src && src('boring') === 'cli' ? Boolean(opts.boring) : undefined;
+
+      const debugFinal =
+        typeof debugFromCli === 'boolean'
+          ? debugFromCli
+          : Boolean(cfgDefaults.debug ?? false);
+      const boringFinal =
+        typeof boringFromCli === 'boolean'
+          ? boringFromCli
+          : Boolean(cfgDefaults.boring ?? false);
+      if (debugFinal) process.env.STAN_DEBUG = '1';
+      if (boringFinal) {
         process.env.STAN_BORING = '1';
         process.env.FORCE_COLOR = '0';
         process.env.NO_COLOR = '1';
@@ -66,7 +101,6 @@ export const makeCli = (): Command => {
       // ignore
     }
   });
-
   // Subcommands
   registerRun(cli);
   registerInit(cli);
@@ -83,12 +117,7 @@ export const makeCli = (): Command => {
       boring?: boolean;
       version?: boolean;
     }>();
-    if (opts.debug) process.env.STAN_DEBUG = '1';
-    if (opts.boring) {
-      process.env.STAN_BORING = '1';
-      process.env.FORCE_COLOR = '0';
-      process.env.NO_COLOR = '1';
-    }
+    // preAction already resolved and set env from flags>config>built-ins.
 
     if (opts.version) {
       const vmod = await import('@/stan/version');

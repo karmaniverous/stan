@@ -1,7 +1,7 @@
 /* src/cli/stan/patch.ts
  * CLI adapter for "stan patch" — Commander wiring only.
  */
-import type { Command } from 'commander';
+import { Command, Option } from 'commander';
 
 import { runPatch } from '@/stan/patch/service';
 
@@ -23,6 +23,12 @@ export const registerPatch = (cli: Command): Command => {
     )
     .argument('[input]', 'Patch data (unified diff)')
     .option('-f, --file [filename]', 'Read patch from file as source')
+    .addOption(
+      new Option(
+        '-F, --no-file',
+        'Ignore configured default patch file (use clipboard unless input/-f provided)',
+      ),
+    )
     .option('-c, --check', 'Validate patch without applying any changes');
 
   applyCliSafety(sub);
@@ -30,9 +36,33 @@ export const registerPatch = (cli: Command): Command => {
   sub.action(
     async (
       inputMaybe?: string,
-      opts?: { file?: string | boolean; check?: boolean },
+      opts?: { file?: string | boolean; check?: boolean; noFile?: boolean },
     ) => {
-      await runPatch(process.cwd(), inputMaybe, opts);
+      // Resolve default patch file from config (opts.cliDefaults.patch.file)
+      let defaultFile: string | undefined;
+      try {
+        const { loadConfigSync, findConfigPathSync } = await import(
+          '@/stan/config'
+        );
+        const cwd = process.cwd();
+        const p = findConfigPathSync(cwd);
+        if (p) {
+          const cfg = loadConfigSync(cwd);
+          const fromCfg = cfg.opts?.cliDefaults?.patch?.file;
+          if (typeof fromCfg === 'string' && fromCfg.trim().length > 0) {
+            defaultFile = fromCfg.trim();
+          }
+        }
+      } catch {
+        // best-effort
+      }
+
+      await runPatch(process.cwd(), inputMaybe, {
+        file: opts?.file,
+        check: opts?.check,
+        defaultFile,
+        noFile: Boolean(opts?.noFile),
+      });
     },
   );
 

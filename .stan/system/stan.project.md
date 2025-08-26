@@ -74,6 +74,34 @@ Note: The project prompt is created on demand when repo‑specific policies emer
 - The `stan.dist/` build is used for internal CLI testing (`npm run stan:build`)
   and is cleaned after build.
 
+## CLI defaults via configuration (opts.cliDefaults)
+
+The CLI honors phase‑scoped defaults when flags are omitted. Precedence is:
+
+- Flags > opts.cliDefaults > built‑ins.
+
+Schema (all keys optional):
+
+```
+opts:
+  cliDefaults:
+    boring: boolean          # root -b / -B
+    debug: boolean           # root -d / -D
+    patch:
+      file: string           # default patch file; overridden by arg or -f; ignored by -F/--no-file
+    run:
+      archive: boolean       # -a / -A; combine implies archive=true
+      combine: boolean       # -c / -C
+      keep: boolean          # -k / -K
+      sequential: boolean    # -q / -Q
+      scripts: boolean | string[]  # default selection when neither -s nor -S given:
+                                   #   true => all, false => none, string[] => listed keys (filtered to known)
+    snap:
+      stash: boolean         # snap -s / -S
+```
+
+Built‑ins (when neither flags nor config specify): debug=false, boring=false; run: archive=true, combine=false, keep=false, sequential=false, scripts=true; snap: stash=false; patch file unset.
+
 ## CLI (repo tool behavior)
 
 - Root command: `stan` (supports `-d/--debug` globally).
@@ -130,6 +158,11 @@ Note: The project prompt is created on demand when repo‑specific policies emer
 - Conflicts:
   - `-S` conflicts with `-s`/`-x`.
   - `-c` conflicts with `-A` (runtime check).
+
+Short negative flags:
+
+- Root: `-D` (no-debug), `-B` (no-boring)
+- Run: `-Q` (no-sequential), `-K` (no-keep), `-C` (no-combine); Snap: `-S` (no-stash)
 
 ## Diff snapshot policy
 

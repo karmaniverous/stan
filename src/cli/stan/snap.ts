@@ -13,7 +13,6 @@ import {
 } from '@/stan/snap/handlers';
 
 import { applyCliSafety } from './cli-utils';
-
 /**
  * Register the `snap` subcommand on the provided root CLI.
  *
@@ -64,8 +63,35 @@ export const registerSnap = (cli: Commander): Command => {
       '-s, --stash',
       'stash changes (git stash -u) before snap and pop after',
     )
+    .addOption(
+      new (require('commander').Option)(
+        '-S, --no-stash',
+        'do not stash before snapshot (negated form)',
+      ),
+    )
     .action(async (opts?: { stash?: boolean }) => {
-      await handleSnap(opts);
+      // Resolve default stash from config when flags omitted
+      let stashFinal: boolean | undefined;
+      try {
+        const src = sub as unknown as {
+          getOptionValueSource?: (name: string) => string | undefined;
+        };
+        const fromCli = src.getOptionValueSource?.('stash') === 'cli';
+        if (fromCli) stashFinal = Boolean(opts?.stash);
+        else {
+          const { loadConfigSync, findConfigPathSync } =
+            require('@/stan/config') as typeof import('@/stan/config');
+          const p = findConfigPathSync(process.cwd());
+          if (p)
+            stashFinal = Boolean(
+              loadConfigSync(process.cwd()).opts?.cliDefaults?.snap?.stash ??
+                false,
+            );
+        }
+      } catch {
+        /* ignore */
+      }
+      await handleSnap({ stash: Boolean(stashFinal) });
     });
 
   return cli;

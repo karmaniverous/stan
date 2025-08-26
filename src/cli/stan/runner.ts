@@ -34,12 +34,21 @@ export const registerRun = (cli: Command): Command => {
       '-q, --sequential',
       'run sequentially (with -s uses listed order; otherwise config order)',
     )
+    .addOption(
+      new Option('-Q, --no-sequential', 'run concurrently (negated form)'),
+    )
     // Legacy explicit archive flag; archiving is now ON by default.
     .option('-a, --archive', 'create archive.tar and archive.diff.tar')
     .addOption(new Option('-A, --no-archive', 'do not create archives'))
     .addOption(new Option('-S, --no-scripts', 'do not run scripts'))
     .option('-p, --plan', 'print run plan and exit (no side effects)')
-    .option('-k, --keep', 'keep (do not clear) the output directory');
+    .option('-k, --keep', 'keep (do not clear) the output directory')
+    .addOption(
+      new Option(
+        '-K, --no-keep',
+        'do not keep the output directory (negated form)',
+      ),
+    );
 
   applyCliSafety(cmd);
 
@@ -51,6 +60,9 @@ export const registerRun = (cli: Command): Command => {
     .conflicts(['keep']);
 
   cmd.addOption(combineOpt);
+  cmd.addOption(
+    new Option('-C, --no-combine', 'do not include outputs inside archives'),
+  );
 
   // Track raw presence of selection flags to detect conflicts reliably.
   let sawNoScriptsFlag = false;
@@ -87,7 +99,6 @@ export const registerRun = (cli: Command): Command => {
       }
       maybe = undefined;
     }
-
     const isContextConfig = (
       v: unknown,
     ): v is { stanPath: string; scripts: Record<string, string> } =>
@@ -99,11 +110,21 @@ export const registerRun = (cli: Command): Command => {
     const config = isContextConfig(maybe)
       ? maybe
       : { stanPath: 'stan', scripts: {} as Record<string, string> };
+    const cliDefs =
+      config &&
+      (config as { opts?: { cliDefaults?: Record<string, unknown> } }).opts
+        ?.cliDefaults;
+    const runDefs = (cliDefs?.run ?? {}) as {
+      archive?: boolean;
+      combine?: boolean;
+      keep?: boolean;
+      sequential?: boolean;
+      scripts?: boolean | string[];
+    };
 
     // Selection flags
     const scriptsOpt = (opts as { scripts?: unknown }).scripts;
     const exceptOpt = (opts as { exceptScripts?: unknown }).exceptScripts;
-
     // Presence: -s seen when scripts is array/string; -S sets scripts to false but also tracked via event.
     const scriptsProvided =
       Array.isArray(scriptsOpt) || typeof scriptsOpt === 'string';
@@ -113,17 +134,32 @@ export const registerRun = (cli: Command): Command => {
     // Negated option -S/--no-scripts => scripts === false
     const noScripts = (opts as { scripts?: unknown }).scripts === false;
 
-    // Archive flags:
-    // -a sets { archive: true }, -A/--no-archive sets { archive: false }.
+    // Archive flags:    // -a sets { archive: true }, -A/--no-archive sets { archive: false }.
     const archiveOpt = (opts as { archive?: unknown }).archive as
       | boolean
       | undefined;
     const archiveFlag = archiveOpt === true;
     const noArchiveFlag = archiveOpt === false;
 
-    const combine = Boolean((opts as { combine?: unknown }).combine);
-    const sequential = Boolean((opts as { sequential?: unknown }).sequential);
-    const keep = Boolean((opts as { keep?: unknown }).keep);
+    // Sources for flags — prefer CLI when present; otherwise config defaults.
+    const src = (
+      cmd as unknown as {
+        getOptionValueSource?: (name: string) => string | undefined;
+      }
+    ).getOptionValueSource?.bind(cmd);
+
+    const combine =
+      src && src('combine') === 'cli'
+        ? Boolean((opts as { combine?: unknown }).combine)
+        : Boolean(runDefs.combine ?? false);
+    const sequential =
+      src && src('sequential') === 'cli'
+        ? Boolean((opts as { sequential?: unknown }).sequential)
+        : Boolean(runDefs.sequential ?? false);
+    const keep =
+      src && src('keep') === 'cli'
+        ? Boolean((opts as { keep?: unknown }).keep)
+        : Boolean(runDefs.keep ?? false);
     const planOnly = Boolean((opts as { plan?: unknown }).plan);
 
     // Manual conflict handling:
@@ -136,6 +172,19 @@ export const registerRun = (cli: Command): Command => {
       );
     }
 
+    const allKeys = Object.keys(config.scripts);
+    const known = new Set(allKeys);
+
+    // Explicit conflict: -c with -A
+    if (combine && noArchiveFlag) {
+      throw new CommanderError(
+        1,
+        'commander.conflictingOption',
+        "error: option '-c, --combine' cannot be used with option '-A, --no-archive'",
+      );
+    }
+
+    // Derive selection from flags first (to preserve -s order and -x semantics)
     const derived = deriveRunInvocation({
       scriptsProvided,
       scriptsOpt,
@@ -148,29 +197,52 @@ export const registerRun = (cli: Command): Command => {
       config,
     });
 
-    // Explicit conflict: -c with -A
-    if (combine && noArchiveFlag) {
-      throw new CommanderError(
-        1,
-        'commander.conflictingOption',
-        "error: option '-c, --combine' cannot be used with option '-A, --no-archive'",
-      );
+    // Compute default selection when -s not present and noScripts not set.
+    let selection: string[] = [];
+    const exceptList = Array.isArray(exceptOpt)
+      ? (exceptOpt as string[]).filter((k) => typeof k === 'string')
+      : [];
+
+    if (noScripts) {
+      selection = [];
+    } else if (scriptsProvided) {
+      selection = derived.selection;
+    } else {
+      // No -s: base on config defaults (run.scripts) then apply -x.
+      const sdef = runDefs.scripts;
+      let base: string[] = [];
+      if (sdef === false) base = [];
+      else if (sdef === true || typeof sdef === 'undefined')
+        base = [...allKeys];
+      else if (Array.isArray(sdef)) {
+        // intersection with configured keys preserving config order
+        base = allKeys.filter((k) => sdef.includes(k));
+      }
+      if (exceptProvided && exceptList.length > 0) {
+        const ex = new Set(exceptList);
+        base = base.filter((k) => !ex.has(k));
+      }
+      selection = base;
     }
 
-    const allKeys = Object.keys(config.scripts);
-    let selection = derived.selection;
-    if (noScripts) selection = [];
-    else if (!scriptsProvided && !exceptProvided) selection = [...allKeys];
-
     const mode = sequential ? 'sequential' : 'concurrent';
-    // Archive default: ON unless -A given; -a overrides -A when both present.
-    const archive = archiveFlag ? true : !noArchiveFlag;
+    // Archive default:
+    // - if -A -> false (error with -c handled above)
+    // - else if -a present OR combine=true -> true
+    // - else config default run.archive ?? true
+    let archive = true;
+    if (noArchiveFlag) archive = false;
+    else if (archiveFlag || combine) archive = true;
+    else {
+      const def = runDefs.archive;
+      archive = typeof def === 'boolean' ? def : true;
+    }
+
     const behavior = {
       combine,
       keep,
       archive,
     };
-
     const planBody = renderRunPlan(runCwd, {
       selection,
       config,

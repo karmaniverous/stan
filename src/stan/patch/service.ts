@@ -30,7 +30,14 @@ const fileExists = (cwd: string, rel: string): boolean =>
 export const runPatch = async (
   cwd0: string,
   inputMaybe?: string,
-  opts?: { file?: string | boolean; check?: boolean },
+  opts?: {
+    file?: string | boolean;
+    check?: boolean;
+    /** Default patch file from config; used when no arg/-f provided and not ignored by noFile. */
+    defaultFile?: string | null | undefined;
+    /** Ignore default file (forces clipboard unless argument/-f provided). */
+    noFile?: boolean;
+  },
 ): Promise<void> => {
   const { cwd, stanPath, patchAbs, patchRel } = await resolvePatchContext(cwd0);
 
@@ -56,11 +63,11 @@ export const runPatch = async (
   // Resolve and read source (with user-facing log)
   let raw = '';
   try {
-    const src = await readPatchSource(
-      cwd,
-      inputMaybe,
-      opts && { file: (opts as { file?: string | boolean }).file },
-    );
+    const src = await readPatchSource(cwd, inputMaybe, {
+      file: opts?.file,
+      defaultFile: opts?.defaultFile ?? undefined,
+      ignoreDefaultFile: Boolean(opts?.noFile),
+    });
     if (src.kind === 'clipboard') {
       console.log('stan: patch source: clipboard');
     } else if (src.kind === 'argument') {

@@ -69,6 +69,10 @@ export const registerRunOptions = (
     '-C, --no-combine',
     'do not include outputs inside archives',
   );
+  // Parse-time conflict: -c conflicts with -A (combine implies archives)
+  // Ensure Commander rejects "run -A -c" with conflictingOption.
+  optCombine.conflicts(optNoArchive);
+  optNoArchive.conflicts(optCombine);
 
   // Output dir & scripts suppressor
   const optKeep = new Option(

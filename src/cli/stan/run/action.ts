@@ -9,6 +9,7 @@ import { runSelected } from '@/stan/run';
 import { renderRunPlan } from '@/stan/run/plan';
 
 import { deriveRunParameters } from './derive';
+import type { FlagPresence } from './options';
 
 export const registerRunAction = (
   cmd: Command,

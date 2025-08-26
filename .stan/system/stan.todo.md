@@ -50,11 +50,15 @@ Completed (recent)
   - fix(cli/run): narrow unknown in catch and log message string only (satisfies eslint @typescript-eslint/no-unsafe-*).
   - Outcome: build/typecheck/docs/knip/lint errors cleared; runner semantics unchanged.
 
+- P0 cleanup follow‑up (no behavior changes)
+  - fix(cli/run): add missing `import type { FlagPresence } from './options'` in action.ts to satisfy TS and lint.
+  - fix(cli/run): enforce parse-time conflict `-c` vs `-A` in options.ts via Option.conflicts to match test expectation.
+  - Outcome: typecheck/docs/lint pass; `runner.semantics.v2` conflict test passes.
+
 - Imports: remove backward-compat usage; update internal modules and tests to import
   from the modular barrel "@/stan/config" (help, version, run/service, init/service,
   snap/context, patch/context, config.test). Library barrel now re-exports explicitly
-  from "./config/index". Deletion of src/stan/config.ts can follow as a separate change.
-- CLI runner decomposition (Phase 2, no behavior changes):
+  from "./config/index". Deletion of src/stan/config.ts can follow as a separate change.- CLI runner decomposition (Phase 2, no behavior changes):
   - Added src/cli/stan/run/options.ts (options/defaults/listeners),
     src/cli/stan/run/derive.ts (selection/mode/behavior derivation),
     src/cli/stan/run/action.ts (conflicts, plan render, runSelected);

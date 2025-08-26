@@ -79,16 +79,11 @@ export const registerRun = (cli: Command): Command => {
   );
   const optNoScripts = new Option('-S, --no-scripts', 'do not run scripts');
 
-  // Re‑enable parse‑time conflicts only on positive selectors to avoid self‑conflict:
-  // - `-s/--scripts` and `-x/--except-scripts` conflict with `-S/--no-scripts`.
-  optScripts.conflicts(optNoScripts);
-  optExcept.conflicts(optNoScripts);
-
   // Plan
   const optPlan = new Option(
     '-p, --plan',
     'print run plan and exit (no side effects)',
-  ); // Add all options
+  );
   cmd
     .addOption(optScripts)
     .addOption(optExcept)
@@ -102,6 +97,21 @@ export const registerRun = (cli: Command): Command => {
     .addOption(optNoKeep)
     .addOption(optNoScripts)
     .addOption(optPlan);
+
+  // Track raw presence of selection flags during parse to enforce -S vs -s/-x conflicts.
+  // Wire listeners BEFORE action so they fire during option parsing.
+  let sawNoScriptsFlag = false;
+  let sawScriptsFlag = false;
+  let sawExceptFlag = false;
+  cmd.on('option:no-scripts', () => {
+    sawNoScriptsFlag = true;
+  });
+  cmd.on('option:scripts', () => {
+    sawScriptsFlag = true;
+  });
+  cmd.on('option:except-scripts', () => {
+    sawExceptFlag = true;
+  });
 
   applyCliSafety(cmd);
   // Tag defaults (config overrides > built-ins)
@@ -139,6 +149,15 @@ export const registerRun = (cli: Command): Command => {
 
   cmd.action(async (options: Record<string, unknown>) => {
     const opts = options;
+
+    // Authoritative conflict handling: -S cannot be combined with -s/-x
+    if (sawNoScriptsFlag && (sawScriptsFlag || sawExceptFlag)) {
+      throw new CommanderError(
+        1,
+        'commander.conflictingOption',
+        "error: option '-S, --no-scripts' cannot be used with option '-s, --scripts' or '-x, --except-scripts'",
+      );
+    }
 
     const cwdInitial = process.cwd();
     const cfgMod = await import('@/stan/config');
@@ -181,7 +200,7 @@ export const registerRun = (cli: Command): Command => {
     // Selection flags
     const scriptsOpt = (opts as { scripts?: unknown }).scripts;
     const exceptOpt = (opts as { exceptScripts?: unknown }).exceptScripts;
-    // Presence: -s seen when scripts is array/string; -S sets scripts to false but also tracked via event.
+    // Presence: -s seen when scripts is array/string; -S sets scripts to false.
     const scriptsProvided =
       Array.isArray(scriptsOpt) || typeof scriptsOpt === 'string';
     const exceptProvided =
@@ -217,28 +236,6 @@ export const registerRun = (cli: Command): Command => {
         ? Boolean((opts as { keep?: unknown }).keep)
         : Boolean(runDefs.keep ?? false);
     const planOnly = Boolean((opts as { plan?: unknown }).plan);
-
-    // Manual conflict handling (fallback):
-    // If Commander versions change behavior, ensure -S conflicts with -s/-x here too.
-    let sawNoScriptsFlag = false;
-    let sawScriptsFlag = false;
-    let sawExceptFlag = false;
-    cmd.on('option:no-scripts', () => {
-      sawNoScriptsFlag = true;
-    });
-    cmd.on('option:scripts', () => {
-      sawScriptsFlag = true;
-    });
-    cmd.on('option:except-scripts', () => {
-      sawExceptFlag = true;
-    });
-    if (sawNoScriptsFlag && (sawScriptsFlag || sawExceptFlag)) {
-      throw new CommanderError(
-        1,
-        'commander.conflictingOption',
-        "error: option '-S, --no-scripts' cannot be used with option '-s, --scripts' or '-x, --except-scripts'",
-      );
-    }
 
     const allKeys = Object.keys(config.scripts);
     // Explicit conflict: -c with -A

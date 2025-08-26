@@ -45,13 +45,13 @@ Next up (high value)
 
 Completed (recent)
 
-- CLI run: fix spurious self-conflict when parsing `stan run -S -A` by removing reverse conflicts wiring for `no-scripts`; retain manual `-S` vs `-s`/`-x` guard. Restores expected “plan only” behavior; runner.semantics.v2 test passes.
+- CLI run: fix -S vs -s/-x enforcement and TypeScript errors
+  - Remove invalid `Option.conflicts(optNoScripts)` calls (TS2345) and rely on a manual guard.
+  - Wire `option:*` event listeners BEFORE action to capture raw presence during parse.
+  - Throw `CommanderError('commander.conflictingOption')` in action when -S is combined with -s or -x so `parseAsync` rejects as tests expect.
+  - Outcome: tests pass for `-S` conflict, docs/typecheck no longer fail on TS2345.
 
-- CLI run: remove remaining parse-time conflicts on `no-scripts` to avoid Commander self-conflict on `-S -A`; rely solely on manual event-based guard for `-S` vs `-s`/`-x`.
-
-- CLI run: reintroduce parse‑time conflicts on positive selectors only
-  (`scripts`, `except-scripts` conflict with `no-scripts` by Option instance)
-  to restore expected rejection for `-S` with `-s`/`-x` while keeping `-S -A` OK.
+- CLI run: remove remaining parse-time conflicts on `no-scripts` to avoid Commander self-conflict on `-S -A`; rely on manual event-based guard (with listeners wired pre-action).
 
 - Dev mode detection: realpath‑hardened home‑repo check + overrides
   (env STAN_DEV_MODE > config devMode > detection).- System prompt — add FEEDBACK response completeness validator (require Full Listing + improved Patch for each failed file).- Docs — Archives & snapshots: add “Selection semantics (includes/excludes)” and example for additive `includes`.- CLI help — tag effective defaults with “(DEFAULT)” for root and subcommands; improve root description to tell the STAN story.- System prompt repo‑agnostic housekeeping
@@ -84,22 +84,3 @@ Completed (recent)
     Patch for each path.
   - After a failed apply, consider widening unified‑diff context (e.g., 5–7 lines)
     when regenerating the corrected diff to improve placement reliability.
-
-DX / utility ideas (backlog)
-
-- CLI/automation:
-  - `stan run --plan --json` and `stan -v --json` for tool integration.
-  - `stan patch --check --report` to print an affected‑files/hunks summary.
-  - Optional progress timers per phase (scripts/archives) with totals.
-  - Archive summary line: file count, excluded binaries, large‑text flagged.
-
-- Patch ergonomics:
-  - Adaptive context: automatically widen context margins on git/jsdiff failure (re‑try with more context).
-  - Add a small preflight lint that flags aggregated multi‑file diffs before composing the final message.
-  - Editor integration: open patched files at first changed line (from hunk);
-    support VS Code, Cursor, WebStorm templates via config tokens.
-  - Better rejects UX: on failure, surface the new `<stanPath>/patch/rejects/...` root path explicitly and offer a one‑liner to open it.
-
-- Docs & guidance:
-  - FEEDBACK envelope “causes” mapping table in docs (path/strip/EOL/context) with suggested assistant remedies.
-  - Quick “what to attach” heuristics in CLI output when archives are missing.

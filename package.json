@@ -23,7 +23,7 @@
     "picomatch": "^4.0.3",
     "yaml": "^2.8.1"
   },
-  "description": "A reproducible context toolkit for AI‑assisted development: snapshot your repo and deterministic outputs, share archives, and safely round‑trip patches.",
+  "description": "STAN is a CLI that packages your code and its build/test outputs into an archive for use with ChatGPT (or other LLMs), and then helps apply the AI’s suggested code patches.",
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.48.4",
     "@eslint/js": "^9.33.0",

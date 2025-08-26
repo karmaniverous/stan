@@ -28,10 +28,11 @@
     "./docs-src/tutorial-quickstart.md",
     "./docs-src/why-stan-over-alternatives.md",
     "./docs-src/case-studies/rrstack.md",
-    "./docs-src/contributing.md",
+    "./contributing.md",
     "./docs-src/faq.md",
     "./CHANGELOG.md"
-  ],  "navigationLinks": {
+  ],
+  "navigationLinks": {
     "GitHub": "https://github.com/karmaniverous/stan"
   },
   "replaceText": {

@@ -1,3 +1,5 @@
+> STAN is a CLI that packages your code and its build/test outputs into an archive for use with ChatGPT (or other LLMs), and then helps apply the AI’s suggested code patches.
+
 # STAN — STAN Tames Autoregressive Nonsense
 
 [![npm version](https://img.shields.io/npm/v/@karmaniverous/stan.svg)](https://www.npmjs.com/package/@karmaniverous/stan)
@@ -135,7 +137,7 @@ Global flags:
   - [Stan Configuration](https://docs.karmanivero.us/stan/documents/Stan_Configuration.html) — All config keys, includes/excludes semantics, and phase‑scoped CLI defaults.
   - [Patch Workflow & FEEDBACK](https://docs.karmanivero.us/stan/documents/Patch_Workflow___FEEDBACK.html) — Unified diff policy, FEEDBACK envelopes, and assistant expectations.
   - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/Archives___Snapshots.html) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history.
-Additional references:
+    Additional references:
 
 - The following documents are maintained by STAN and live under `<stanPath>/system/` in your repo:
   - `stan.project.md` contains your evolving project requirements.

@@ -78,10 +78,6 @@ export const registerRun = (cli: Command): Command => {
     'do not keep the output directory (negated form)',
   );
   const optNoScripts = new Option('-S, --no-scripts', 'do not run scripts');
-  // Parse-time conflicts: -S may not be combined with -s or -x.
-  // Commander resolves conflicts during parsing, causing parseAsync() to reject with
-  // code 'commander.conflictingOption', which our tests expect.
-  optNoScripts.conflicts(['scripts', 'except-scripts']);
 
   // Plan
   const optPlan = new Option(
@@ -219,6 +215,7 @@ export const registerRun = (cli: Command): Command => {
 
     // Manual conflict handling:
     // -S with -s or -x (detect by raw presence to handle last-wins semantics)
+    // Commander parse-time conflicts removed to avoid -S self-conflicts; rely on these event guards.
     let sawNoScriptsFlag = false;
     let sawScriptsFlag = false;
     let sawExceptFlag = false;
@@ -330,5 +327,6 @@ export const registerRun = (cli: Command): Command => {
     await runSelected(runCwd, config, selection, mode, behavior);
   });
 
+  // NOTE: Commander parse-time conflicts removed; using manual -S vs -s/-x guards above.
   return cli;
 };

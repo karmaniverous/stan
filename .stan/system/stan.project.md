@@ -75,6 +75,7 @@ Note: The project prompt is created on demand when repo‑specific policies emer
   types build to resolve `"@/..."` path aliases reliably.
 - The `stan.dist/` build is used for internal CLI testing (`npm run stan:build`)
   and is cleaned after build.
+
 ## CLI defaults via configuration (opts.cliDefaults)
 
 The CLI honors phase‑scoped defaults when flags are omitted. Precedence is:
@@ -95,10 +96,10 @@ opts:
       combine: boolean       # -c / -C
       keep: boolean          # -k / -K
       sequential: boolean    # -q / -Q
-      scripts: boolean | string[]  # default selection when neither -s nor -S given:
-                                   #   true => all, false => none, string[] => listed keys (filtered to known)
+      scripts: boolean | string[]  # default selection when neither -s is omitted nor -S used:
+                                   #   true => all, false => none, ["lint","test"] => only these keys
     snap:
-      stash: boolean         # snap -s / -S
+      stash: boolean         # -s / -S
 ```
 
 Built‑ins (when neither flags nor config specify): debug=false, boring=false; run: archive=true, combine=false, keep=false, sequential=false, scripts=true; snap: stash=false; patch file unset.
@@ -136,11 +137,16 @@ Built‑ins (when neither flags nor config specify): debug=false, boring=false; 
 - `snap` (default): creates/replaces the diff snapshot. With `-s/--stash`, stash before and pop after; on stash failure, abort (no snapshot).
 - `snap undo` / `snap redo`: navigate history; restore `.archive.snapshot.json`.
 - `snap set <index>`: jump to a specific history index and restore it.
-- `snap info`: print history entries with newest first. Each line shows:
-  - `[*] [index] <local timestamp>  file: <snapshot-filename>  archive: yes|no  diff: yes|no`
-  - `*` marks the current entry in the stack.
+- `snap info`: print the snapshot stack and current position.
 - History lives under `<stanPath>/diff`: `.snap.state.json`, `snapshots/`, and optional `archives/` captures.
 - Trimming: respect `maxUndos` (default 10).
+
+### stan init
+
+- Interactive and forced modes are supported.
+- Script preservation logic:
+  - When the user elects to preserve existing scripts (interactive) or passes `--preserve-scripts`, skip the script‑selection step entirely and retain `scripts` from the current `stan.config.*` (updating only other answers such as `stanPath`, includes/excludes, etc.).
+  - When not preserving, prompt for script selection from `package.json` keys and materialize them as `npm run <key>` commands in `stan.config.yml`.
 
 ## Selection & Execution (current semantics)
 
@@ -161,6 +167,7 @@ Built‑ins (when neither flags nor config specify): debug=false, boring=false; 
   - `-c` conflicts with `-A` (parse‑time via Commander conflicts).
 
 Short negative flags:
+
 - Root: `-D` (no-debug), `-B` (no-boring)
 - Run: `-Q` (no-sequential), `-K` (no-keep), `-C` (no-combine); Snap: `-S` (no-stash)
 
@@ -193,8 +200,32 @@ Short negative flags:
 - Order and determinism:
   - Preserve deterministic ordering by constructing a union of the base selection with the additive allow‑list while maintaining stable file ordering.
 
+- Default sub‑package exclusion (new):
+  - By default, exclude any top‑level folders that contain their own `package.json` (i.e., treat them as sub‑packages/workspaces) to avoid duplicating nested projects and reducing noise in archives.
+  - Users can re‑include specific sub‑packages with `includes` globs (e.g., `packages/appA/**`) when desired.
+  - Exclusion applies to the first level below the repo root (e.g., `packages/<name>` or any other root child with a `package.json`), not to the repo root itself.
+
+## Compression policy (archives & outputs)
+
+- Canonical artifacts remain plain `.tar` (`archive.tar` and `archive.diff.tar`) to maximize compatibility with assistants and the bootloader’s integrity‑first tar reader.
+- Research optional compression that does not compromise assistant reading or patch round‑trips:
+  - Do not change the canonical `.tar` artifacts by default.
+  - Explore an optional, companion compressed artifact for transport (e.g., `archive.tar.gz`) while continuing to produce the plain `.tar`.
+  - Script outputs do not need to be round‑tripped into patches, but they are used for review context. Any compression of outputs must preserve practical readability in chat (for example, consider an optional `outputs.summary.txt` plus compressed raw outputs, or compress only in secondary artifacts).
+- Any compression feature must be behind an opt‑in flag/config and accompanied by documentation and tests.
+
 ## Logging
 
 - At the start of `stan run`, print a concise plan.
 - For each script/archive action, log `stan: start "<key>"` and `stan: done "<key>" -> <path>"`.
 - Archive warnings: do not write a warnings file. Print a console summary of excluded binaries and large text files when creating archives.
+
+## Assistant reply ordering (local policy)
+
+- When presenting both a Patch and a Full Listing for the same file in a single reply, the Patch MUST appear before the Full Listing.
+  - Rationale: reviewers can see the change first, then consult the full file for context.
+  - Implications:
+    - For each changed file, order sections as:
+      1. “### Patch: path/to/file.ext”
+      2. “### Full Listing: path/to/file.ext”
+    - Future validators should assert this ordering per file when both blocks are present.

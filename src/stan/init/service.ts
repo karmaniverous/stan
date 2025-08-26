@@ -3,8 +3,9 @@ import path from 'node:path';
 
 import YAML from 'yaml';
 
-import type { ContextConfig, ScriptMap } from '../config';
-import { ensureOutputDir, findConfigPathSync, loadConfig } from '../config';
+import type { ContextConfig, ScriptMap } from '@/stan/config';
+import { ensureOutputDir, findConfigPathSync, loadConfig } from '@/stan/config';
+
 import { writeArchiveSnapshot } from '../diff';
 import { ensureDocs } from './docs';
 import { ensureStanGitignore } from './gitignore';

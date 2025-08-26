@@ -1,6 +1,7 @@
 import path from 'node:path';
 
-import { findConfigPathSync, loadConfig } from '../config';
+import { findConfigPathSync, loadConfig } from '@/stan/config';
+
 import { makeStanDirs } from '../paths';
 
 export const resolvePatchContext = async (

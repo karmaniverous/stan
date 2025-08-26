@@ -2,8 +2,9 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import type { ContextConfig } from '../config';
-import { ensureOutputDir } from '../config';
+import type { ContextConfig } from '@/stan/config';
+import { ensureOutputDir } from '@/stan/config';
+
 import { makeStanDirs } from '../paths';
 import { preflightDocsAndVersion } from '../preflight';
 import { archivePhase } from './archive';

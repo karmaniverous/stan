@@ -1,8 +1,7 @@
-import { loadConfigSync } from './config';
+import { loadConfigSync } from '@/stan/config';
 
 /**
- * Render a help footer that lists available script keys and examples.
- *
+ * Render a help footer that lists available script keys and examples. *
  * @param cwd - Repo root (or descendant) used to locate `stan.config.*`.
  * @returns Multi‑line string (empty when config cannot be loaded).
  *

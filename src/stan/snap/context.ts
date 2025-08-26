@@ -3,11 +3,10 @@
  */
 import path from 'node:path';
 
-import { findConfigPathSync, loadConfig } from '../config';
+import { findConfigPathSync, loadConfig } from '@/stan/config';
 
 /**
- * Resolve the effective execution context for snapshot operations.
- *
+ * Resolve the effective execution context for snapshot operations. *
  * Starting from `cwd0`, locates the nearest `stan.config.*` and returns:
  * - `cwd`: the directory containing that config (or `cwd0` if none found),
  * - `stanPath`: configured workspace folder (defaults to ".stan"),

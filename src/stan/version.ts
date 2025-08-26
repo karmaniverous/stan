@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 
 import { packageDirectorySync } from 'package-directory';
 
-import { loadConfigSync, resolveStanPathSync } from './config';
+import { loadConfigSync, resolveStanPathSync } from '@/stan/config';
+
 import { makeStanDirs } from './paths';
 
 export type VersionInfo = {

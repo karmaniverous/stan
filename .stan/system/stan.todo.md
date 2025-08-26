@@ -48,10 +48,14 @@ Next up (high value)
 
 Completed (recent)
 
+- Imports: remove backward-compat usage; update internal modules and tests to import
+  from the modular barrel "@/stan/config" (help, version, run/service, init/service,
+  snap/context, patch/context, config.test). Library barrel now re-exports explicitly
+  from "./config/index". Deletion of src/stan/config.ts can follow as a separate change.
+
 - Phase 1 scaffolding: add modular config files under src/stan/config/ (types, defaults,
   normalize, discover, load, output, index) with no behavior changes. Existing
-  imports continue to work via current src/stan/config.ts. A follow‑up will switch
-  config.ts to re‑export from ./config to complete the split while preserving
+  imports continue to work via current src/stan/config.ts. A follow‑up will switch  config.ts to re‑export from ./config to complete the split while preserving
   public API and test/build behavior.
 
 - CLI run: fix -S vs -s/-x enforcement and TypeScript errors

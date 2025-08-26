@@ -4,10 +4,9 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { ensureOutputDir, loadConfig } from './config';
+import { ensureOutputDir, loadConfig } from '@/stan/config';
 
 const write = (p: string, c: string) => writeFile(p, c, 'utf8');
-
 describe('config loading', () => {
   it('loads valid JSON config (stan.config.json)', async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), 'stan-json-'));

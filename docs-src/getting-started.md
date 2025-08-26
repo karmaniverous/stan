@@ -27,12 +27,14 @@ stan init
 ```
 
 What this does:
+
 - Creates `stan.config.yml` with sensible defaults.
 - Ensures `.gitignore` entries for `.stan/output/`, `.stan/diff/`, `.stan/dist/`, and `.stan/patch/`.
 - Ensures documentation metadata under `.stan/system/` and creates required directories. The project prompt (`.stan/system/stan.project.md`) is created on demand by STAN when repo‑specific requirements emerge (no template is installed).
 - Writes an initial diff snapshot to `.stan/diff/.archive.snapshot.json`.
 
 You can re-run `stan init` safely. Use `--force` to accept defaults; otherwise you’ll be prompted.
+
 ## 3) Understand stan.config.yml
 
 Minimal example:
@@ -49,6 +51,7 @@ scripts:
 ```
 
 Key settings:
+
 - `stanPath` (default `.stan`): STAN workspace folder.
 - `scripts`: commands whose combined stdout/stderr become deterministic text outputs (e.g., `test.txt`).
 - `includes`/`excludes`: glob controls for archiving; text files are included, binaries automatically excluded.
@@ -65,6 +68,7 @@ stan run
 ```
 
 This:
+
 - Runs configured scripts (in parallel by default).
 - Writes outputs to `.stan/output/*.txt`.
 - Creates `.stan/output/archive.tar` (full snapshot of text files) and `.stan/output/archive.diff.tar` (changed files).
@@ -93,13 +97,15 @@ STAN ships a small “bootloader” system prompt that reliably loads your attac
 - Bootloader prompt (source): [.stan/system/stan.bootloader.md](https://github.com/karmaniverous/stan/blob/main/.stan/system/stan.bootloader.md)
 
 How to use with a third‑party client (TypingMind example):
+
 1. Create a custom agent and paste the entire bootloader into the agent’s System Prompt.
-2. Model: GPT‑5 (or your preferred GPT‑like model); set “High” reasoning effort and max_output_tokens to 128,000 if available.
+2. Model: GPT‑5 (or your preferred GPT‑like model); set “High” reasoning effort and max_output_tokens to 32,000 if available.
 3. Start a fresh chat with this agent each time you attach a new archive set.
 4. Attach the latest `.stan/output/archive.tar` (and `archive.diff.tar` if present). The bootloader will locate and load `.stan/system/stan.system.md` from the archive automatically.
 5. Begin the discussion (e.g., “Here are my archives; please review the plan in `.stan/system/stan.todo.md` and propose next steps.”).
 
 Notes:
+
 - The bootloader performs an integrity‑first tar read and refuses to proceed if `.stan/system/stan.system.md` cannot be found. Attachments are the source of truth.
 - If you paste a previous handoff block, STAN uses it as input (does not generate a new handoff unless you explicitly ask).
 

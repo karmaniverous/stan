@@ -1,10 +1,11 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-26 (UTC) — Validated -c/-A conflict semantics; TS/TypeDoc clean; tests green; coverage ~86.2%
+When updated: 2025-08-26 (UTC) — P0 cleanup after runner split (plan import fix; lint hardening)
 
 Next up (high value)
+
 - Long-file sweep and decomposition plan
-  - Results (approximate LOC; bytes/60 heuristic):    - src/stan/config.ts — replaced by folder barrel (flip applied); proceed with P0 cleanup of any stale comments/duplication left from the previous monolith (no behavior changes).
+  - Results (approximate LOC; bytes/60 heuristic): - src/stan/config.ts — replaced by folder barrel (flip applied); proceed with P0 cleanup of any stale comments/duplication left from the previous monolith (no behavior changes).
     - src/cli/stan/runner.ts (~25 KB) ≈ ~400–430 LOC — exceeds 300 LOC (priority P1).
     - Near threshold (monitor; likely <300): src/stan/run/archive.ts (~17.6 KB), src/stan/diff.ts (~14.1 KB),
       src/stan/fs.ts (~13.4 KB), src/stan/version.ts (~13.5 KB), src/cli/stan/index.ts (~14.2 KB). - Phase 1 (P0) — Cleanup after flip:
@@ -12,7 +13,7 @@ Next up (high value)
   - Flip src/stan/config.ts to a thin compatibility barrel that re‑exports ./config
     (the modular implementation). Acceptance: monolith content removed; "@/stan/config" and
     relative "../config" imports still resolve via the barrel; build/lint/typecheck/tests green.
-  - Phase 2 (P1): Decompose src/cli/stan/runner.ts (CLI adapter only) into smaller units:    - src/cli/stan/run/options.ts: option construction, default tagging, conflict wiring.
+  - Phase 2 (P1): Decompose src/cli/stan/runner.ts (CLI adapter only) into smaller units: - src/cli/stan/run/options.ts: option construction, default tagging, conflict wiring.
     - src/cli/stan/run/derive.ts: deriveRunInvocation wrapper + config-default application.
     - src/cli/stan/run/action.ts: action handler (plan rendering + runSelected).
     - src/cli/stan/runner.ts: thin registration shell (wires the above).
@@ -52,7 +53,8 @@ Completed (recent)
 
 - P0 cleanup (runner split follow‑through; no behavior changes)
   - fix(cli/run): resolve plan import by using service module '@/stan/run/plan' (removes bad './plan' path).
-  - fix(cli/run): narrow unknown in catch and log message string only (satisfies eslint @typescript-eslint/no-unsafe-*).  - Outcome: build/typecheck/docs/knip/lint errors cleared; runner semantics unchanged.
+  - fix(cli/run): narrow unknown in catch and log message string only (satisfies eslint @typescript-eslint/no-unsafe-\*).
+  - Outcome: build/typecheck/docs/knip/lint errors cleared; runner semantics unchanged.
 
 - P0 cleanup follow‑up (no behavior changes)
   - fix(cli/run): add missing `import type { FlagPresence } from './options'` in action.ts to satisfy TS and lint.

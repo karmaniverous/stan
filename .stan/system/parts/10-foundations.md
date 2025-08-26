@@ -22,7 +22,7 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 - Development plan (`<stanPath>/system/stan.todo.md`): short‑lived, actionable plan that explains how to get from the current state to the desired state.
   - Maintain only a short “Completed (recent)” list (e.g., last 3–5 items or last 2 weeks); prune older entries during routine updates.
   - When a completed item establishes a durable policy, promote that policy to the project prompt and remove it from “Completed”.
-- System prompt (this file) remains the repo‑agnostic baseline for STAN itself. For this repo, improvements to system‑level behavior are proposed here.
+- System prompt (this file) is the repo‑agnostic baseline. In downstream repos, propose durable behavior changes in `<stanPath>/system/stan.project.md`. STAN‑repo‑specific authoring/assembly details live in its project prompt.
 
 # Operating Model
 

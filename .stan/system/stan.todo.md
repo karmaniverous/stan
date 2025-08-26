@@ -25,6 +25,8 @@ Next up (high value)
 
 Completed (recent)
 
+- docs(cli-examples): full exposition of root/run/patch/snap/init options, conflicts, negative flags, and config-driven defaults (opts.cliDefaults); add comprehensive examples.
+
 - docs(cli-examples): correct selection note — remove “(in config order)” from “Run specific scripts” example; CLI preserves provided order only with `-q` and uses config order only when `-s` is omitted (all scripts by default).
 
 - build(types): resolve "@/..." alias when bundling d.ts

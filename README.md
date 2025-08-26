@@ -1,4 +1,4 @@
-> STAN is a CLI that packages your code and its build/test outputs into an archive for use with ChatGPT (or other LLMs), and then helps apply the AI’s suggested code patches.
+> **_STAN is a CLI that packages your code and its build/test outputs into an archive for use with ChatGPT (or other LLMs), and then helps apply the AI’s suggested code patches._**
 
 # STAN — STAN Tames Autoregressive Nonsense
 

@@ -2,12 +2,25 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [Unreleased](https://github.com/karmaniverous/stan/compare/0.4.0...HEAD)
+
+- updated docs [`7e7012f`](https://github.com/karmaniverous/stan/commit/7e7012fb4695fbcef452c98c71295c207f56819b)
+- updated docs [`4759a37`](https://github.com/karmaniverous/stan/commit/4759a377904a1d74472328112a571b62537f0f0c)
+- docs(config): add Stan Configuration guide and wire into site + README [`dab2a7b`](https://github.com/karmaniverous/stan/commit/dab2a7bdf3c61cac9ccc617603a5ee82b598eab1)
+- docs(cli-examples): full CLI options and defaults [`86dd838`](https://github.com/karmaniverous/stan/commit/86dd8385f2f4df14ff47329dcbd93d76f67ebd92)
+- updated docs [`51a5cbc`](https://github.com/karmaniverous/stan/commit/51a5cbcb623892eb1ae73460fac555fb1ba5a706)
+- docs(project,plan): add sub‑package exclusion, compression evaluation, and init UX (preserve scripts) requirements [`b25c92d`](https://github.com/karmaniverous/stan/commit/b25c92dbe264843703711e2e0e23235f58fde61e)
+- updated readme [`508764f`](https://github.com/karmaniverous/stan/commit/508764f4368d8caefecf4e2d5caf1e781903b131)
+
 #### [0.4.0](https://github.com/karmaniverous/stan/compare/0.3.1...0.4.0)
+
+> 26 August 2025
 
 - feat(cli,config,patch,snap,run): add phase-scoped CLI defaults and negative flags [`f2a8c38`](https://github.com/karmaniverous/stan/commit/f2a8c386bb3c1cc019f247e1e517c50706f92f22)
 - refactor(cli/run): split runner into options/derive/action; keep semantics unchanged [`6f653d1`](https://github.com/karmaniverous/stan/commit/6f653d18b892a89a418dac307a40e3477a0cb780)
 - refactor(config): scaffold modular split under src/stan/config/ (no behavior change) [`41bea4d`](https://github.com/karmaniverous/stan/commit/41bea4d5cf5003069e5bfa2978f2061926813279)
 - chore(config): flip to folder barrel by removing monolith; refresh plan [`8423722`](https://github.com/karmaniverous/stan/commit/842372292de0364a742d77074ddc74cbd0a5e503)
+- chore: release v0.4.0 [`6aad387`](https://github.com/karmaniverous/stan/commit/6aad3878e4cde14cbbc0c7d82beab6306d095481)
 - docs(help): add selection semantics to Archives & Snapshots; tag CLI defaults in help; improve root description [`f94d88d`](https://github.com/karmaniverous/stan/commit/f94d88debf6e74b0239eb3d77a043a0b58affb67)
 - docs(system,project,todo): enforce docs‑update cadence, one‑patch‑per‑file, and fence checklist; record additive includes [`7c03887`](https://github.com/karmaniverous/stan/commit/7c03887428e2ef034ebed63cad3d6fa4b69c553b)
 - docs(system): repo‑agnostic monolith guidance; add “monolith” alias; neutral preflight [`ba7ee80`](https://github.com/karmaniverous/stan/commit/ba7ee8053d29f2a342f7ad5cbaf8d61e24f788d3)

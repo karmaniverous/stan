@@ -26,10 +26,6 @@ Next up (high value)
     - Acceptance: CLI behavior unchanged (help footer, defaults, conflicts), tests green.
   - Phase 3 (monitor): Re‑scan near-threshold modules after Phase 1–2; split if any exceed ~300 LOC in practice.
 
-- Immediate hotfix (P0, next change set)
-  - Fix the parse error in src/stan/config.ts by removing the stray “\*/;” after the JSDoc for patchOpenCommand.
-  - Goal: unblock build/typecheck/tests prior to the larger decomposition in Phase 1.
-
 - Patch reliability for Markdown/docs:
   - If git/jsdiff both fail and exactly one contiguous section is changed in a
     .md file, consider a safe, heading‑anchored section‑replacement fallback
@@ -70,6 +66,9 @@ Completed (recent)
     `<stanPath>/system/stan.todo.md` whenever any code Patch is emitted
     (with deletions‑only / plan‑only exceptions) and re‑assert that the
     Commit Message is present and last (HARD GATE; MUST fail composition).
+- Hotfix: fix parse error in src/stan/config.ts by removing stray “\*/;” tokens
+  after two JSDoc blocks (devMode, patchOpenCommand); unblocks build/lint/
+  typecheck/tests ahead of Phase 1 decomposition.
 
 DX / utility ideas (backlog)
 

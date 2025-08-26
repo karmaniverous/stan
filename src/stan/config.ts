@@ -80,7 +80,7 @@ export type ContextConfig = {
    * Command template to open modified files after a successful patch.
    * Tokens: `\{file\}` expands to a repo‑relative file path.
    * Default: `code -g \{file\}`.
-   */;
+   */
   patchOpenCommand?: string;
   /** Optional bag for phase-scoped CLI defaults and future options. */
   opts?: ContextOpts;

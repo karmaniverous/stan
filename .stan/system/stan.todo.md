@@ -1,9 +1,8 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-25 (UTC)
+When updated: 2025-08-26 (UTC)
 
 ALIASES
-
 - “development plan” / “dev plan” / “implementation plan” / “todo list”
   → <stanPath>/system/stan.todo.md
 
@@ -65,10 +64,15 @@ Completed (recent)
   - docs(system): add a monolith refusal rule; strengthen FEEDBACK Full Listing requirement.
   - docs(system): add a post‑compose verification checklist to enforce fence hygiene and commit isolation.
 
+- System prompt hard gate enhancement
+  - docs(system): add explicit Post‑compose validator requiring a Patch for
+    `<stanPath>/system/stan.todo.md` whenever any code Patch is emitted
+    (with deletions‑only / plan‑only exceptions) and re‑assert that the
+    Commit Message is present and last (HARD GATE; MUST fail composition).
+
 Next up (follow‑through)
 
 - Public docs: surface the new additive‑includes rule in the website guide (“Archives & snapshots”) with a short example.
-
 DX / utility ideas (backlog)
 
 - CLI/automation:

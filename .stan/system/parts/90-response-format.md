@@ -87,10 +87,17 @@ Before sending a reply, verify all of the following:
 4) Section headings
    - Headings match the template exactly (names and order).
 
+5) Documentation cadence (gating)
+   - If any Patch block is present in this reply, there MUST also be a Patch
+     for <stanPath>/system/stan.todo.md that reflects the change set
+     (unless the change set is deletions‑only or explicitly plan‑only).
+   - The “Commit Message (MANDATORY; fenced code block)” MUST be present and last.
+   - If either requirement is missing, STOP and re‑emit after fixing. This is a
+     hard gate and the composition MUST fail when missing.
+
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 
-## Plain Unified Diff Policy (no base64)
-- Never emit base64‑encoded patches.
+## Plain Unified Diff Policy (no base64)- Never emit base64‑encoded patches.
 - Always emit plain unified diffs with @@ hunks.
 - The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.
 - Never include non‑diff prologues or synthetic markers such as “**_ Begin Patch”/“_** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.

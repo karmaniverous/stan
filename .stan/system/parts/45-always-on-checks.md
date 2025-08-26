@@ -31,3 +31,7 @@ Notes:
   - Patch `<stanPath>/system/stan.todo.md` (add a “Completed (recent)” entry; update “Next up” if applicable).
   - Patch `<stanPath>/system/stan.project.md` when the change introduces/clarifies a durable requirement or policy.
 - If a required documentation patch is missing, STOP and recompose with the missing patch(es) before sending a reply.
+
+This is a HARD GATE: the composition MUST fail when a required documentation
+patch is missing or when the final “Commit Message” block is absent or not last.
+Correct these omissions and re‑emit before sending.

@@ -553,7 +553,7 @@ in a fence computed by the algorithm above.
 
 <plain unified diff fenced per algorithm>
 
-## Commit Message (MANDATORY; fenced code block)
+## Commit Message
 
 - Output the commit message at the end of the reply wrapped in a fenced
   code block. Do not annotate with a language tag. Apply the +1 backtick
@@ -572,30 +572,30 @@ in a fence computed by the algorithm above.
 
 Before sending a reply, verify all of the following:
 
-1) One‑patch‑per‑file
+1. One‑patch‑per‑file
    - There is exactly one Patch block per changed file.
    - No Patch block contains more than one “diff --git a/<path> b/<path>”.
 
-2) Commit message isolation and position
-   - The “Commit Message (MANDATORY; fenced code block)” appears once, as the final section.
+2. Commit message isolation and position
+   - The “Commit Message” is MANDATORY. It appears once, as the final section.
    - The commit message fence is not inside any other fenced block.
 
-3) Fence hygiene (+1 rule)
+3. Fence hygiene (+1 rule)
    - For every fenced block, the outer fence is strictly longer than any internal backtick run (minimum 3).
    - Patches, optional Full Listings, and commit message all satisfy the +1 rule.
 
-4) Section headings
+4. Section headings
    - Headings match the template exactly (names and order).
 
-5) Documentation cadence (gating)
+5. Documentation cadence (gating)
    - If any Patch block is present in this reply, there MUST also be a Patch
      for <stanPath>/system/stan.todo.md that reflects the change set
      (unless the change set is deletions‑only or explicitly plan‑only).
-   - The “Commit Message (MANDATORY; fenced code block)” MUST be present and last.
+   - The “Commit Message” MUST be present and last.
    - If either requirement is missing, STOP and re‑emit after fixing. This is a
      hard gate and the composition MUST fail when missing.
 
-6) FEEDBACK response completeness
+6. FEEDBACK response completeness
    - When replying to a FEEDBACK packet:
      - Include a Full Listing for each file listed under `summary.failed`.
      - Include an improved Patch for each of those files (and only those files).
@@ -605,6 +605,7 @@ Before sending a reply, verify all of the following:
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 
 ## Plain Unified Diff Policy (no base64)- Never emit base64‑encoded patches.- Always emit plain unified diffs with @@ hunks.
+
 - The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.
 - Never include non‑diff prologues or synthetic markers such as “**_ Begin Patch”/“_** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.
 - Do not wrap the patch beyond the fence required by the +1 rule.

@@ -49,9 +49,12 @@ Completed (recent)
 
 - CLI run: remove remaining parse-time conflicts on `no-scripts` to avoid Commander self-conflict on `-S -A`; rely solely on manual event-based guard for `-S` vs `-s`/`-x`.
 
+- CLI run: reintroduce parse‑time conflicts on positive selectors only
+  (`scripts`, `except-scripts` conflict with `no-scripts` by Option instance)
+  to restore expected rejection for `-S` with `-s`/`-x` while keeping `-S -A` OK.
+
 - Dev mode detection: realpath‑hardened home‑repo check + overrides
-  (env STAN_DEV_MODE > config devMode > detection).- System prompt — add FEEDBACK response completeness validator (require Full Listing + improved Patch for each failed file).- Docs — Archives & snapshots: add “Selection semantics (includes/excludes)” and example for additive `includes`.
-- CLI help — tag effective defaults with “(DEFAULT)” for root and subcommands; improve root description to tell the STAN story.- System prompt repo‑agnostic housekeeping
+  (env STAN_DEV_MODE > config devMode > detection).- System prompt — add FEEDBACK response completeness validator (require Full Listing + improved Patch for each failed file).- Docs — Archives & snapshots: add “Selection semantics (includes/excludes)” and example for additive `includes`.- CLI help — tag effective defaults with “(DEFAULT)” for root and subcommands; improve root description to tell the STAN story.- System prompt repo‑agnostic housekeeping
   - docs(system): make monolith guidance fully repo‑agnostic; direct all
     durable policy/behavior changes to the project prompt.
   - docs(system): add vocabulary alias “monolith” → `<stanPath>/system/stan.system.md`.

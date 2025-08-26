@@ -79,6 +79,11 @@ export const registerRun = (cli: Command): Command => {
   );
   const optNoScripts = new Option('-S, --no-scripts', 'do not run scripts');
 
+  // Re‑enable parse‑time conflicts only on positive selectors to avoid self‑conflict:
+  // - `-s/--scripts` and `-x/--except-scripts` conflict with `-S/--no-scripts`.
+  optScripts.conflicts(optNoScripts);
+  optExcept.conflicts(optNoScripts);
+
   // Plan
   const optPlan = new Option(
     '-p, --plan',
@@ -213,9 +218,8 @@ export const registerRun = (cli: Command): Command => {
         : Boolean(runDefs.keep ?? false);
     const planOnly = Boolean((opts as { plan?: unknown }).plan);
 
-    // Manual conflict handling:
-    // -S with -s or -x (detect by raw presence to handle last-wins semantics)
-    // Commander parse-time conflicts removed to avoid -S self-conflicts; rely on these event guards.
+    // Manual conflict handling (fallback):
+    // If Commander versions change behavior, ensure -S conflicts with -s/-x here too.
     let sawNoScriptsFlag = false;
     let sawScriptsFlag = false;
     let sawExceptFlag = false;
@@ -327,6 +331,6 @@ export const registerRun = (cli: Command): Command => {
     await runSelected(runCwd, config, selection, mode, behavior);
   });
 
-  // NOTE: Commander parse-time conflicts removed; using manual -S vs -s/-x guards above.
+  // NOTE: Parse-time conflicts are on -s/-x vs -S; manual guards remain as a fallback.
   return cli;
 };

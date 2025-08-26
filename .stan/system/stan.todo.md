@@ -10,14 +10,13 @@ Next up (high value)
     - src/cli/stan/runner.ts (~25 KB) ≈ ~400–430 LOC — exceeds 300 LOC (priority P1).
     - Near threshold (monitor; likely <300): src/stan/run/archive.ts (~17.6 KB), src/stan/diff.ts (~14.1 KB),
       src/stan/fs.ts (~13.4 KB), src/stan/version.ts (~13.5 KB), src/cli/stan/index.ts (~14.2 KB).
-  - Phase 1 (P0): Split src/stan/config.ts into a folder with cohesive modules (no external API change):
-    - src/stan/config/types.ts: ScriptMap, ContextConfig, CLI defaults types; defaults/constants.
-    - src/stan/config/normalize.ts: asString/asBool/asStringArray, normalizeMaxUndos, normalizeCliDefaults.
-    - src/stan/config/load.ts: parseFile, config discovery (findConfigPathSync), loadConfigSync/async,
-      resolveStanPathSync/async.
-    - src/stan/config/output.ts: ensureOutputDir.
-    - src/stan/config/index.ts: re‑export the public API so imports of "@/stan/config" continue to work.
-    - Acceptance: build/lint/typecheck/tests green; no consumer import path changes required.
+  - Phase 1 (P0) — Follow‑through to complete the split:
+    - Flip src/stan/config.ts into a thin re‑export of the new src/stan/config/\* modules
+      (delegate to ./config/index), remove duplicated logic.
+    - Acceptance:
+      - No public API changes (imports of "@/stan/config" continue to work).
+      - build/lint/typecheck/tests green.
+    - Then prune dead code/comments left from the monolith.
   - Phase 2 (P1): Decompose src/cli/stan/runner.ts (CLI adapter only) into smaller units:
     - src/cli/stan/run/options.ts: option construction, default tagging, conflict wiring.
     - src/cli/stan/run/derive.ts: deriveRunInvocation wrapper + config-default application.
@@ -42,6 +41,11 @@ Next up (high value)
   - FAQ: promote common answers (archives cadence, binary handling, unified diffs, CI).
   - Add badges (npm, docs, license) to README for credibility.
   - Link Roadmap (this file) prominently in README.
+
+- Coverage follow‑ups (quick wins)
+  - Add/adjust tests for newly split config modules (discover/load/normalize/output)
+    and consider excluding trivial barrels from coverage to avoid false negatives.
+  - Target raising line coverage from ~80% → 85%+ without behavior changes.
 
 Completed (recent)
 

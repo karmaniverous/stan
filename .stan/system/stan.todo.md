@@ -1,9 +1,8 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-26 (UTC) — P0 cleanup after runner split (plan import fix; lint hardening)
+When updated: 2025-08-26 (UTC) — Validated -c/-A conflict semantics; TS/TypeDoc clean; tests green; coverage ~86.2%
 
 Next up (high value)
-
 - Long-file sweep and decomposition plan
   - Results (approximate LOC; bytes/60 heuristic):    - src/stan/config.ts — replaced by folder barrel (flip applied); proceed with P0 cleanup of any stale comments/duplication left from the previous monolith (no behavior changes).
     - src/cli/stan/runner.ts (~25 KB) ≈ ~400–430 LOC — exceeds 300 LOC (priority P1).
@@ -45,10 +44,15 @@ Next up (high value)
 
 Completed (recent)
 
+- Validation run (no code changes)
+  - build/test/lint/typecheck/docs all green
+  - coverage (lines): ~86.2% (>=85% target)
+  - knip: OK
+  - outcome: conflict handling (-c vs -A) confirmed at parse-time; CLI semantics unchanged
+
 - P0 cleanup (runner split follow‑through; no behavior changes)
   - fix(cli/run): resolve plan import by using service module '@/stan/run/plan' (removes bad './plan' path).
-  - fix(cli/run): narrow unknown in catch and log message string only (satisfies eslint @typescript-eslint/no-unsafe-*).
-  - Outcome: build/typecheck/docs/knip/lint errors cleared; runner semantics unchanged.
+  - fix(cli/run): narrow unknown in catch and log message string only (satisfies eslint @typescript-eslint/no-unsafe-*).  - Outcome: build/typecheck/docs/knip/lint errors cleared; runner semantics unchanged.
 
 - P0 cleanup follow‑up (no behavior changes)
   - fix(cli/run): add missing `import type { FlagPresence } from './options'` in action.ts to satisfy TS and lint.

@@ -123,11 +123,11 @@ export const buildCli = (dest: string): RollupOptions => ({
 export const buildTypes = (dest: string): RollupOptions => ({
   input: 'src/index.ts',
   output: [{ dir: `${dest}/types`, format: 'esm' }],
-  plugins: [dtsPlugin()],
+  // Ensure alias resolution works during type bundling to avoid unresolved "@/..." warnings.
+  plugins: [alias, dtsPlugin()],
 });
 
 export default [
   buildLibrary(outputPath),
-  buildCli(outputPath),
-  buildTypes(outputPath),
+  buildCli(outputPath),  buildTypes(outputPath),
 ];

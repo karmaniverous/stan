@@ -1,3 +1,4 @@
+// src/cli/stan/run/action.ts
 import path from 'node:path';
 
 import type { Command } from 'commander';
@@ -5,10 +6,9 @@ import { CommanderError } from 'commander';
 
 import { findConfigPathSync, loadConfig } from '@/stan/config';
 import { runSelected } from '@/stan/run';
+import { renderRunPlan } from '@/stan/run/plan';
 
 import { deriveRunParameters } from './derive';
-import type { FlagPresence } from './options';
-import { renderRunPlan } from './plan';
 
 export const registerRunAction = (
   cmd: Command,
@@ -36,7 +36,13 @@ export const registerRunAction = (
       maybe = await loadConfig(runCwd);
     } catch (err) {
       if (process.env.STAN_DEBUG === '1') {
-        console.error('stan: failed to load config', err);
+        const msg =
+          err instanceof Error
+            ? err.message
+            : typeof err === 'string'
+              ? err
+              : String(err);
+        console.error('stan: failed to load config', msg);
       }
       maybe = undefined;
     }

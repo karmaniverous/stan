@@ -1,12 +1,11 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-26 (UTC) — config flip applied (resolve to folder barrel)
+When updated: 2025-08-26 (UTC) — P0 cleanup after runner split (plan import fix; lint hardening)
 
 Next up (high value)
 
 - Long-file sweep and decomposition plan
-  - Results (approximate LOC; bytes/60 heuristic):
-    - src/stan/config.ts — replaced by folder barrel (flip applied); proceed with P0 cleanup of any stale comments/duplication left from the previous monolith (no behavior changes).
+  - Results (approximate LOC; bytes/60 heuristic):    - src/stan/config.ts — replaced by folder barrel (flip applied); proceed with P0 cleanup of any stale comments/duplication left from the previous monolith (no behavior changes).
     - src/cli/stan/runner.ts (~25 KB) ≈ ~400–430 LOC — exceeds 300 LOC (priority P1).
     - Near threshold (monitor; likely <300): src/stan/run/archive.ts (~17.6 KB), src/stan/diff.ts (~14.1 KB),
       src/stan/fs.ts (~13.4 KB), src/stan/version.ts (~13.5 KB), src/cli/stan/index.ts (~14.2 KB). - Phase 1 (P0) — Cleanup after flip:
@@ -14,8 +13,7 @@ Next up (high value)
   - Flip src/stan/config.ts to a thin compatibility barrel that re‑exports ./config
     (the modular implementation). Acceptance: monolith content removed; "@/stan/config" and
     relative "../config" imports still resolve via the barrel; build/lint/typecheck/tests green.
-  - Phase 2 (P1): Decompose src/cli/stan/runner.ts (CLI adapter only) into smaller units:
-    - src/cli/stan/run/options.ts: option construction, default tagging, conflict wiring.
+  - Phase 2 (P1): Decompose src/cli/stan/runner.ts (CLI adapter only) into smaller units:    - src/cli/stan/run/options.ts: option construction, default tagging, conflict wiring.
     - src/cli/stan/run/derive.ts: deriveRunInvocation wrapper + config-default application.
     - src/cli/stan/run/action.ts: action handler (plan rendering + runSelected).
     - src/cli/stan/runner.ts: thin registration shell (wires the above).
@@ -30,7 +28,6 @@ Next up (high value)
     (anchor on H2/H3 heading, replace through next same‑level heading).
     Validate under --check/sandbox first; preserve whitespace; normalize EOL.
     Ship only if demonstrably safe.
-
 - Docs compellingness (low‑effort wins)
   - Add visuals (animated gif/terminal cast) in README for `stan init`, `stan run`, `stan patch`.
   - Expand “Tutorial — Quickstart (End‑to‑End)” with copy‑paste commands and expected outputs.
@@ -48,11 +45,15 @@ Next up (high value)
 
 Completed (recent)
 
+- P0 cleanup (runner split follow‑through; no behavior changes)
+  - fix(cli/run): resolve plan import by using service module '@/stan/run/plan' (removes bad './plan' path).
+  - fix(cli/run): narrow unknown in catch and log message string only (satisfies eslint @typescript-eslint/no-unsafe-*).
+  - Outcome: build/typecheck/docs/knip/lint errors cleared; runner semantics unchanged.
+
 - Imports: remove backward-compat usage; update internal modules and tests to import
   from the modular barrel "@/stan/config" (help, version, run/service, init/service,
   snap/context, patch/context, config.test). Library barrel now re-exports explicitly
   from "./config/index". Deletion of src/stan/config.ts can follow as a separate change.
-
 - CLI runner decomposition (Phase 2, no behavior changes):
   - Added src/cli/stan/run/options.ts (options/defaults/listeners),
     src/cli/stan/run/derive.ts (selection/mode/behavior derivation),

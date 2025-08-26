@@ -132,9 +132,9 @@ Global flags:
   - [Getting Started](https://docs.karmanivero.us/stan/documents/Getting_Started.html) — Install the CLI, initialize a repo, attach archives in chat, and use the bootloader with TypingMind (GPT‑5, High reasoning, 128k tokens).
   - [The STAN Loop](https://docs.karmanivero.us/stan/documents/The_STAN_Loop.html) — How Build & Snapshot → Share & Baseline → Discuss & Patch work together.
   - [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html) — Common flags and invocation patterns, including `-p`, `-S`, `-A`, and `-c`.
+  - [Stan Configuration](https://docs.karmanivero.us/stan/documents/Stan_Configuration.html) — All config keys, includes/excludes semantics, and phase‑scoped CLI defaults.
   - [Patch Workflow & FEEDBACK](https://docs.karmanivero.us/stan/documents/Patch_Workflow___FEEDBACK.html) — Unified diff policy, FEEDBACK envelopes, and assistant expectations.
   - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/Archives___Snapshots.html) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history.
-
 Additional references:
 
 - The following documents are maintained by STAN and live under `<stanPath>/system/` in your repo:

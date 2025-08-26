@@ -1,9 +1,8 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-26 (UTC) — Long‑file sweep recorded; dts alias fix; coverage excludes; monitoring near‑threshold modules
+When updated: 2025-08-26 (UTC) — add Configuration guide and integrations; long‑file sweep recorded; dts alias fix; coverage excludes; monitoring near‑threshold modules
 
 Next up (high value)
-
 - Long‑file monitoring and decomposition (Phase 3)
   - Continue to monitor near‑threshold modules; propose splits if any
     trend toward or exceed ~300 LOC in future changes.
@@ -25,10 +24,11 @@ Next up (high value)
 
 Completed (recent)
 
+- docs(config): add complete “Stan Configuration” guide under docs-src; include in typedoc projectDocuments; link from README Guides.
+
 - docs(cli-examples): full exposition of root/run/patch/snap/init options, conflicts, negative flags, and config-driven defaults (opts.cliDefaults); add comprehensive examples.
 
 - docs(cli-examples): correct selection note — remove “(in config order)” from “Run specific scripts” example; CLI preserves provided order only with `-q` and uses config order only when `-s` is omitted (all scripts by default).
-
 - build(types): resolve "@/..." alias when bundling d.ts
   - rollup.config.ts: include alias plugin in buildTypes
   - effect: silences unresolved dependency warning during dts build (no behavior change)

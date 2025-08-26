@@ -22,6 +22,7 @@
     "./docs-src/getting-started.md",
     "./docs-src/the-stan-loop.md",
     "./docs-src/cli-examples.md",
+    "./docs-src/configuration.md",
     "./docs-src/patch-workflow.md",
     "./docs-src/archives-and-snapshots.md",
     "./docs-src/tutorial-quickstart.md",
@@ -30,8 +31,7 @@
     "./docs-src/contributing.md",
     "./docs-src/faq.md",
     "./CHANGELOG.md"
-  ],
-  "navigationLinks": {
+  ],  "navigationLinks": {
     "GitHub": "https://github.com/karmaniverous/stan"
   },
   "replaceText": {

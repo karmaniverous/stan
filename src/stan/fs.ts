@@ -82,12 +82,18 @@ export type FilterOptions = {
 
 /**
  * Filter a list of repo-relative paths according to:
- * - `includes` (allow‑list globs) — when provided, overrides all denials,
- * - `excludes` (deny‑list globs),
- * - `.gitignore` semantics,
- * - default denials (node_modules, .git),
- * - STAN workspace rules (always exclude `stanPath/diff`; optionally exclude
- *   `stanPath/output` unless `includeOutputDir` is true).
+ * - Base selection:
+ *   - `.gitignore` semantics,
+ *   - default denials (node_modules, .git),
+ *   - user `excludes` (deny‑list globs),
+ *   - STAN workspace rules (always exclude `stanPath/diff`; optionally exclude
+ *     `stanPath/output` unless `includeOutputDir` is true).
+ * - `includes` (allow‑list globs) — ADDITIVE augment:
+ *   - When provided, matched files are ADDED to the base selection even if
+ *     they would otherwise be excluded by `.gitignore`, user `excludes`, or
+ *     default denials.
+ *   - Reserved exclusions still apply: `stanPath/diff` is always excluded;
+ *     `stanPath/output` is excluded when `includeOutputDir` is false.
  *
  * Paths are compared using POSIX separators.
  *
@@ -108,13 +114,7 @@ export const filterFiles = async (
   const stanRel = stanPath.replace(/\\/g, '/');
   const ig = await buildIgnoreFromGitignore(cwd);
 
-  // Allow-list mode: includes override excludes and default denials.
-  if (includes.length > 0) {
-    const allow: Matcher[] = includes.map(toMatcher);
-    return files.filter((f) => allow.some((m) => m(f)));
-  }
-
-  // Deny-list mode: default denials + excludes + (optionally) output/diff
+  // Deny list used to compute base selection
   const denyMatchers: Matcher[] = [
     // default denials by prefix
     (f) => matchesPrefix(f, 'node_modules'),
@@ -131,9 +131,29 @@ export const filterFiles = async (
     denyMatchers.push((f) => matchesPrefix(f, `${stanRel}/output`));
   }
 
-  return files.filter((f) => !denyMatchers.some((m) => m(f)));
-};
+  // Base selection (deny list applied)
+  const base = files.filter((f) => !denyMatchers.some((m) => m(f)));
 
+  // Additive includes: union with base, but still respect reserved exclusions
+  if (includes.length > 0) {
+    const allowMatchers: Matcher[] = includes.map(toMatcher);
+    const reserved: Matcher[] = [
+      (f) => matchesPrefix(f, `${stanRel}/diff`),
+      ...(includeOutputDir
+        ? []
+        : [(f: string) => matchesPrefix(f, `${stanRel}/output`)]),
+    ];
+    const inUnion = new Set<string>(base);
+    // Preserve input order: walk original files and add allowed matches.
+    for (const f of files) {
+      if (allowMatchers.some((m) => m(f))) inUnion.add(f);
+    }
+    // Final pass: drop reserved paths
+    return files.filter((f) => inUnion.has(f) && !reserved.some((m) => m(f)));
+  }
+
+  return base;
+};
 /**
  * Ensure `stanPath/output` and `stanPath/diff` exist (and `stanPath/patch` so
  * patch payloads can be archived), returning their absolute paths.

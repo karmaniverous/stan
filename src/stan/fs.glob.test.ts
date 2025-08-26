@@ -63,14 +63,20 @@ describe('filterFiles with glob patterns', () => {
     );
   });
 
-  it('includes allow-list globs when includes are provided', async () => {
+  it('includes globs AUGMENT the base selection (e.g., bring back gitignored files)', async () => {
     const all = await listFiles(dir);
+    // Simulate a .gitignore that would exclude README.md
+    await writeFile(path.join(dir, '.gitignore'), 'README.md\n', 'utf8');
     const filtered = await filterFiles(all, {
       cwd: dir,
       stanPath: 'stan',
       includeOutputDir: false,
       includes: ['**/*.md'],
     });
-    expect(filtered).toEqual(['README.md']);
+    // README.md should be present even though .gitignore would exclude it,
+    // and base selection (non-ignored files) should remain included as well.
+    expect(filtered).toEqual(
+      expect.arrayContaining(['README.md', 'packages/app1/src/index.ts']),
+    );
   });
 });

@@ -45,6 +45,12 @@ Next up (high value)
 
 Completed (recent)
 
+- Phase 1 scaffolding: add modular config files under src/stan/config/ (types, defaults,
+  normalize, discover, load, output, index) with no behavior changes. Existing
+  imports continue to work via current src/stan/config.ts. A follow‑up will switch
+  config.ts to re‑export from ./config to complete the split while preserving
+  public API and test/build behavior.
+
 - CLI run: fix -S vs -s/-x enforcement and TypeScript errors
   - Remove invalid `Option.conflicts(optNoScripts)` calls (TS2345) and rely on a manual guard.
   - Wire `option:*` event listeners BEFORE action to capture raw presence during parse.
@@ -84,3 +90,22 @@ Completed (recent)
     Patch for each path.
   - After a failed apply, consider widening unified‑diff context (e.g., 5–7 lines)
     when regenerating the corrected diff to improve placement reliability.
+
+DX / utility ideas (backlog)
+
+- CLI/automation:
+  - `stan run --plan --json` and `stan -v --json` for tool integration.
+  - `stan patch --check --report` to print an affected‑files/hunks summary.
+  - Optional progress timers per phase (scripts/archives) with totals.
+  - Archive summary line: file count, excluded binaries, large‑text flagged.
+
+- Patch ergonomics:
+  - Adaptive context: automatically widen context margins on git/jsdiff failure (re‑try with more context).
+  - Add a small preflight lint that flags aggregated multi‑file diffs before composing the final message.
+  - Editor integration: open patched files at first changed line (from hunk);
+    support VS Code, Cursor, WebStorm templates via config tokens.
+  - Better rejects UX: on failure, surface the new `<stanPath>/patch/rejects/...` root path explicitly and offer a one‑liner to open it.
+
+- Docs & guidance:
+  - FEEDBACK envelope “causes” mapping table in docs (path/strip/EOL/context) with suggested assistant remedies.
+  - Quick “what to attach” heuristics in CLI output when archives are missing.

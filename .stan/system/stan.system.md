@@ -225,7 +225,7 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
   - `/<stanPath>/dist`: dev build (e.g., for npm script `stan:build`)
   - `/<stanPath>/patch`: canonical patch workspace (see Patch Policy)
 - Config key is `stanPath`.
-- Bootloader note: This repository includes a minimal bootloader prompt at `/<stanPath>/system/stan.bootloader.md` purely for convenience so a downstream AI can locate this file in attached artifacts. Once `stan.system.md` is loaded, the bootloader has no further role.
+- Bootloader note: A minimal bootloader may be present at `/<stanPath>/system/stan.bootloader.md` to help assistants locate `stan.system.md` in attached artifacts; once `stan.system.md` is loaded, the bootloader has no further role.
 
 ## One‑patch‑per‑file (hard rule + validator)
 
@@ -337,9 +337,9 @@ Notes
 
 On every turn, perform these checks and act accordingly:
 
-- System prompt delta (STAN repo only):
-  - When working in the STAN repository itself (`@karmaniverous/stan`), if you discover a repo‑agnostic improvement to assistant behavior, propose a patch to `stan.system.md` (via parts) to capture it.
-  - In downstream repos, do NOT edit the local system prompt; use the project prompt instead (see below).
+- System behavior improvements:
+  - In downstream repos, do NOT edit `<stanPath>/system/stan.system.md`; propose durable behavior changes in `<stanPath>/system/stan.project.md` instead.
+  - Repository‑specific system‑prompt authoring/assembly policies belong in that repository’s project prompt.
 
 - Project prompt promotion:
   - When a durable, repo‑specific rule or decision emerges during work, propose a patch to `<stanPath>/system/stan.project.md` to memorialize it for future contributors.
@@ -354,16 +354,11 @@ Notes:
   - Prints version and docs‑baseline information.
 - The “always‑on” checks above are assistant‑behavior obligations; they complement (not replace) CLI preflight.
 
-Implementation guidance for this repo:
+## Monolith read‑only guidance
 
-- Author system‑prompt edits under `.stan/system/parts/*` and re‑assemble with `npm run gen:system` (or any script that invokes the generator).
-- Do not hand‑edit the assembled monolith.
-
-## Monolith refusal rule (NEVER edit the assembled system file)
-
-- The assembled file `<stanPath>/system/stan.system.md` MUST NOT be edited directly.
-- All system‑prompt changes MUST be made to files under `.stan/system/parts/` and then re‑assembled.
-- If a patch targets the monolith directly, STOP and refuse with a short notice; re‑emit patches against the appropriate `parts/*.md` files instead.
+- Treat `<stanPath>/system/stan.system.md` as read‑only in downstream repos.
+- If behavior must change, propose updates to `<stanPath>/system/stan.project.md` instead of editing the monolith.
+- Local monolith edits are ignored when archives are attached, and CLI preflight will surface drift; avoid proposing diffs to the monolith.
 
 ## Mandatory documentation cadence (gating rule)
 

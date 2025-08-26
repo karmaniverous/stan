@@ -13,7 +13,7 @@
   - `/<stanPath>/dist`: dev build (e.g., for npm script `stan:build`)
   - `/<stanPath>/patch`: canonical patch workspace (see Patch Policy)
 - Config key is `stanPath`.
-- Bootloader note: This repository includes a minimal bootloader prompt at `/<stanPath>/system/stan.bootloader.md` purely for convenience so a downstream AI can locate this file in attached artifacts. Once `stan.system.md` is loaded, the bootloader has no further role.
+- Bootloader note: A minimal bootloader may be present at `/<stanPath>/system/stan.bootloader.md` to help assistants locate `stan.system.md` in attached artifacts; once `stan.system.md` is loaded, the bootloader has no further role.
 
 ## One‑patch‑per‑file (hard rule + validator)
 

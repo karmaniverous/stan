@@ -10,13 +10,8 @@ Next up (high value)
     - src/cli/stan/runner.ts (~25 KB) ≈ ~400–430 LOC — exceeds 300 LOC (priority P1).
     - Near threshold (monitor; likely <300): src/stan/run/archive.ts (~17.6 KB), src/stan/diff.ts (~14.1 KB),
       src/stan/fs.ts (~13.4 KB), src/stan/version.ts (~13.5 KB), src/cli/stan/index.ts (~14.2 KB).
-  - Phase 1 (P0) — Follow‑through to complete the split:
-    - Flip src/stan/config.ts into a thin re‑export of the new src/stan/config/\* modules
-      (delegate to ./config/index), remove duplicated logic.
-    - Acceptance:
-      - No public API changes (imports of "@/stan/config" continue to work).
-      - build/lint/typecheck/tests green.
-    - Then prune dead code/comments left from the monolith.
+  - Phase 1 (P0) — Cleanup after flip:
+    - Prune dead code/comments left from the monolith (no behavior changes).
   - Phase 2 (P1): Decompose src/cli/stan/runner.ts (CLI adapter only) into smaller units:
     - src/cli/stan/run/options.ts: option construction, default tagging, conflict wiring.
     - src/cli/stan/run/derive.ts: deriveRunInvocation wrapper + config-default application.
@@ -54,6 +49,11 @@ Completed (recent)
   imports continue to work via current src/stan/config.ts. A follow‑up will switch
   config.ts to re‑export from ./config to complete the split while preserving
   public API and test/build behavior.
+
+- Phase 1 (P0) follow‑through:
+  - Flip src/stan/config.ts to a thin re‑export of the modular implementation
+    under ./config (preserve "@/stan/config" public API).
+  - build/lint/typecheck/tests green.
 
 - CLI run: fix -S vs -s/-x enforcement and TypeScript errors
   - Remove invalid `Option.conflicts(optNoScripts)` calls (TS2345) and rely on a manual guard.

@@ -5,6 +5,7 @@ title: CLI Usage & Examples
 # CLI usage & examples
 
 ## Defaults
+
 The default run executes all configured scripts and writes regular and diff archives:
 
 ```
@@ -27,7 +28,7 @@ stan run -S -A -p    # plan only (nothing to do)
 
 ## Selection
 
-Run specific scripts (in config order):
+Run specific scripts:
 
 ```
 stan run -s test lint
@@ -61,7 +62,7 @@ stan run -k
 
 ## Patching
 
-Apply a unified diff from clipboard (default), from argument, or from file:
+Apply a unified diff from clipboard (default), argument, or file:
 
 ```
 stan patch

@@ -9,11 +9,15 @@ Next up (high value)
     - src/stan/config.ts — replaced by folder barrel (flip applied); proceed with P0 cleanup of any stale comments/duplication left from the previous monolith (no behavior changes).
     - src/cli/stan/runner.ts (~25 KB) ≈ ~400–430 LOC — exceeds 300 LOC (priority P1).
     - Near threshold (monitor; likely <300): src/stan/run/archive.ts (~17.6 KB), src/stan/diff.ts (~14.1 KB),
-      src/stan/fs.ts (~13.4 KB), src/stan/version.ts (~13.5 KB), src/cli/stan/index.ts (~14.2 KB).  - Phase 1 (P0) — Cleanup after flip:
+      src/stan/fs.ts (~13.4 KB), src/stan/version.ts (~13.5 KB), src/cli/stan/index.ts (~14.2 KB). - Phase 1 (P0) — Cleanup after flip:
     - Prune dead code/comments left from the monolith (no behavior changes).
+  - Flip src/stan/config.ts to a thin compatibility barrel that re‑exports ./config
+    (the modular implementation). Acceptance: monolith content removed; "@/stan/config" and
+    relative "../config" imports still resolve via the barrel; build/lint/typecheck/tests green.
   - Phase 2 (P1): Decompose src/cli/stan/runner.ts (CLI adapter only) into smaller units:
     - src/cli/stan/run/options.ts: option construction, default tagging, conflict wiring.
-    - src/cli/stan/run/derive.ts: deriveRunInvocation wrapper + config-default application.    - src/cli/stan/run/action.ts: action handler (plan rendering + runSelected invocation).
+    - src/cli/stan/run/derive.ts: deriveRunInvocation wrapper + config-default application.
+    - src/cli/stan/run/action.ts: action handler (plan rendering + runSelected).
     - src/cli/stan/runner.ts: thin registration shell (wires the above).
     - Acceptance: CLI behavior unchanged (help footer, defaults, conflicts), tests green.
   - Phase 3 (monitor): Re‑scan near-threshold modules after Phase 1–2; split if any exceed ~300 LOC in practice.
@@ -22,7 +26,7 @@ Next up (high value)
   - Sanity: validate imports resolve to the folder barrel (src/stan/config/index.ts) and that CLI/tests continue to pass.
 
 - Patch reliability for Markdown/docs:
-  - If git/jsdiff both fail and exactly one contiguous section is changed in a    .md file, consider a safe, heading‑anchored section‑replacement fallback
+  - If git/jsdiff both fail and exactly one contiguous section is changed in a .md file, consider a safe, heading‑anchored section‑replacement fallback
     (anchor on H2/H3 heading, replace through next same‑level heading).
     Validate under --check/sandbox first; preserve whitespace; normalize EOL.
     Ship only if demonstrably safe.
@@ -49,13 +53,16 @@ Completed (recent)
   snap/context, patch/context, config.test). Library barrel now re-exports explicitly
   from "./config/index". Deletion of src/stan/config.ts can follow as a separate change.
 
-- Config monolith removal:
-  - Deleted src/stan/config.ts (no backward compatibility). All internal imports now
-    resolve to the modular barrel "@/stan/config".
+- CLI runner decomposition (Phase 2, no behavior changes):
+  - Added src/cli/stan/run/options.ts (options/defaults/listeners),
+    src/cli/stan/run/derive.ts (selection/mode/behavior derivation),
+    src/cli/stan/run/action.ts (conflicts, plan render, runSelected);
+    reduced src/cli/stan/runner.ts to thin wiring.
 
 - Phase 1 scaffolding: add modular config files under src/stan/config/ (types, defaults,
   normalize, discover, load, output, index) with no behavior changes. Existing
-  imports continue to work via current src/stan/config.ts. A follow‑up will switch  config.ts to re‑export from ./config to complete the split while preserving  public API and test/build behavior.
+  imports continue to work via current src/stan/config.ts. A follow‑up will switch config.ts to re‑export from ./config to complete the split while preserving
+  public API and test/build behavior.
 
 - CLI run: fix -S vs -s/-x enforcement and TypeScript errors
   - Remove invalid `Option.conflicts(optNoScripts)` calls (TS2345) and rely on a manual guard.

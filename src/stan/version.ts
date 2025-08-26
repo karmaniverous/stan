@@ -4,7 +4,7 @@
 
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath as realpathAsync } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -47,6 +47,19 @@ const getModuleRoot = (): string | null => {
   }
 };
 
+const realAbs = async (
+  p: string | null | undefined,
+): Promise<string | null> => {
+  if (!p) return null;
+  try {
+    // Normalize symlinks/junctions (npm link, Windows) for reliable equality.
+    const rp = await realpathAsync(p);
+    return rp;
+  } catch {
+    return p ? path.resolve(p) : null;
+  }
+};
+
 const readJson = async <T>(abs: string): Promise<T | null> => {
   try {
     const raw = await readFile(abs, 'utf8');
@@ -81,6 +94,16 @@ export const getVersionInfo = async (cwd: string): Promise<VersionInfo> => {
       return resolveStanPathSync(repoRoot);
     }
   })();
+
+  // Optional config override for dev mode
+  let devModeFromConfig: boolean | undefined;
+  try {
+    const cfg = loadConfigSync(repoRoot);
+    devModeFromConfig =
+      typeof cfg.devMode === 'boolean' ? cfg.devMode : undefined;
+  } catch {
+    devModeFromConfig = undefined;
+  }
 
   const dirs = makeStanDirs(repoRoot, stanPath);
   const localSystem = path.join(dirs.systemAbs, 'stan.system.md');
@@ -121,8 +144,28 @@ export const getVersionInfo = async (cwd: string): Promise<VersionInfo> => {
 
   const docsMeta = await readJson<{ version?: string }>(docsMetaPath);
 
+  // Realpath-hardened, name-agnostic detection
+  const [realModule, realRepo] = await Promise.all([
+    realAbs(moduleRoot),
+    realAbs(repoRoot),
+  ]);
+  const detectedHome = !!realModule && !!realRepo && realModule === realRepo;
+
+  // Overrides: env > config > detection
+  const env = process.env.STAN_DEV_MODE?.trim().toLowerCase();
+  const envOverride =
+    env === '1' || env === 'true'
+      ? true
+      : env === '0' || env === 'false'
+        ? false
+        : undefined;
+
   const isDevModuleRepo =
-    !!moduleRoot && path.resolve(moduleRoot) === path.resolve(repoRoot);
+    typeof envOverride === 'boolean'
+      ? envOverride
+      : typeof devModeFromConfig === 'boolean'
+        ? devModeFromConfig
+        : detectedHome;
 
   return {
     packageVersion,

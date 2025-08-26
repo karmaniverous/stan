@@ -72,6 +72,11 @@ export type ContextConfig = {
   excludes?: string[];
   /** Maximum retained snapshot "undos" (history depth for snap undo/redo); default 10. */
   maxUndos?: number /**
+   * Optional developer-mode switch to treat the current repo as the STAN dev module.
+   */;
+
+  devMode?: boolean;
+  /**
    * Command template to open modified files after a successful patch.
    * Tokens: `\{file\}` expands to a repo‑relative file path.
    * Default: `code -g \{file\}`.
@@ -171,6 +176,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
   const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
+  const devMode = (cfg as { devMode?: unknown }).devMode;
   const optsAny = (cfg as { opts?: unknown }).opts as
     | { cliDefaults?: unknown }
     | undefined;
@@ -191,6 +197,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
     maxUndos: normalizeMaxUndos(maxUndos),
+    devMode: asBool(devMode),
     patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,
     opts:
       optsAny && typeof optsAny === 'object'
@@ -263,6 +270,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const excludes = (cfg as { excludes?: unknown }).excludes;
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
   const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
+  const devMode = (cfg as { devMode?: unknown }).devMode;
   const optsAny = (cfg as { opts?: unknown }).opts as
     | { cliDefaults?: unknown }
     | undefined;
@@ -283,6 +291,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
     maxUndos: normalizeMaxUndos(maxUndos),
+    devMode: asBool(devMode),
     patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,
     opts:
       optsAny && typeof optsAny === 'object'

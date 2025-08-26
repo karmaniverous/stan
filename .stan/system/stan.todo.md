@@ -23,10 +23,11 @@ Next up (high value)
 
 Completed (recent)
 
+- Dev mode detection: realpath‑hardened home‑repo check + overrides
+  (env STAN_DEV_MODE > config devMode > detection).
 - System prompt — add FEEDBACK response completeness validator (require Full Listing + improved Patch for each failed file).
 - Docs — Archives & snapshots: add “Selection semantics (includes/excludes)” and example for additive `includes`.
-- CLI help — tag effective defaults with “(DEFAULT)” for root and subcommands; improve root description to tell the STAN story.
-- System prompt repo‑agnostic housekeeping
+- CLI help — tag effective defaults with “(DEFAULT)” for root and subcommands; improve root description to tell the STAN story.- System prompt repo‑agnostic housekeeping
   - docs(system): make monolith guidance fully repo‑agnostic; direct all
     durable policy/behavior changes to the project prompt.
   - docs(system): add vocabulary alias “monolith” → `<stanPath>/system/stan.system.md`.

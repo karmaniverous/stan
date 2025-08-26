@@ -71,9 +71,10 @@ Note: The project prompt is created on demand when repo‑specific policies emer
   - `dist/cli` (executables, with shebang),
   - `dist/types` (d.ts bundle).
 - Use the `@` alias at build time via Rollup alias config.
+- d.ts bundling: apply the alias plugin alongside `rollup-plugin-dts` in the
+  types build to resolve `"@/..."` path aliases reliably.
 - The `stan.dist/` build is used for internal CLI testing (`npm run stan:build`)
   and is cleaned after build.
-
 ## CLI defaults via configuration (opts.cliDefaults)
 
 The CLI honors phase‑scoped defaults when flags are omitted. Precedence is:
@@ -157,10 +158,9 @@ Built‑ins (when neither flags nor config specify): debug=false, boring=false; 
   - `-x, --except-scripts <keys...>` excludes keys (reduces from `-s` when present; otherwise from full set).
 - Conflicts:
   - `-S` conflicts with `-s`/`-x`.
-  - `-c` conflicts with `-A` (runtime check).
+  - `-c` conflicts with `-A` (parse‑time via Commander conflicts).
 
 Short negative flags:
-
 - Root: `-D` (no-debug), `-B` (no-boring)
 - Run: `-Q` (no-sequential), `-K` (no-keep), `-C` (no-combine); Snap: `-S` (no-stash)
 

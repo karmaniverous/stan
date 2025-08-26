@@ -4,6 +4,32 @@ When updated: 2025-08-26 (UTC)
 
 Next up (high value)
 
+- Long-file sweep and decomposition plan
+  - Results (approximate LOC; bytes/60 heuristic):
+    - src/stan/config.ts (~34 KB) ≈ ~560–590 LOC — exceeds 300 LOC (priority P0).
+    - src/cli/stan/runner.ts (~25 KB) ≈ ~400–430 LOC — exceeds 300 LOC (priority P1).
+    - Near threshold (monitor; likely <300): src/stan/run/archive.ts (~17.6 KB), src/stan/diff.ts (~14.1 KB),
+      src/stan/fs.ts (~13.4 KB), src/stan/version.ts (~13.5 KB), src/cli/stan/index.ts (~14.2 KB).
+  - Phase 1 (P0): Split src/stan/config.ts into a folder with cohesive modules (no external API change):
+    - src/stan/config/types.ts: ScriptMap, ContextConfig, CLI defaults types; defaults/constants.
+    - src/stan/config/normalize.ts: asString/asBool/asStringArray, normalizeMaxUndos, normalizeCliDefaults.
+    - src/stan/config/load.ts: parseFile, config discovery (findConfigPathSync), loadConfigSync/async,
+      resolveStanPathSync/async.
+    - src/stan/config/output.ts: ensureOutputDir.
+    - src/stan/config/index.ts: re‑export the public API so imports of "@/stan/config" continue to work.
+    - Acceptance: build/lint/typecheck/tests green; no consumer import path changes required.
+  - Phase 2 (P1): Decompose src/cli/stan/runner.ts (CLI adapter only) into smaller units:
+    - src/cli/stan/run/options.ts: option construction, default tagging, conflict wiring.
+    - src/cli/stan/run/derive.ts: deriveRunInvocation wrapper + config-default application.
+    - src/cli/stan/run/action.ts: action handler (plan rendering + runSelected invocation).
+    - src/cli/stan/runner.ts: thin registration shell (wires the above).
+    - Acceptance: CLI behavior unchanged (help footer, defaults, conflicts), tests green.
+  - Phase 3 (monitor): Re‑scan near-threshold modules after Phase 1–2; split if any exceed ~300 LOC in practice.
+
+- Immediate hotfix (P0, next change set)
+  - Fix the parse error in src/stan/config.ts by removing the stray “\*/;” after the JSDoc for patchOpenCommand.
+  - Goal: unblock build/typecheck/tests prior to the larger decomposition in Phase 1.
+
 - Patch reliability for Markdown/docs:
   - If git/jsdiff both fail and exactly one contiguous section is changed in a
     .md file, consider a safe, heading‑anchored section‑replacement fallback

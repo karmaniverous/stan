@@ -14,10 +14,15 @@ import {
 } from '@/stan/snap/handlers';
 
 import { applyCliSafety } from './cli-utils';
+
+const tagDefault = (opt: Option, on: boolean): void => {
+  if (on && !opt.description.includes('(DEFAULT)')) {
+    opt.description = `${opt.description} (DEFAULT)`;
+  }
+};
 /**
  * Register the `snap` subcommand on the provided root CLI.
- *
- * @param cli - Commander root command.
+ * * @param cli - Commander root command.
  * @returns The same root command for chaining.
  */
 export const registerSnap = (cli: Commander): Command => {
@@ -59,17 +64,28 @@ export const registerSnap = (cli: Commander): Command => {
       await handleInfo();
     });
 
+  // Stash flags with default tagging
+  const optStash = new Option(
+    '-s, --stash',
+    'stash changes (git stash -u) before snap and pop after',
+  );
+  const optNoStash = new Option(
+    '-S, --no-stash',
+    'do not stash before snapshot (negated form)',
+  );
+  // Determine effective default (config overrides > built-ins)
+  try {
+    const p = findConfigPathSync(process.cwd());
+    const cfg = p ? loadConfigSync(process.cwd()) : null;
+    const stashDef = Boolean(cfg?.opts?.cliDefaults?.snap?.stash ?? false);
+    tagDefault(stashDef ? optStash : optNoStash, true);
+  } catch {
+    tagDefault(optNoStash, true); // built-in default is no-stash
+  }
+
   sub
-    .option(
-      '-s, --stash',
-      'stash changes (git stash -u) before snap and pop after',
-    )
-    .addOption(
-      new Option(
-        '-S, --no-stash',
-        'do not stash before snapshot (negated form)',
-      ),
-    )
+    .addOption(optStash)
+    .addOption(optNoStash)
     .action(async (opts?: { stash?: boolean }) => {
       // Resolve default stash from config when flags omitted
       let stashFinal: boolean | undefined;

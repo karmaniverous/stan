@@ -5,12 +5,19 @@ import path from 'node:path';
 
 import { Command, CommanderError, Option } from 'commander';
 
+import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { runSelected } from '@/stan/run';
 import { renderRunPlan } from '@/stan/run/plan';
 
 import { applyCliSafety } from './cli-utils';
 import { deriveRunInvocation } from './run-args';
+
+const tagDefault = (opt: Option, on: boolean): void => {
+  if (on && !opt.description.includes('(DEFAULT)')) {
+    opt.description = `${opt.description} (DEFAULT)`;
+  }
+};
 
 /**
  * Register the `run` subcommand on the provided root CLI.
@@ -21,63 +28,111 @@ import { deriveRunInvocation } from './run-args';
 export const registerRun = (cli: Command): Command => {
   const cmd = cli
     .command('run')
-    .description('Run configured scripts to generate STAN artifacts')
-    .option(
-      '-s, --scripts [keys...]',
-      'script keys to run (all scripts if omitted)',
-    )
-    .option(
-      '-x, --except-scripts <keys...>',
-      'script keys to exclude (reduces from --scripts or from full set)',
-    )
-    .option(
-      '-q, --sequential',
-      'run sequentially (with -s uses listed order; otherwise config order)',
-    )
-    .addOption(
-      new Option('-Q, --no-sequential', 'run concurrently (negated form)'),
-    )
-    // Legacy explicit archive flag; archiving is now ON by default.
-    .option('-a, --archive', 'create archive.tar and archive.diff.tar')
-    .addOption(new Option('-A, --no-archive', 'do not create archives'))
-    .addOption(new Option('-S, --no-scripts', 'do not run scripts'))
-    .option('-p, --plan', 'print run plan and exit (no side effects)')
-    .option('-k, --keep', 'keep (do not clear) the output directory')
-    .addOption(
-      new Option(
-        '-K, --no-keep',
-        'do not keep the output directory (negated form)',
-      ),
+    .description(
+      'Run configured scripts to produce text outputs and archives (full + diff).',
     );
 
-  applyCliSafety(cmd);
+  // Selection flags
+  const optScripts = new Option(
+    '-s, --scripts [keys...]',
+    'script keys to run (all scripts if omitted)',
+  );
+  const optExcept = new Option(
+    '-x, --except-scripts <keys...>',
+    'script keys to exclude (reduces from --scripts or from full set)',
+  );
 
-  const combineOpt = new Option(
+  // Mode flags
+  const optSequential = new Option(
+    '-q, --sequential',
+    'run sequentially (with -s uses listed order; otherwise config order)',
+  );
+  const optNoSequential = new Option(
+    '-Q, --no-sequential',
+    'run concurrently (negated form)',
+  );
+
+  // Archive/outputs
+  const optArchive = new Option(
+    '-a, --archive',
+    'create archive.tar and archive.diff.tar',
+  );
+  const optNoArchive = new Option('-A, --no-archive', 'do not create archives');
+  const optCombine = new Option(
     '-c, --combine',
     'include script outputs inside archives and do not keep them on disk',
   )
     .implies({ archive: true })
     .conflicts(['keep']);
-
-  cmd.addOption(combineOpt);
-  cmd.addOption(
-    new Option('-C, --no-combine', 'do not include outputs inside archives'),
+  const optNoCombine = new Option(
+    '-C, --no-combine',
+    'do not include outputs inside archives',
   );
 
-  // Track raw presence of selection flags to detect conflicts reliably.
-  let sawNoScriptsFlag = false;
-  let sawScriptsFlag = false;
-  let sawExceptFlag = false;
-  cmd.on('option:no-scripts', () => {
-    sawNoScriptsFlag = true;
-  });
-  cmd.on('option:scripts', () => {
-    // Only fires for -s/--scripts, not -S.
-    sawScriptsFlag = true;
-  });
-  cmd.on('option:except-scripts', () => {
-    sawExceptFlag = true;
-  });
+  // Output dir & scripts suppressor
+  const optKeep = new Option(
+    '-k, --keep',
+    'keep (do not clear) the output directory',
+  );
+  const optNoKeep = new Option(
+    '-K, --no-keep',
+    'do not keep the output directory (negated form)',
+  );
+  const optNoScripts = new Option('-S, --no-scripts', 'do not run scripts');
+
+  // Plan
+  const optPlan = new Option(
+    '-p, --plan',
+    'print run plan and exit (no side effects)',
+  );
+
+  // Add all options
+  cmd
+    .addOption(optScripts)
+    .addOption(optExcept)
+    .addOption(optSequential)
+    .addOption(optNoSequential)
+    .addOption(optArchive)
+    .addOption(optNoArchive)
+    .addOption(optCombine)
+    .addOption(optNoCombine)
+    .addOption(optKeep)
+    .addOption(optNoKeep)
+    .addOption(optNoScripts)
+    .addOption(optPlan);
+
+  applyCliSafety(cmd);
+
+  // Tag defaults (config overrides > built-ins)
+  try {
+    const p = findConfigPathSync(process.cwd());
+    const cfg = p ? loadConfigSync(process.cwd()) : null;
+    const runDefs = (cfg?.opts?.cliDefaults?.run ?? {}) as {
+      archive?: boolean;
+      combine?: boolean;
+      keep?: boolean;
+      sequential?: boolean;
+      scripts?: boolean | string[];
+    };
+    const dArchive =
+      typeof runDefs.archive === 'boolean' ? runDefs.archive : true;
+    const dCombine =
+      typeof runDefs.combine === 'boolean' ? runDefs.combine : false;
+    const dKeep = typeof runDefs.keep === 'boolean' ? runDefs.keep : false;
+    const dSeq =
+      typeof runDefs.sequential === 'boolean' ? runDefs.sequential : false;
+    tagDefault(dArchive ? optArchive : optNoArchive, true);
+    tagDefault(dCombine ? optCombine : optNoCombine, true);
+    tagDefault(dKeep ? optKeep : optNoKeep, true);
+    tagDefault(dSeq ? optSequential : optNoSequential, true);
+    if (runDefs.scripts === false) tagDefault(optNoScripts, true);
+  } catch {
+    // Built-ins already implied above; tags applied via defaults path
+    tagDefault(optArchive, true); // archive defaults ON
+    tagDefault(optNoCombine, true); // combine defaults OFF
+    tagDefault(optNoKeep, true); // keep defaults OFF
+    tagDefault(optNoSequential, true); // sequential defaults OFF
+  }
 
   cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
 
@@ -134,7 +189,7 @@ export const registerRun = (cli: Command): Command => {
     // Negated option -S/--no-scripts => scripts === false
     const noScripts = (opts as { scripts?: unknown }).scripts === false;
 
-    // Archive flags:    // -a sets { archive: true }, -A/--no-archive sets { archive: false }.
+    // Archive flags:
     const archiveOpt = (opts as { archive?: unknown }).archive as
       | boolean
       | undefined;
@@ -164,6 +219,18 @@ export const registerRun = (cli: Command): Command => {
 
     // Manual conflict handling:
     // -S with -s or -x (detect by raw presence to handle last-wins semantics)
+    let sawNoScriptsFlag = false;
+    let sawScriptsFlag = false;
+    let sawExceptFlag = false;
+    cmd.on('option:no-scripts', () => {
+      sawNoScriptsFlag = true;
+    });
+    cmd.on('option:scripts', () => {
+      sawScriptsFlag = true;
+    });
+    cmd.on('option:except-scripts', () => {
+      sawExceptFlag = true;
+    });
     if (sawNoScriptsFlag && (sawScriptsFlag || sawExceptFlag)) {
       throw new CommanderError(
         1,

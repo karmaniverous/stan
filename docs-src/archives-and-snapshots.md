@@ -5,11 +5,38 @@ title: Archives & Snapshots
 # Archives & snapshots
 
 ## Artifacts
+
 - `<stanPath>/output/archive.tar` — full snapshot of repo files (excludes binaries).
 - `<stanPath>/output/archive.diff.tar` — changed files vs snapshot (always when archiving).
 - `*.txt` outputs — deterministic stdout/stderr from scripts.
 
-Attach `archive.tar` (and `archive.diff.tar` if present) in chat.
+Attach `archive.tar` (and `archive.diff.tar` if present) to your chat.
+
+## Selection semantics (includes/excludes)
+
+STAN selects files for archiving in two passes:
+
+- Base selection
+  - Applies your `.gitignore`, default denials (`node_modules`, `.git`),
+    user `excludes`, and STAN workspace rules.
+  - Reserved exclusions always apply:
+    - `<stanPath>/diff` is always excluded.
+    - `<stanPath>/output` is excluded unless you enable combine mode.
+
+- Additive includes
+  - `includes` is an allow‑list that ADDS matches back even if they would be
+    excluded by `.gitignore`, user `excludes`, or default denials.
+  - Reserved exclusions still apply (see above).
+
+Example (YAML):
+
+```yaml
+excludes:
+  - '**/.tsbuild/**'
+  - '**/generated/**'
+includes:
+  - '**/*.md' # bring docs back even if ignored elsewhere
+```
 
 ## Combine mode
 

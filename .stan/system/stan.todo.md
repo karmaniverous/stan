@@ -23,6 +23,9 @@ Next up (high value)
 
 Completed (recent)
 
+- System prompt — add FEEDBACK response completeness validator (require Full Listing + improved Patch for each failed file).
+- Docs — Archives & snapshots: add “Selection semantics (includes/excludes)” and example for additive `includes`.
+- CLI help — tag effective defaults with “(DEFAULT)” for root and subcommands; improve root description to tell the STAN story.
 - System prompt repo‑agnostic housekeeping
   - docs(system): make monolith guidance fully repo‑agnostic; direct all
     durable policy/behavior changes to the project prompt.
@@ -40,10 +43,6 @@ Completed (recent)
     `<stanPath>/system/stan.todo.md` whenever any code Patch is emitted
     (with deletions‑only / plan‑only exceptions) and re‑assert that the
     Commit Message is present and last (HARD GATE; MUST fail composition).
-
-Next up (follow‑through)
-
-- Public docs: surface the new additive‑includes rule in the website guide (“Archives & snapshots”) with a short example.
 
 DX / utility ideas (backlog)
 

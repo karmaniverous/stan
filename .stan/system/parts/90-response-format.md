@@ -95,10 +95,16 @@ Before sending a reply, verify all of the following:
    - If either requirement is missing, STOP and re‑emit after fixing. This is a
      hard gate and the composition MUST fail when missing.
 
+6) FEEDBACK response completeness
+   - When replying to a FEEDBACK packet:
+     - Include a Full Listing for each file listed under `summary.failed`.
+     - Include an improved Patch for each of those files (and only those files).
+   - If any failed file is missing its Full Listing or improved Patch, STOP and
+     re‑emit after fixing before sending.
+
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 
-## Plain Unified Diff Policy (no base64)- Never emit base64‑encoded patches.
-- Always emit plain unified diffs with @@ hunks.
+## Plain Unified Diff Policy (no base64)- Never emit base64‑encoded patches.- Always emit plain unified diffs with @@ hunks.
 - The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.
 - Never include non‑diff prologues or synthetic markers such as “**_ Begin Patch”/“_** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.
 - Do not wrap the patch beyond the fence required by the +1 rule.

@@ -17,6 +17,13 @@ import { performInit, registerInit } from './init';
 import { registerPatch } from './patch';
 import { registerRun } from './runner';
 import { registerSnap } from './snap';
+
+const tagDefault = (opt: Option, on: boolean): void => {
+  if (on && !opt.description.includes('(DEFAULT)')) {
+    opt.description = `${opt.description} (DEFAULT)`;
+  }
+};
+
 /**
  * Build the root CLI (`stan`) without side effects (safe for tests).
  *
@@ -28,23 +35,54 @@ import { registerSnap } from './snap';
  */
 export const makeCli = (): Command => {
   const cli = new Command();
-  cli
-    .name('stan')
-    .description(
-      'Generate reproducible STAN artifacts for AI-assisted development',
-    )
-    .option('-d, --debug', 'enable verbose debug logging')
-    .addOption(new Option('-D, --no-debug', 'disable verbose debug logging'))
-    .option(
-      '-b, --boring',
-      'disable all color and styling (useful for tests/CI)',
-    )
-    .addOption(new Option('-B, --no-boring', 'do not disable color/styling'))
-    .option('-v, --version', 'print version and baseline-docs status');
+  // Resolve effective defaults from config (when present); fall back to built‑ins.
+  let cfgDefaults: { debug?: boolean; boring?: boolean } = {};
+  try {
+    const cwd = process.cwd();
+    const p = findConfigPathSync(cwd);
+    if (p) {
+      const cfg = loadConfigSync(cwd);
+      const cliDefs = cfg.opts?.cliDefaults;
+      cfgDefaults = {
+        debug: typeof cliDefs?.debug === 'boolean' ? cliDefs.debug : undefined,
+        boring:
+          typeof cliDefs?.boring === 'boolean' ? cliDefs.boring : undefined,
+      };
+    }
+  } catch {
+    // best-effort
+  }
+  const debugDefault = Boolean(cfgDefaults.debug ?? false);
+  const boringDefault = Boolean(cfgDefaults.boring ?? false);
+
+  cli.name('stan').description(
+    // A clearer story than the prior one‑liner.
+    'Snapshot your repo and deterministic outputs, attach archives in chat, and safely round‑trip unified‑diff patches.',
+  );
+
+  const optDebug = new Option('-d, --debug', 'enable verbose debug logging');
+  const optNoDebug = new Option(
+    '-D, --no-debug',
+    'disable verbose debug logging',
+  );
+  tagDefault(debugDefault ? optDebug : optNoDebug, true);
+  cli.addOption(optDebug).addOption(optNoDebug);
+
+  const optBoring = new Option(
+    '-b, --boring',
+    'disable all color and styling (useful for tests/CI)',
+  );
+  const optNoBoring = new Option(
+    '-B, --no-boring',
+    'do not disable color/styling',
+  );
+  tagDefault(boringDefault ? optBoring : optNoBoring, true);
+  cli.addOption(optBoring).addOption(optNoBoring);
+
+  cli.option('-v, --version', 'print version and baseline-docs status');
 
   // Root-level help footer: show available script keys
-  cli.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
-  // Ensure tests never call process.exit() and argv normalization is consistent
+  cli.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd())); // Ensure tests never call process.exit() and argv normalization is consistent
   applyCliSafety(cli);
 
   // Propagate -d/--debug to subcommands (set before any subcommand action)

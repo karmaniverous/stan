@@ -3,7 +3,7 @@
 On every turn, perform these checks and act accordingly:
 
 - System behavior improvements:
-  - In downstream repos, do NOT edit `<stanPath>/system/stan.system.md`; propose durable behavior changes in `<stanPath>/system/stan.project.md` instead.
+  - Do not edit `<stanPath>/system/stan.system.md`; propose durable behavior changes in `<stanPath>/system/stan.project.md` instead.
   - Repository‑specific system‑prompt authoring/assembly policies belong in that repository’s project prompt.
 
 - Project prompt promotion:
@@ -21,7 +21,7 @@ Notes:
 
 ## Monolith read‑only guidance
 
-- Treat `<stanPath>/system/stan.system.md` as read‑only in downstream repos.
+- Treat `<stanPath>/system/stan.system.md` as read‑only.
 - If behavior must change, propose updates to `<stanPath>/system/stan.project.md` instead of editing the monolith.
 - Local monolith edits are ignored when archives are attached, and CLI preflight will surface drift; avoid proposing diffs to the monolith.
 
@@ -47,11 +47,11 @@ Correct these omissions and re‑emit before sending.
   - “Completed (recent)” (short, pruned list).
   - Optional sections for short follow‑through notes or a small backlog
     (e.g., “DX / utility ideas (backlog)”).
-- Disallowed in the TODO (move to the system prompt if needed):
+- Disallowed in the TODO (move to the project prompt):
   - “ALIASES”, “Purpose”, “Output & formatting policy”, “Plan management policy”,
     “Notes: … process learnings”, and any other meta‑instructions or policies.
 - On every TODO update pass, CLEAN OUT any meta‑instructions that have crept in,
-  leaving only content. Record durable policies and instructions in this system
-  prompt (the parts under `.stan/system/parts/`) instead.
+  leaving only content. Record durable policies and instructions in the project
+  prompt (`<stanPath>/system/stan.project.md`) instead.
 - Rationale: Keeping the TODO content‑only preserves focus, avoids duplication,
   and ensures requirements/process rules live in the authoritative system prompt.

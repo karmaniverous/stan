@@ -23,12 +23,17 @@ Next up (high value)
 
 Completed (recent)
 
+- System prompt repo‑agnostic housekeeping
+  - docs(system): make monolith guidance fully repo‑agnostic; direct all
+    durable policy/behavior changes to the project prompt.
+  - docs(system): add vocabulary alias “monolith” → `<stanPath>/system/stan.system.md`.
+  - docs(system): neutralize preflight drift wording (no “downstream repos”).
+
 - Archiving selection semantics + docs cadence enforcement
   - feat(fs): make `includes` additive and able to override `.gitignore`/excludes for specific paths; preserve reserved exclusions; keep ordering deterministic.
   - tests: extend fs.glob tests to cover additive includes even when .gitignore would exclude a match.
   - docs(project): add “Archiving & snapshot selection semantics (includes/excludes)” to stan.project.md.
   - docs(system): add a monolith refusal rule; strengthen FEEDBACK Full Listing requirement.
-  - docs(system): add a post‑compose verification checklist to enforce fence hygiene and commit isolation.
 
 - System prompt hard gate enhancement
   - docs(system): add explicit Post‑compose validator requiring a Patch for

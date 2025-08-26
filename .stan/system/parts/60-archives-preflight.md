@@ -13,13 +13,9 @@
 
 - Preflight baseline check on `stan run`:
   - Compare `<stanPath>/system/stan.system.md` to the packaged baseline
-    (dist). If drifted in downstream repos, warn that local edits will
+    (dist). If drift is detected, warn that local edits will
     be overwritten by `stan init` and suggest moving customizations to
     the project prompt; offer to revert to baseline.
-  - Track last installed docs version (e.g.),
-    `<stanPath>/system/.docs.meta.json`. If the installed package
-    version is newer and docs changed, nudge to run `stan init` to
-    update docs.
 
 - Version CLI:
   - `stan -v`/`--version` prints STAN version, Node version, repo root,

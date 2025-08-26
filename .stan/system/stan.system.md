@@ -64,6 +64,7 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 - “project prompt” → `<stanPath>/system/stan.project.md`
 - “bootloader” → `<stanPath>/system/stan.bootloader.md`
 - “development plan” (aliases: “dev plan”, “implementation plan”, “todo list”) → `<stanPath>/system/stan.todo.md`
+- “monolith” → `<stanPath>/system/stan.system.md`
 
 # Separation of Concerns: System vs Project
 
@@ -126,71 +127,6 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
     (the dev plan) before making further changes to that module.
 - Favor composability and testability.
   - Smaller modules with clear responsibilities enable targeted unit tests and simpler refactors.
-
-# Architecture: Services‑first (Ports & Adapters); Adapters‑thin
-
-## TypeScript module layout (guideline)
-
-- Prefer directory modules with an explicit public entry:
-  - Do NOT structure as `foo.ts` + helpers in `/foo`.
-  - INSTEAD, create `foo/index.ts` that exports the public interface of the module, with helpers as siblings under `foo/`.
-  - Callers import `foo` (the folder), not individual helper files; the index is the public API.
-
-- Business logic as services:
-  - Implement domain and orchestration logic as services behind explicit ports (interfaces) and expose them via a stable public API. Services may both PRODUCE and CONSUME other services; compose them for higher‑level operations.
-  - Services should be pure where practical; isolate side effects (filesystem, process, network, clipboard) behind ports injected as dependencies. Do not depend on ambient state (process.cwd/env) unless passed in explicitly.
-  - Services return structured results (objects) and never print/exit. The caller (adapter) owns presentation.
-  - Export service façades from the package root (index) for programmatic consumers (CLIs, servers, workers, CI, GUIs). Apply SemVer discipline.
-
-- Adapters as thin consumers:
-  - Adapters marshal inputs and present outputs. Examples: CLI commands, HTTP endpoints, background workers, CI steps, GUI actions.
-  - Adapters parse arguments, load config, call services, and render results (e.g., print to console, copy feedback to clipboard). Adapters contain no business logic and no hidden behavior.
-  - External surfaces (CLI flags, request payloads, UI forms) map 1:1 to service inputs; adapters do not introduce additional decision‑making or side effects beyond presentation concerns.
-
-- Dependency direction (ports & adapters):
-  - Services depend on ports (interfaces), not concrete adapters. Adapters implement those ports (dependency inversion).
-  - Side‑effectful operations are implemented as port adapters and injected into services. This keeps services testable and adapters replaceable (e.g., CLI vs server).
-
-- Testing & DX:
-  - Unit tests target services and ports with deterministic behavior; inject fakes/mocks for side‑effect ports (fs/process/network/clipboard).
-  - Adapters (CLI, HTTP, workers, GUIs) get thin smoke tests to validate mapping (flags→service inputs) and presentation‑only concerns; business logic must remain in services.
-  - Prefer many small modules over monoliths. If a service/orchestrator would exceed ~300 LOC, split it before coding.
-
-# Testing architecture (mirrors modules)
-
-- Test pairing is mandatory:
-  - Every non‑trivial module `foo.ts` must have a co‑located `foo.test.ts` that exercises it.
-  - If pairing is “hard,” treat that as a design smell: untestable code is bad code by definition. Return to design and factor the module until it is testable.
-  - If a module is intentionally left without a test, justify why in the module’s header comments (and memorialize that decision); examples: trivial type re‑exports, generated code with external validation, rare cases where unit‑testing would violate architecture.
-
-- Structure mirrors code:
-  - Co‑locate tests with modules (same directory) and keep naming consistent to make coverage audits and navigation trivial.
-  - The presence of multiple test modules targeting a single artifact (e.g., `runner.test.ts`, `runner.combine.test.ts`) should be an immediate signal to split the artifact into discrete, responsibility‑focused modules that can be tested independently.
-
-- Services/ports vs adapters:
-  - Unit tests focus on services and ports with deterministic behavior; inject fakes for side‑effect ports.
-  - Adapters get thin smoke tests to validate mapping/presentation (e.g., CLI prints, clipboard copy).
-
-- Testability and size:
-  - Apply Single‑Responsibility at both module and function level. Prefer small modules and small, composable functions.
-  - If any single test module grows unwieldy, it likely reflects a module doing too much. Return to design and split both the code and its tests accordingly.
-
-# System‑level lint policy (tool‑agnostic)
-
-- Evaluate rules before fixing; prioritize changes that improve clarity or prevent bugs over cosmetic churn.
-- Prefer local and targeted disables (at line or file scope) when a rule conflicts with intentional code structure.
-- Avoid busywork changes; do not rewrap/reorder solely to appease a formatter/linter unless clearly beneficial.
-- Be permissive in tests: allow looser typings and patterns that aid readability and test authoring (e.g., disabling require‑await, relaxed unsafe assignments in mocks).
-- Keep guidance resilient to specific engines (ESLint, Biome, etc.); the intent applies regardless of the chosen toolchain.
-
-# Context window exhaustion (termination rule)
-
-- The full archive is typically uploaded once at the beginning of a STAN chat and rarely re‑uploaded in the same thread.
-- If a full archive was uploaded earlier in this chat and is no longer present in the current context window, assume the context window has been exhausted and terminate the chat.
-- Termination behavior:
-  - Print a concise notice (one or two lines) stating that the context has been exhausted and instruct the user to start a new chat and reattach the latest archives (e.g., “Context exhausted: please start a new chat and attach the latest .stan/output/archive.tar (and archive.diff.tar if available). STAN will resume from repo state.”).
-  - Do not proceed with partial context and do not infer missing content.
-  - Rationale: STAN’s in‑repo state under `<stanPath>/system` preserves continuity and enables safe resumption in a fresh chat.
 
 # Intake: Integrity & Ellipsis (MANDATORY)
 
@@ -338,7 +274,7 @@ Notes
 On every turn, perform these checks and act accordingly:
 
 - System behavior improvements:
-  - In downstream repos, do NOT edit `<stanPath>/system/stan.system.md`; propose durable behavior changes in `<stanPath>/system/stan.project.md` instead.
+  - Do not edit `<stanPath>/system/stan.system.md`; propose durable behavior changes in `<stanPath>/system/stan.project.md` instead.
   - Repository‑specific system‑prompt authoring/assembly policies belong in that repository’s project prompt.
 
 - Project prompt promotion:
@@ -356,7 +292,7 @@ Notes:
 
 ## Monolith read‑only guidance
 
-- Treat `<stanPath>/system/stan.system.md` as read‑only in downstream repos.
+- Treat `<stanPath>/system/stan.system.md` as read‑only.
 - If behavior must change, propose updates to `<stanPath>/system/stan.project.md` instead of editing the monolith.
 - Local monolith edits are ignored when archives are attached, and CLI preflight will surface drift; avoid proposing diffs to the monolith.
 
@@ -382,12 +318,12 @@ Correct these omissions and re‑emit before sending.
   - “Completed (recent)” (short, pruned list).
   - Optional sections for short follow‑through notes or a small backlog
     (e.g., “DX / utility ideas (backlog)”).
-- Disallowed in the TODO (move to the system prompt if needed):
+- Disallowed in the TODO (move to the project prompt):
   - “ALIASES”, “Purpose”, “Output & formatting policy”, “Plan management policy”,
     “Notes: … process learnings”, and any other meta‑instructions or policies.
 - On every TODO update pass, CLEAN OUT any meta‑instructions that have crept in,
-  leaving only content. Record durable policies and instructions in this system
-  prompt (the parts under `.stan/system/parts/`) instead.
+  leaving only content. Record durable policies and instructions in the project
+  prompt (`<stanPath>/system/stan.project.md`) instead.
 - Rationale: Keeping the TODO content‑only preserves focus, avoids duplication,
   and ensures requirements/process rules live in the authoritative system prompt.
 
@@ -458,13 +394,9 @@ Correct these omissions and re‑emit before sending.
 
 - Preflight baseline check on `stan run`:
   - Compare `<stanPath>/system/stan.system.md` to the packaged baseline
-    (dist). If drifted in downstream repos, warn that local edits will
+    (dist). If drift is detected, warn that local edits will
     be overwritten by `stan init` and suggest moving customizations to
     the project prompt; offer to revert to baseline.
-  - Track last installed docs version (e.g.),
-    `<stanPath>/system/.docs.meta.json`. If the installed package
-    version is newer and docs changed, nudge to run `stan init` to
-    update docs.
 
 - Version CLI:
   - `stan -v`/`--version` prints STAN version, Node version, repo root,

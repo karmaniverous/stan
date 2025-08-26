@@ -35,3 +35,23 @@ Notes:
 This is a HARD GATE: the composition MUST fail when a required documentation
 patch is missing or when the final “Commit Message” block is absent or not last.
 Correct these omissions and re‑emit before sending.
+
+## Dev plan document hygiene (content‑only)
+
+- The development plan at `<stanPath>/system/stan.todo.md` MUST contain only the
+  current plan content. Keep meta‑instructions, aliases, formatting/policy notes,
+  process guidance, or “how to update the TODO” rules OUT of this file.
+- Allowed content in the TODO:
+  - Header with “When updated: <UTC timestamp>”.
+  - “Next up …” (near‑term actionable items).
+  - “Completed (recent)” (short, pruned list).
+  - Optional sections for short follow‑through notes or a small backlog
+    (e.g., “DX / utility ideas (backlog)”).
+- Disallowed in the TODO (move to the system prompt if needed):
+  - “ALIASES”, “Purpose”, “Output & formatting policy”, “Plan management policy”,
+    “Notes: … process learnings”, and any other meta‑instructions or policies.
+- On every TODO update pass, CLEAN OUT any meta‑instructions that have crept in,
+  leaving only content. Record durable policies and instructions in this system
+  prompt (the parts under `.stan/system/parts/`) instead.
+- Rationale: Keeping the TODO content‑only preserves focus, avoids duplication,
+  and ensures requirements/process rules live in the authoritative system prompt.

@@ -82,17 +82,12 @@ export const registerRun = (cli: Command): Command => {
   // Commander resolves conflicts during parsing, causing parseAsync() to reject with
   // code 'commander.conflictingOption', which our tests expect.
   optNoScripts.conflicts(['scripts', 'except-scripts']);
-  // Also mark the reverse relationship for robustness across Commander versions.
-  // (These are benign if Commander resolves by attribute name.)
-  optScripts.conflicts('no-scripts');
-  optExcept.conflicts('no-scripts');
 
   // Plan
   const optPlan = new Option(
     '-p, --plan',
     'print run plan and exit (no side effects)',
-  );
-  // Add all options
+  ); // Add all options
   cmd
     .addOption(optScripts)
     .addOption(optExcept)

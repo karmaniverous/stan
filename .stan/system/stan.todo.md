@@ -45,10 +45,11 @@ Next up (high value)
 
 Completed (recent)
 
+- CLI run: fix spurious self-conflict when parsing `stan run -S -A` by removing reverse conflicts wiring for `no-scripts`; retain manual `-S` vs `-s`/`-x` guard. Restores expected “plan only” behavior; runner.semantics.v2 test passes.
+
 - Dev mode detection: realpath‑hardened home‑repo check + overrides
   (env STAN_DEV_MODE > config devMode > detection).
-- System prompt — add FEEDBACK response completeness validator (require Full Listing + improved Patch for each failed file).
-- Docs — Archives & snapshots: add “Selection semantics (includes/excludes)” and example for additive `includes`.
+- System prompt — add FEEDBACK response completeness validator (require Full Listing + improved Patch for each failed file).- Docs — Archives & snapshots: add “Selection semantics (includes/excludes)” and example for additive `includes`.
 - CLI help — tag effective defaults with “(DEFAULT)” for root and subcommands; improve root description to tell the STAN story.- System prompt repo‑agnostic housekeeping
   - docs(system): make monolith guidance fully repo‑agnostic; direct all
     durable policy/behavior changes to the project prompt.

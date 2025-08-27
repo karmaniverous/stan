@@ -20,7 +20,7 @@ Because a freaking chatbot shouldn’t gaslight your code.
 
 ## Quick start
 
-1. Install
+### 1. Install
 
 ```
 npm i -g @karmaniverous/stan
@@ -30,7 +30,7 @@ pnpm add -g @karmaniverous/stan
 yarn global add @karmaniverous/stan
 ```
 
-2. Initialize in your repo
+### 2. Initialize in your repo
 
 ```
 stan init
@@ -39,43 +39,53 @@ stan init
 - Creates stan.config.yml and scaffolds STAN docs under <stanPath> (default .stan).
 - Adds sensible .gitignore entries for <stanPath> subfolders.
 
-3. Run the loop
+### 3. Run the loop
 
-- Build & Snapshot
+- **Build & Snapshot**
 
-```
-stan run
-```
+  Make any changes you like to your code. Then snapshot your code base and outputs from test, build & diagnostic scripts with:
 
-- Share & Baseline
+  ```
+  stan run
+  ```
 
-Attach .stan/output/archive.tar (and archive.diff.tar if present) to your chat.
+- **Share & Baseline**
 
-Optionally run:
+  Commit your changes.
 
-```
-stan snap
-```
+  Attach `.stan/output/archive.tar` and your script outputs to your chat along with your requirements or comments. Or nothing: STAN will just advance your current dev plan. Use the smaller `archive.diff.tar` in subsequent turns to make the most your context window.
 
-- Discuss & Patch
+  Then baseline your next differential archive with:
 
-Iterate in chat. Apply suggested patches:
+  ```
+  stan snap
+  ```
 
-```
-stan patch
-```
+- **Discuss & Patch**
 
-Use --check to validate without changing files, or -f <file> to read from a patch file.
+  Iterate in chat until you have a set of patches that advance your dev plan in the direction you want to go. These will include updates to your requirements and your dev plan, as well as a detailed commit message!
+
+  If you exhaust your context window, say `handoff`, copy the resulting document, and paste it into a new chat thread along with your latest artifacts.
+
+  Apply each patch with:
+
+  ```
+  stan patch
+  ```
+
+- **Repeat**
+
+  When all your tests are passing and all your requirements are met, you're done!
 
 ---
 
 ## Why STAN?
 
-- Reproducible context: one archive captures exactly the files to read.
-- Structured outputs: test/lint/typecheck/build logs are deterministic and easy to diff.
-- Always‑on diffs: with --archive, STAN writes archive.diff.tar for changed files automatically.
-- Preflight guardrails: nudges you to update prompts when the baseline changes.
-- Patch workflow: paste a unified diff or read from a file; STAN applies it safely and opens modified files in your editor.
+- **Reproducible context:** one archive captures exactly the files to read.
+- **Structured outputs:** test/lint/typecheck/build logs are deterministic and easy to diff.
+- **Always‑on diffs:** STAN writes archive.diff.tar for changed files automatically.
+- **Preflight guardrails:** nudges you to update prompts when the baseline changes.
+- **Patch workflow:** paste a unified diff or read from a file; STAN applies it safely and opens modified files in your editor. If a patch fails, STAN provides an improved patch and a full listing just for good measure.
 
 ---
 
@@ -88,16 +98,13 @@ stanPath: .stan
 includes: []
 excludes: []
 scripts:
-  build: npm run stan:build
+  build: npm run build
   lint: npm run lint
   test: npm run test
   typecheck: npm run typecheck
 ```
 
-Optional:
-
-- maxUndos: number of retained snapshot history entries (default 10).
-- patchOpenCommand: editor open command (default: "code -g {file}").
+See [STAN Configuration](https://docs.karmanivero.us/stan/documents/Stan_Configuration.html) for more!
 
 ---
 
@@ -114,16 +121,13 @@ Optional:
 - Snap (share & baseline)
   - stan snap
   - stan snap undo | redo | set <index> | info
-  - stan snap -s (stash before snap; pop after)
+  - stan snap -s # stash before snap; pop after
 - Patch (discuss & patch)
   - stan patch # from clipboard (default)
   - stan patch --check # validate only
-  - stan patch -f file.patch
+  - stan patch -f file.patch # patch from file
 
-Global flags:
-
-- -d/--debug (verbose streaming of script stdout/stderr)
-- -b/--boring (disable color)
+See [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html) for more!
 
 ---
 

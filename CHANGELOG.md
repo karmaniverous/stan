@@ -2,13 +2,23 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.0](https://github.com/karmaniverous/stan/compare/0.4.1...0.5.0)
+
+- feat(config): move CLI defaults to top-level `cliDefaults`; drop `opts` wrapper [`2a6b989`](https://github.com/karmaniverous/stan/commit/2a6b989662a1e5aeace8c94ed35ae10af3e113de)
+- feat(selection): default‑exclude nested sub‑packages; fix parse errors [`fdda472`](https://github.com/karmaniverous/stan/commit/fdda47295d3874804ec36010491038d75c71e804)
+- fix(fs): repair denyMatchers array to resolve TS/rollup parse errors [`782caf9`](https://github.com/karmaniverous/stan/commit/782caf92e3cee4c81c3ab55562916b6bc574dcf1)
+- fix(fs): separate comment and if-statement to restore valid block structure [`ed1a19a`](https://github.com/karmaniverous/stan/commit/ed1a19aaf164575db5cba40a565c9c9921a2a306)
+
 #### [0.4.1](https://github.com/karmaniverous/stan/compare/0.4.0...0.4.1)
+
+> 27 August 2025
 
 - updated docs [`7e7012f`](https://github.com/karmaniverous/stan/commit/7e7012fb4695fbcef452c98c71295c207f56819b)
 - updated docs [`4759a37`](https://github.com/karmaniverous/stan/commit/4759a377904a1d74472328112a571b62537f0f0c)
 - docs(config): add Stan Configuration guide and wire into site + README [`dab2a7b`](https://github.com/karmaniverous/stan/commit/dab2a7bdf3c61cac9ccc617603a5ee82b598eab1)
 - docs(cli-examples): full CLI options and defaults [`86dd838`](https://github.com/karmaniverous/stan/commit/86dd8385f2f4df14ff47329dcbd93d76f67ebd92)
 - updated docs [`f7e07a7`](https://github.com/karmaniverous/stan/commit/f7e07a7978c5c62607bdec62f9f30218c45baed7)
+- chore: release v0.4.1 [`0433c8c`](https://github.com/karmaniverous/stan/commit/0433c8c3ccfd1d978387f0126d741ec7abc24fcc)
 - updated docs [`51a5cbc`](https://github.com/karmaniverous/stan/commit/51a5cbcb623892eb1ae73460fac555fb1ba5a706)
 - docs update [`41b0af9`](https://github.com/karmaniverous/stan/commit/41b0af9734ef672bb40c456fb44c2cfeb1cae7ee)
 - docs(project,plan): add sub‑package exclusion, compression evaluation, and init UX (preserve scripts) requirements [`b25c92d`](https://github.com/karmaniverous/stan/commit/b25c92dbe264843703711e2e0e23235f58fde61e)

@@ -4,7 +4,7 @@ title: CLI Usage & Examples
 
 # CLI usage & examples
 
-This page documents all CLI options and shows practical examples. STAN’s CLI honors phase‑scoped defaults from your configuration (opts.cliDefaults) when flags are omitted; see “Config‑driven defaults” below.
+This page documents all CLI options and shows practical examples. STAN’s CLI honors phase‑scoped defaults from your configuration (cliDefaults) when flags are omitted; see “Config‑driven defaults” below.
 
 ## Root (stan) options
 
@@ -105,7 +105,7 @@ Sources and precedence:
 - -f, --file [filename] → read from file; if -f is present without a filename, read from clipboard.
 - (default) clipboard → if no argument/-f provided.
 - -F, --no-file → ignore configured default patch file (forces clipboard unless argument/-f provided).
-- Config default: opts.cliDefaults.patch.file (see below).
+- Config default: cliDefaults.patch.file (see below).
 
 Flags:
 
@@ -190,34 +190,33 @@ Options:
 
 ## Config‑driven defaults (opts.cliDefaults)
 
-Phase‑scoped defaults are read from your config when flags are omitted. Precedence: flags > opts.cliDefaults > built‑ins.
+Phase‑scoped defaults are read from your config when flags are omitted. Precedence: flags > cliDefaults > built‑ins.
 
 Example:
 
 ```yaml
-opts:
-  cliDefaults:
-    # Root
-    debug: false
-    boring: false
+cliDefaults:
+  # Root
+  debug: false
+  boring: false
 
-    # Run defaults
-    run:
-      archive: true # -a / -A
-      combine: false # -c / -C
-      keep: false # -k / -K
-      sequential: false # -q / -Q
-      # scripts default when -s is omitted:
-      #   true => all, false => none, ["lint","test"] => only these keys
-      scripts: true
+  # Run defaults
+  run:
+    archive: true # -a / -A
+    combine: false # -c / -C
+    keep: false # -k / -K
+    sequential: false # -q / -Q
+    # scripts default when -s is omitted:
+    #   true => all, false => none, ["lint","test"] => only these keys
+    scripts: true
 
-    # Patch defaults
-    patch:
-      file: .stan/patch/last.patch
+  # Patch defaults
+  patch:
+    file: .stan/patch/last.patch
 
-    # Snap defaults
-    snap:
-      stash: false # -s / -S
+  # Snap defaults
+  snap:
+    stash: false
 ```
 
 ---

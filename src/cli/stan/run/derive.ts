@@ -30,10 +30,8 @@ export const deriveRunParameters = (args: {
     Array.isArray(exceptOpt) && (exceptOpt as unknown[]).length > 0;
 
   const runDefs = ((
-    config as {
-      opts?: { cliDefaults?: { run?: Record<string, unknown> } };
-    }
-  ).opts?.cliDefaults?.run ?? {}) as {
+    config as { cliDefaults?: { run?: Record<string, unknown> } }
+  ).cliDefaults?.run ?? {}) as {
     archive?: boolean;
     combine?: boolean;
     keep?: boolean;

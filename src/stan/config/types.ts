@@ -21,15 +21,9 @@ export type CliDefaults = {
   patch?: CliDefaultsPatch;
   run?: CliDefaultsRun;
   snap?: CliDefaultsSnap;
-};
-export type ContextOpts = {
-  /** Phase-scoped CLI defaults used by adapters when flags are omitted. */
-  cliDefaults?: CliDefaults;
-};
 
 /**
- * Resolved STAN configuration.
- * - Paths like stanPath/output and stanPath/diff are referred to without angle
+ * Resolved STAN configuration. * - Paths like stanPath/output and stanPath/diff are referred to without angle
  *   brackets to avoid confusion with HTML-like tags in TSDoc.
  */
 export type ContextConfig = {
@@ -50,11 +44,10 @@ export type ContextConfig = {
   /** Optional developer-mode switch to treat the current repo as the STAN dev module. */
   devMode?: boolean;
   /**
-   * Command template to open modified files after a successful patch.
-   * Tokens: `{file}` expands to a repo‑relative file path.
-   * Default: `code -g {file}`.
+   * Phase-scoped CLI defaults used by adapters when flags are omitted.
+   * Top-level (no 'opts' wrapper).
    */
+  cliDefaults?: CliDefaults;
+  /** Command template to open modified files after a successful patch. */
   patchOpenCommand?: string;
-  /** Optional bag for phase-scoped CLI defaults and future options. */
-  opts?: ContextOpts;
 };

@@ -42,7 +42,7 @@ export const makeCli = (): Command => {
     const p = findConfigPathSync(cwd);
     if (p) {
       const cfg = loadConfigSync(cwd);
-      const cliDefs = cfg.opts?.cliDefaults;
+      const cliDefs = cfg.cliDefaults;
       cfgDefaults = {
         debug: typeof cliDefs?.debug === 'boolean' ? cliDefs.debug : undefined,
         boring:
@@ -102,7 +102,7 @@ export const makeCli = (): Command => {
         const p = findConfigPathSync(cwd);
         if (p) {
           const cfg = loadConfigSync(cwd);
-          const cliDefs = cfg.opts?.cliDefaults;
+          const cliDefs = cfg.cliDefaults;
           cfgDefaults = {
             debug:
               typeof cliDefs?.debug === 'boolean' ? cliDefs.debug : undefined,

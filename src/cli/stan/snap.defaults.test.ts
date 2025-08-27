@@ -38,10 +38,9 @@ describe('snap defaults (opts.cliDefaults.snap.stash) and -S override', () => {
     const yml = [
       'stanPath: out',
       'scripts: {}',
-      'opts:',
-      '  cliDefaults:',
-      '    snap:',
-      '      stash: true',
+      'cliDefaults:',
+      '  snap:',
+      '    stash: true',
     ].join('\n');
     await writeFile(path.join(dir, 'stan.config.yml'), yml, 'utf8');
 
@@ -55,10 +54,9 @@ describe('snap defaults (opts.cliDefaults.snap.stash) and -S override', () => {
     const yml = [
       'stanPath: out',
       'scripts: {}',
-      'opts:',
-      '  cliDefaults:',
-      '    snap:',
-      '      stash: true',
+      'cliDefaults:',
+      '  snap:',
+      '    stash: true',
     ].join('\n');
     await writeFile(path.join(dir, 'stan.config.yml'), yml, 'utf8');
 

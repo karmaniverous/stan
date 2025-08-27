@@ -29,9 +29,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
   const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
   const devMode = (cfg as { devMode?: unknown }).devMode;
-  const optsAny = (cfg as { opts?: unknown }).opts as
-    | { cliDefaults?: unknown }
-    | undefined;
+  const cliAny = (cfg as { cliDefaults?: unknown }).cliDefaults;
 
   if (typeof stanPath !== 'string' || stanPath.length === 0) {
     throw new Error('Invalid config: "stanPath" must be a non-empty string');
@@ -51,15 +49,10 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
     maxUndos: normalizeMaxUndos(maxUndos),
     devMode: asBool(devMode),
     patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,
-    opts:
-      optsAny && typeof optsAny === 'object'
-        ? {
-            cliDefaults: normalizeCliDefaults(optsAny.cliDefaults),
-          }
-        : undefined,
+    cliDefaults:
+      typeof cliAny === 'undefined' ? undefined : normalizeCliDefaults(cliAny),
   };
 };
-
 /**
  * Load and validate STAN configuration synchronously.
  *
@@ -81,9 +74,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
   const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
   const devMode = (cfg as { devMode?: unknown }).devMode;
-  const optsAny = (cfg as { opts?: unknown }).opts as
-    | { cliDefaults?: unknown }
-    | undefined;
+  const cliAny = (cfg as { cliDefaults?: unknown }).cliDefaults;
 
   if (typeof stanPath !== 'string' || stanPath.length === 0) {
     throw new Error('Invalid config: "stanPath" must be a non-empty string');
@@ -103,15 +94,10 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     maxUndos: normalizeMaxUndos(maxUndos),
     devMode: asBool(devMode),
     patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,
-    opts:
-      optsAny && typeof optsAny === 'object'
-        ? {
-            cliDefaults: normalizeCliDefaults(optsAny.cliDefaults),
-          }
-        : undefined,
+    cliDefaults:
+      typeof cliAny === 'undefined' ? undefined : normalizeCliDefaults(cliAny),
   };
 };
-
 /**
  * Load and validate STAN configuration (async).
  *

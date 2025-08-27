@@ -31,10 +31,9 @@ describe('root env resolution from config opts.cliDefaults', () => {
     const yml = [
       'stanPath: stan',
       'scripts: {}',
-      'opts:',
-      '  cliDefaults:',
-      '    debug: true',
-      '    boring: true',
+      'cliDefaults:',
+      '  debug: true',
+      '  boring: true',
     ].join('\n');
     await writeFile(path.join(dir, 'stan.config.yml'), yml, 'utf8');
 
@@ -52,10 +51,9 @@ describe('root env resolution from config opts.cliDefaults', () => {
     const yml = [
       'stanPath: stan',
       'scripts: {}',
-      'opts:',
-      '  cliDefaults:',
-      '    debug: true',
-      '    boring: true',
+      'cliDefaults:',
+      '  debug: true',
+      '  boring: true',
     ].join('\n');
     await writeFile(path.join(dir, 'stan.config.yml'), yml, 'utf8');
 

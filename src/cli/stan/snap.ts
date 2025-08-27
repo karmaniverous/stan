@@ -77,11 +77,10 @@ export const registerSnap = (cli: Commander): Command => {
   try {
     const p = findConfigPathSync(process.cwd());
     const cfg = p ? loadConfigSync(process.cwd()) : null;
-    const stashDef = Boolean(cfg?.opts?.cliDefaults?.snap?.stash ?? false);
+    const stashDef = Boolean(cfg?.cliDefaults?.snap?.stash ?? false);
     tagDefault(stashDef ? optStash : optNoStash, true);
   } catch {
-    tagDefault(optNoStash, true); // built-in default is no-stash
-  }
+    tagDefault(optNoStash, true); // built-in default is no-stash  }
 
   sub
     .addOption(optStash)
@@ -99,13 +98,12 @@ export const registerSnap = (cli: Commander): Command => {
           const p = findConfigPathSync(process.cwd());
           if (p) {
             const cfg = loadConfigSync(process.cwd());
-            stashFinal = Boolean(cfg.opts?.cliDefaults?.snap?.stash ?? false);
+            stashFinal = Boolean(cfg.cliDefaults?.snap?.stash ?? false);
           }
         }
       } catch {
         /* ignore */
-      }
-      await handleSnap({ stash: Boolean(stashFinal) });
+      }      await handleSnap({ stash: Boolean(stashFinal) });
     });
 
   return cli;

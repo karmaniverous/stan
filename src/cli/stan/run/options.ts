@@ -126,7 +126,7 @@ export const registerRunOptions = (
   try {
     const p = findConfigPathSync(process.cwd());
     const cfg = p ? loadConfigSync(process.cwd()) : null;
-    const runDefs = (cfg?.opts?.cliDefaults?.run ?? {}) as {
+    const runDefs = (cfg?.cliDefaults?.run ?? {}) as {
       archive?: boolean;
       combine?: boolean;
       keep?: boolean;

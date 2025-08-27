@@ -48,7 +48,7 @@ export const registerPatch = (cli: Command): Command => {
         const p = findConfigPathSync(cwd);
         if (p) {
           const cfg = loadConfigSync(cwd);
-          const fromCfg = cfg.opts?.cliDefaults?.patch?.file;
+          const fromCfg = cfg.cliDefaults?.patch?.file;
           if (typeof fromCfg === 'string' && fromCfg.trim().length > 0) {
             defaultFile = fromCfg.trim();
           }

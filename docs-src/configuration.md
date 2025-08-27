@@ -4,7 +4,7 @@ title: Stan Configuration
 
 # Stan Configuration (stan.config.yml / stan.config.json)
 
-This guide explains every configuration key, how STAN finds your config, how file selection works (includes/excludes), and how phase‑scoped CLI defaults (opts.cliDefaults) influence the CLI when flags are omitted.
+This guide explains every configuration key, how STAN finds your config, how file selection works (includes/excludes), and how phase‑scoped CLI defaults (cliDefaults) influence the CLI when flags are omitted.
 
 - Formats: YAML (recommended) or JSON.
 - Location: STAN searches upward from the current working directory for the nearest `stan.config.yml|yaml|json`.
@@ -92,7 +92,7 @@ excludes:
   - '**/generated/**'
 ```
 
-Tip: Use excludes to reduce archive noise (tool state folders, large generated code) and use includes to bring back specific files when needed.
+Tip: Use excludes to reduce archive noise (tool state folders, large generated code) and use includes to bring back specific assets you want the assistant to read.
 
 ### maxUndos (number)
 
@@ -123,39 +123,32 @@ Developer‑mode switch used by STAN’s own repo to detect when local developme
 devMode: false
 ```
 
-### opts.cliDefaults (object)
+### cliDefaults (object)
 
-Phase‑scoped defaults used when CLI flags are omitted. Precedence: flags > opts.cliDefaults > built‑ins.
+Phase‑scoped defaults used when CLI flags are omitted. Precedence: flags > cliDefaults > built‑ins.
 
 Schema:
 
 ```yaml
-opts:
-  cliDefaults:
-    # root flags
-    debug: false # -d / -D
-    boring: false # -b / -B
-
-    # run defaults
-    run:
-      archive: true # -a / -A; combine implies archive=true
-      combine: false # -c / -C
-      keep: false # -k / -K
-      sequential: false # -q / -Q
-      # default script selection when neither -s nor -S is provided:
-      #   true  => all scripts,
-      #   false => none,
-      #   ["a","b"] => only these (filtered to known keys)
-      scripts: true
-
-    # patch defaults
-    patch:
-      # default patch file when no argument/-f is provided, unless -F/--no-file is used
-      file: .stan/patch/last.patch
-
-    # snap defaults
-    snap:
-      stash: false # -s / -S
+cliDefaults:
+  # root flags
+  debug: false # -d / -D
+  boring: false # -b / -B
+  run:
+    archive: true # -a / -A; combine implies archive=true
+    combine: false # -c / -C
+    keep: false # -k / -K
+    sequential: false # -q / -Q
+    # default script selection when neither -s nor -S is provided:
+    #   true  => all scripts,
+    #   false => none,
+    #   ["a","b"] => only these keys
+    scripts: true
+  patch:
+    # default patch file when no argument/-f is provided, unless -F/--no-file is used
+    file: .stan/patch/last.patch
+  snap:
+    stash: false # -s / -S
 ```
 
 Examples:
@@ -163,31 +156,28 @@ Examples:
 - Default to all scripts, but disable archives unless requested:
 
 ```yaml
-opts:
-  cliDefaults:
-    run:
-      scripts: true
-      archive: false
+cliDefaults:
+  run:
+    scripts: true
+    archive: false
 ```
 
 - Prefer sequential runs and capture a default patch file:
 
 ```yaml
-opts:
-  cliDefaults:
-    run:
-      sequential: true
-    patch:
-      file: .stan/patch/pending.patch
+cliDefaults:
+  run:
+    sequential: true
+  patch:
+    file: .stan/patch/pending.patch
 ```
 
 - Prefer stashing before snapshot:
 
 ```yaml
-opts:
-  cliDefaults:
-    snap:
-      stash: true
+cliDefaults:
+  snap:
+    stash: true
 ```
 
 ## File selection (archives & snapshots)
@@ -215,8 +205,8 @@ Combine mode (`stan run -c`) behavior:
 ## CLI defaults & precedence
 
 - Flags override everything.
-- If a flag is omitted, STAN consults `opts.cliDefaults`.
-- If not in `opts.cliDefaults`, STAN uses built‑ins:
+- If a flag is omitted, STAN consults `cliDefaults`.
+- If not in `cliDefaults`, STAN uses built‑ins:
   - `run.archive=true`, `run.combine=false`, `run.keep=false`, `run.sequential=false`, `run.scripts=true`
   - `patch.file` unset
   - `snap.stash=false`
@@ -231,7 +221,7 @@ Examples:
 stan run
 
 # With config:
-# opts.cliDefaults.run.archive=false
+# cliDefaults.run.archive=false
 # => No archives unless you pass -a
 stan run
 stan run -a   # force archives this time
@@ -240,10 +230,9 @@ stan run -a   # force archives this time
 - Default script selection:
 
 ```yaml
-opts:
-  cliDefaults:
-    run:
-      scripts: ['lint', 'test']
+cliDefaults:
+  run:
+    scripts: ['lint', 'test']
 ```
 
 ```bash
@@ -271,14 +260,13 @@ scripts:
   test: npm run test
 maxUndos: 10
 patchOpenCommand: 'code -g {file}'
-opts:
-  cliDefaults:
-    run:
-      scripts: true
-      archive: true
-      sequential: false
-    snap:
-      stash: false
+cliDefaults:
+  run:
+    scripts: true
+    archive: true
+    sequential: false
+  snap:
+    stash: false
 ```
 
 - JSON variant (stan.config.json):
@@ -296,23 +284,21 @@ opts:
   },
   "maxUndos": 10,
   "patchOpenCommand": "code -g {file}",
-  "opts": {
-    "cliDefaults": {
-      "debug": false,
-      "boring": false,
-      "run": {
-        "archive": true,
-        "combine": false,
-        "keep": false,
-        "sequential": false,
-        "scripts": true
-      },
-      "patch": {
-        "file": ".stan/patch/last.patch"
-      },
-      "snap": {
-        "stash": false
-      }
+  "cliDefaults": {
+    "debug": false,
+    "boring": false,
+    "run": {
+      "archive": true,
+      "combine": false,
+      "keep": false,
+      "sequential": false,
+      "scripts": true
+    },
+    "patch": {
+      "file": ".stan/patch/last.patch"
+    },
+    "snap": {
+      "stash": false
     }
   }
 }
@@ -321,5 +307,5 @@ opts:
 ## Tips
 
 - Keep `scripts` deterministic: tests, typecheckers, and linters that always produce stable output are ideal.
-- Use `excludes` to trim large/generated noise and `includes` to bring back specific assets you want the assistant to read.
+- Use `excludes` to trim large/generated noise and `includes` to bring back specific assets you want to share.
 - Prefer LF in your repo; STAN normalizes line endings when applying patches and counts LOC for large‑text warnings.

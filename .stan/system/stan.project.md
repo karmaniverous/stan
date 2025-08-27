@@ -76,34 +76,32 @@ Note: The project prompt is created on demand when repo‑specific policies emer
 - The `stan.dist/` build is used for internal CLI testing (`npm run stan:build`)
   and is cleaned after build.
 
-## CLI defaults via configuration (opts.cliDefaults)
+## CLI defaults via configuration (cliDefaults)
 
 The CLI honors phase‑scoped defaults when flags are omitted. Precedence is:
 
-- Flags > opts.cliDefaults > built‑ins.
+- Flags > cliDefaults > built‑ins.
 
 Schema (all keys optional):
 
 ```
-opts:
-  cliDefaults:
-    boring: boolean          # root -b / -B
-    debug: boolean           # root -d / -D
-    patch:
-      file: string           # default patch file; overridden by arg or -f; ignored by -F/--no-file
-    run:
-      archive: boolean       # -a / -A; combine implies archive=true
-      combine: boolean       # -c / -C
-      keep: boolean          # -k / -K
-      sequential: boolean    # -q / -Q
-      scripts: boolean | string[]  # default selection when neither -s is omitted nor -S used:
-                                   #   true => all, false => none, ["lint","test"] => only these keys
-    snap:
-      stash: boolean         # -s / -S
+cliDefaults:
+  boring: boolean          # root -b / -B
+  debug: boolean           # root -d / -D
+  patch:
+    file: string           # default patch file; overridden by arg or -f; ignored by -F/--no-file
+  run:
+    archive: boolean       # -a / -A; combine implies archive=true
+    combine: boolean       # -c / -C
+    keep: boolean          # -k / -K
+    sequential: boolean    # -q / -Q
+    scripts: boolean | string[]  # default selection when neither -s is omitted nor -S used:
+                                 #   true => all, false => none, ["lint","test"] => only these keys
+  snap:
+    stash: boolean         # -s / -S
 ```
 
 Built‑ins (when neither flags nor config specify): debug=false, boring=false; run: archive=true, combine=false, keep=false, sequential=false, scripts=true; snap: stash=false; patch file unset.
-
 ## CLI (repo tool behavior)
 
 - Root command: `stan` (supports `-d/--debug` globally).

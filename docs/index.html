@@ -66,30 +66,17 @@
 <p>See <a href="https://docs.karmanivero.us/stan/documents/Stan_Configuration.html">STAN Configuration</a> for more!</p>
 <hr>
 <h2 id="commands-at-a-glance" class="tsd-anchor-link">Commands at a glance<a href="#commands-at-a-glance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
-<li>Run (build &amp; snapshot)
-<ul>
-<li>Default: stan run # runs all configured scripts and writes archives</li>
-<li>stan run -p # print plan only, no side effects</li>
-<li>stan run -S # do not run scripts (combine with -A/-p)</li>
-<li>stan run -A # do not create archives</li>
-<li>stan run -c -s test # include outputs inside archives; remove on-disk outputs</li>
-<li>stan run -q -s lint test # sequential run in provided order</li>
-<li>stan run -x test # run all except “test”</li>
-</ul>
+<li><strong>Run</strong> (build &amp; snapshot)<pre><code class="bash"><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">run</span><span class="hl-1">                 </span><span class="hl-5"># runs all configured scripts and writes archives</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">run</span><span class="hl-1"> </span><span class="hl-6">-p</span><span class="hl-1">              </span><span class="hl-5"># print plan only, no side effects</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">run</span><span class="hl-1"> </span><span class="hl-6">-S</span><span class="hl-1">              </span><span class="hl-5"># do not run scripts (combine with -A/-p)</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">run</span><span class="hl-1"> </span><span class="hl-6">-A</span><span class="hl-1">              </span><span class="hl-5"># do not create archives</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">run</span><span class="hl-1"> </span><span class="hl-6">-c</span><span class="hl-1"> </span><span class="hl-6">-s</span><span class="hl-1"> </span><span class="hl-4">test</span><span class="hl-1">      </span><span class="hl-5"># combine archives &amp; outputs</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">run</span><span class="hl-1"> </span><span class="hl-6">-q</span><span class="hl-1"> </span><span class="hl-6">-s</span><span class="hl-1"> </span><span class="hl-4">lint</span><span class="hl-1"> </span><span class="hl-4">test</span><span class="hl-1"> </span><span class="hl-5"># sequential run subset in provided order</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">run</span><span class="hl-1"> </span><span class="hl-6">-x</span><span class="hl-1"> </span><span class="hl-4">test</span><span class="hl-1">         </span><span class="hl-5"># run all except “test”</span>
+</code><button type="button">Copy</button></pre>
+
 </li>
-<li>Snap (share &amp; baseline)
-<ul>
-<li>stan snap</li>
-<li>stan snap undo | redo | set <index> | info</li>
-<li>stan snap -s # stash before snap; pop after</li>
-</ul>
+<li><strong>Snap</strong> (share &amp; baseline)<pre><code class="bash"><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">snap</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">snap</span><span class="hl-1"> </span><span class="hl-4">undo</span><span class="hl-1"> | </span><span class="hl-3">redo</span><span class="hl-1"> | </span><span class="hl-3">set</span><span class="hl-1"> &lt;</span><span class="hl-4">inde</span><span class="hl-1">x&gt; | </span><span class="hl-3">info</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">snap</span><span class="hl-1"> </span><span class="hl-6">-s</span><span class="hl-1"> </span><span class="hl-5"># stash before snap; pop after</span>
+</code><button type="button">Copy</button></pre>
+
 </li>
-<li>Patch (discuss &amp; patch)
-<ul>
-<li>stan patch # from clipboard (default)</li>
-<li>stan patch --check # validate only</li>
-<li>stan patch -f file.patch # patch from file</li>
-</ul>
+<li><strong>Patch</strong> (discuss &amp; patch)<pre><code class="bash"><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">patch</span><span class="hl-1">               </span><span class="hl-5"># from clipboard</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">patch</span><span class="hl-1"> </span><span class="hl-6">--check</span><span class="hl-1">       </span><span class="hl-5"># validate only</span><br/><span class="hl-3">stan</span><span class="hl-1"> </span><span class="hl-4">patch</span><span class="hl-1"> </span><span class="hl-6">-f</span><span class="hl-1"> </span><span class="hl-4">file.patch</span><span class="hl-1"> </span><span class="hl-5"># from file</span>
+</code><button type="button">Copy</button></pre>
+
 </li>
 </ul>
 <p>See <a href="https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html">CLI Usage &amp; Examples</a> for more!</p>

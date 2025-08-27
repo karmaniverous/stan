@@ -110,22 +110,28 @@ See [STAN Configuration](https://docs.karmanivero.us/stan/documents/Stan_Configu
 
 ## Commands at a glance
 
-- Run (build & snapshot)
-  - Default: stan run # runs all configured scripts and writes archives
-  - stan run -p # print plan only, no side effects
-  - stan run -S # do not run scripts (combine with -A/-p)
-  - stan run -A # do not create archives
-  - stan run -c -s test # include outputs inside archives; remove on-disk outputs
-  - stan run -q -s lint test # sequential run in provided order
-  - stan run -x test # run all except “test”
-- Snap (share & baseline)
-  - stan snap
-  - stan snap undo | redo | set <index> | info
-  - stan snap -s # stash before snap; pop after
-- Patch (discuss & patch)
-  - stan patch # from clipboard (default)
-  - stan patch --check # validate only
-  - stan patch -f file.patch # patch from file
+- **Run** (build & snapshot)
+  ```bash
+  stan run                 # runs all configured scripts and writes archives
+  stan run -p              # print plan only, no side effects
+  stan run -S              # do not run scripts (combine with -A/-p)
+  stan run -A              # do not create archives
+  stan run -c -s test      # combine archives & outputs
+  stan run -q -s lint test # sequential run subset in provided order
+  stan run -x test         # run all except “test”
+  ```
+- **Snap** (share & baseline)
+  ```bash
+  stan snap
+  stan snap undo | redo | set <index> | info
+  stan snap -s # stash before snap; pop after
+  ```
+- **Patch** (discuss & patch)
+  ```bash
+  stan patch               # from clipboard
+  stan patch --check       # validate only
+  stan patch -f file.patch # from file
+  ```
 
 See [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html) for more!
 

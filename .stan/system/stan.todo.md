@@ -1,9 +1,8 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-27 (UTC) — first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated
+When updated: 2025-08-27 (UTC) — init preserves existing config keys and cliDefaults; first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated
 
 Next up (high value)
-
 - Response format validator: ensure Patch precedes Full Listing
   - Add/extend a validator in the response composition checks so that when both blocks exist for a file, the “### Patch:” block appears before the “### Full Listing:” block.
   - Acceptance:
@@ -55,10 +54,21 @@ Completed (recent)
   - src/stan/config/types.ts — closed CliDefaults type.
   - outcome: typecheck/lint/docs unblock; tests run clean for affected areas.
 
+- init: preserve existing config keys and cliDefaults; maintain order
+  - behavior:
+    - When a config exists, stan init now merges user answers into the existing document,
+      preserving unknown keys (e.g., cliDefaults), key order, and formatting (file type).
+    - Writes back to the same config path/format (json|yml|yaml).
+    - Migrates legacy opts.cliDefaults to top‑level cliDefaults and removes empty opts.
+    - --force is non‑destructive when a config exists (only migrates/ensures required keys).
+  - implementation:
+    - src/stan/init/service.ts loads raw config (YAML.parse), merges answers, and serializes using
+      the existing file’s extension; preserves insertion order to avoid key reordering.
+  - result: no unintended deletion of cliDefaults; only obsolete keys removed or required ones added.
+
 - init UX: default “Preserve existing scripts” to Yes; skip selection when preserving
   - Change: the interactive confirm now defaults to Yes; when preserving scripts, the package.json script selection checklist is hidden.
-  - Implementation:
-    - src/stan/init/prompts.ts — confirm default set to `true`; added `when` to conditionally present selection only when not preserving. - Notes:
+  - Implementation:    - src/stan/init/prompts.ts — confirm default set to `true`; added `when` to conditionally present selection only when not preserving. - Notes:
     - CLI `--preserve-scripts` continues to behave as before; this change affects interactive defaults and UX only.
     - Existing tests remain valid; follow‑up tests can assert skip behavior via prompt mocks.
 

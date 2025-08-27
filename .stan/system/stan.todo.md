@@ -131,6 +131,7 @@ DX / utility ideas (backlog)
   - `stan patch --check --report` to print an affected‑files/hunks summary.
   - Optional progress timers per phase (scripts/archives) with totals.
   - Archive summary line: file count, excluded binaries, large‑text flagged.
+  - Add comments to `stan snap` and display in `stan snap info`
 
 - Patch ergonomics:
   - Adaptive context: automatically widen context margins on git/jsdiff failure (re‑try with more context).

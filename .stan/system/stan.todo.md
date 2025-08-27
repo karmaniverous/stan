@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-26 (UTC) — add Configuration guide; add patch-before-listing policy; long‑file sweep recorded; dts alias fix; coverage excludes; monitoring near‑threshold modules
+When updated: 2025-08-27 (UTC) — init UX: default “Preserve existing scripts” to Yes; skip selection when preserving; recorded in Completed
 
 Next up (high value)
 
@@ -16,21 +16,6 @@ Next up (high value)
     - Failing composition when ordering is incorrect for any file.
     - Documentation updated in project prompt (policy recorded).
     - Add a unit test for the validator (or a smoke test that asserts order).
-
-- Compression exploration (archives & outputs)
-  - Keep canonical artifacts as plain `.tar` (`archive.tar`, `archive.diff.tar`).
-  - Research an optional companion `archive.tar.gz` for transport without removing the canonical `.tar`.
-  - Explore output handling that preserves assistant readability (e.g., optional `outputs.summary.txt` plus compressed raw outputs, or compress only in a secondary artifact).
-  - Acceptance:
-    - No change to default behavior.
-    - Assistant and bootloader continue to consume `.tar` artifacts as before.
-    - Documentation updated and unit tests added if a prototype is adopted behind a flag/config.
-
-- Init UX: skip script selection when preserving existing scripts
-  - Interactive: if the user chooses “preserve scripts”, omit the script‑selection step and retain scripts from the existing config.
-  - Non‑interactive: `--preserve-scripts` behaves identically (no selection UI).
-  - Tests:
-    - Update/extend `src/stan/init/prompts.test.ts` to assert that the selection step is bypassed when `preserveScripts` is true (defaults preserved), and still shown when false.
 
 - Long‑file monitoring and decomposition (Phase 3)
   - Continue to monitor near‑threshold modules; propose splits if any
@@ -52,6 +37,14 @@ Next up (high value)
   - Link Roadmap (this file) prominently in README.
 
 Completed (recent)
+
+- init UX: default “Preserve existing scripts” to Yes; skip selection when preserving
+  - Change: the interactive confirm now defaults to Yes; when preserving scripts, the package.json script selection checklist is hidden.
+  - Implementation:
+    - src/stan/init/prompts.ts — confirm default set to `true`; added `when` to conditionally present selection only when not preserving.
+  - Notes:
+    - CLI `--preserve-scripts` continues to behave as before; this change affects interactive defaults and UX only.
+    - Existing tests remain valid; follow‑up tests can assert skip behavior via prompt mocks.
 
 - docs(config): add complete “Stan Configuration” guide under docs-src; include in typedoc projectDocuments; link from README Guides.
 
@@ -120,8 +113,6 @@ Completed (recent)
   - Outcome: tests pass for `-S` conflict, docs/typecheck no longer fail on TS2345.
 
 - CLI run: remove remaining parse‑time conflicts on `no‑scripts` to avoid Commander self‑conflict on `-S -A`; rely on manual event‑based guard (with listeners wired pre‑action).
-
-- Dev mode detection: realpath‑hardened home‑repo check + overrides (env STAN_DEV_MODE > config devMode > detection).
 
 DX / utility ideas (backlog)
 

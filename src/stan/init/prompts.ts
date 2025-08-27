@@ -76,7 +76,7 @@ export const promptForConfig = async (
             type: 'confirm',
             name: 'preserveScripts',
             message: 'Preserve existing scripts from current config?',
-            default: preserveScriptsFromDefaults ?? true,
+            default: true,
           },
         ]
       : []),
@@ -92,6 +92,9 @@ export const promptForConfig = async (
             })),
             default: defaultSelected,
             loop: false,
+            // When defaults exist, hide this selection step if preserving scripts.
+            when: (a: { preserveScripts?: boolean }) =>
+              hasDefaults ? !a.preserveScripts : true,
           },
         ]
       : []),

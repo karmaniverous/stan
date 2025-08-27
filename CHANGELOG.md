@@ -2,14 +2,19 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
-#### [Unreleased](https://github.com/karmaniverous/stan/compare/0.4.0...HEAD)
+#### [0.4.1](https://github.com/karmaniverous/stan/compare/0.4.0...0.4.1)
 
 - updated docs [`7e7012f`](https://github.com/karmaniverous/stan/commit/7e7012fb4695fbcef452c98c71295c207f56819b)
 - updated docs [`4759a37`](https://github.com/karmaniverous/stan/commit/4759a377904a1d74472328112a571b62537f0f0c)
 - docs(config): add Stan Configuration guide and wire into site + README [`dab2a7b`](https://github.com/karmaniverous/stan/commit/dab2a7bdf3c61cac9ccc617603a5ee82b598eab1)
 - docs(cli-examples): full CLI options and defaults [`86dd838`](https://github.com/karmaniverous/stan/commit/86dd8385f2f4df14ff47329dcbd93d76f67ebd92)
+- updated docs [`f7e07a7`](https://github.com/karmaniverous/stan/commit/f7e07a7978c5c62607bdec62f9f30218c45baed7)
 - updated docs [`51a5cbc`](https://github.com/karmaniverous/stan/commit/51a5cbcb623892eb1ae73460fac555fb1ba5a706)
+- docs update [`41b0af9`](https://github.com/karmaniverous/stan/commit/41b0af9734ef672bb40c456fb44c2cfeb1cae7ee)
 - docs(project,plan): add sub‑package exclusion, compression evaluation, and init UX (preserve scripts) requirements [`b25c92d`](https://github.com/karmaniverous/stan/commit/b25c92dbe264843703711e2e0e23235f58fde61e)
+- init: default preserve-scripts to Yes; skip selection when preserving [`75937a2`](https://github.com/karmaniverous/stan/commit/75937a28163da9c9bad27ca809ee953b85836c52)
+- stan init [`11f0182`](https://github.com/karmaniverous/stan/commit/11f0182a2621f63f514cf80ea75fc752552ce80e)
+- updated rrelease script [`87a0f14`](https://github.com/karmaniverous/stan/commit/87a0f14e0b2879a3ce9279fde0063007cd545aae)
 - updated readme [`508764f`](https://github.com/karmaniverous/stan/commit/508764f4368d8caefecf4e2d5caf1e781903b131)
 
 #### [0.4.0](https://github.com/karmaniverous/stan/compare/0.3.1...0.4.0)

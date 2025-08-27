@@ -4,7 +4,7 @@ excludes:
   - assets
   - docs
   - package-lock.json
-  - '*.local'
+  - "*.local"
   - CHANGELOG.md
 scripts:
   typecheck: npm run typecheck
@@ -13,4 +13,4 @@ scripts:
   build: npm run stan:build
   docs: npm run stan:docs
   knip: npm run knip
-
+patchOpenCommand: code -g {file}

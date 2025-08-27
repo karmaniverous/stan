@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-27 (UTC) — default sub‑package exclusion implemented; parse errors fixed; tests/docs updated
+When updated: 2025-08-27 (UTC) — first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated
 
 Next up (high value)
 
@@ -38,6 +38,12 @@ Completed (recent)
   - docs: configuration and CLI examples updated to cliDefaults and new precedence wording.
   - policy: .stan/system/stan.project.md updated to reflect cliDefaults schema.
   - compatibility: no support for legacy opts.cliDefaults (breaking change by design).
+
+- handoff: first‑message guard and fence‑agnostic detection
+  - system prompt (parts): added hard “first message of thread” guard — never emit a new handoff in response to the first user message; treat as startup input.
+  - detection: recognize pasted handoffs by title line “Handoff — …” with or without code fences; allow additional user instructions before/after.
+  - validator: expanded post‑compose checklist to include first‑message guard and non‑trigger rules; suppress new handoff unless explicitly requested later in the thread.
+  - outcome: assistants will not respond to a pasted (or first‑message) handoff with another handoff; they resume with the startup checklist instead.
 
 - selection: default‑exclude nested sub‑packages; re‑include via includes
   - code: src/stan/fs.ts — exclude any directory (at any depth) that contains its own `package.json`; repo root not excluded; reserved STAN workspace exclusions unchanged.
@@ -100,30 +106,6 @@ Completed (recent)
   - fix(cli/run): enforce parse‑time conflict `-c` vs `-A` in options.ts via Option.conflicts to match test expectation.
   - Outcome: typecheck/docs/lint pass; `runner.semantics.v2` conflict test passes.
 
-- Imports: remove backward‑compat usage; update internal modules and tests to import
-  from the modular barrel "@/stan/config" (help, version, run/service, init/service,
-  snap/context, patch/context, config.test). Library barrel now re‑exports explicitly
-  from "./config/index". Deletion of src/stan/config.ts can follow as a separate change.
-
-- CLI runner decomposition (Phase 2, no behavior changes)
-  - Added src/cli/stan/run/options.ts (options/defaults/listeners),
-    src/cli/stan/run/derive.ts (selection/mode/behavior derivation),
-    src/cli/stan/run/action.ts (conflicts, plan render, runSelected);
-    reduced src/cli/stan/runner.ts to thin wiring.
-
-- Phase 1 scaffolding: add modular config files under src/stan/config/ (types, defaults,
-  normalize, discover, load, output, index) with no behavior changes. Existing
-  imports continue to work via current src/stan/config.ts. A follow‑up will switch config.ts to re‑export from ./config to complete the split while preserving
-  public API and test/build behavior.
-
-- CLI run: fix -S vs -s/-x enforcement and TypeScript errors
-  - Remove invalid `Option.conflicts(optNoScripts)` calls (TS2345) and rely on a manual guard.
-  - Wire `option:*` event listeners BEFORE action to capture raw presence during parse.
-  - Throw `CommanderError('commander.conflictingOption')` in action when -S is combined with -s or -x so `parseAsync` rejects as tests expect.
-  - Outcome: tests pass for `-S` conflict, docs/typecheck no longer fail on TS2345.
-
-- CLI run: remove remaining parse‑time conflicts on `no‑scripts` to avoid Commander self‑conflict on `-S -A`; rely on manual event‑based guard (with listeners wired pre‑action).
-
 DX / utility ideas (backlog)
 
 - CLI/automation:
@@ -131,7 +113,6 @@ DX / utility ideas (backlog)
   - `stan patch --check --report` to print an affected‑files/hunks summary.
   - Optional progress timers per phase (scripts/archives) with totals.
   - Archive summary line: file count, excluded binaries, large‑text flagged.
-  - Add comments to `stan snap` and display in `stan snap info`
 
 - Patch ergonomics:
   - Adaptive context: automatically widen context margins on git/jsdiff failure (re‑try with more context).
@@ -141,4 +122,5 @@ DX / utility ideas (backlog)
   - Better rejects UX: on failure, surface the new `<stanPath>/patch/rejects/...` root path explicitly and offer a one‑liner to open it.
 
 - Docs & guidance:
-  - FEEDBACK envelope “causes” mapping table in docs (path/strip/EOL/context) with
+  - FEEDBACK envelope “causes” mapping table in docs (path/strip/EOL/context) with suggested assistant remedies.
+  - Quick “what to attach” heuristics in CLI output when archives are missing.

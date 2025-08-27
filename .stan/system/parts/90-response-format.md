@@ -102,6 +102,12 @@ Before sending a reply, verify all of the following:
    - If any failed file is missing its Full Listing or improved Patch, STOP and
      re‑emit after fixing before sending.
 
+7. Handoff guard (must not duplicate)
+   - First‑message guard: if replying to the first user message of a thread, you MUST NOT emit a new handoff. Treat the message as startup input and proceed with the “Assistant startup checklist”.
+   - Do not emit a handoff block unless the user explicitly requested a new handoff.
+   - If the user’s message contains a prior handoff (title line “Handoff — …”, with or without code fences) and there is no explicit request to “generate a new handoff”, you MUST NOT produce a new handoff.
+   - If any of these checks fail, discard the handoff output and instead proceed with the “Assistant startup checklist”.
+
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 
 ## Plain Unified Diff Policy (no base64)- Never emit base64‑encoded patches.- Always emit plain unified diffs with @@ hunks.

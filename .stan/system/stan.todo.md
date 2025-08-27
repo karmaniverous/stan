@@ -66,10 +66,14 @@ Completed (recent)
       the existing file’s extension; preserves insertion order to avoid key reordering.
   - result: no unintended deletion of cliDefaults; only obsolete keys removed or required ones added.
 
+- init: fix ESLint no-unsafe-assignment in config loader
+  - change: type the result of YAML.parse as unknown and narrow before assigning
+    to typed structures in src/stan/init/service.ts.
+  - outcome: lint passes without weakening types; behavior unchanged.
+
 - init UX: default “Preserve existing scripts” to Yes; skip selection when preserving
   - Change: the interactive confirm now defaults to Yes; when preserving scripts, the package.json script selection checklist is hidden.
-  - Implementation:    - src/stan/init/prompts.ts — confirm default set to `true`; added `when` to conditionally present selection only when not preserving. - Notes:
-    - CLI `--preserve-scripts` continues to behave as before; this change affects interactive defaults and UX only.
+  - Implementation:    - src/stan/init/prompts.ts — confirm default set to `true`; added `when` to conditionally present selection only when not preserving. - Notes:    - CLI `--preserve-scripts` continues to behave as before; this change affects interactive defaults and UX only.
     - Existing tests remain valid; follow‑up tests can assert skip behavior via prompt mocks.
 
 - docs(config): add complete “Stan Configuration” guide under docs-src; include in typedoc projectDocuments; link from README Guides.

@@ -44,7 +44,7 @@ export const performInitService = async ({
   if (existingPath) {
     try {
       const raw = await readFile(existingPath, 'utf8');
-      const parsed = YAML.parse(raw);
+      const parsed: unknown = YAML.parse(raw);
       if (parsed && typeof parsed === 'object')
         base = parsed as Record<string, unknown>;
     } catch {

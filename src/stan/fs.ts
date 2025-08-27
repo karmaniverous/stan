@@ -11,7 +11,6 @@ import picomatch from 'picomatch';
 
 import { makeStanDirs } from './paths';
 
-
 /**
  * Recursively enumerate files under `root`, returning POSIX-style
  * relative paths (`/` separators, no leading `./`). *
@@ -91,7 +90,8 @@ const detectSubpackageDirs = (files: string[], stanRel: string): string[] => {
 
 export type FilterOptions = {
   cwd: string;
-  stanPath: string;  includeOutputDir: boolean;
+  stanPath: string;
+  includeOutputDir: boolean;
   includes?: string[];
   excludes?: string[];
 };
@@ -156,7 +156,8 @@ export const filterFiles = async (
   // Base selection (deny list applied)
   const base = files.filter((f) => !denyMatchers.some((m) => m(f)));
 
-  // Additive includes: union with base, but still respect reserved exclusions  if (includes.length > 0) {
+  // Additive includes: union with base, but still respect reserved exclusions
+  if (includes.length > 0) {
     const allowMatchers: Matcher[] = includes.map(toMatcher);
     const reserved: Matcher[] = [
       (f) => matchesPrefix(f, `${stanRel}/diff`),
@@ -175,8 +176,7 @@ export const filterFiles = async (
 
   return base;
 };
-/**
- * Ensure `stanPath/output` and `stanPath/diff` exist (and `stanPath/patch` so
+/** * Ensure `stanPath/output` and `stanPath/diff` exist (and `stanPath/patch` so
  * patch payloads can be archived), returning their absolute paths.
  *
  * @param cwd - Repo root.

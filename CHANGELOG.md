@@ -2,9 +2,20 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.1](https://github.com/karmaniverous/stan/compare/0.5.0...0.5.1)
+
+- updated docs [`100221a`](https://github.com/karmaniverous/stan/commit/100221aa22f65ec13dee05b85b942b87f4dbbe40)
+- docs update [`43392e0`](https://github.com/karmaniverous/stan/commit/43392e0baf27d8cf82094436511400860864e56d)
+- updated docs [`0358655`](https://github.com/karmaniverous/stan/commit/0358655dc5669d073c24d4a4dabb4b496de1b8da)
+- docs(system): never trigger handoff on first thread message; detect pasted handoffs without code fences [`276d15f`](https://github.com/karmaniverous/stan/commit/276d15f67a22d96a942cd9476add7804bb8178c0)
+- updated todo [`da4211f`](https://github.com/karmaniverous/stan/commit/da4211fbc5dccb8a4063015711e1cc57081cbfe5)
+
 #### [0.5.0](https://github.com/karmaniverous/stan/compare/0.4.1...0.5.0)
 
+> 27 August 2025
+
 - feat(config): move CLI defaults to top-level `cliDefaults`; drop `opts` wrapper [`2a6b989`](https://github.com/karmaniverous/stan/commit/2a6b989662a1e5aeace8c94ed35ae10af3e113de)
+- chore: release v0.5.0 [`fbc36be`](https://github.com/karmaniverous/stan/commit/fbc36beeebb29756f10c5d41ffa23e52d17b3fa2)
 - feat(selection): default‑exclude nested sub‑packages; fix parse errors [`fdda472`](https://github.com/karmaniverous/stan/commit/fdda47295d3874804ec36010491038d75c71e804)
 - fix(fs): repair denyMatchers array to resolve TS/rollup parse errors [`782caf9`](https://github.com/karmaniverous/stan/commit/782caf92e3cee4c81c3ab55562916b6bc574dcf1)
 - fix(fs): separate comment and if-statement to restore valid block structure [`ed1a19a`](https://github.com/karmaniverous/stan/commit/ed1a19aaf164575db5cba40a565c9c9921a2a306)

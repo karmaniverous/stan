@@ -115,7 +115,7 @@
   },
   "release-it": {
     "git": {
-      "changelog": "npx auto-changelog -u --stdout --template https://raw.githubusercontent.com/release-it/release-it/main/templates/changelog-compact.hbs",
+      "changelog": "npx auto-changelog --unreleased-only --stdout --template https://raw.githubusercontent.com/release-it/release-it/main/templates/changelog-compact.hbs",
       "commitMessage": "chore: release v${version}",
       "requireBranch": "main"
     },

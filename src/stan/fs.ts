@@ -134,20 +134,21 @@ export const filterFiles = async (
 
   const ig = await buildIgnoreFromGitignore(cwd);
 
-  // Deny list used to compute base selection  const denyMatchers: Matcher[] = [
+  // Deny list used to compute base selection
+  const denyMatchers: Matcher[] = [
     // default denials by prefix
-    (f) => matchesPrefix(f, 'node_modules'),
-    (f) => matchesPrefix(f, '.git'),
+    (f: string) => matchesPrefix(f, 'node_modules'),
+    (f: string) => matchesPrefix(f, '.git'),
     // .gitignore (full semantics via "ignore")
     ...(ig ? [(f: string) => ig.ignores(f)] : []),
     // user excludes (glob or prefix)
     ...excludes.map(toMatcher),
     // default: exclude nested sub‑packages by prefix
     ...subpkgDirs.map((d) => (f: string) => matchesPrefix(f, d)),
-
     // always exclude <stanPath>/diff
-    (f) => matchesPrefix(f, `${stanRel}/diff`),
+    (f: string) => matchesPrefix(f, `${stanRel}/diff`),
   ];
+
   if (!includeOutputDir) {
     denyMatchers.push((f) => matchesPrefix(f, `${stanRel}/output`));
   }
@@ -155,8 +156,7 @@ export const filterFiles = async (
   // Base selection (deny list applied)
   const base = files.filter((f) => !denyMatchers.some((m) => m(f)));
 
-  // Additive includes: union with base, but still respect reserved exclusions
-  if (includes.length > 0) {
+  // Additive includes: union with base, but still respect reserved exclusions  if (includes.length > 0) {
     const allowMatchers: Matcher[] = includes.map(toMatcher);
     const reserved: Matcher[] = [
       (f) => matchesPrefix(f, `${stanRel}/diff`),

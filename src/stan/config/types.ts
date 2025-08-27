@@ -21,10 +21,10 @@ export type CliDefaults = {
   patch?: CliDefaultsPatch;
   run?: CliDefaultsRun;
   snap?: CliDefaultsSnap;
+};
 
 /**
- * Resolved STAN configuration. * - Paths like stanPath/output and stanPath/diff are referred to without angle
- *   brackets to avoid confusion with HTML-like tags in TSDoc.
+ * Resolved STAN configuration. * - Paths like stanPath/output and stanPath/diff are referred to without angle *   brackets to avoid confusion with HTML-like tags in TSDoc.
  */
 export type ContextConfig = {
   stanPath: string;

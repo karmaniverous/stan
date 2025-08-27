@@ -202,10 +202,26 @@ Combine mode (`stan run -c`) behavior:
 - Diff archive excludes `<stanPath>/diff` and both `archive.tar`/`archive.diff.tar`.
 - After archiving in combine mode, on‑disk outputs are removed; the archives remain.
 
+### Default sub‑package exclusion
+
+STAN excludes nested sub‑packages by default to reduce noise:
+
+- Any directory (at any depth) that contains its own `package.json` is treated
+  as an independent sub‑package and excluded from the base selection.
+- The repository root itself (root‑level `package.json`) is not excluded.
+- Reserved exclusions still apply (see above).
+
+To include a specific sub‑package, add an `includes` glob. For example:
+
+```yaml
+includes:
+  - 'packages/app1/**'   # re‑include a nested package
+```
+
+
 ## CLI defaults & precedence
 
-- Flags override everything.
-- If a flag is omitted, STAN consults `cliDefaults`.
+- Flags override everything.- If a flag is omitted, STAN consults `cliDefaults`.
 - If not in `cliDefaults`, STAN uses built‑ins:
   - `run.archive=true`, `run.combine=false`, `run.keep=false`, `run.sequential=false`, `run.scripts=true`
   - `patch.file` unset

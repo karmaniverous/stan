@@ -11,10 +11,10 @@ import picomatch from 'picomatch';
 
 import { makeStanDirs } from './paths';
 
+
 /**
  * Recursively enumerate files under `root`, returning POSIX-style
- * relative paths (`/` separators, no leading `./`).
- *
+ * relative paths (`/` separators, no leading `./`). *
  * @param root - Absolute directory to walk.
  */
 export const listFiles = async (root: string): Promise<string[]> => {
@@ -72,10 +72,26 @@ const toMatcher = (pattern: string): Matcher => {
   return (f) => isMatch(f);
 };
 
+/**
+ * Detect directories (at any depth) that contain their own package.json
+ * (monorepo sub‑packages). Skips the repo root, node_modules/.git, and stanPath.
+ */
+const detectSubpackageDirs = (files: string[], stanRel: string): string[] => {
+  const out = new Set<string>();
+  for (const p of files) {
+    if (p === 'package.json') continue; // repo root
+    if (!p.endsWith('/package.json')) continue;
+    const dir = p.slice(0, -'/package.json'.length);
+    if (dir.startsWith('node_modules/') || dir.startsWith('.git/')) continue;
+    if (dir === stanRel || dir.startsWith(`${stanRel}/`)) continue;
+    if (dir.length > 0) out.add(dir);
+  }
+  return Array.from(out);
+};
+
 export type FilterOptions = {
   cwd: string;
-  stanPath: string;
-  includeOutputDir: boolean;
+  stanPath: string;  includeOutputDir: boolean;
   includes?: string[];
   excludes?: string[];
 };
@@ -112,10 +128,13 @@ export const filterFiles = async (
   }: FilterOptions,
 ): Promise<string[]> => {
   const stanRel = stanPath.replace(/\\/g, '/');
+
+  // Default sub‑package exclusion: any directory that contains its own package.json
+  const subpkgDirs = detectSubpackageDirs(files, stanRel);
+
   const ig = await buildIgnoreFromGitignore(cwd);
 
-  // Deny list used to compute base selection
-  const denyMatchers: Matcher[] = [
+  // Deny list used to compute base selection  const denyMatchers: Matcher[] = [
     // default denials by prefix
     (f) => matchesPrefix(f, 'node_modules'),
     (f) => matchesPrefix(f, '.git'),
@@ -123,10 +142,12 @@ export const filterFiles = async (
     ...(ig ? [(f: string) => ig.ignores(f)] : []),
     // user excludes (glob or prefix)
     ...excludes.map(toMatcher),
+    // default: exclude nested sub‑packages by prefix
+    ...subpkgDirs.map((d) => (f: string) => matchesPrefix(f, d)),
+
     // always exclude <stanPath>/diff
     (f) => matchesPrefix(f, `${stanRel}/diff`),
   ];
-
   if (!includeOutputDir) {
     denyMatchers.push((f) => matchesPrefix(f, `${stanRel}/output`));
   }

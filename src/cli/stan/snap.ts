@@ -80,7 +80,9 @@ export const registerSnap = (cli: Commander): Command => {
     const stashDef = Boolean(cfg?.cliDefaults?.snap?.stash ?? false);
     tagDefault(stashDef ? optStash : optNoStash, true);
   } catch {
-    tagDefault(optNoStash, true); // built-in default is no-stash  }
+    // best-effort; built-in default is no-stash
+    tagDefault(optNoStash, true);
+  }
 
   sub
     .addOption(optStash)
@@ -103,7 +105,8 @@ export const registerSnap = (cli: Commander): Command => {
         }
       } catch {
         /* ignore */
-      }      await handleSnap({ stash: Boolean(stashFinal) });
+      }
+      await handleSnap({ stash: Boolean(stashFinal) });
     });
 
   return cli;

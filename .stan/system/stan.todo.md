@@ -1,13 +1,8 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-27 (UTC) — config: top‑level cliDefaults (drop opts); docs/tests updated; no backward compatibility
+When updated: 2025-08-27 (UTC) — default sub‑package exclusion implemented; parse errors fixed; tests/docs updated
 
 Next up (high value)
-- Selection: default‑exclude sub‑packages (folders with their own package.json)
-  - Implement exclusion in file selection for top‑level sub‑packages (child folders of repo root that contain a `package.json`). Repo root itself is not excluded.
-  - Provide clear override via `includes` globs to re‑include specific sub‑packages.
-  - Tests:
-    - Extend `src/stan/fs.glob.test.ts` (or add a new test) to verify that `packages/app1` with a `package.json` is excluded by default and can be re‑included via `includes: ["packages/app1/**"]`.
 
 - Response format validator: ensure Patch precedes Full Listing
   - Add/extend a validator in the response composition checks so that when both blocks exist for a file, the “### Patch:” block appears before the “### Full Listing:” block.
@@ -44,10 +39,20 @@ Completed (recent)
   - policy: .stan/system/stan.project.md updated to reflect cliDefaults schema.
   - compatibility: no support for legacy opts.cliDefaults (breaking change by design).
 
+- selection: default‑exclude nested sub‑packages; re‑include via includes
+  - code: src/stan/fs.ts — exclude any directory (at any depth) that contains its own `package.json`; repo root not excluded; reserved STAN workspace exclusions unchanged.
+  - tests: added src/stan/fs.subpackages.test.ts to verify default exclusion and re‑include with includes: ["packages/app1/**"].
+  - docs: updated docs-src/configuration.md to document the behavior and re‑include pattern.
+
+- fixes: resolve parse/type/lint errors blocking build/docs
+  - src/cli/stan/snap.ts — fixed missing brace and formatting.
+  - src/stan/config/types.ts — closed CliDefaults type.
+  - outcome: typecheck/lint/docs unblock; tests run clean for affected areas.
+
 - init UX: default “Preserve existing scripts” to Yes; skip selection when preserving
   - Change: the interactive confirm now defaults to Yes; when preserving scripts, the package.json script selection checklist is hidden.
   - Implementation:
-    - src/stan/init/prompts.ts — confirm default set to `true`; added `when` to conditionally present selection only when not preserving.  - Notes:
+    - src/stan/init/prompts.ts — confirm default set to `true`; added `when` to conditionally present selection only when not preserving. - Notes:
     - CLI `--preserve-scripts` continues to behave as before; this change affects interactive defaults and UX only.
     - Existing tests remain valid; follow‑up tests can assert skip behavior via prompt mocks.
 
@@ -135,5 +140,4 @@ DX / utility ideas (backlog)
   - Better rejects UX: on failure, surface the new `<stanPath>/patch/rejects/...` root path explicitly and offer a one‑liner to open it.
 
 - Docs & guidance:
-  - FEEDBACK envelope “causes” mapping table in docs (path/strip/EOL/context) with suggested assistant remedies.
-  - Quick “what to attach” heuristics in CLI output when archives are missing.
+  - FEEDBACK envelope “causes” mapping table in docs (path/strip/EOL/context) with

@@ -45,7 +45,12 @@ vi.mock('./diff', () => ({
   },
 }));
 
-import { registerSnap } from '@/cli/stan/snap';
+// Dynamic loader to ensure our mocks apply before importing CLI code
+const loadRegisterSnap = async () => {
+  vi.resetModules();
+  const mod = await import('@/cli/stan/snap');
+  return mod.registerSnap as (cli: Command) => Command;
+};
 
 describe('snap CLI (-s) logs stash/pop confirmations on success', () => {
   let dir: string;
@@ -76,6 +81,7 @@ describe('snap CLI (-s) logs stash/pop confirmations on success', () => {
   });
 
   it('prints confirmations for stash and pop', async () => {
+    const registerSnap = await loadRegisterSnap();
     const cli = new Command();
     registerSnap(cli);
     const logs: string[] = [];

@@ -1,8 +1,9 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-27 (UTC) — init preserves existing config keys and cliDefaults; first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated
+When updated: 2025-08-28 (UTC) — stash/pop confirmations logged for `stan snap -s` with a success test; init preserves existing config keys and cliDefaults; first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated
 
 Next up (high value)
+
 - Response format validator: ensure Patch precedes Full Listing
   - Add/extend a validator in the response composition checks so that when both blocks exist for a file, the “### Patch:” block appears before the “### Full Listing:” block.
   - Acceptance:
@@ -30,6 +31,11 @@ Next up (high value)
   - Link Roadmap (this file) prominently in README.
 
 Completed (recent)
+
+- snap: stash/pop confirmations and test
+  - code: `handleSnap` logs “stash saved changes”, “no local changes to stash”, and “stash pop restored changes”.
+  - tests: added isolated success suite (`src/cli/stan/snap.stash.success.test.ts`) that resets modules before importing CLI to avoid cross‑suite mock interference.
+  - outcome: clearer operator feedback for `stan snap -s`; tests are stable and isolated from existing stash‑failure suite.
 
 - config: move CLI defaults to top-level cliDefaults; drop opts wrapper
   - code: types/load/index/cli refs updated; CLI run/patch/snap/root defaults now read cliDefaults.

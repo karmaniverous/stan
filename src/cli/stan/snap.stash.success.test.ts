@@ -6,26 +6,8 @@ import path from 'node:path';
 import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock child_process spawn for stash success in this test file
-vi.mock('node:child_process', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:child_process')>();
-  return {
-    __esModule: true,
-    ...actual,
-    default: actual as unknown as object,
-    spawn: (_cmd: string, args: string[]) => {
-      const ee = new EventEmitter();
-      // Simulate success for both 'stash -u' and 'stash pop' (code 0)
-      const code = 0;
-      // Minimal async close to mimic process lifecycle
-      setTimeout(() => ee.emit('close', code), 0);
-      return ee as unknown;
-    },
-  };
-});
-
-// Mock diff.writeArchiveSnapshot to write a recognizable snapshot body
-vi.mock('./diff', () => ({
+// Mock diff.writeArchiveSnapshot in the module actually used by handleSnap
+vi.mock('@/stan/diff', () => ({
   __esModule: true,
   writeArchiveSnapshot: async ({
     cwd,
@@ -45,7 +27,13 @@ vi.mock('./diff', () => ({
   },
 }));
 
-// Dynamic loader to ensure our mocks apply before importing CLI code
+// Mock runGit in the snap layer to force success for stash and pop
+vi.mock('@/stan/snap/git', () => ({
+  __esModule: true,
+  runGit: async () => ({ code: 0, stdout: '', stderr: '' }),
+}));
+
+// Dynamic loader to ensure mocks are installed before the CLI registers actions
 const loadRegisterSnap = async () => {
   vi.resetModules();
   const mod = await import('@/cli/stan/snap');

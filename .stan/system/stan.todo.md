@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-28 (UTC) — stash/pop confirmations logged for `stan snap -s` with a success test; init preserves existing config keys and cliDefaults; first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated
+When updated: 2025-08-28 (UTC) — process guarantee (doc‑cadence) captured; stash/pop confirmations logged for `stan snap -s` with a success test; init preserves existing config keys and cliDefaults; first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated
 
 Next up (high value)
 
@@ -31,6 +31,11 @@ Next up (high value)
   - Link Roadmap (this file) prominently in README.
 
 Completed (recent)
+
+- process guarantee: enforce doc‑cadence every turn
+  - policy: replies that contain any Patch must also include a Patch to `.stan/system/stan.todo.md` and a final “Commit Message” block (hard gate).
+  - validator (near‑term): add a response‑format validator that fails composition when the doc‑cadence gate or the Patch/Full‑Listing order per file is violated.
+  - tests: add unit/smoke tests for the validator to prevent regressions.
 
 - snap: stash/pop confirmations and test
   - code: `handleSnap` logs “stash saved changes”, “no local changes to stash”, and “stash pop restored changes”.

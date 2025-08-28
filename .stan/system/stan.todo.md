@@ -1,15 +1,10 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-28 (UTC) — process guarantee (doc‑cadence) captured; stash/pop confirmations logged for `stan snap -s` with a success test; init preserves existing config keys and cliDefaults; first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated
+When updated: 2025-08-28 (UTC) — process guarantee (doc‑cadence) captured; stash/pop confirmations logged for `stan snap -s` with a success test; init preserves existing config keys and cliDefaults; first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated; response‑format validator (initial library + tests)
 
 Next up (high value)
 
-- Response format validator: ensure Patch precedes Full Listing
-  - Add/extend a validator in the response composition checks so that when both blocks exist for a file, the “### Patch:” block appears before the “### Full Listing:” block.
-  - Acceptance:
-    - Failing composition when ordering is incorrect for any file.
-    - Documentation updated in project prompt (policy recorded).
-    - Add a unit test for the validator (or a smoke test that asserts order).
+<!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
 - Long‑file monitoring and decomposition (Phase 3)
   - Continue to monitor near‑threshold modules; propose splits if any
@@ -32,6 +27,14 @@ Next up (high value)
 
 Completed (recent)
 
+- response‑format validator (initial library + tests)
+  - code: added `src/stan/validate/response.ts` with checks:
+    - one Patch per file,
+    - “Patch” precedes “Full Listing” when both present for a file,
+    - presence of “## Commit Message” last,
+    - TODO patch present when any Patch exists.
+  - tests: `src/stan/validate/response.test.ts`.
+  - export: validator is available via `@/stan/validate/response`.
 - process guarantee: enforce doc‑cadence every turn
   - policy: replies that contain any Patch must also include a Patch to `.stan/system/stan.todo.md` and a final “Commit Message” block (hard gate).
   - validator (near‑term): add a response‑format validator that fails composition when the doc‑cadence gate or the Patch/Full‑Listing order per file is violated.

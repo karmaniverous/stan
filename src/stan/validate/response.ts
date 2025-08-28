@@ -1,0 +1,211 @@
+/** src/stan/validate/response.ts
+ * Response-format validator for assistant replies.
+ *
+ * Checks (initial):
+ * - One Patch per file.
+ * - Each Patch block contains exactly one "diff --git a/<path> b/<path>" and it matches the heading path.
+ * - When both are present for a given file, "Patch" precedes "Full Listing".
+ * - "## Commit Message" exists and is the last section.
+ * - If any Patch exists, there is also a Patch for ".stan/system/stan.todo.md".
+ */
+
+type BlockKind = 'patch' | 'full' | 'commit';
+
+export type ValidationResult = {
+  ok: boolean;
+  errors: string[];
+  warnings: string[];
+};
+
+export type Block = {
+  kind: BlockKind;
+  /** Repo-relative target path for patch/listing blocks; undefined for commit. */
+  path?: string;
+  /** Start index (character offset) in the source for ordering checks. */
+  start: number;
+  /** Block body (content between its heading and the next heading). */
+  body: string;
+};
+
+const toPosix = (p: string): string => p.replace(/\\/g, '/');
+
+const H_PATCH = /^###\s+Patch:\s+(.+?)\s*$/m;
+const H_FULL = /^###\s+Full Listing:\s+(.+?)\s*$/m;
+const H_COMMIT = /^##\s+Commit Message\s*$/m;
+const H_ANY = /^##\s+.*$|^###\s+.*$/m;
+
+/** Find all headings and slice blocks up to the next heading or end. */
+const extractBlocks = (text: string): Block[] => {
+  const blocks: Block[] = [];
+  const indices: number[] = [];
+  // Collect all heading start indices (## or ###)
+  {
+    const re = new RegExp(H_ANY.source, 'gm');
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text))) indices.push(m.index);
+  }
+  // Append sentinel end
+  indices.push(text.length);
+  // Walk each heading
+  for (let i = 0; i < indices.length - 1; i += 1) {
+    const start = indices[i];
+    const end = indices[i + 1];
+    const chunk = text.slice(start, end);
+    // Classify
+    if (H_COMMIT.test(chunk)) {
+      // Commit block
+      blocks.push({ kind: 'commit', start, body: chunk });
+      continue;
+    }
+    const mPatch = chunk.match(H_PATCH);
+    if (mPatch && mPatch[1]) {
+      blocks.push({
+        kind: 'patch',
+        path: toPosix(mPatch[1].trim()),
+        start,
+        body: chunk,
+      });
+      continue;
+    }
+    const mFull = chunk.match(H_FULL);
+    if (mFull && mFull[1]) {
+      blocks.push({
+        kind: 'full',
+        path: toPosix(mFull[1].trim()),
+        start,
+        body: chunk,
+      });
+    }
+  }
+  return blocks;
+};
+
+/** Extract all "diff --git a/<path> b/<path>" pairs in a patch body. */
+const parseDiffHeaders = (body: string): Array<{ a: string; b: string }> => {
+  const re = /^diff --git a\/(.+?) b\/(.+?)\s*$/gm;
+  const out: Array<{ a: string; b: string }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body))) {
+    out.push({ a: toPosix(m[1] ?? ''), b: toPosix(m[2] ?? '') });
+  }
+  return out;
+};
+
+/** Return true if the "## Commit Message" section is last and nothing follows its fence. */
+const isCommitLast = (text: string): boolean => {
+  // Find the commit heading
+  const m = text.match(H_COMMIT);
+  if (!m) return false;
+  const idx = text.search(H_COMMIT);
+  if (idx < 0) return false;
+  // From heading to end, find the first fence and its matching close
+  const tail = text.slice(idx);
+  const fenceOpen = tail.match(/^`{3,}/m);
+  if (!fenceOpen) return false;
+  const openLine = fenceOpen[0];
+  const ticks = (openLine.match(/`/g) ?? []).length;
+  // Find closing fence with same tick count
+  const closeRe = new RegExp(`^\\\`${'{'}${ticks}{'}'}\\s*$`, 'm');
+  const closeMatch = tail.match(closeRe);
+  if (!closeMatch) return false;
+  const closeIdx = tail.search(closeRe);
+  if (closeIdx < 0) return false;
+  // Nothing but whitespace allowed after the closing fence
+  const after = tail.slice(closeIdx + ticks).trim();
+  return after.length === 0;
+};
+
+/** Validate an assistant reply body against response-format rules. */
+export const validateResponseMessage = (text: string): ValidationResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const blocks = extractBlocks(text);
+  const patches = blocks.filter((b) => b.kind === 'patch');
+  const listings = blocks.filter((b) => b.kind === 'full');
+  const commitBlocks = blocks.filter((b) => b.kind === 'commit');
+
+  // 1) One Patch per file
+  {
+    const seen = new Map<string, Block[]>();
+    for (const p of patches) {
+      const k = p.path ?? '(unknown)';
+      const list = seen.get(k) ?? [];
+      list.push(p);
+      seen.set(k, list);
+      // Also check its internal diff headers count and path match
+      const diffs = parseDiffHeaders(p.body);
+      if (diffs.length !== 1) {
+        errors.push(
+          `Patch for ${k} contains ${diffs.length.toString()} "diff --git" headers (expected 1)`,
+        );
+      } else {
+        const { a, b } = diffs[0];
+        const want = toPosix(k);
+        if (a !== want || b !== want) {
+          errors.push(`Patch header path mismatch for ${k}: got a/${a} b/${b}`);
+        }
+      }
+    }
+    for (const [k, list] of seen.entries()) {
+      if (list.length > 1) {
+        errors.push(
+          `Multiple Patch blocks found for ${k} (${list.length.toString()})`,
+        );
+      }
+    }
+  }
+
+  // 2) Patch precedes Full Listing (when both exist for the same file)
+  {
+    const fullIndex = new Map<string, Block>();
+    for (const f of listings) {
+      const key = toPosix(f.path ?? '(unknown)');
+      fullIndex.set(key, f);
+    }
+    for (const p of patches) {
+      const key = toPosix(p.path ?? '(unknown)');
+      const f = fullIndex.get(key);
+      if (f && !(p.start < f.start)) {
+        errors.push(
+          `Ordering violation for ${key}: Full Listing appears before Patch`,
+        );
+      }
+    }
+  }
+
+  // 3) Commit Message last (and present)
+  if (commitBlocks.length === 0) {
+    errors.push('Missing "## Commit Message" section');
+  } else if (!isCommitLast(text)) {
+    errors.push('"## Commit Message" is not last or its fence is malformed');
+  }
+
+  // 4) TODO patch required when any Patch exists
+  if (patches.length > 0) {
+    const hasTodo = patches.some(
+      (p) => toPosix(p.path ?? '') === '.stan/system/stan.todo.md',
+    );
+    if (!hasTodo) {
+      errors.push(
+        'Doc cadence violation: Patch present but no Patch for ".stan/system/stan.todo.md"',
+      );
+    }
+  }
+
+  return { ok: errors.length === 0, errors, warnings };
+};
+
+/** Throw on validation failure (convenience API). */
+export const validateOrThrow = (text: string): void => {
+  const res = validateResponseMessage(text);
+  if (!res.ok) {
+    const msg =
+      'Response-format validation failed:\n' +
+      res.errors.map((e) => `- ${e}`).join('\n');
+    throw new Error(msg);
+  }
+};
+
+// Re-exports for testing
+export const __internal = { extractBlocks, parseDiffHeaders, isCommitLast };

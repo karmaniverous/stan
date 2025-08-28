@@ -13,7 +13,7 @@ type BlockKind = 'patch' | 'full' | 'commit';
 
 export type Block = {
   kind: BlockKind;
-  /** Repo-relative target path for patch/listing blocks; undefined for commit. */  path?: string;
+  /** Repo-relative target path for patch/listing blocks; undefined for commit. */ path?: string;
   /** Start index (character offset) in the source for ordering checks. */
   start: number;
   /** Block body (content between its heading and the next heading). */
@@ -28,7 +28,8 @@ export type ValidationResult = {
 
 const toPosix = (p: string): string => p.replace(/\\/g, '/');
 
-const H_PATCH = /^###\s+Patch:\s+(.+?)\s*$/m;const H_FULL = /^###\s+Full Listing:\s+(.+?)\s*$/m;
+const H_PATCH = /^###\s+Patch:\s+(.+?)\s*$/m;
+const H_FULL = /^###\s+Full Listing:\s+(.+?)\s*$/m;
 const H_COMMIT = /^##\s+Commit Message\s*$/m;
 const H_ANY = /^##\s+.*$|^###\s+.*$/m;
 
@@ -92,7 +93,8 @@ const parseDiffHeaders = (body: string): Array<{ a: string; b: string }> => {
 /** Legacy helper (retained for potential future use). */
 const isCommitLast = (text: string): boolean => {
   // Find the commit heading
-  const m = text.match(H_COMMIT);  if (!m) return false;
+  const m = text.match(H_COMMIT);
+  if (!m) return false;
   const idx = text.search(H_COMMIT);
   if (idx < 0) return false;
   // From heading to end, find the first fence and its matching close
@@ -138,7 +140,8 @@ export const validateResponseMessage = (text: string): ValidationResult => {
         );
       } else {
         const { a, b } = diffs[0];
-        const want = toPosix(k);        if (a !== want || b !== want) {
+        const want = toPosix(k);
+        if (a !== want || b !== want) {
           errors.push(`Patch header path mismatch for ${k}: got a/${a} b/${b}`);
         }
       }
@@ -180,7 +183,8 @@ export const validateResponseMessage = (text: string): ValidationResult => {
     }
   }
 
-  // 4) TODO patch required when any Patch exists  if (patches.length > 0) {
+  // 4) TODO patch required when any Patch exists
+  if (patches.length > 0) {
     const hasTodo = patches.some(
       (p) => toPosix(p.path ?? '') === '.stan/system/stan.todo.md',
     );
@@ -193,7 +197,6 @@ export const validateResponseMessage = (text: string): ValidationResult => {
 
   return { ok: errors.length === 0, errors, warnings };
 };
-
 /** Throw on validation failure (convenience API). */
 export const validateOrThrow = (text: string): void => {
   const res = validateResponseMessage(text);

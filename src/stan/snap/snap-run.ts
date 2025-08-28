@@ -11,7 +11,6 @@ import { ensureDirs } from './shared';
 
 export const handleSnap = async (opts?: { stash?: boolean }): Promise<void> => {
   const { cwd, stanPath, maxUndos } = await resolveContext(process.cwd());
-
   // Always-on prompt/version/docs checks (best-effort; consistent with run/patch)
   try {
     await preflightDocsAndVersion(cwd);
@@ -29,6 +28,10 @@ export const handleSnap = async (opts?: { stash?: boolean }): Promise<void> => {
     const res = await runGit(cwd, ['stash', '-u']);
     if (res.code === 0 && !/No local changes to save/i.test(res.stdout)) {
       attemptPop = true;
+      console.log('stan: stash saved changes');
+    } else if (res.code === 0) {
+      // Nothing to stash is a successful no-op; print a concise confirmation.
+      console.log('stan: no local changes to stash');
     } else if (res.code !== 0) {
       console.error(
         'stan: git stash -u failed; snapshot aborted (no changes made)',
@@ -68,6 +71,8 @@ export const handleSnap = async (opts?: { stash?: boolean }): Promise<void> => {
     const pop = await runGit(cwd, ['stash', 'pop']);
     if (pop.code !== 0) {
       console.error('stan: git stash pop failed');
+    } else {
+      console.log('stan: stash pop restored changes');
     }
   }
 

@@ -64,9 +64,12 @@ describe('response-format validator', () => {
   });
 
   it('fails when a Patch block contains multiple diff --git headers', () => {
+    // Replace the entire first UPDATED section (including its Patch) with a block that contains two diff headers.
     const bad = makeOkMessage().replace(
-      /### Patch: src\/x\.ts[\s\S]*?```/,
+      /## UPDATED: src\/x\.ts[\s\S]*?## UPDATED:/m,
       [
+        '## UPDATED: src/x.ts',
+        '',
         '### Patch: src/x.ts',
         '```',
         'diff --git a/src/x.ts b/src/x.ts',
@@ -82,15 +85,16 @@ describe('response-format validator', () => {
         '-a',
         '+b',
         '```',
+        '',
+        '## UPDATED:',
       ].join('\n'),
     );
     const res = validateResponseMessage(bad);
     expect(res.ok).toBe(false);
-    expect(res.errors.some((e) => /contains 2 "diff --git"/.test(e))).toBe(
-      true,
-    );
+    expect(
+      res.errors.some((e) => /contains multiple "diff --git"/.test(e)),
+    ).toBe(true);
   });
-
   it('fails when two Patch blocks target the same file', () => {
     const bad = makeOkMessage().replace(
       /## Commit Message[\s\S]*$/,

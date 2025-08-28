@@ -38,11 +38,13 @@ Completed (recent)
 - tests/robustness: improved multi‑diff test generation to replace the entire section,
   and made the assertion tolerant (“contains multiple …”). Commit‑last check now uses
   heading order (final section) to avoid brittle fence parsing.
+ - system prompt (FEEDBACK): add explicit rule to anchor hunks for docs/text files on
+   stable structural markers and keep the blast radius minimal (single, well‑anchored
+   hunk when possible).
 - process guarantee: enforce doc‑cadence every turn
   - policy: replies that contain any Patch must also include a Patch to `.stan/system/stan.todo.md` and a final “Commit Message” block (hard gate).
   - validator (near‑term): add a response‑format validator that fails composition when the doc‑cadence gate or the Patch/Full‑Listing order per file is violated.
-  - tests: add unit/smoke tests for the validator to prevent regressions.
-- snap: stash/pop confirmations and test
+  - tests: add unit/smoke tests for the validator to prevent regressions.- snap: stash/pop confirmations and test
   - code: `handleSnap` logs “stash saved changes”, “no local changes to stash”, and “stash pop restored changes”.
   - tests: added isolated success suite (`src/cli/stan/snap.stash.success.test.ts`) that resets modules before importing CLI to avoid cross‑suite mock interference.
   - outcome: clearer operator feedback for `stan snap -s`; tests are stable and isolated from existing stash‑failure suite.

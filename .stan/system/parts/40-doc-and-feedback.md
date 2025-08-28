@@ -18,6 +18,7 @@
   - MUST include a Full Listing for each file reported as failed (from `summary.failed`) in addition to the improved Patch.
     - This requirement is not optional. If a failed file is present and a Full Listing is missing, STOP and re‑emit with the Full Listing.
     - Do not include Full Listings (or repeat patches) for files that applied successfully.
+  - For docs/text files, anchor hunks on stable structural markers (section headers and nearby unique lines) and keep the blast radius minimal (a single, well‑anchored hunk whenever possible).
   - If the feedback’s `summary.failed` list lacks concrete file names (placeholder “(patch)”), treat the files listed under `summary.changed` as the targets: include a Full Listing and improved Patch for each of those files.
   - When composing the corrected diff after a failure, consider widening context margins (e.g., 5–7 lines of surrounding context) to improve placement reliability while still respecting LF normalization and git‑style headers.
   - Continue to compute fence lengths per the +1 rule, and keep listings LF‑normalized.

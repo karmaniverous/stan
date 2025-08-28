@@ -2,10 +2,27 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.2](https://github.com/karmaniverous/stan/compare/0.5.1...0.5.2)
+
+- feat: response-format validator (initial library + tests) [`0b285ba`](https://github.com/karmaniverous/stan/commit/0b285ba2f01abfc4b1ec7aa2617cd6bbdf7bfd8a)
+- fix(init): preserve existing config keys and cliDefaults; write back to same file [`ccb7032`](https://github.com/karmaniverous/stan/commit/ccb70322948572fc77a5493b9ddb5f3c4ca85b08)
+- test(init): add behavior tests to lock non-destructive merge and cliDefaults migration [`f116515`](https://github.com/karmaniverous/stan/commit/f116515d98599c95cbf496e5fb1962d5f569fac9)
+- feat(snap): log success for git stash/pop in `stan snap -s` [`e3b7354`](https://github.com/karmaniverous/stan/commit/e3b7354954cc00e86882db9d2e296ab9997bfc8f)
+- fix(validator): relax commit-last check; stabilize multi-diff error and tests [`2d764b1`](https://github.com/karmaniverous/stan/commit/2d764b1ace3b7828652e22608d8686468bdf176c)
+- test(snap): mock runGit in snap layer and defer CLI load to stabilize stash/pop logs; docs: record process guarantee [`b2c7d7c`](https://github.com/karmaniverous/stan/commit/b2c7d7ce277563ad01a67650e05ba0aa20688868)
+- fix(validate): repair response‑format validator syntax and restore TODO gate [`ad097ce`](https://github.com/karmaniverous/stan/commit/ad097ceb014bd9555696832a589ce97d77b6a69d)
+- test(validate): stabilize commit‑last message and fail commit‑only bodies [`8300942`](https://github.com/karmaniverous/stan/commit/8300942ccb7d10f4ab4c6c537a2616303022dce7)
+- test(snap): isolate mocks to stabilize stash/pop success test; docs: update plan [`2bce321`](https://github.com/karmaniverous/stan/commit/2bce32175335435952434ac10d927dd70e743581)
+- docs(system): add FEEDBACK rule for docs/text hunk anchoring; record in TODO [`7be0c8e`](https://github.com/karmaniverous/stan/commit/7be0c8e71e904be41e94b12273016de351083f32)
+- chore(init): fix ESLint no-unsafe-assignment in config loader [`ba94b25`](https://github.com/karmaniverous/stan/commit/ba94b25c5377557ad8f1c4d2d9d6a3d5229a0451)
+
 #### [0.5.1](https://github.com/karmaniverous/stan/compare/0.5.0...0.5.1)
+
+> 28 August 2025
 
 - updated docs [`100221a`](https://github.com/karmaniverous/stan/commit/100221aa22f65ec13dee05b85b942b87f4dbbe40)
 - docs update [`43392e0`](https://github.com/karmaniverous/stan/commit/43392e0baf27d8cf82094436511400860864e56d)
+- chore: release v0.5.1 [`2d90f65`](https://github.com/karmaniverous/stan/commit/2d90f6574bea5455cfd59d293ebba7823e38891f)
 - updated docs [`0358655`](https://github.com/karmaniverous/stan/commit/0358655dc5669d073c24d4a4dabb4b496de1b8da)
 - docs(system): never trigger handoff on first thread message; detect pasted handoffs without code fences [`276d15f`](https://github.com/karmaniverous/stan/commit/276d15f67a22d96a942cd9476add7804bb8178c0)
 - updated todo [`da4211f`](https://github.com/karmaniverous/stan/commit/da4211fbc5dccb8a4063015711e1cc57081cbfe5)

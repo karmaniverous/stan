@@ -124,6 +124,12 @@ export const validateResponseMessage = (text: string): ValidationResult => {
   const listings = blocks.filter((b) => b.kind === 'full');
   const commitBlocks = blocks.filter((b) => b.kind === 'commit');
 
+  // Require at least one Patch block for a valid response.
+  // This validator is intended for patch-carrying replies; a commit-only body is not valid here.
+  if (patches.length === 0) {
+    errors.push('No Patch blocks found');
+  }
+
   // 1) One Patch per file
   {
     const seen = new Map<string, Block[]>();
@@ -179,7 +185,7 @@ export const validateResponseMessage = (text: string): ValidationResult => {
   } else {
     const last = blocks[blocks.length - 1];
     if (!last || last.kind !== 'commit') {
-      errors.push('"## Commit Message" must be the final section');
+      errors.push('Commit Message is not last');
     }
   }
 

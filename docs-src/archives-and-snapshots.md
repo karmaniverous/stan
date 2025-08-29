@@ -7,20 +7,21 @@ title: Archives & Snapshots
 ## Artifacts
 
 - `<stanPath>/output/archive.tar` — full snapshot of repo files (excludes binaries).
-- `<stanPath>/output/archive.diff.tar` — changed files vs snapshot (always when archiving).
+- `<stanPath>/output/archive.diff.tar` — changed files vs snapshot (always when archiving; binaries are also screened out).
 - `*.txt` outputs — deterministic stdout/stderr from scripts.
 
 Attach `archive.tar` (and `archive.diff.tar` if present) to your chat.
-
 ## Selection semantics (includes/excludes)
 
 STAN selects files for archiving in two passes:
 
 - Base selection
+  - Both regular and diff archives apply the same screening, including exclusion of binary files.
+  - A concise “archive warnings” summary (binary exclusions, large text call‑outs) is printed to the console.
+
   - Applies your `.gitignore`, default denials (`node_modules`, `.git`),
     user `excludes`, and STAN workspace rules.
-  - Reserved exclusions always apply:
-    - `<stanPath>/diff` is always excluded.
+  - Reserved exclusions always apply:    - `<stanPath>/diff` is always excluded.
     - `<stanPath>/output` is excluded unless you enable combine mode.
 
 - Additive includes

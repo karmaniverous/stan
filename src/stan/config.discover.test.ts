@@ -30,11 +30,16 @@ describe('config discovery and fallback stanPath', () => {
       '\n',
     );
     await writeFile(path.join(dir, 'stan.config.yml'), cfg, 'utf8');
+    // Ensure a package.json so packageDirectorySync can identify the repo root
+    await writeFile(
+      path.join(dir, 'package.json'),
+      JSON.stringify({ name: 'pkg' }),
+      'utf8',
+    );
 
     // Deep subfolder
     const deep = path.join(dir, 'packages', 'app1', 'src');
     await mkdir(deep, { recursive: true });
-
     const found = findConfigPathSync(deep);
     expect(
       found && found.replace(/\\/g, '/').endsWith('/stan.config.yml'),

@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-29 (UTC) — pruned Completed (recent) and refreshed Next up; no functional changes.
+When updated: 2025-08-29 (UTC) — fix tests/docs build (remove unused ts-expect-error; add package.json in discover test); pruned Completed and refreshed Next up.
 
 Next up (high value)
 
@@ -28,6 +28,7 @@ Next up (high value)
 
 Completed (recent)
 
+- tests/docs build: remove unused @ts-expect-error in config.normalize.test; ensure package.json in config.discover.test so discovery ascends correctly
 - coverage(config): add unit tests for normalize, discover, and output helpers (this change set)
 - selection precedence: config excludes > includes > .gitignore — code/tests/docs updated to reflect precedence
 - response‑format validator (initial library + tests) available via @/stan/validate/response

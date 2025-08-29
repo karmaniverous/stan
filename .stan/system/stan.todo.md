@@ -1,8 +1,9 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-29 (UTC) — selection precedence updated: excludes > includes > gitignore; code/tests updated. Diff archive continues to apply binary-screening classifier; validator/doc-cadence unchanged.
+When updated: 2025-08-29 (UTC) — selection precedence updated: excludes > includes > gitignore; code/tests updated; docs revised to match. Diff archive continues to apply binary-screening classifier; validator/doc-cadence unchanged.
 
 Next up (high value)
+
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
 - Long‑file monitoring and decomposition (Phase 3)
@@ -32,9 +33,14 @@ Completed (recent)
     they win over includes. Reserved exclusions unchanged.
   - tests: added coverage in src/stan/fs.glob.test.ts to prove excludes
     override includes and includes override .gitignore.
+  - docs: updated docs-src/configuration.md and
+    docs-src/archives-and-snapshots.md to document the precedence:
+    excludes > includes > .gitignore/default denials; reserved exclusions
+    unchanged.
 - response‑format validator (initial library + tests)
   - code: added `src/stan/validate/response.ts` with checks:
-    - one Patch per file,    - “Patch” precedes “Full Listing” when both present for a file,
+    - one Patch per file,
+    - “Patch” precedes “Full Listing” when both present for a file,
     - presence of “## Commit Message” last,
     - TODO patch present when any Patch exists.
   - tests: `src/stan/validate/response.test.ts`.

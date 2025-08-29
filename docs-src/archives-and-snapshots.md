@@ -11,6 +11,7 @@ title: Archives & Snapshots
 - `*.txt` outputs — deterministic stdout/stderr from scripts.
 
 Attach `archive.tar` (and `archive.diff.tar` if present) to your chat.
+
 ## Selection semantics (includes/excludes)
 
 STAN selects files for archiving in two passes:
@@ -20,13 +21,17 @@ STAN selects files for archiving in two passes:
   - A concise “archive warnings” summary (binary exclusions, large text call‑outs) is printed to the console.
 
   - Applies your `.gitignore`, default denials (`node_modules`, `.git`),
-    user `excludes`, and STAN workspace rules.
-  - Reserved exclusions always apply:    - `<stanPath>/diff` is always excluded.
+    user `excludes`, and STAN workspace rules. Explicit `excludes` take precedence
+    over any later `includes`.
+  - Reserved exclusions always apply:
+    - `<stanPath>/diff` is always excluded.
     - `<stanPath>/output` is excluded unless you enable combine mode.
 
 - Additive includes
   - `includes` is an allow‑list that ADDS matches back even if they would be
-    excluded by `.gitignore`, user `excludes`, or default denials.
+    excluded by `.gitignore` or default denials.
+  - Explicit `excludes` still win: if a path matches both `includes` and `excludes`,
+    it is excluded.
   - Reserved exclusions still apply (see above).
 
 Example (YAML):
@@ -58,7 +63,7 @@ undo/redo history under `<stanPath>/diff`:
 ```
 stan snap
 stan snap info | undo | redo | set <index>
-stan snap -s    # stash before snapping; pop after
+stan snap -s    # stash before snap; pop after
 ```
 
 Snapshots are used to compute archive diffs; `stan run` creates a diff archive even

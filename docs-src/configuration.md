@@ -63,8 +63,9 @@ Notes:
 
 ### includes (string[])
 
-Additive allow‑list of glob patterns. Matches are ADDED back to the base selection even if they would otherwise be excluded by `.gitignore`, user excludes, or default denials.
+Additive allow‑list of glob patterns. Matches are ADDED back to the base selection even if they would otherwise be excluded by `.gitignore` or default denials.
 
+- Explicit `excludes` take precedence over `includes` (excludes win).
 - Reserved exclusions still apply:
   - `<stanPath>/diff` is always excluded.
   - `<stanPath>/output` is excluded unless combine mode includes it for archiving.
@@ -85,6 +86,7 @@ Deny‑list of glob/prefix patterns applied to the base selection in addition to
 - STAN workspace rules:
   - Always exclude `<stanPath>/diff`.
   - Exclude `<stanPath>/output` unless combine mode includes it.
+- Precedence: `excludes` take priority over `includes`.
 
 ```yaml
 excludes:
@@ -193,8 +195,8 @@ STAN selects files in two passes:
 
 2. Additive includes
 
-- Patterns in `includes` ADD matched files back into the selection even if excluded by `.gitignore`, user excludes, or default denials.
-- Reserved exclusions still apply (see above).
+- Patterns in `includes` ADD matched files back into the selection even if excluded by `.gitignore` or default denials.
+- Explicit `excludes` still win over `includes`.
 
 Combine mode (`stan run -c`) behavior:
 
@@ -215,9 +217,8 @@ To include a specific sub‑package, add an `includes` glob. For example:
 
 ```yaml
 includes:
-  - 'packages/app1/**'   # re‑include a nested package
+  - 'packages/app1/**' # re‑include a nested package
 ```
-
 
 ## CLI defaults & precedence
 

@@ -5,7 +5,6 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { filterFiles, listFiles } from './fs';
-
 describe('filterFiles with glob patterns', () => {
   let dir: string;
 
@@ -78,5 +77,30 @@ describe('filterFiles with glob patterns', () => {
     expect(filtered).toEqual(
       expect.arrayContaining(['README.md', 'packages/app1/src/index.ts']),
     );
+  });
+
+  it('excludes override includes and includes override .gitignore', async () => {
+    const all = await listFiles(dir);
+    // Simulate a .gitignore that would exclude README.md
+    await writeFile(path.join(dir, '.gitignore'), 'README.md\n', 'utf8');
+    // With includes only, README.md would be brought back
+    const withIncludes = await filterFiles(all, {
+      cwd: dir,
+      stanPath: 'stan',
+      includeOutputDir: false,
+      includes: ['**/*.md'],
+    });
+    expect(withIncludes).toEqual(
+      expect.arrayContaining(['README.md', 'packages/app1/src/index.ts']),
+    );
+    // But when explicitly excluded, excludes win over includes
+    const withExcludes = await filterFiles(all, {
+      cwd: dir,
+      stanPath: 'stan',
+      includeOutputDir: false,
+      includes: ['**/*.md'],
+      excludes: ['README.md'],
+    });
+    expect(withExcludes).not.toEqual(expect.arrayContaining(['README.md']));
   });
 });

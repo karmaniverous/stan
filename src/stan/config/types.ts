@@ -31,17 +31,17 @@ export type ContextConfig = {
   scripts: ScriptMap;
   /**
    * Additive allow‑list globs for archiving/snapshot logic.
-   * - Augments the base selection (which applies .gitignore, default denials, and user excludes).
-   * - Overrides user `excludes`, `.gitignore`, and default denials.
-   * - Reserved exclusions still apply: `<stanPath>/diff` is always excluded; `<stanPath>/output`
-   *   is excluded unless explicitly included by combine behavior at archive time.
+   * - Augments the base selection (which applies .gitignore and default denials).
+   * - Explicit `excludes` take precedence over `includes` (i.e., excludes always win).
+   * - `includes` can bring back files ignored by `.gitignore` or default denials.
+   * - Reserved exclusions still apply: `<stanPath>/diff` is always excluded;
+   *   `<stanPath>/output` is excluded unless explicitly included by combine mode at archive time.
    */
   includes?: string[];
   /** Paths to exclude in archiving logic (globs supported). */
   excludes?: string[];
   /** Maximum retained snapshot "undos" (history depth for snap undo/redo). */
-  maxUndos?: number;
-  /** Optional developer-mode switch to treat the current repo as the STAN dev module. */
+  maxUndos?: number /** Optional developer-mode switch to treat the current repo as the STAN dev module. */;
   devMode?: boolean;
   /**
    * Phase-scoped CLI defaults used by adapters when flags are omitted.

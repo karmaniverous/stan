@@ -104,10 +104,11 @@ export type FilterOptions = {
  *   - user `excludes` (deny‑list globs),
  *   - STAN workspace rules (always exclude `stanPath/diff`; optionally exclude
  *     `stanPath/output` unless `includeOutputDir` is true).
- * - `includes` (allow‑list globs) — ADDITIVE augment:
+ * - `includes` (allow‑list globs) — ADDITIVE augment with precedence:
  *   - When provided, matched files are ADDED to the base selection even if
- *     they would otherwise be excluded by `.gitignore`, user `excludes`, or
- *     default denials.
+ *     they would otherwise be excluded by `.gitignore` or default denials.
+ *   - Config `excludes` take precedence over `includes` (i.e., explicit
+ *     excludes always win).
  *   - Reserved exclusions still apply: `stanPath/diff` is always excluded;
  *     `stanPath/output` is excluded when `includeOutputDir` is false.
  *
@@ -128,7 +129,6 @@ export const filterFiles = async (
   }: FilterOptions,
 ): Promise<string[]> => {
   const stanRel = stanPath.replace(/\\/g, '/');
-
   // Default sub‑package exclusion: any directory that contains its own package.json
   const subpkgDirs = detectSubpackageDirs(files, stanRel);
 
@@ -165,13 +165,17 @@ export const filterFiles = async (
         ? []
         : [(f: string) => matchesPrefix(f, `${stanRel}/output`)]),
     ];
+    // Build union: start from base, add includes (even if gitignored/default-denied)
     const inUnion = new Set<string>(base);
-    // Preserve input order: walk original files and add allowed matches.
-    for (const f of files) {
-      if (allowMatchers.some((m) => m(f))) inUnion.add(f);
-    }
-    // Final pass: drop reserved paths
-    return files.filter((f) => inUnion.has(f) && !reserved.some((m) => m(f)));
+    for (const f of files) if (allowMatchers.some((m) => m(f))) inUnion.add(f);
+    // Excludes take precedence over includes: drop anything matching user excludes.
+    const excludesMatchers: Matcher[] = excludes.map(toMatcher);
+    return files.filter(
+      (f) =>
+        inUnion.has(f) &&
+        !reserved.some((m) => m(f)) &&
+        !excludesMatchers.some((m) => m(f)),
+    );
   }
 
   return base;

@@ -2,9 +2,17 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.3](https://github.com/karmaniverous/stan/compare/0.5.2...0.5.3)
+
+- docs(system): add design‑first policy for broken dependencies [`96d9631`](https://github.com/karmaniverous/stan/commit/96d9631321e24c50b23856d852b4fc5484f62b92)
+- fix(diff): repair no-changes tar.create call; keep classifier parity [`5d3348a`](https://github.com/karmaniverous/stan/commit/5d3348a643db70c1c7ae7b5571debfe73234a3bf)
+
 #### [0.5.2](https://github.com/karmaniverous/stan/compare/0.5.1...0.5.2)
 
+> 28 August 2025
+
 - feat: response-format validator (initial library + tests) [`0b285ba`](https://github.com/karmaniverous/stan/commit/0b285ba2f01abfc4b1ec7aa2617cd6bbdf7bfd8a)
+- chore: release v0.5.2 [`92f76f8`](https://github.com/karmaniverous/stan/commit/92f76f894ea6ea701788d2cf0fd9d0d9f82a980c)
 - fix(init): preserve existing config keys and cliDefaults; write back to same file [`ccb7032`](https://github.com/karmaniverous/stan/commit/ccb70322948572fc77a5493b9ddb5f3c4ca85b08)
 - test(init): add behavior tests to lock non-destructive merge and cliDefaults migration [`f116515`](https://github.com/karmaniverous/stan/commit/f116515d98599c95cbf496e5fb1962d5f569fac9)
 - feat(snap): log success for git stash/pop in `stan snap -s` [`e3b7354`](https://github.com/karmaniverous/stan/commit/e3b7354954cc00e86882db9d2e296ab9997bfc8f)

@@ -35,8 +35,9 @@
 <li>Keys are free‑form (e.g., <code>build</code>, <code>docs</code>, <code>lint</code>).</li>
 <li>Disallowed keys: <code>archive</code>, <code>init</code> (reserved by STAN).</li>
 </ul>
-<h3 id="includes-string" class="tsd-anchor-link">includes (string[])<a href="#includes-string" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Additive allow‑list of glob patterns. Matches are ADDED back to the base selection even if they would otherwise be excluded by <code>.gitignore</code>, user excludes, or default denials.</p>
+<h3 id="includes-string" class="tsd-anchor-link">includes (string[])<a href="#includes-string" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Additive allow‑list of glob patterns. Matches are ADDED back to the base selection even if they would otherwise be excluded by <code>.gitignore</code> or default denials.</p>
 <ul>
+<li>Explicit <code>excludes</code> take precedence over <code>includes</code> (excludes win).</li>
 <li>Reserved exclusions still apply:
 <ul>
 <li><code>&lt;stanPath&gt;/diff</code> is always excluded.</li>
@@ -57,6 +58,7 @@
 <li>Exclude <code>&lt;stanPath&gt;/output</code> unless combine mode includes it.</li>
 </ul>
 </li>
+<li>Precedence: <code>excludes</code> take priority over <code>includes</code>.</li>
 </ul>
 <pre><code class="yaml"><span class="hl-7">excludes</span><span class="hl-1">:</span><br/><span class="hl-1">  - </span><span class="hl-8">&#39;**/.tsbuild/**&#39;</span><br/><span class="hl-1">  - </span><span class="hl-8">&#39;**/generated/**&#39;</span>
 </code><button type="button">Copy</button></pre>
@@ -124,8 +126,8 @@
 <li>Additive includes</li>
 </ol>
 <ul>
-<li>Patterns in <code>includes</code> ADD matched files back into the selection even if excluded by <code>.gitignore</code>, user excludes, or default denials.</li>
-<li>Reserved exclusions still apply (see above).</li>
+<li>Patterns in <code>includes</code> ADD matched files back into the selection even if excluded by <code>.gitignore</code> or default denials.</li>
+<li>Explicit <code>excludes</code> still win over <code>includes</code>.</li>
 </ul>
 <p>Combine mode (<code>stan run -c</code>) behavior:</p>
 <ul>
@@ -141,7 +143,7 @@ as an independent sub‑package and excluded from the base selection.</li>
 <li>Reserved exclusions still apply (see above).</li>
 </ul>
 <p>To include a specific sub‑package, add an <code>includes</code> glob. For example:</p>
-<pre><code class="yaml"><span class="hl-7">includes</span><span class="hl-1">:</span><br/><span class="hl-1">  - </span><span class="hl-8">&#39;packages/app1/**&#39;</span><span class="hl-1">   </span><span class="hl-5"># re‑include a nested package</span>
+<pre><code class="yaml"><span class="hl-7">includes</span><span class="hl-1">:</span><br/><span class="hl-1">  - </span><span class="hl-8">&#39;packages/app1/**&#39;</span><span class="hl-1"> </span><span class="hl-5"># re‑include a nested package</span>
 </code><button type="button">Copy</button></pre>
 
 <h2 id="cli-defaults--precedence" class="tsd-anchor-link">CLI defaults &amp; precedence<a href="#cli-defaults--precedence" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>

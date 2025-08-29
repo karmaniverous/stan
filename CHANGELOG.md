@@ -2,9 +2,19 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.4](https://github.com/karmaniverous/stan/compare/0.5.3...0.5.4)
+
+- test(config): add unit tests for normalize/discover/output helpers; update roadmap [`3a33928`](https://github.com/karmaniverous/stan/commit/3a3392808dc6a18a95f1fa0ff85f8e5272239faf)
+- feat: selection precedence excludes &gt; includes &gt; gitignore [`59eab23`](https://github.com/karmaniverous/stan/commit/59eab236f91123f8b8a5b2295f5c7d09e00fe03c)
+- docs: document selection precedence excludes &gt; includes &gt; gitignore [`48e5d65`](https://github.com/karmaniverous/stan/commit/48e5d65d241a59ec137c10aec76cbd81d6420b28)
+- test: fix config discovery test and remove unused ts-expect-error; update roadmap [`4b271d8`](https://github.com/karmaniverous/stan/commit/4b271d82d7e60144459b9980ce99b14717303182)
+
 #### [0.5.3](https://github.com/karmaniverous/stan/compare/0.5.2...0.5.3)
 
+> 29 August 2025
+
 - docs(system): add design‑first policy for broken dependencies [`96d9631`](https://github.com/karmaniverous/stan/commit/96d9631321e24c50b23856d852b4fc5484f62b92)
+- chore: release v0.5.3 [`1307831`](https://github.com/karmaniverous/stan/commit/1307831248e1da0043cc72e9bf3232acda20692a)
 - fix(diff): repair no-changes tar.create call; keep classifier parity [`5d3348a`](https://github.com/karmaniverous/stan/commit/5d3348a643db70c1c7ae7b5571debfe73234a3bf)
 
 #### [0.5.2](https://github.com/karmaniverous/stan/compare/0.5.1...0.5.2)

@@ -1,9 +1,11 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-28 (UTC) — validator robustness: commit‑last message aligned with tests (“not last”); commit‑only replies now fail fast; earlier syntax/brace fix retained. Process guarantee (doc‑cadence) captured; stash/pop confirmations logged for `stan snap -s` with a success test; init preserves existing config keys and cliDefaults; first‑message handoff guard; anti‑duplication hardened; sub‑package exclusion implemented; parse errors fixed; tests/docs updated; response‑format validator (initial library + tests)
+When updated: 2025-08-29 (UTC) — diff archive now applies the same binary-screening classifier as the regular archive; tests and docs updated; validator/doc-cadence unchanged.
 
 Next up (high value)
+
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
+
 - Long‑file monitoring and decomposition (Phase 3)
   - Continue to monitor near‑threshold modules; propose splits if any
     trend toward or exceed ~300 LOC in future changes.
@@ -36,7 +38,7 @@ Completed (recent)
 - tests/robustness: improved multi‑diff test generation to replace the entire section,
   and made the assertion tolerant (“contains multiple …”). Commit‑last check now uses
   heading order (final section) to avoid brittle fence parsing.
- - system prompt (FEEDBACK): add explicit rule to anchor hunks for docs/text files on
+- system prompt (FEEDBACK): add explicit rule to anchor hunks for docs/text files on
   stable structural markers and keep the blast radius minimal (single, well‑anchored
   hunk when possible).
 - validator: align commit‑last message and guard commit‑only replies
@@ -47,8 +49,8 @@ Completed (recent)
 
 - validator: fix syntax/brace error and restore TODO cadence check
   - code: repaired commented‑out `if (patches.length > 0)` and extra closing brace,
-    preventing build/test/docs failures and ensuring the TODO gate runs conditionally.   stable structural markers and keep the blast radius minimal (single, well‑anchored
-   hunk when possible).
+    preventing build/test/docs failures and ensuring the TODO gate runs conditionally. stable structural markers and keep the blast radius minimal (single, well‑anchored
+    hunk when possible).
 - process guarantee: enforce doc‑cadence every turn
   - policy: replies that contain any Patch must also include a Patch to `.stan/system/stan.todo.md` and a final “Commit Message” block (hard gate).
   - validator (near‑term): add a response‑format validator that fails composition when the doc‑cadence gate or the Patch/Full‑Listing order per file is violated.

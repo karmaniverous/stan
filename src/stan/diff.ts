@@ -11,6 +11,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import { yellow } from '@/stan/util/color';
+
 import { classifyForArchive } from './classifier';
 import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
 
@@ -19,7 +20,8 @@ type TarLike = {
     opts: {
       file: string;
       cwd?: string;
-      filter?: (path: string, stat: unknown) => boolean;    },
+      filter?: (path: string, stat: unknown) => boolean;
+    },
     files: string[],
   ) => Promise<void>;
 };
@@ -149,10 +151,7 @@ export const createArchiveDiff = async ({
   // Classify like the regular archive:
   // - exclude binaries
   // - flag large text (not excluded)
-  const { textFiles, warningsBody } = await classifyForArchive(
-    cwd,
-    changedRaw,
-  );
+  const { textFiles, warningsBody } = await classifyForArchive(cwd, changedRaw);
   const changed = textFiles;
 
   // Log warnings to console (same as regular archive).
@@ -189,7 +188,8 @@ export const createArchiveDiff = async ({
   } else if (changed.length === 0) {
     const sentinel = sentinelPathFor(diffDir);
     await writeFile(sentinel, 'no changes', 'utf8');
-    // Always include patch directory; tar from repo root to include sentinel path    await tar.create({ file: diffPath, cwd }, [
+    // Always include patch directory; tar from repo root to include sentinel path
+    await tar.create({ file: diffPath, cwd }, [
       patchRel,
       `${stanPath.replace(/\\/g, '/')}/diff/.stan_no_changes`,
     ]);
@@ -198,7 +198,8 @@ export const createArchiveDiff = async ({
     await tar.create({ file: diffPath, cwd }, files);
   }
 
-  if (updateSnapshot === 'replace') {    await writeFile(snapPath, JSON.stringify(current, null, 2), 'utf8');
+  if (updateSnapshot === 'replace') {
+    await writeFile(snapPath, JSON.stringify(current, null, 2), 'utf8');
   } else if (updateSnapshot === 'createIfMissing' && !hasPrev) {
     await writeFile(snapPath, JSON.stringify(current, null, 2), 'utf8');
   }

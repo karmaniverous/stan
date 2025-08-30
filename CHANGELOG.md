@@ -2,9 +2,17 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.6](https://github.com/karmaniverous/stan/compare/0.5.5...0.5.6)
+
+- fix(diff): exclude packaged system prompt from diff archive in downstream repos [`7e1baba`](https://github.com/karmaniverous/stan/commit/7e1babab002e56512f56c1dae6131328a6806aac)
+- fix(build): remove duplicate import in archive phase to restore typecheck [`5a7b29b`](https://github.com/karmaniverous/stan/commit/5a7b29b92ea862a57fa97de649d1e0bdd643adcf)
+
 #### [0.5.5](https://github.com/karmaniverous/stan/compare/0.5.4...0.5.5)
 
+> 30 August 2025
+
 - docs: add “Dependency Bug Report”, elevate fence hygiene; trim bootloader [`8c7d727`](https://github.com/karmaniverous/stan/commit/8c7d7272adde50155f343cfd76a11832926012d9)
+- chore: release v0.5.5 [`d0062a7`](https://github.com/karmaniverous/stan/commit/d0062a749fc3a5d48b0fac9ecdfd8c29db4a3902)
 - docs(system): patches-only by default; omit commit message on FEEDBACK [`3bf0de5`](https://github.com/karmaniverous/stan/commit/3bf0de522520b12a0daa9c3d0b1912f85e0ea01c)
 - docs: add badges, expand contributing guide, and flesh out FAQ [`ec2c625`](https://github.com/karmaniverous/stan/commit/ec2c6250a9a6f641fcad7593c034d79de2342460)
 - refactor(system): streamline handoff and remove base64 warnings [`a05cd1f`](https://github.com/karmaniverous/stan/commit/a05cd1f34d4fbff3b7d2bc0457603b1279b9498d)

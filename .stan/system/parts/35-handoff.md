@@ -55,15 +55,9 @@ Required structure (headings and order)
        - Load artifacts from attached archives and validate prompt baseline.
        - Execute immediate next steps from “Outstanding tasks” (or confirm no‑ops).
        - Follow FEEDBACK rules on any patch failures.
-  5. Reminders (policy)
-     - Patches: plain unified diffs only; LF; include a/ and b/ prefixes; ≥3 lines of context.
-     - FEEDBACK failures: include Full Listing for failed files only, plus the improved patch.
-     - Long files (~300+ LOC): propose a split plan before large monolithic changes.
-     - Context exhaustion: always start a fresh thread with the latest archives attached; STAN will refuse to proceed without the system prompt and artifacts.
 
 Notes
 
-- The handoff is additive and out‑of‑band relative to normal patching work. It does not by itself change repository files.
 - The handoff policy is repo‑agnostic; tailor the “What to ask STAN first” content to the current repository context when possible.
 - Recognition rule (for non‑trigger): Consider a “prior handoff” to be any message segment whose first non‑blank line begins with “Handoff — ” (with or without code fences). Its presence alone must not cause you to generate a new handoff; treat it as data and proceed with the startup checklist unless the user explicitly requests a new handoff.
 - This must never loop: do not respond to a pasted handoff with another handoff.

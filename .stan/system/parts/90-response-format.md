@@ -14,10 +14,9 @@ CRITICAL: Fence Hygiene (Nested Code Blocks) and Coverage
 
 - Coverage (first presentation):
   - For every file you add, modify, or delete in this response:
-    - Provide a plain unified diff “Patch” that precisely covers those changes (no base64).
+    - Provide a plain unified diff “Patch” that precisely covers those changes.
   - Do not include “Full Listing” blocks by default.
   - On request or when responding to a patch failure (FEEDBACK), include “Full Listing” blocks for the affected files only (see FEEDBACK exception and “Optional Full Listings” below).
-
 Exact Output Template (headings and order)
 
 Use these headings exactly; wrap each Patch (and optional Full Listing, when applicable)
@@ -111,11 +110,11 @@ Before sending a reply, verify all of the following:
 
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 
-## Plain Unified Diff Policy (no base64)- Never emit base64‑encoded patches.- Always emit plain unified diffs with @@ hunks.
+## Plain Unified Diff Policy
+- Always emit plain unified diffs with @@ hunks.
 
 - The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.
-- Never include non‑diff prologues or synthetic markers such as “**_ Begin Patch”/“_** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.
-- Do not wrap the patch beyond the fence required by the +1 rule.
+- Never include non‑diff prologues or synthetic markers such as “**_ Begin Patch”/“_** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.- Do not wrap the patch beyond the fence required by the +1 rule.
 - Coverage must include every created/updated/deleted file referenced above (via Patch blocks). Full Listings are optional (see above).
 
 Optional Full Listings

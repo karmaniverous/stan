@@ -13,21 +13,11 @@ Next up (high value)
   - Target incremental gains over ~86% lines coverage as changes land.
   - Keep excludes limited to trivial barrels and types‑only modules.
 
-- Docs compellingness (low‑effort wins)
-  - Add visuals (animated gif/terminal cast) in README for `stan init`, `stan run`, `stan patch`.
-  - Expand “Tutorial — Quickstart (End‑to‑End)” with copy‑paste commands and expected outputs.
-  - Case Studies: start with rrstack; invite community submissions.
-  - Comparison page: “Why STAN Over Alternatives?” with a simple table.
-  - Contributing — Dev Quickstart: local setup, commands, PR flow.
-  - FAQ: promote common answers (archives cadence, binary handling, unified diffs, CI).
-  - Add badges (npm, docs, license) to README for credibility.
-  - Link Roadmap (this file) prominently in README.
-
 Completed (recent)
 
+- docs: add badges, expand contributing guide, and flesh out FAQ
 - refactor(system): streamline handoff format and remove legacy base64 warnings
 - response‑format: default to patches only on first presentation; Full Listings only on FEEDBACK or explicit request; FEEDBACK replies omit commit message
-
 - system: add “Dependency Bug Report” section with valid‑Markdown template (nested code examples; fence‑hygiene reminder)- system: elevate fence hygiene (CRITICAL jump list, quick how‑to before Response Format, hard gate in checklist)
 - bootloader: remove non‑loader guidance (fixed 10‑backtick note, ellipsis hygiene); keep loader + context‑mismatch guard only- dependency failures: cross‑link to “Dependency Bug Report”
 - tests/docs build: remove unused @ts-expect-error in config.normalize.test; ensure package.json in config.discover.test so discovery ascends correctly

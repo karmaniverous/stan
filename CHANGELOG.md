@@ -2,9 +2,19 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.5](https://github.com/karmaniverous/stan/compare/0.5.4...0.5.5)
+
+- docs: add “Dependency Bug Report”, elevate fence hygiene; trim bootloader [`8c7d727`](https://github.com/karmaniverous/stan/commit/8c7d7272adde50155f343cfd76a11832926012d9)
+- docs(system): patches-only by default; omit commit message on FEEDBACK [`3bf0de5`](https://github.com/karmaniverous/stan/commit/3bf0de522520b12a0daa9c3d0b1912f85e0ea01c)
+- docs: add badges, expand contributing guide, and flesh out FAQ [`ec2c625`](https://github.com/karmaniverous/stan/commit/ec2c6250a9a6f641fcad7593c034d79de2342460)
+- refactor(system): streamline handoff and remove base64 warnings [`a05cd1f`](https://github.com/karmaniverous/stan/commit/a05cd1f34d4fbff3b7d2bc0457603b1279b9498d)
+
 #### [0.5.4](https://github.com/karmaniverous/stan/compare/0.5.3...0.5.4)
 
+> 29 August 2025
+
 - test(config): add unit tests for normalize/discover/output helpers; update roadmap [`3a33928`](https://github.com/karmaniverous/stan/commit/3a3392808dc6a18a95f1fa0ff85f8e5272239faf)
+- chore: release v0.5.4 [`2f301f3`](https://github.com/karmaniverous/stan/commit/2f301f3137fd416dbe5a0c4f98630a9970351fa2)
 - feat: selection precedence excludes &gt; includes &gt; gitignore [`59eab23`](https://github.com/karmaniverous/stan/commit/59eab236f91123f8b8a5b2295f5c7d09e00fe03c)
 - docs: document selection precedence excludes &gt; includes &gt; gitignore [`48e5d65`](https://github.com/karmaniverous/stan/commit/48e5d65d241a59ec137c10aec76cbd81d6420b28)
 - test: fix config discovery test and remove unused ts-expect-error; update roadmap [`4b271d8`](https://github.com/karmaniverous/stan/commit/4b271d82d7e60144459b9980ce99b14717303182)

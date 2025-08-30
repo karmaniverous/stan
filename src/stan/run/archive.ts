@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readdir, rm } from 'node:fs/promises';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path, { resolve } from 'node:path';
+import path, { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { packageDirectorySync } from 'package-directory';
@@ -209,6 +210,13 @@ export const archivePhase = async (args: {
       )}`,
     );
 
+    // Important: restore any ephemeral packaged system prompt before computing the diff.
+    // Otherwise, downstream repos (which do not maintain a local stan.system.md)
+    // will see it as a spurious change on every run because the snapshot won’t include it.
+    await restore();
+    // Prevent double-restore in the outer finally.
+    restore = async () => {};
+
     console.log(`stan: start "${cyan('archive (diff)')}"`);
     // We intentionally do not force-include the system prompt in the diff archive.
     ({ diffPath } = await createArchiveDiff({
@@ -226,10 +234,9 @@ export const archivePhase = async (args: {
       )}`,
     );
   } finally {
-    // Remove/restore the ephemeral system prompt on disk (downstream only).
+    // No-op if already restored; otherwise remove/restore ephemeral system prompt (downstream only).
     await restore();
   }
-
   if (includeOutputs) {
     await cleanupOutputsAfterCombine(dirs.outputAbs);
   }

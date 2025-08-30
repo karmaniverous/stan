@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs';
 import { readdir, rm } from 'node:fs/promises';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path, { resolve } from 'node:path';
-import path, { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { packageDirectorySync } from 'package-directory';

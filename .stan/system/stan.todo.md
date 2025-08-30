@@ -15,10 +15,11 @@ Next up (high value)
 
 Completed (recent)
 
+- fix(build): remove duplicate import in src/stan/run/archive.ts that caused TS2300
+  duplicate identifier errors (path/resolve)
 - fix(diff): prevent packaged stan.system.md from appearing in archive.diff.tar for downstream repos
   by restoring the ephemeral monolith before computing the diff archive.
-- docs: add badges, expand contributing guide, and flesh out FAQ
-- refactor(system): streamline handoff format and remove legacy base64 warnings
+- docs: add badges, expand contributing guide, and flesh out FAQ- refactor(system): streamline handoff format and remove legacy base64 warnings
 - response‑format: default to patches only on first presentation; Full Listings only on FEEDBACK or explicit request; FEEDBACK replies omit commit message- system: add “Dependency Bug Report” section with valid‑Markdown template (nested code examples; fence‑hygiene reminder)- system: elevate fence hygiene (CRITICAL jump list, quick how‑to before Response Format, hard gate in checklist)
 - bootloader: remove non‑loader guidance (fixed 10‑backtick note, ellipsis hygiene); keep loader + context‑mismatch guard only- dependency failures: cross‑link to “Dependency Bug Report”
 - tests/docs build: remove unused @ts-expect-error in config.normalize.test; ensure package.json in config.discover.test so discovery ascends correctly

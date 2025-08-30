@@ -50,3 +50,4 @@ CRITICAL essentials (jump list)
 - Intake: Integrity & Ellipsis (MANDATORY)
 - CRITICAL: Patch Coverage
 - CRITICAL: Layout
+- Fence Hygiene

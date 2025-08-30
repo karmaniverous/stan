@@ -102,11 +102,11 @@ Before sending a reply, verify all of the following:
    - If any failed file is missing its Full Listing or improved Patch, STOP and
      re‑emit after fixing before sending.
 
-7. Handoff guard (must not duplicate)
-   - First‑message guard: if replying to the first user message of a thread, you MUST NOT emit a new handoff. Treat the message as startup input and proceed with the “Assistant startup checklist”.
-   - Do not emit a handoff block unless the user explicitly requested a new handoff.
-   - If the user’s message contains a prior handoff (title line “Handoff — …”, with or without code fences) and there is no explicit request to “generate a new handoff”, you MUST NOT produce a new handoff.
-   - If any of these checks fail, discard the handoff output and instead proceed with the “Assistant startup checklist”.
+7. Nested-code templates (hard gate)
+   - Any template or example that contains nested fenced code blocks (e.g., the
+     Dependency Bug Report or FEEDBACK) MUST pass the fence‑hygiene scan:
+     compute N = maxInnerBackticks + 1 (min 3), apply that fence, then re‑scan
+     before sending. If any collision remains, STOP and re‑emit.
 
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 

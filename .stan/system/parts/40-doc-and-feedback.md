@@ -23,3 +23,4 @@
   - When composing the corrected diff after a failure, consider widening context margins (e.g., 5–7 lines of surrounding context) to improve placement reliability while still respecting LF normalization and git‑style headers.
   - Continue to compute fence lengths per the +1 rule, and keep listings LF‑normalized.
   - Propose prompt improvements (below) as appropriate.
+  - Do not include a Commit Message in FEEDBACK replies. FEEDBACK packets are corrective by nature and are not new change sets to be committed directly.

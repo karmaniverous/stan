@@ -12,14 +12,15 @@ CRITICAL: Fence Hygiene (Nested Code Blocks) and Coverage
   6. Never emit a block whose outer fence length is less than or equal to the maximum backtick run inside it.
   7. After composing the message, rescan each block and verify the rule holds; if not, increase fence lengths and re‑emit.
 
-- Coverage:
+- Coverage (first presentation):
   - For every file you add, modify, or delete in this response:
-    - Provide a “Full Listing” (skipped for deletions) and
-    - Provide a matching plain unified diff “Patch” that precisely covers those changes (no base64).
+    - Provide a plain unified diff “Patch” that precisely covers those changes (no base64).
+  - Do not include “Full Listing” blocks by default.
+  - On request or when responding to a patch failure (FEEDBACK), include “Full Listing” blocks for the affected files only (see FEEDBACK exception and “Optional Full Listings” below).
 
 Exact Output Template (headings and order)
 
-Use these headings exactly; wrap each Patch (and optional Full Listing)
+Use these headings exactly; wrap each Patch (and optional Full Listing, when applicable)
 in a fence computed by the algorithm above.
 
 ---
@@ -77,8 +78,9 @@ Before sending a reply, verify all of the following:
    - No Patch block contains more than one “diff --git a/<path> b/<path>”.
 
 2. Commit message isolation and position
-   - The “Commit Message” is MANDATORY. It appears once, as the final section.
-   - The commit message fence is not inside any other fenced block.
+   - Normal replies: The “Commit Message” is MANDATORY. It appears once, as the final section.
+   - FEEDBACK replies: Do not include a Commit Message.
+   - In cases where a Commit Message is present, its fence is not inside any other fenced block.
 
 3. Fence hygiene (+1 rule)
    - For every fenced block, the outer fence is strictly longer than any internal backtick run (minimum 3).
@@ -88,12 +90,11 @@ Before sending a reply, verify all of the following:
    - Headings match the template exactly (names and order).
 
 5. Documentation cadence (gating)
-   - If any Patch block is present in this reply, there MUST also be a Patch
+   - Normal replies: If any Patch block is present, there MUST also be a Patch
      for <stanPath>/system/stan.todo.md that reflects the change set
      (unless the change set is deletions‑only or explicitly plan‑only).
    - The “Commit Message” MUST be present and last.
-   - If either requirement is missing, STOP and re‑emit after fixing. This is a
-     hard gate and the composition MUST fail when missing.
+   - FEEDBACK replies: Commit Message requirement is waived; documentation patches are not required solely to accompany FEEDBACK corrections.
 
 6. FEEDBACK response completeness
    - When replying to a FEEDBACK packet:
@@ -115,8 +116,7 @@ If any check fails, STOP and re‑emit after fixing. Do not send a reply that fa
 - The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.
 - Never include non‑diff prologues or synthetic markers such as “**_ Begin Patch”/“_** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.
 - Do not wrap the patch beyond the fence required by the +1 rule.
-- Coverage must include every created/updated/deleted file referenced
-  above.
+- Coverage must include every created/updated/deleted file referenced above (via Patch blocks). Full Listings are optional (see above).
 
 Optional Full Listings
 

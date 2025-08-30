@@ -1,10 +1,9 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-30 (UTC) — add “Dependency Bug Report” system section; elevate fence hygiene (quick how‑to + checklist gate); trim bootloader to loader‑only.
+When updated: 2025-08-30 (UTC) — default to patches‑only; FEEDBACK replies omit commit message; add “Dependency Bug Report” section; elevate fence hygiene; trim bootloader to loader‑only.
 
 Next up (high value)
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
-
 - Long‑file monitoring and decomposition (Phase 3)
   - Continue to monitor near‑threshold modules; propose splits if any
     trend toward or exceed ~300 LOC in future changes.
@@ -27,10 +26,11 @@ Next up (high value)
 
 Completed (recent)
 
+- response‑format: default to patches only on first presentation; Full Listings only on FEEDBACK or explicit request; FEEDBACK replies omit commit message
+
 - system: add “Dependency Bug Report” section with valid‑Markdown template (nested code examples; fence‑hygiene reminder)
 - system: elevate fence hygiene (CRITICAL jump list, quick how‑to before Response Format, hard gate in checklist)
-- bootloader: remove non‑loader guidance (fixed 10‑backtick note, ellipsis hygiene); keep loader + context‑mismatch guard only
-- dependency failures: cross‑link to “Dependency Bug Report”
+- bootloader: remove non‑loader guidance (fixed 10‑backtick note, ellipsis hygiene); keep loader + context‑mismatch guard only- dependency failures: cross‑link to “Dependency Bug Report”
 - tests/docs build: remove unused @ts-expect-error in config.normalize.test; ensure package.json in config.discover.test so discovery ascends correctly
 - coverage(config): add unit tests for normalize, discover, and output helpers (this change set)
 - selection precedence: config excludes > includes > .gitignore — code/tests/docs updated to reflect precedence- response‑format validator (initial library + tests) available via @/stan/validate/response

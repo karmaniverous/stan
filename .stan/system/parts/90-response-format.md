@@ -12,12 +12,19 @@ CRITICAL: Fence Hygiene (Nested Code Blocks) and Coverage
   6. Never emit a block whose outer fence length is less than or equal to the maximum backtick run inside it.
   7. After composing the message, rescan each block and verify the rule holds; if not, increase fence lengths and re‑emit.
 
+General Markdown formatting
+
+- Do not manually hard‑wrap narrative Markdown text. Use normal paragraphs and headings only.
+- Allowed exceptions:
+  - Commit Message block: hard‑wrap at 72 columns.
+  - Code blocks: wrap lines as needed for code readability.
+- Opportunistic repair: when editing existing Markdown files or sections as part of another change, if you encounter manually wrapped paragraphs, unwrap and reflow them to natural paragraphs while preserving content. Do not perform a repository‑wide reflow as part of an unrelated change set.
+
 - Coverage (first presentation):
   - For every file you add, modify, or delete in this response:
     - Provide a plain unified diff “Patch” that precisely covers those changes.
   - Do not include “Full Listing” blocks by default.
-  - On request or when responding to a patch failure (FEEDBACK), include “Full Listing” blocks for the affected files only (see FEEDBACK exception and “Optional Full Listings” below).
-Exact Output Template (headings and order)
+  - On request or when responding to a patch failure (FEEDBACK), include “Full Listing” blocks for the affected files only (see FEEDBACK exception and “Optional Full Listings” below).Exact Output Template (headings and order)
 
 Use these headings exactly; wrap each Patch (and optional Full Listing, when applicable)
 in a fence computed by the algorithm above.

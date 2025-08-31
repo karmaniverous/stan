@@ -1,11 +1,10 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-31 (UTC) — remove repo‑specific refs from system prompt; move diagnostics guidance to project prompt.
+When updated: 2025-08-31 (UTC) — add Markdown formatting policy (no manual wrapping outside commit messages or code blocks); continue removing repo‑specific refs from system prompt and keep diagnostics guidance in project prompt.
 
 Next up (high value)
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->- Long‑file monitoring and decomposition (Phase 3)
-
 - Continue to monitor near‑threshold modules; propose splits if any
   trend toward or exceed ~300 LOC in future changes.
 
@@ -17,10 +16,11 @@ Next up (high value)
 
 Completed (recent)
 
+- system: add Markdown formatting policy — no manual wrapping outside commit messages or code blocks; opportunistically unwrap/reflow when touching affected sections.
+
 - system/docs: remove STAN‑repo special cases from the system prompt; direct all prompt updates to `<stanPath>/system/stan.project.md`; add STAN‑specific diagnostics guidance to the project prompt.
 - fix(build): remove duplicate import in src/stan/run/archive.ts that caused TS2300
-  duplicate identifier errors (path/resolve)
-- fix(diff): prevent packaged stan.system.md from appearing in archive.diff.tar for downstream repos
+  duplicate identifier errors (path/resolve)- fix(diff): prevent packaged stan.system.md from appearing in archive.diff.tar for downstream repos
   by restoring the ephemeral monolith before computing the diff archive.
 - docs: add badges, expand contributing guide, and flesh out FAQ- refactor(system): streamline handoff format and remove legacy base64 warnings
 - response‑format: default to patches only on first presentation; Full Listings only on FEEDBACK or explicit request; FEEDBACK replies omit commit message- system: add “Dependency Bug Report” section with valid‑Markdown template (nested code examples; fence‑hygiene reminder)- system: elevate fence hygiene (CRITICAL jump list, quick how‑to before Response Format, hard gate in checklist)

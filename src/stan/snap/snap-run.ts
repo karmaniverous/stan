@@ -1,6 +1,8 @@
 /* src/stan/snap/snap-run.ts
  * Snapshot capture operation with optional stash.
  */
+import { loadConfig } from '@/stan/config';
+
 import { writeArchiveSnapshot } from '../diff';
 import { preflightDocsAndVersion } from '../preflight';
 import { utcStamp } from '../util/time';
@@ -8,7 +10,6 @@ import { captureSnapshotAndArchives } from './capture';
 import { resolveContext } from './context';
 import { runGit } from './git';
 import { ensureDirs } from './shared';
-
 export const handleSnap = async (opts?: { stash?: boolean }): Promise<void> => {
   const { cwd, stanPath, maxUndos } = await resolveContext(process.cwd());
   // Always-on prompt/version/docs checks (best-effort; consistent with run/patch)
@@ -40,12 +41,23 @@ export const handleSnap = async (opts?: { stash?: boolean }): Promise<void> => {
     }
   }
 
+  // Resolve selection from repo config so the snapshot and diff use the same rules
+  let cfgIncludes: string[] = [];
+  let cfgExcludes: string[] = [];
+  try {
+    const cfg = await loadConfig(cwd);
+    cfgIncludes = Array.isArray(cfg.includes) ? cfg.includes : [];
+    cfgExcludes = Array.isArray(cfg.excludes) ? cfg.excludes : [];
+  } catch {
+    // best‑effort; fall back to empty arrays
+  }
+
   try {
     await writeArchiveSnapshot({
       cwd,
       stanPath,
-      includes: [],
-      excludes: [],
+      includes: cfgIncludes,
+      excludes: cfgExcludes,
     });
   } catch (e) {
     console.error('stan: snapshot write failed', e);

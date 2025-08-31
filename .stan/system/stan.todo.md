@@ -1,65 +1,10 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-31 (UTC) — add Markdown formatting policy (no manual wrapping outside commit messages or code blocks); continue removing repo‑specific refs from system prompt and keep diagnostics guidance in project prompt. Standardize LF line endings across platforms. Add targeted config/load coverage cases. Next up (high value)
+When updated: 2025-08-31 (UTC) — CLI UX: friendlier excess-args handling; fix snap to honor config includes/excludes so snapshots match run selection.
 
-<!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->- Long‑file monitoring and decomposition (Phase 3)
+<!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
-When I use an unspecified stan command I get an error like this:
-
-```
-error: too many arguments. Expected 0 arguments but got 1.
-file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2027
-              this._exitCallback(new CommanderError(exitCode, code, message));
-                                 ^
-
-CommanderError: error: too many arguments. Expected 0 arguments but got 1.
-    at Command._exit (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2027:27)
-    at Command.error (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:3449:11)
-    at Command._excessArguments (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:3645:11)
-    at Command._checkNumberOfArguments (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2910:13)
-    at Command._processArguments (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2936:11)
-    at Command._parseCommand (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:3091:13)
-    at Command.parseAsync (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2614:17)
-    at holder.parseAsync (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:13577:15)
-    at holder.parseAsync (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:13577:15)
-    at holder.parseAsync (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:13577:15) {
-  code: 'commander.excessArguments',
-  exitCode: 1,
-  nestedError: undefined
-}
-```
-
-Stan should fail much more gracefully than that.
-
-I have the following config file in another project:
-
-```
-cliDefaults:
-  run:
-    sequential: true
-excludes:
-  - '**/.tsbuild/**'
-  - '**/generated/**'
-  - '**/node_modules/**'
-  - '**/*.tsbuildinfo'
-  - package-lock.json
-  - services/activecampaign/src/openapi.json
-includes:
-  - services/**
-outputPath: .stan
-patchOpenCommand: code -g {file}
-scripts:
-  knip: npm run knip
-  generate: npm run generate
-  typecheck: npm run typecheck
-  lint: npm run lint
-  openapi: npm run openapi
-  test: npm run test
-  package: npm run package
-stanPath: .stan
-```
-
-I find that while the exclusion rules work properly, my diff archive still contains files in services/\*\* that have not changed since the last snap.
+- Long‑file monitoring and decomposition (Phase 3)
 
 - Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
@@ -70,6 +15,8 @@ I find that while the exclusion rules work properly, my diff archive still conta
 
 Completed (recent)
 
+- fix(snap): pass repo config includes/excludes to snapshot writer. Prevents phantom diffs when nested sub‑packages (default‑excluded) are re‑included via config. Verified against Windows report where services/\*\* appeared in archive.diff.tar despite no content edits.
+- fix(cli): friendly handling for excess root arguments — print concise message and help; avoid CommanderError stack dump.
 - docs(system): FEEDBACK quick‑triage mapping for common git errors (path/strip/context/hunk hygiene). Reinforces existing rule to use `summary.changed` when `summary.failed` equals “(patch)”, and adds concise remedies for frequent failure snippets.
 
 - fix(lint): replace require('node:fs').writeFileSync with a typed import in src/stan/config.load.extra.test.ts to satisfy no-require-imports and no-unsafe-\* rules; no runtime code changes. Tests and coverage remain green.
@@ -79,18 +26,26 @@ Completed (recent)
 
 - docs/system: ensure Markdown list structure survives Prettier
   - replace Unicode “•” pseudo‑bullets with proper nested list markers in design‑first section,
-  - add explicit guidance to use standard Markdown list markers (“-”, “\*”, “1.”), - note inserting a blank line before nested lists when needed.
+  - add explicit guidance to use standard Markdown list markers (“-”, “\*”, “1.”),
+  - note inserting a blank line before nested lists when needed.
 
 - tooling: centralize Prettier as single source of truth; set proseWrap: never and keep embeddedLanguageFormatting: auto; make ESLint plugin defer to Prettier config (no duplicated rule options).
 - system: add Markdown formatting policy — no manual wrapping outside commit messages or code blocks; opportunistically unwrap/reflow when touching affected sections.
 
-- system/docs: remove STAN‑repo special cases from the system prompt; direct all prompt updates to `<stanPath>/system/stan.project.md`; add STAN‑specific diagnostics guidance to the project prompt.- fix(build): remove duplicate import in src/stan/run/archive.ts that caused TS2300 duplicate identifier errors (path/resolve)- fix(diff): prevent packaged stan.system.md from appearing in archive.diff.tar for downstream repos by restoring the ephemeral monolith before computing the diff archive.
-- docs: add badges, expand contributing guide, and flesh out FAQ- refactor(system): streamline handoff format and remove legacy base64 warnings
-- response‑format: default to patches only on first presentation; Full Listings only on FEEDBACK or explicit request; FEEDBACK replies omit commit message- system: add “Dependency Bug Report” section with valid‑Markdown template (nested code examples; fence‑hygiene reminder)- system: elevate fence hygiene (CRITICAL jump list, quick how‑to before Response Format, hard gate in checklist)
-- bootloader: remove non‑loader guidance (fixed 10‑backtick note, ellipsis hygiene); keep loader + context‑mismatch guard only- dependency failures: cross‑link to “Dependency Bug Report”
+- system/docs: remove STAN‑repo special cases from the system prompt; direct all prompt updates to `<stanPath>/system/stan.project.md`; add STAN‑specific diagnostics guidance to the project prompt.
+- fix(build): remove duplicate import in src/stan/run/archive.ts that caused TS2300 duplicate identifier errors (path/resolve)
+- fix(diff): prevent packaged stan.system.md from appearing in archive.diff.tar for downstream repos by restoring the ephemeral monolith before computing the diff archive.
+- docs: add badges, expand contributing guide, and flesh out FAQ
+- refactor(system): streamline handoff format and remove legacy base64 warnings
+- response‑format: default to patches only on first presentation; Full Listings only on FEEDBACK or explicit request; FEEDBACK replies omit commit message
+- system: add “Dependency Bug Report” section with valid‑Markdown template (nested code examples; fence‑hygiene reminder)
+- system: elevate fence hygiene (CRITICAL jump list, quick how‑to before Response Format, hard gate in checklist)
+- bootloader: remove non‑loader guidance (fixed 10‑backtick note, ellipsis hygiene); keep loader + context‑mismatch guard only
+- dependency failures: cross‑link to “Dependency Bug Report”
 - tests/docs build: remove unused @ts-expect-error in config.normalize.test; ensure package.json in config.discover.test so discovery ascends correctly
 - coverage(config): add unit tests for normalize, discover, and output helpers (this change set)
-- selection precedence: config excludes > includes > .gitignore — code/tests/docs updated to reflect precedence- response‑format validator (initial library + tests) available via @/stan/validate/response
+- selection precedence: config excludes > includes > .gitignore — code/tests/docs updated to reflect precedence
+- response‑format validator (initial library + tests) available via @/stan/validate/response
 - snap: stash/pop confirmations with isolated success test improve operator feedback
 
 DX / utility ideas (backlog)

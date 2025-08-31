@@ -18,8 +18,13 @@ General Markdown formatting
 - Allowed exceptions:
   - Commit Message block: hard‑wrap at 72 columns.
   - Code blocks: wrap lines as needed for code readability.
-- Opportunistic repair: when editing existing Markdown files or sections as part of another change, if you encounter manually wrapped paragraphs, unwrap and reflow them to natural paragraphs while preserving content. Do not perform a repository‑wide reflow as part of an unrelated change set.
+- Lists:
+  - Use proper Markdown list markers (“-”, “*”, or numbered “1.”) and indent for nested lists.
+  - Do not use the Unicode bullet “•” for list items — it is plain text, not a list marker, and formatters (Prettier) may collapse intended line breaks.
+  - When introducing a nested list after a sentence ending with a colon, insert a blank line if needed so the nested list is recognized as a list, not paragraph text.
+  - Prefer nested lists over manual line breaks to represent sub‑items.
 
+- Opportunistic repair: when editing existing Markdown files or sections as part of another change, if you encounter manually wrapped paragraphs, unwrap and reflow them to natural paragraphs while preserving content. Do not perform a repository‑wide reflow as part of an unrelated change set.
 - Coverage (first presentation):
   - For every file you add, modify, or delete in this response:
     - Provide a plain unified diff “Patch” that precisely covers those changes.

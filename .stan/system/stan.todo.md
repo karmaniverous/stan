@@ -3,31 +3,27 @@
 When updated: 2025-08-31 (UTC) — add Markdown formatting policy (no manual wrapping outside commit messages or code blocks); continue removing repo‑specific refs from system prompt and keep diagnostics guidance in project prompt. Standardize LF line endings across platforms.
 
 Next up (high value)
+
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->- Long‑file monitoring and decomposition (Phase 3)
-- Continue to monitor near‑threshold modules; propose splits if any
-  trend toward or exceed ~300 LOC in future changes.
+
+- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
 - Coverage follow‑ups
-  - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output};
-    consider small additional cases for load.ts branches as needed.
+  - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed.
   - Target incremental gains over ~86% lines coverage as changes land.
   - Keep excludes limited to trivial barrels and types‑only modules.
 
 Completed (recent)
 
-- tooling: standardize LF line endings cross‑platform
-  - add .gitattributes (* text=auto eol=lf; CRLF only for .bat/.cmd),
-  - add .editorconfig (end_of_line=lf, insert_final_newline, trimming),
-  - set Prettier endOfLine=lf,
-  - update VS Code defaults (files.eol="\n", insertFinalNewline).
+- docs/system: ensure Markdown list structure survives Prettier
+  - replace Unicode “•” pseudo‑bullets with proper nested list markers in design‑first section,
+  - add explicit guidance to use standard Markdown list markers (“-”, “\*”, “1.”),
+  - note inserting a blank line before nested lists when needed.
 
-- tooling: centralize Prettier as single source of truth; set
-  proseWrap: never and keep embeddedLanguageFormatting: auto; make ESLint
-  plugin defer to Prettier config (no duplicated rule options).- system: add Markdown formatting policy — no manual wrapping outside commit messages or code blocks; opportunistically unwrap/reflow when touching affected sections.
+- tooling: centralize Prettier as single source of truth; set proseWrap: never and keep embeddedLanguageFormatting: auto; make ESLint plugin defer to Prettier config (no duplicated rule options).
+- system: add Markdown formatting policy — no manual wrapping outside commit messages or code blocks; opportunistically unwrap/reflow when touching affected sections.
 
-- system/docs: remove STAN‑repo special cases from the system prompt; direct all prompt updates to `<stanPath>/system/stan.project.md`; add STAN‑specific diagnostics guidance to the project prompt.- fix(build): remove duplicate import in src/stan/run/archive.ts that caused TS2300
-  duplicate identifier errors (path/resolve)- fix(diff): prevent packaged stan.system.md from appearing in archive.diff.tar for downstream repos
-  by restoring the ephemeral monolith before computing the diff archive.
+- system/docs: remove STAN‑repo special cases from the system prompt; direct all prompt updates to `<stanPath>/system/stan.project.md`; add STAN‑specific diagnostics guidance to the project prompt.- fix(build): remove duplicate import in src/stan/run/archive.ts that caused TS2300 duplicate identifier errors (path/resolve)- fix(diff): prevent packaged stan.system.md from appearing in archive.diff.tar for downstream repos by restoring the ephemeral monolith before computing the diff archive.
 - docs: add badges, expand contributing guide, and flesh out FAQ- refactor(system): streamline handoff format and remove legacy base64 warnings
 - response‑format: default to patches only on first presentation; Full Listings only on FEEDBACK or explicit request; FEEDBACK replies omit commit message- system: add “Dependency Bug Report” section with valid‑Markdown template (nested code examples; fence‑hygiene reminder)- system: elevate fence hygiene (CRITICAL jump list, quick how‑to before Response Format, hard gate in checklist)
 - bootloader: remove non‑loader guidance (fixed 10‑backtick note, ellipsis hygiene); keep loader + context‑mismatch guard only- dependency failures: cross‑link to “Dependency Bug Report”
@@ -47,8 +43,7 @@ DX / utility ideas (backlog)
 - Patch ergonomics:
   - Adaptive context: automatically widen context margins on git/jsdiff failure (re‑try with more context).
   - Add a small preflight lint that flags aggregated multi‑file diffs before composing the final message.
-  - Editor integration: open patched files at first changed line (from hunk);
-    support VS Code, Cursor, WebStorm templates via config tokens.
+  - Editor integration: open patched files at first changed line (from hunk); support VS Code, Cursor, WebStorm templates via config tokens.
   - Better rejects UX: on failure, surface the new `<stanPath>/patch/rejects/...` root path explicitly and offer a one‑liner to open it.
 
 - Docs & guidance:

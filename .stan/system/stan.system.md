@@ -101,8 +101,8 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 
 2. Propose prompt updates as code changes
    - After design convergence, propose updates to the prompts as plain unified diff patches:
-     • Update the project prompt (`<stanPath>/system/stan.project.md`).
-     • Do not edit `<stanPath>/system/stan.system.md`; it is repo‑agnostic and treated as read‑only.
+     - Update the project prompt (`<stanPath>/system/stan.project.md`).
+     - Do not edit `<stanPath>/system/stan.system.md`; it is repo‑agnostic and treated as read‑only.
    - These prompt updates are “requirements” and follow normal listing/patch/refactor rules.
 
 3. Iterate requirements until convergence
@@ -120,11 +120,8 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
   - Do not generate a single new module that exceeds ~300 LOC. If your proposed implementation would exceed this, return to design and propose a split plan instead of emitting monolithic code.
   - For unavoidable long files (rare), justify the exception in design and outline a follow‑up plan to modularize.
 - Enforcement
-  - Whenever a module exceeds ~300 LOC, either:
-    • propose and seek approval for a split (modules, responsibilities, tests), or
-    • justify keeping it long (rare, e.g., generated code).
-  - Record the split plan or justification in <stanPath>/system/stan.todo.md
-    (the dev plan) before making further changes to that module.
+  - Whenever a module exceeds ~300 LOC, either: • propose and seek approval for a split (modules, responsibilities, tests), or • justify keeping it long (rare, e.g., generated code).
+  - Record the split plan or justification in <stanPath>/system/stan.todo.md (the dev plan) before making further changes to that module.
 - Favor composability and testability.
   - Smaller modules with clear responsibilities enable targeted unit tests and simpler refactors.
 
@@ -668,8 +665,13 @@ General Markdown formatting
 - Allowed exceptions:
   - Commit Message block: hard‑wrap at 72 columns.
   - Code blocks: wrap lines as needed for code readability.
-- Opportunistic repair: when editing existing Markdown files or sections as part of another change, if you encounter manually wrapped paragraphs, unwrap and reflow them to natural paragraphs while preserving content. Do not perform a repository‑wide reflow as part of an unrelated change set.
+- Lists:
+  - Use proper Markdown list markers (“-”, “*”, or numbered “1.”) and indent for nested lists.
+  - Do not use the Unicode bullet “•” for list items — it is plain text, not a list marker, and formatters (Prettier) may collapse intended line breaks.
+  - When introducing a nested list after a sentence ending with a colon, insert a blank line if needed so the nested list is recognized as a list, not paragraph text.
+  - Prefer nested lists over manual line breaks to represent sub‑items.
 
+- Opportunistic repair: when editing existing Markdown files or sections as part of another change, if you encounter manually wrapped paragraphs, unwrap and reflow them to natural paragraphs while preserving content. Do not perform a repository‑wide reflow as part of an unrelated change set.
 - Coverage (first presentation):
   - For every file you add, modify, or delete in this response:
     - Provide a plain unified diff “Patch” that precisely covers those changes.

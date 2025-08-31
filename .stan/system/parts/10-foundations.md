@@ -46,8 +46,8 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 
 2. Propose prompt updates as code changes
    - After design convergence, propose updates to the prompts as plain unified diff patches:
-     • Update the project prompt (`<stanPath>/system/stan.project.md`).
-     • Do not edit `<stanPath>/system/stan.system.md`; it is repo‑agnostic and treated as read‑only.
+     - Update the project prompt (`<stanPath>/system/stan.project.md`).
+     - Do not edit `<stanPath>/system/stan.system.md`; it is repo‑agnostic and treated as read‑only.
    - These prompt updates are “requirements” and follow normal listing/patch/refactor rules.
 
 3. Iterate requirements until convergence
@@ -65,10 +65,7 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
   - Do not generate a single new module that exceeds ~300 LOC. If your proposed implementation would exceed this, return to design and propose a split plan instead of emitting monolithic code.
   - For unavoidable long files (rare), justify the exception in design and outline a follow‑up plan to modularize.
 - Enforcement
-  - Whenever a module exceeds ~300 LOC, either:
-    • propose and seek approval for a split (modules, responsibilities, tests), or
-    • justify keeping it long (rare, e.g., generated code).
-  - Record the split plan or justification in <stanPath>/system/stan.todo.md
-    (the dev plan) before making further changes to that module.
+  - Whenever a module exceeds ~300 LOC, either: • propose and seek approval for a split (modules, responsibilities, tests), or • justify keeping it long (rare, e.g., generated code).
+  - Record the split plan or justification in <stanPath>/system/stan.todo.md (the dev plan) before making further changes to that module.
 - Favor composability and testability.
   - Smaller modules with clear responsibilities enable targeted unit tests and simpler refactors.

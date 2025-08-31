@@ -1,4 +1,6 @@
 {
   "endOfLine": "crlf",
-  "singleQuote": true
+  "singleQuote": true,
+  "proseWrap": "never",
+  "embeddedLanguageFormatting": "auto"
 }

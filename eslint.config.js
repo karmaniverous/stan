@@ -50,10 +50,10 @@ export default [
     },
     rules: {
       ...(c.rules ?? {}),
-      'prettier/prettier': ['error', { endOfLine: 'auto' }],
+      // Defer to the repo Prettier config (.prettierrc.json) as the single source of truth.
+      'prettier/prettier': 'error',
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
-
       // Our TS preferences
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-definitions': ['error', 'type'],

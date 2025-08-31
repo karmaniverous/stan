@@ -16,10 +16,12 @@ Next up (high value)
 
 Completed (recent)
 
+- tooling: centralize Prettier as single source of truth; set
+  proseWrap: never and keep embeddedLanguageFormatting: auto; make ESLint
+  plugin defer to Prettier config (no duplicated rule options).
 - system: add Markdown formatting policy — no manual wrapping outside commit messages or code blocks; opportunistically unwrap/reflow when touching affected sections.
 
-- system/docs: remove STAN‑repo special cases from the system prompt; direct all prompt updates to `<stanPath>/system/stan.project.md`; add STAN‑specific diagnostics guidance to the project prompt.
-- fix(build): remove duplicate import in src/stan/run/archive.ts that caused TS2300
+- system/docs: remove STAN‑repo special cases from the system prompt; direct all prompt updates to `<stanPath>/system/stan.project.md`; add STAN‑specific diagnostics guidance to the project prompt.- fix(build): remove duplicate import in src/stan/run/archive.ts that caused TS2300
   duplicate identifier errors (path/resolve)- fix(diff): prevent packaged stan.system.md from appearing in archive.diff.tar for downstream repos
   by restoring the ephemeral monolith before computing the diff archive.
 - docs: add badges, expand contributing guide, and flesh out FAQ- refactor(system): streamline handoff format and remove legacy base64 warnings

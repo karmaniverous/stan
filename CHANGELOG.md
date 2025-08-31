@@ -2,8 +2,22 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.7](https://github.com/karmaniverous/stan/compare/0.5.6...0.5.7)
+
+- fix(lint): replace require usage with typed writeFileSync in config.load.extra.test.ts [`32095f7`](https://github.com/karmaniverous/stan/commit/32095f796d346cfbbd520117bd8c9cd33a200520)
+- test(config/load): add branch coverage cases [`a8333b0`](https://github.com/karmaniverous/stan/commit/a8333b0ad414b63b6c5636f8c49273db9545be36)
+- docs(system): use proper Markdown bullets; add list formatting guidance [`75e5c06`](https://github.com/karmaniverous/stan/commit/75e5c06acb6f2060c25c6a1d601845ff1cc2caf1)
+- docs(system,project): remove STAN-repo special cases; FEEDBACK listings are post‑patch; add STAN-only diagnostics guidance to project prompt [`1fb4605`](https://github.com/karmaniverous/stan/commit/1fb4605c4cba7d756c265abe50683f1ba802cae8)
+- chore: standardize LF EOL and VS Code defaults [`c9c2f1d`](https://github.com/karmaniverous/stan/commit/c9c2f1daa8b073e1cf4d8f97232e0c4d29814eba)
+- chore(system): add Markdown formatting policy [`958d71c`](https://github.com/karmaniverous/stan/commit/958d71c89bac3c6ece68025265980435f99ef45a)
+- improved cross-platform dev [`7c3b89e`](https://github.com/karmaniverous/stan/commit/7c3b89ed39ccc8cb721cf63d2fee0312490eb41e)
+- chore(format): centralize Prettier and enable Markdown unwrapping [`0225aff`](https://github.com/karmaniverous/stan/commit/0225aff2c0343082d4c044ccf1866aa25120d9a9)
+
 #### [0.5.6](https://github.com/karmaniverous/stan/compare/0.5.5...0.5.6)
 
+> 30 August 2025
+
+- chore: release v0.5.6 [`c9072f9`](https://github.com/karmaniverous/stan/commit/c9072f92f27ea144611e8632ff137f2b2380eb4d)
 - fix(diff): exclude packaged system prompt from diff archive in downstream repos [`7e1baba`](https://github.com/karmaniverous/stan/commit/7e1babab002e56512f56c1dae6131328a6806aac)
 - fix(build): remove duplicate import in archive phase to restore typecheck [`5a7b29b`](https://github.com/karmaniverous/stan/commit/5a7b29b92ea862a57fa97de649d1e0bdd643adcf)
 

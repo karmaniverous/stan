@@ -31,6 +31,36 @@ CommanderError: error: too many arguments. Expected 0 arguments but got 1.
 
 Stan should fail much more gracefully than that.
 
+I have the following config file in another project:
+
+```
+cliDefaults:
+  run:
+    sequential: true
+excludes:
+  - '**/.tsbuild/**'
+  - '**/generated/**'
+  - '**/node_modules/**'
+  - '**/*.tsbuildinfo'
+  - package-lock.json
+  - services/activecampaign/src/openapi.json
+includes:
+  - services/**
+outputPath: .stan
+patchOpenCommand: code -g {file}
+scripts:
+  knip: npm run knip
+  generate: npm run generate
+  typecheck: npm run typecheck
+  lint: npm run lint
+  openapi: npm run openapi
+  test: npm run test
+  package: npm run package
+stanPath: .stan
+```
+
+I find that while the exclusion rules work properly, my diff archive still contains files in services/\*\* that have not changed since the last snap.
+
 - Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
 - Coverage follow‑ups

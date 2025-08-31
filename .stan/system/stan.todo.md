@@ -1,11 +1,13 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-31 (UTC) — simplify handoff format; remove legacy base64 warnings.
+When updated: 2025-08-31 (UTC) — remove repo‑specific refs from system prompt; move diagnostics guidance to project prompt.
 
 Next up (high value)
+
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->- Long‑file monitoring and decomposition (Phase 3)
-  - Continue to monitor near‑threshold modules; propose splits if any
-    trend toward or exceed ~300 LOC in future changes.
+
+- Continue to monitor near‑threshold modules; propose splits if any
+  trend toward or exceed ~300 LOC in future changes.
 
 - Coverage follow‑ups
   - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output};
@@ -15,6 +17,7 @@ Next up (high value)
 
 Completed (recent)
 
+- system/docs: remove STAN‑repo special cases from the system prompt; direct all prompt updates to `<stanPath>/system/stan.project.md`; add STAN‑specific diagnostics guidance to the project prompt.
 - fix(build): remove duplicate import in src/stan/run/archive.ts that caused TS2300
   duplicate identifier errors (path/resolve)
 - fix(diff): prevent packaged stan.system.md from appearing in archive.diff.tar for downstream repos

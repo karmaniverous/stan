@@ -101,13 +101,12 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 
 2. Propose prompt updates as code changes
    - After design convergence, propose updates to the prompts as plain unified diff patches:
-     • Normal repos: update the project prompt (`stan.project.md`).
-     • STAN repo (`@karmaniverous/stan`): update the system prompt (s`tan.system.md`) only for repo‑agnostic concerns.
+     • Update the project prompt (`<stanPath>/system/stan.project.md`).
+     • Do not edit `<stanPath>/system/stan.system.md`; it is repo‑agnostic and treated as read‑only.
    - These prompt updates are “requirements” and follow normal listing/patch/refactor rules.
 
 3. Iterate requirements until convergence
    - The user may commit changes and provide a new archive diff & script outputs, or accept the requirements and ask to proceed to code.
-
 4. Implementation and code iteration
    - Produce code, iterate until scripts (lint/test/build/typecheck) pass.
    - If requirements change mid‑flight, stop coding and return to design.
@@ -396,10 +395,13 @@ Notes
   - MUST include a Full Listing for each file reported as failed (from `summary.failed`) in addition to the improved Patch.
     - This requirement is not optional. If a failed file is present and a Full Listing is missing, STOP and re‑emit with the Full Listing.
     - Do not include Full Listings (or repeat patches) for files that applied successfully.
+  - Full Listings MUST reflect the POST‑PATCH state:
+    apply the corrected diff conceptually and list the resulting file
+    content, not the pre‑patch body. This ensures the listing matches
+    the code that would exist once the improved patch is applied.
   - For docs/text files, anchor hunks on stable structural markers (section headers and nearby unique lines) and keep the blast radius minimal (a single, well‑anchored hunk whenever possible).
   - If the feedback’s `summary.failed` list lacks concrete file names (placeholder “(patch)”), treat the files listed under `summary.changed` as the targets: include a Full Listing and improved Patch for each of those files.
-  - When composing the corrected diff after a failure, consider widening context margins (e.g., 5–7 lines of surrounding context) to improve placement reliability while still respecting LF normalization and git‑style headers.
-  - Continue to compute fence lengths per the +1 rule, and keep listings LF‑normalized.
+  - When composing the corrected diff after a failure, consider widening context margins (e.g., 5–7 lines of surrounding context) to improve placement reliability while still respecting LF normalization and git‑style headers.  - Continue to compute fence lengths per the +1 rule, and keep listings LF‑normalized.
   - Propose prompt improvements (below) as appropriate.
   - Do not include a Commit Message in FEEDBACK replies. FEEDBACK packets are corrective by nature and are not new change sets to be committed directly.
 
@@ -468,9 +470,10 @@ Correct these omissions and re‑emit before sending.
 - Patches must be plain unified diffs.
 - Prefer diffs with a/ b/ prefixes and stable strip levels; include sufficient context.
 - Normalize to UTF‑8 + LF. Avoid BOM and zero‑width characters.
-- On patch failures:  - Perform a concise root‑cause analysis (e.g., path mismatches, context drift, hunk corruption).
+- On patch failures:
+  - Perform a concise root‑cause analysis (e.g., path mismatches, context drift, hunk corruption).
   - Use the FEEDBACK handshake (BEGIN_STAN_PATCH_FEEDBACK v1 … END_STAN_PATCH_FEEDBACK). Regenerate a corrected diff that applies cleanly.
-  - Summarize in this chat and call out changes that should be folded back into the PROJECT prompt for downstream repos (or into this SYSTEM prompt for `@karmaniverous/stan`).
+  - Summarize in this chat and call out changes that should be folded back into the PROJECT prompt.
 
 # CRITICAL: Patch generation guidelines (compatible with “stan patch”)
 

@@ -5,9 +5,10 @@
 - Patches must be plain unified diffs.
 - Prefer diffs with a/ b/ prefixes and stable strip levels; include sufficient context.
 - Normalize to UTF‑8 + LF. Avoid BOM and zero‑width characters.
-- On patch failures:  - Perform a concise root‑cause analysis (e.g., path mismatches, context drift, hunk corruption).
+- On patch failures:
+  - Perform a concise root‑cause analysis (e.g., path mismatches, context drift, hunk corruption).
   - Use the FEEDBACK handshake (BEGIN_STAN_PATCH_FEEDBACK v1 … END_STAN_PATCH_FEEDBACK). Regenerate a corrected diff that applies cleanly.
-  - Summarize in this chat and call out changes that should be folded back into the PROJECT prompt for downstream repos (or into this SYSTEM prompt for `@karmaniverous/stan`).
+  - Summarize in this chat and call out changes that should be folded back into the PROJECT prompt.
 
 # CRITICAL: Patch generation guidelines (compatible with “stan patch”)
 

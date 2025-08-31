@@ -1,7 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
 When updated: 2025-08-31 (UTC) — add Markdown formatting policy (no manual wrapping outside commit messages or code blocks); continue removing repo‑specific refs from system prompt and keep diagnostics guidance in project prompt. Standardize LF line endings across platforms. Add targeted config/load coverage cases.
-
 Next up (high value)
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->- Long‑file monitoring and decomposition (Phase 3)
 
@@ -14,6 +13,14 @@ Next up (high value)
 
 Completed (recent)
 
+- docs(system): FEEDBACK quick‑triage mapping for common git errors
+  (path/strip/context/hunk hygiene). Reinforces existing rule to use
+  `summary.changed` when `summary.failed` equals “(patch)”, and adds
+  concise remedies for frequent failure snippets.
+
+- fix(lint): replace require('node:fs').writeFileSync with a typed import in
+  src/stan/config.load.extra.test.ts to satisfy no-require-imports and
+  no-unsafe-* rules; no runtime code changes. Tests and coverage remain green.
 - tests(coverage): add targeted cases for config loading branches (devMode normalization from strings, patchOpenCommand default fallback, maxUndos normalization from string, invalid config guards for stanPath/scripts); small but meaningful coverage gain in src/stan/config/load.ts without touching runtime code.
   - Confirmed normalization surfaces via public loadConfig API.
   - Keeps excludes limited and focuses on high‑value branch coverage as planned.

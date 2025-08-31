@@ -1,3 +1,4 @@
+import { writeFileSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -58,13 +59,12 @@ describe('config.load (additional branch coverage)', () => {
     const yml = ['stanPath: out', 'scripts:', '  a: echo a'].join('\n');
     const p = path.join(dir, 'stan.config.yml');
     // sync writer to keep test concise
-    require('node:fs').writeFileSync(p, yml, 'utf8');
+    writeFileSync(p, yml, 'utf8');
     const cfg = loadConfigSync(dir);
     expect(cfg.includes).toEqual([]);
     expect(cfg.excludes).toEqual([]);
     expect(typeof cfg.patchOpenCommand).toBe('string');
   });
-
   it('resolveStanPathSync falls back to default when no config exists', () => {
     const stan = resolveStanPathSync(dir);
     expect(stan).toBe('.stan');

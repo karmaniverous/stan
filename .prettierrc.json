@@ -1,6 +1,6 @@
 {
+  "embeddedLanguageFormatting": "auto",
   "endOfLine": "lf",
-  "singleQuote": true,
   "proseWrap": "never",
-  "embeddedLanguageFormatting": "auto"
+  "singleQuote": true
 }

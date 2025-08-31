@@ -1,9 +1,8 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-31 (UTC) — add Markdown formatting policy (no manual wrapping outside commit messages or code blocks); continue removing repo‑specific refs from system prompt and keep diagnostics guidance in project prompt. Standardize LF line endings across platforms.
+When updated: 2025-08-31 (UTC) — add Markdown formatting policy (no manual wrapping outside commit messages or code blocks); continue removing repo‑specific refs from system prompt and keep diagnostics guidance in project prompt. Standardize LF line endings across platforms. Add targeted config/load coverage cases.
 
 Next up (high value)
-
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->- Long‑file monitoring and decomposition (Phase 3)
 
 - Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
@@ -15,10 +14,13 @@ Next up (high value)
 
 Completed (recent)
 
+- tests(coverage): add targeted cases for config loading branches (devMode normalization from strings, patchOpenCommand default fallback, maxUndos normalization from string, invalid config guards for stanPath/scripts); small but meaningful coverage gain in src/stan/config/load.ts without touching runtime code.
+  - Confirmed normalization surfaces via public loadConfig API.
+  - Keeps excludes limited and focuses on high‑value branch coverage as planned.
+
 - docs/system: ensure Markdown list structure survives Prettier
   - replace Unicode “•” pseudo‑bullets with proper nested list markers in design‑first section,
-  - add explicit guidance to use standard Markdown list markers (“-”, “\*”, “1.”),
-  - note inserting a blank line before nested lists when needed.
+  - add explicit guidance to use standard Markdown list markers (“-”, “\*”, “1.”),  - note inserting a blank line before nested lists when needed.
 
 - tooling: centralize Prettier as single source of truth; set proseWrap: never and keep embeddedLanguageFormatting: auto; make ESLint plugin defer to Prettier config (no duplicated rule options).
 - system: add Markdown formatting policy — no manual wrapping outside commit messages or code blocks; opportunistically unwrap/reflow when touching affected sections.

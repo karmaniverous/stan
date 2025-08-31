@@ -2,8 +2,20 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.8](https://github.com/karmaniverous/stan/compare/0.5.7...0.5.8)
+
+- test(snap): ensure snap and run selection are in sync (prevents phantom diffs) [`d7611e8`](https://github.com/karmaniverous/stan/commit/d7611e85fd3fc4a1a8e4d7ea68a00ab2bb1d9e35)
+- fix(snap): honor config includes/excludes when writing snapshot [`76f8b0e`](https://github.com/karmaniverous/stan/commit/76f8b0efcb380769697befd5da64c50b819603fc)
+- test(snap): fix selection-sync mock hoist; stabilize tar call capture [`8347622`](https://github.com/karmaniverous/stan/commit/8347622a3511eb2631c6d2024f987b37fa54bb37)
+- new requirement [`48b417f`](https://github.com/karmaniverous/stan/commit/48b417f98fad332884def4e8e6886cf07a0b71ee)
+- bug report [`25eb9d5`](https://github.com/karmaniverous/stan/commit/25eb9d59f972136b522ce21dfaa28cde1860c44a)
+- friendlier stan errors [`07ff74e`](https://github.com/karmaniverous/stan/commit/07ff74eeeca7b921fd237cc6eb8d1a893ed2d48e)
+
 #### [0.5.7](https://github.com/karmaniverous/stan/compare/0.5.6...0.5.7)
 
+> 31 August 2025
+
+- chore: release v0.5.7 [`cdff9ba`](https://github.com/karmaniverous/stan/commit/cdff9baa26efd618ef94beced67a29c636c74637)
 - fix(lint): replace require usage with typed writeFileSync in config.load.extra.test.ts [`32095f7`](https://github.com/karmaniverous/stan/commit/32095f796d346cfbbd520117bd8c9cd33a200520)
 - test(config/load): add branch coverage cases [`a8333b0`](https://github.com/karmaniverous/stan/commit/a8333b0ad414b63b6c5636f8c49273db9545be36)
 - docs(system): use proper Markdown bullets; add list formatting guidance [`75e5c06`](https://github.com/karmaniverous/stan/commit/75e5c06acb6f2060c25c6a1d601845ff1cc2caf1)

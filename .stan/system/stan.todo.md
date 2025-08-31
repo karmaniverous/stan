@@ -1,8 +1,35 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-31 (UTC) — add Markdown formatting policy (no manual wrapping outside commit messages or code blocks); continue removing repo‑specific refs from system prompt and keep diagnostics guidance in project prompt. Standardize LF line endings across platforms. Add targeted config/load coverage cases.
-Next up (high value)
+When updated: 2025-08-31 (UTC) — add Markdown formatting policy (no manual wrapping outside commit messages or code blocks); continue removing repo‑specific refs from system prompt and keep diagnostics guidance in project prompt. Standardize LF line endings across platforms. Add targeted config/load coverage cases. Next up (high value)
+
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->- Long‑file monitoring and decomposition (Phase 3)
+
+When I use an unspecified stan command I get an error like this:
+
+```
+error: too many arguments. Expected 0 arguments but got 1.
+file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2027
+              this._exitCallback(new CommanderError(exitCode, code, message));
+                                 ^
+
+CommanderError: error: too many arguments. Expected 0 arguments but got 1.
+    at Command._exit (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2027:27)
+    at Command.error (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:3449:11)
+    at Command._excessArguments (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:3645:11)
+    at Command._checkNumberOfArguments (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2910:13)
+    at Command._processArguments (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2936:11)
+    at Command._parseCommand (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:3091:13)
+    at Command.parseAsync (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:2614:17)
+    at holder.parseAsync (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:13577:15)
+    at holder.parseAsync (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:13577:15)
+    at holder.parseAsync (file:///C:/Code/karmaniverous/stan/dist/cli/index-a29FJ5J-.js:13577:15) {
+  code: 'commander.excessArguments',
+  exitCode: 1,
+  nestedError: undefined
+}
+```
+
+Stan should fail much more gracefully than that.
 
 - Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
@@ -13,21 +40,16 @@ Next up (high value)
 
 Completed (recent)
 
-- docs(system): FEEDBACK quick‑triage mapping for common git errors
-  (path/strip/context/hunk hygiene). Reinforces existing rule to use
-  `summary.changed` when `summary.failed` equals “(patch)”, and adds
-  concise remedies for frequent failure snippets.
+- docs(system): FEEDBACK quick‑triage mapping for common git errors (path/strip/context/hunk hygiene). Reinforces existing rule to use `summary.changed` when `summary.failed` equals “(patch)”, and adds concise remedies for frequent failure snippets.
 
-- fix(lint): replace require('node:fs').writeFileSync with a typed import in
-  src/stan/config.load.extra.test.ts to satisfy no-require-imports and
-  no-unsafe-* rules; no runtime code changes. Tests and coverage remain green.
+- fix(lint): replace require('node:fs').writeFileSync with a typed import in src/stan/config.load.extra.test.ts to satisfy no-require-imports and no-unsafe-\* rules; no runtime code changes. Tests and coverage remain green.
 - tests(coverage): add targeted cases for config loading branches (devMode normalization from strings, patchOpenCommand default fallback, maxUndos normalization from string, invalid config guards for stanPath/scripts); small but meaningful coverage gain in src/stan/config/load.ts without touching runtime code.
   - Confirmed normalization surfaces via public loadConfig API.
   - Keeps excludes limited and focuses on high‑value branch coverage as planned.
 
 - docs/system: ensure Markdown list structure survives Prettier
   - replace Unicode “•” pseudo‑bullets with proper nested list markers in design‑first section,
-  - add explicit guidance to use standard Markdown list markers (“-”, “\*”, “1.”),  - note inserting a blank line before nested lists when needed.
+  - add explicit guidance to use standard Markdown list markers (“-”, “\*”, “1.”), - note inserting a blank line before nested lists when needed.
 
 - tooling: centralize Prettier as single source of truth; set proseWrap: never and keep embeddedLanguageFormatting: auto; make ESLint plugin defer to Prettier config (no duplicated rule options).
 - system: add Markdown formatting policy — no manual wrapping outside commit messages or code blocks; opportunistically unwrap/reflow when touching affected sections.

@@ -2,10 +2,11 @@
   "[markdown]": {
     "editor.wordWrap": "bounded"
   },
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.formatOnPaste": true,
-  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,  "editor.formatOnSave": true,
   "eslint.useFlatConfig": true,
   "eslint.validate": [
     "javascript",

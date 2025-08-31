@@ -14,45 +14,48 @@ vi.mock('@/stan/preflight', () => ({
   preflightDocsAndVersion: async () => {},
 }));
 
+// Capture tar.create calls to assert diff contents — define at module scope so
+// the hoisted vi.mock factory can access it reliably.
+type TarCall = {
+  file: string;
+  cwd?: string;
+  filter?: (p: string, s: unknown) => boolean;
+  files: string[];
+};
+const calls: TarCall[] = [];
+
+// Hoisted mock for 'tar': executed before the rest of the module body. It must
+// only reference symbols declared at module scope (e.g., `calls`).
+vi.mock('tar', () => ({
+  __esModule: true,
+  default: undefined,
+  create: async (
+    opts: {
+      file: string;
+      cwd?: string;
+      filter?: (p: string, s: unknown) => boolean;
+    },
+    files: string[],
+  ) => {
+    calls.push({
+      file: opts.file,
+      cwd: opts.cwd,
+      filter: opts.filter,
+      files,
+    });
+    // write a recognizable tar body
+    const { writeFile } = await import('node:fs/promises');
+    await writeFile(opts.file, 'TAR', 'utf8');
+  },
+}));
+
 describe('snap selection matches run selection (includes/excludes in sync)', () => {
   let dir: string;
   const read = (p: string) => readFile(p, 'utf8');
 
-  // Capture tar.create calls to assert diff contents
-  type TarCall = {
-    file: string;
-    cwd?: string;
-    filter?: (p: string, s: unknown) => boolean;
-    files: string[];
-  };
-  const calls: TarCall[] = [];
-
-  vi.mock('tar', () => ({
-    __esModule: true,
-    default: undefined,
-    create: async (
-      opts: {
-        file: string;
-        cwd?: string;
-        filter?: (p: string, s: unknown) => boolean;
-      },
-      files: string[],
-    ) => {
-      calls.push({
-        file: opts.file,
-        cwd: opts.cwd,
-        filter: opts.filter,
-        files,
-      });
-      // write a recognizable tar body
-      const { writeFile } = await import('node:fs/promises');
-      await writeFile(opts.file, 'TAR', 'utf8');
-    },
-  }));
-
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), 'stan-snap-sync-'));
-    calls.length = 0;
+    calls.length = 0; // reset captured calls between tests
     try {
       process.chdir(dir);
     } catch {
@@ -82,7 +85,6 @@ describe('snap selection matches run selection (includes/excludes in sync)', () 
       'scripts: {}',
     ].join('\n');
     await writeFile(path.join(dir, 'stan.config.yml'), yml, 'utf8');
-
     // Nested sub-package (default excluded): should be brought back by includes
     const pkgRoot = path.join(dir, 'services', 'activecampaign');
     await mkdir(path.join(pkgRoot, 'src'), { recursive: true });

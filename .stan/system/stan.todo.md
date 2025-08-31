@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-31 (UTC) — CLI UX: friendlier excess-args handling; fix snap to honor config includes/excludes so snapshots match run selection.
+When updated: 2025-08-31 (UTC) — Fix selection-sync test hoist; CLI root excess-args UX; snap snapshot honors includes/excludes.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
@@ -15,6 +15,7 @@ When updated: 2025-08-31 (UTC) — CLI UX: friendlier excess-args handling; fix 
 
 Completed (recent)
 
+- test(snap): fix selection-sync hoisting error in tar mock; move calls capture and vi.mock to module scope and reset in beforeEach. Resolves “ReferenceError: calls is not defined” and brings the suite back to green.
 - fix(snap): pass repo config includes/excludes to snapshot writer. Prevents phantom diffs when nested sub‑packages (default‑excluded) are re‑included via config. Verified against Windows report where services/\*\* appeared in archive.diff.tar despite no content edits.
 - fix(cli): friendly handling for excess root arguments — print concise message and help; avoid CommanderError stack dump.
 - docs(system): FEEDBACK quick‑triage mapping for common git errors (path/strip/context/hunk hygiene). Reinforces existing rule to use `summary.changed` when `summary.failed` equals “(patch)”, and adds concise remedies for frequent failure snippets.

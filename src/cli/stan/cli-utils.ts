@@ -49,19 +49,32 @@ export const patchParseMethods = (cli: Command): void => {
 /** Install a Commander exit override that swallows benign exits during tests. */
 export const installExitOverride = (cmd: Command): void => {
   cmd.exitOverride((err) => {
-    if (
-      err.code === 'commander.helpDisplayed' ||
-      err.code === 'commander.unknownCommand' ||
-      err.code === 'commander.unknownOption' ||
-      err.code === 'commander.help'
-    ) {
-      // Commander already printed any relevant message. Do not call process.exit.
+    // Swallow benign/expected exits to avoid noisy stack traces in CLI usage.
+    const swallow = new Set<string>([
+      'commander.helpDisplayed',
+      'commander.unknownCommand',
+      'commander.unknownOption',
+      'commander.help',
+      // New: treat excess arguments as a friendly help case.
+      'commander.excessArguments',
+    ]);
+    if (swallow.has(err.code)) {
+      if (err.code === 'commander.excessArguments') {
+        try {
+          // Print concise message then help footer.
+          // Commander typically prints the message already; ensure help is shown.
+          // Avoid rethrowing to prevent stack traces.
+          if (err.message) console.error(err.message);
+          cmd.outputHelp();
+        } catch {
+          // best‑effort
+        }
+      }
       return;
     }
     throw err;
   });
 };
-
 /** Apply both safety adapters to a command. */
 export const applyCliSafety = (cmd: Command): void => {
   installExitOverride(cmd);

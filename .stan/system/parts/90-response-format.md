@@ -122,21 +122,8 @@ Before sending a reply, verify all of the following:
 
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 
-## Plain Unified Diff Policy
-- Always emit plain unified diffs with @@ hunks.
-
-- The patch block must begin with “diff --git a/<path> b/<path>” followed by “--- a/<path>” and “+++ b/<path>” headers (git‑style). Include “@@” hunks for changes.
-- Never include non‑diff prologues or synthetic markers such as “**_ Begin Patch”/“_** End Patch”, “Add File:”, “Index:”, or similar. Emit only the plain unified diff bytes inside the fence.- Do not wrap the patch beyond the fence required by the +1 rule.
-- Coverage must include every created/updated/deleted file referenced above (via Patch blocks). Full Listings are optional (see above).
+## Patch policy reference
+Follow the canonical rules in “Patch Policy” (see earlier section). The Response Format adds presentation requirements only (fencing, section ordering, per‑file one‑patch rule). Do not duplicate prose inside patch fences; emit plain unified diff payloads.
 
 Optional Full Listings
-
-- If the user explicitly asks for full listings, include the “Full
-  Listing” block(s) for the requested file(s) using fences computed by
-  the same algorithm.
-
-- FEEDBACK failure exception:
-  - When replying to a failed patch FEEDBACK, include a Full Listing for each
-    reported failed file only, alongside its improved Patch.
-  - Do not include Full Listings (or repeat patches) for files that
-    applied successfully.
+– On explicit request or when replying to FEEDBACK, include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.

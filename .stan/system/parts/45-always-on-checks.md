@@ -27,7 +27,7 @@ Notes:
 
 ## Mandatory documentation cadence (gating rule)
 
-- If you emit any code Patch blocks, you MUST also:
+- If you emit any code Patch blocks, you MUST also (except deletions‑only or explicitly plan‑only replies):
   - Patch `<stanPath>/system/stan.todo.md` (add a “Completed (recent)” entry; update “Next up” if applicable).
   - Patch `<stanPath>/system/stan.project.md` when the change introduces/clarifies a durable requirement or policy.
 - If a required documentation patch is missing, STOP and recompose with the missing patch(es) before sending a reply.
@@ -35,7 +35,6 @@ Notes:
 This is a HARD GATE: the composition MUST fail when a required documentation
 patch is missing or when the final “Commit Message” block is absent or not last.
 Correct these omissions and re‑emit before sending.
-
 ## Dev plan document hygiene (content‑only)
 
 - The development plan at `<stanPath>/system/stan.todo.md` MUST contain only the

@@ -7,11 +7,10 @@ Quick Reference (Top 10 rules)
 3. Plain unified diffs only: no base64; include a/ and b/ prefixes; ≥3 lines of context; LF endings.
 4. Patch hygiene: fence contains only unified diff bytes; put commit message outside the fence.
 5. Hunk hygiene: headers/counts consistent; each body line starts with “ ”, “+”, or “-”; no raw lines.
-6. Coverage: every created/updated/deleted file in this reply has Full Listing (skip for deletions) and a matching diff.
+6. Coverage: one Patch per changed file. Full Listings are not required by default; include them only on explicit request or when replying to FEEDBACK (failed files only). Skip listings for deletions.
 7. System vs Project vs Plan:
    • System (this file): repo‑agnostic rules,
-   • Project (stan.project.md): durable repo‑specific requirements,
-   • Plan (stan.todo.md): short‑term steps; keep “Completed (recent)” short and prune routinely.
+   • Project (stan.project.md): durable repo‑specific requirements,   • Plan (stan.todo.md): short‑term steps; keep “Completed (recent)” short and prune routinely.
 8. Services‑first: ports & adapters; thin adapters; pure services; co‑located tests.
 9. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
 10. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.

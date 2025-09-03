@@ -15,10 +15,15 @@ When updated: 2025-08-31 (UTC) — Fix selection-sync test hoist; CLI root exces
 
 Completed (recent)
 
+- docs(system): align Quick Reference with Response Format — Full Listings not required by default (on request or FEEDBACK only; skip deletions).
+- docs(system): add explicit exceptions to mandatory doc cadence (deletions‑only and plan‑only replies) to match the validator.
+- docs(system): add missing TOC sections — Architecture (Services‑first), Testing architecture, System‑level lint policy, and Context window exhaustion (termination rule).
+- docs(system): deduplicate patch rules — Response Format now references the canonical Patch Policy instead of restating “Plain Unified Diff Policy.”
+  This reduces drift and keeps composition guidance focused on fencing/ordering.
+
 - test(snap): fix selection-sync hoisting error in tar mock; move calls capture and vi.mock to module scope and reset in beforeEach. Resolves “ReferenceError: calls is not defined” and brings the suite back to green.
 - fix(snap): pass repo config includes/excludes to snapshot writer. Prevents phantom diffs when nested sub‑packages (default‑excluded) are re‑included via config. Verified against Windows report where services/\*\* appeared in archive.diff.tar despite no content edits.
-- fix(cli): friendly handling for excess root arguments — print concise message and help; avoid CommanderError stack dump.
-- docs(system): FEEDBACK quick‑triage mapping for common git errors (path/strip/context/hunk hygiene). Reinforces existing rule to use `summary.changed` when `summary.failed` equals “(patch)”, and adds concise remedies for frequent failure snippets.
+- fix(cli): friendly handling for excess root arguments — print concise message and help; avoid CommanderError stack dump.- docs(system): FEEDBACK quick‑triage mapping for common git errors (path/strip/context/hunk hygiene). Reinforces existing rule to use `summary.changed` when `summary.failed` equals “(patch)”, and adds concise remedies for frequent failure snippets.
 
 - fix(lint): replace require('node:fs').writeFileSync with a typed import in src/stan/config.load.extra.test.ts to satisfy no-require-imports and no-unsafe-\* rules; no runtime code changes. Tests and coverage remain green.
 - tests(coverage): add targeted cases for config loading branches (devMode normalization from strings, patchOpenCommand default fallback, maxUndos normalization from string, invalid config guards for stanPath/scripts); small but meaningful coverage gain in src/stan/config/load.ts without touching runtime code.

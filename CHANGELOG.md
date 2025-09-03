@@ -2,8 +2,15 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.9](https://github.com/karmaniverous/stan/compare/0.5.8...0.5.9)
+
+- docs(system): align coverage/cadence rules; add missing TOC sections; dedupe patch policy [`dbac622`](https://github.com/karmaniverous/stan/commit/dbac6223fe71983c0f412396ac3642e0720d7312)
+
 #### [0.5.8](https://github.com/karmaniverous/stan/compare/0.5.7...0.5.8)
 
+> 31 August 2025
+
+- chore: release v0.5.8 [`8c2e3cc`](https://github.com/karmaniverous/stan/commit/8c2e3cc0b58c2994613cfcc500f6fecd3e56414b)
 - test(snap): ensure snap and run selection are in sync (prevents phantom diffs) [`d7611e8`](https://github.com/karmaniverous/stan/commit/d7611e85fd3fc4a1a8e4d7ea68a00ab2bb1d9e35)
 - fix(snap): honor config includes/excludes when writing snapshot [`76f8b0e`](https://github.com/karmaniverous/stan/commit/76f8b0efcb380769697befd5da64c50b819603fc)
 - test(snap): fix selection-sync mock hoist; stabilize tar call capture [`8347622`](https://github.com/karmaniverous/stan/commit/8347622a3511eb2631c6d2024f987b37fa54bb37)

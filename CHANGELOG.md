@@ -2,8 +2,21 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.10](https://github.com/karmaniverous/stan/compare/0.5.9...0.5.10)
+
+- feat(run): add --ding completion bell (+cliDefaults) [`ee7b263`](https://github.com/karmaniverous/stan/commit/ee7b26337b35373b5857ed9241a97442b2b2983d)
+- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell [`3817006`](https://github.com/karmaniverous/stan/commit/38170069df7710dd1d5d7926002fc047d7d110e9)
+- chore(test): remove any casts in ding.test to satisfy ESLint [`5666b66`](https://github.com/karmaniverous/stan/commit/5666b66d8d6dc0d178b962d700e982047926297f)
+- fix(test): relax bell test spy typing to unblock build/docs/typecheck [`830ca30`](https://github.com/karmaniverous/stan/commit/830ca30fbc50414cb50948dd0d96de941f6e21f0)
+- fix(test): correct stdout.write spy typing; unblock build/docs [`fd9d1a9`](https://github.com/karmaniverous/stan/commit/fd9d1a96b6ee6c315e72948cf9477bb9a66148dd)
+- fix(cli): honor -D/-B overrides by clearing env when negated [`a4a2aee`](https://github.com/karmaniverous/stan/commit/a4a2aee50d80cd733a4d972b8bbb4babd39ac7e7)
+- fix(test): make ding.test spy TS-safe via Writable + mockReturnValue [`0eb1854`](https://github.com/karmaniverous/stan/commit/0eb185409cc7cefc6c39d2dedee69abb68e78ffc)
+
 #### [0.5.9](https://github.com/karmaniverous/stan/compare/0.5.8...0.5.9)
 
+> 3 September 2025
+
+- chore: release v0.5.9 [`c3bcde9`](https://github.com/karmaniverous/stan/commit/c3bcde957b749a47528ecd6db47fe969cd9f956e)
 - docs(system): align coverage/cadence rules; add missing TOC sections; dedupe patch policy [`dbac622`](https://github.com/karmaniverous/stan/commit/dbac6223fe71983c0f412396ac3642e0720d7312)
 
 #### [0.5.8](https://github.com/karmaniverous/stan/compare/0.5.7...0.5.8)

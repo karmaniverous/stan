@@ -129,16 +129,24 @@ export const makeCli = (): Command => {
           ? boringFromCli
           : Boolean(cfgDefaults.boring ?? false);
       if (debugFinal) process.env.STAN_DEBUG = '1';
+      else {
+        // Ensure negated flag clears any prior setting from defaults
+        delete process.env.STAN_DEBUG;
+      }
       if (boringFinal) {
         process.env.STAN_BORING = '1';
         process.env.FORCE_COLOR = '0';
         process.env.NO_COLOR = '1';
+      } else {
+        // Ensure negated flag clears any prior setting from defaults
+        delete process.env.STAN_BORING;
+        delete process.env.FORCE_COLOR;
+        delete process.env.NO_COLOR;
       }
     } catch {
       // ignore
     }
-  });
-  // Subcommands
+  }); // Subcommands
   registerRun(cli);
   registerInit(cli);
   registerSnap(cli);

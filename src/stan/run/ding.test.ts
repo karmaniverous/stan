@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ContextConfig } from '@/stan/config';
 import { runSelected } from '@/stan/run';
-
 describe('runSelected --ding terminal bell', () => {
   let dir: string;
   // Minimal spy handle shape: enough for restore() and inspecting .mock.calls
@@ -14,9 +13,16 @@ describe('runSelected --ding terminal bell', () => {
 
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), 'stan-ding-'));
+    // Create a small structural view over stdout that exposes a boolean-returning write.
+    const stdoutLike = process.stdout as unknown as {
+      write: (...args: unknown[]) => boolean;
+    };
     writeSpy = vi
-      .spyOn(process.stdout as any, 'write' as any)
-      .mockImplementation(() => true as any) as any;
+      .spyOn(stdoutLike, 'write')
+      .mockImplementation(() => true) as unknown as {
+      mockRestore: () => void;
+      mock: { calls: unknown[][] };
+    };
   });
 
   afterEach(async () => {

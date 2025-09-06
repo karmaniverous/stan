@@ -3,6 +3,7 @@
 When updated: 2025-09-06 (UTC) — Fix selection-sync test hoist; CLI root excess-args UX; snap snapshot honors includes/excludes; run -b/--bell flag rename and conflict-guard fix; unblocked build/docs by correcting bell test typing.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
+
 - Long‑file monitoring and decomposition (Phase 3)
 
 - Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
@@ -18,11 +19,10 @@ Completed (recent)
   - Use precise generic form for vi.spyOn on process.stdout.write and a compatible mock implementation.
   - Unblocks rollup/typecheck/typedoc (TS2322 no longer reported from tests during build/docs).
   - Follow-up: target Writable and mockReturnValue(true) for a TS-safe, minimal spy across environments.
-  - Finalize: relax spy typing (cast to any) to avoid brittle generic key constraints under tsc/rollup/typedoc in all environments.
-  - Note: the ASCII BEL (\\x07) is written; whether it produces an audible sound depends on terminal/OS settings.
-    Many modern terminals disable audible bells; the flag remains a minimal, portable notification.- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell
+  - Finalize: avoid any by casting stdout to a minimal structural type via unknown; spy on that and return true. This removes lint warnings and keeps typecheck stable.
+  - Note: the ASCII BEL (\\x07) is written; whether it produces an audible sound depends on terminal/OS settings. Many modern terminals disable audible bells; the flag remains a minimal, portable notification.- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell
   - CLI only; config default remains cliDefaults.run.ding.
-  - Help/docs updated; example uses `stan run -b`.  - Note: root `-b/--boring` remains at the root command; Commander scopes `-b` correctly when used after `run` (e.g., `stan run -b` toggles the bell).
+  - Help/docs updated; example uses `stan run -b`. - Note: root `-b/--boring` remains at the root command; Commander scopes `-b` correctly when used after `run` (e.g., `stan run -b` toggles the bell).
 
 - fix(run/options): declare missing `sawNoScriptsFlag` used by conflict checks.
 

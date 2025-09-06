@@ -1,7 +1,6 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import type { Writable } from 'node:stream';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,14 +9,14 @@ import { runSelected } from '@/stan/run';
 
 describe('runSelected --ding terminal bell', () => {
   let dir: string;
-  // Spy on Writable.write (stdout conforms), keeping types simple and TS-safe.
-  let writeSpy: ReturnType<typeof vi.spyOn<Writable, 'write'>>;
+  // Minimal spy handle shape: enough for restore() and inspecting .mock.calls
+  let writeSpy: { mockRestore: () => void; mock: { calls: unknown[][] } };
 
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), 'stan-ding-'));
     writeSpy = vi
-      .spyOn(process.stdout as unknown as Writable, 'write')
-      .mockReturnValue(true);
+      .spyOn(process.stdout as any, 'write' as any)
+      .mockImplementation(() => true as any) as any;
   });
 
   afterEach(async () => {

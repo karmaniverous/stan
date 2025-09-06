@@ -18,9 +18,9 @@ Completed (recent)
   - Use precise generic form for vi.spyOn on process.stdout.write and a compatible mock implementation.
   - Unblocks rollup/typecheck/typedoc (TS2322 no longer reported from tests during build/docs).
   - Follow-up: target Writable and mockReturnValue(true) for a TS-safe, minimal spy across environments.
+  - Finalize: relax spy typing (cast to any) to avoid brittle generic key constraints under tsc/rollup/typedoc in all environments.
   - Note: the ASCII BEL (\\x07) is written; whether it produces an audible sound depends on terminal/OS settings.
-    Many modern terminals disable audible bells; the flag remains a minimal, portable notification.
-- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell
+    Many modern terminals disable audible bells; the flag remains a minimal, portable notification.- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell
   - CLI only; config default remains cliDefaults.run.ding.
   - Help/docs updated; example uses `stan run -b`.  - Note: root `-b/--boring` remains at the root command; Commander scopes `-b` correctly when used after `run` (e.g., `stan run -b` toggles the bell).
 

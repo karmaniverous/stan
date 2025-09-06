@@ -2,6 +2,9 @@
   "[markdown]": {
     "editor.wordWrap": "bounded"
   },
+  "accessibility.signals.terminalBell": {
+    "sound": "on"
+  },
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnPaste": true,
@@ -63,5 +66,6 @@
   "todo-tree.tree.groupedByTag": true,
   "todo-tree.tree.hideIconsWhenGroupedByTag": true,
   "todo-tree.tree.labelFormat": "${tag} ${after}",
-  "todo-tree.tree.showCountsInTree": true
+  "todo-tree.tree.showCountsInTree": true,
+  "terminal.integrated.enableVisualBell": true
 }

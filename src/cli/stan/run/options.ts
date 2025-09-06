@@ -93,8 +93,11 @@ export const registerRunOptions = (
   );
 
   // Notification (terminal bell)
-  const optDing = new Option('--ding', 'play a terminal bell upon completion');
-  const optNoDing = new Option('--no-ding', 'do not play a terminal bell');
+  const optBell = new Option(
+    '-b, --bell',
+    'play a terminal bell upon completion',
+  );
+  const optNoBell = new Option('-B, --no-bell', 'do not play a terminal bell');
 
   cmd
     .addOption(optScripts)
@@ -108,11 +111,12 @@ export const registerRunOptions = (
     .addOption(optKeep)
     .addOption(optNoKeep)
     .addOption(optNoScripts)
-    .addOption(optDing)
-    .addOption(optNoDing)
+    .addOption(optBell)
+    .addOption(optNoBell)
     .addOption(optPlan);
 
-  // Track raw presence of selection flags during parse to enforce -S vs -s/-x conflicts.  let sawNoScriptsFlag = false;
+  // Track raw presence of selection flags during parse to enforce -S vs -s/-x conflicts.
+  let sawNoScriptsFlag = false;
   let sawScriptsFlag = false;
   let sawExceptFlag = false;
   cmd.on('option:no-scripts', () => {
@@ -146,13 +150,13 @@ export const registerRunOptions = (
     const dKeep = typeof runDefs.keep === 'boolean' ? runDefs.keep : false;
     const dSeq =
       typeof runDefs.sequential === 'boolean' ? runDefs.sequential : false;
-    const dDing = typeof runDefs.ding === 'boolean' ? runDefs.ding : false;
+    const dDing = typeof runDefs.ding === 'boolean' ? runDefs.ding : false; // config key remains "ding"
     tagDefault(dArchive ? optArchive : optNoArchive, true);
     tagDefault(dCombine ? optCombine : optNoCombine, true);
     tagDefault(dKeep ? optKeep : optNoKeep, true);
     tagDefault(dSeq ? optSequential : optNoSequential, true);
     if (runDefs.scripts === false) tagDefault(optNoScripts, true);
-    tagDefault(dDing ? optDing : optNoDing, true);
+    tagDefault(dDing ? optBell : optNoBell, true);
   } catch {
     tagDefault(optArchive, true);
     tagDefault(optNoCombine, true);

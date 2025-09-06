@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-08-31 (UTC) — Fix selection-sync test hoist; CLI root excess-args UX; snap snapshot honors includes/excludes.
+When updated: 2025-08-31 (UTC) — Fix selection-sync test hoist; CLI root excess-args UX; snap snapshot honors includes/excludes; run -b/--bell flag rename and conflict-guard fix.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
@@ -15,6 +15,13 @@ When updated: 2025-08-31 (UTC) — Fix selection-sync test hoist; CLI root exces
 
 Completed (recent)
 
+- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell
+  - CLI only; config default remains cliDefaults.run.ding.
+  - Help/docs updated; example uses `stan run -b`.
+  - Note: root `-b/--boring` remains at the root command; Commander scopes `-b` correctly when used after `run` (e.g., `stan run -b` toggles the bell).
+
+- fix(run/options): declare missing `sawNoScriptsFlag` used by conflict checks.
+
 - feat(run): add --ding completion bell with cliDefaults support
   - Long option only to avoid conflict with root -d/--debug.
   - Minimal, portable implementation: ASCII BEL to stdout at end of run.
@@ -23,8 +30,7 @@ Completed (recent)
 
 - docs(system): align Quick Reference with Response Format — Full Listings not required by default (on request or FEEDBACK only; skip deletions).
 - docs(system): add explicit exceptions to mandatory doc cadence (deletions‑only and plan‑only replies) to match the validator.
-- docs(system): add missing TOC sections — Architecture (Services‑first), Testing architecture, System‑level lint policy, and Context window exhaustion (termination rule).- docs(system): deduplicate patch rules — Response Format now references the canonical Patch Policy instead of restating “Plain Unified Diff Policy.”
-  This reduces drift and keeps composition guidance focused on fencing/ordering.
+- docs(system): add missing TOC sections — Architecture (Services‑first), Testing architecture, System‑level lint policy, and Context window exhaustion (termination rule).- docs(system): deduplicate patch rules — Response Format now references the canonical Patch Policy instead of restating “Plain Unified Diff Policy.” This reduces drift and keeps composition guidance focused on fencing/ordering.
 
 - test(snap): fix selection-sync hoisting error in tar mock; move calls capture and vi.mock to module scope and reset in beforeEach. Resolves “ReferenceError: calls is not defined” and brings the suite back to green.
 - fix(snap): pass repo config includes/excludes to snapshot writer. Prevents phantom diffs when nested sub‑packages (default‑excluded) are re‑included via config. Verified against Windows report where services/\*\* appeared in archive.diff.tar despite no content edits.
@@ -50,7 +56,6 @@ Completed (recent)
 - refactor(system): streamline handoff format and remove legacy base64 warnings
 - response‑format: default to patches only on first presentation; Full Listings only on FEEDBACK or explicit request; FEEDBACK replies omit commit message
 - system: add “Dependency Bug Report” section with valid‑Markdown template (nested code examples; fence‑hygiene reminder)
-- system: elevate fence hygiene (CRITICAL jump list, quick how‑to before Response Format, hard gate in checklist)
 - bootloader: remove non‑loader guidance (fixed 10‑backtick note, ellipsis hygiene); keep loader + context‑mismatch guard only
 - dependency failures: cross‑link to “Dependency Bug Report”
 - tests/docs build: remove unused @ts-expect-error in config.normalize.test; ensure package.json in config.discover.test so discovery ascends correctly

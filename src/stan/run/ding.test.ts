@@ -9,13 +9,16 @@ import { runSelected } from '@/stan/run';
 
 describe('runSelected --ding terminal bell', () => {
   let dir: string;
-  let writeSpy: ReturnType<typeof vi.spyOn>;
+  // Spy specifically on process.stdout.write so typings align with the real signature.
+  let writeSpy: ReturnType<typeof vi.spyOn<typeof process.stdout, 'write'>>;
 
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), 'stan-ding-'));
     writeSpy = vi
       .spyOn(process.stdout, 'write')
-      .mockImplementation(() => true as unknown as boolean);
+      .mockImplementation(
+        (..._args: Parameters<typeof process.stdout.write>) => true,
+      );
   });
 
   afterEach(async () => {

@@ -59,6 +59,8 @@ export const normalizeCliDefaults = (v: unknown): CliDefaults | undefined => {
   if (typeof rc === 'boolean') run.combine = rc;
   if (typeof rk === 'boolean') run.keep = rk;
   if (typeof rq === 'boolean') run.sequential = rq;
+  const rd = asBool(runIn.ding);
+  if (typeof rd === 'boolean') run.ding = rd;
   if (typeof runIn.scripts === 'boolean') {
     run.scripts = runIn.scripts;
   } else {

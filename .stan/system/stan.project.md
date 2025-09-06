@@ -1,59 +1,37 @@
 # Project‑Specific Requirements
 
-This file contains STAN (this repo) specific requirements and conventions.
-General, repo‑agnostic standards live in `/stan.system.md`.
+This file contains STAN (this repo) specific requirements and conventions. General, repo‑agnostic standards live in `/stan.system.md`.
 
 Note: The project prompt is created on demand when repo‑specific policies emerge. No template is installed or shipped by `stan init`.
 
 ## System prompt source layout & assembly (authoring in this repo)
 
-- Runtime invariant: downstream tools and assistants consume a single file
-  `.stan/system/stan.system.md`. Do not change this invariant.
-- Source split: author the system prompt as ordered parts under
-  `.stan/system/parts/` (e.g., `00-intro.md`, `20-intake.md`,
-  `30-response-format.md`, `40-patch-policy.md`, …). Filenames should
-  start with a numeric prefix to define order.
-- Generator: `npm run gen:system` (wired as `prebuild`) assembles parts
-  in numeric/lex order into `.stan/system/stan.system.md`, adding a
-  short generated header comment. It is a no‑op when no parts exist.
+- Runtime invariant: downstream tools and assistants consume a single file `.stan/system/stan.system.md`. Do not change this invariant.
+- Source split: author the system prompt as ordered parts under `.stan/system/parts/` (e.g., `00-intro.md`, `20-intake.md`, `30-response-format.md`, `40-patch-policy.md`, …). Filenames should start with a numeric prefix to define order.
+- Generator: `npm run gen:system` (wired as `prebuild`) assembles parts in numeric/lex order into `.stan/system/stan.system.md`, adding a short generated header comment. It is a no‑op when no parts exist.
 - Distribution & archive injection:
   - The published package includes `dist/stan.system.md`.
   - During the archive phase in downstream repos, STAN temporarily writes the packaged monolith to `<stanPath>/system/stan.system.md` so full archives always contain a baseline prompt. Local monolith edits in downstream repos are ignored by archives and surfaced by CLI preflight. Propose downstream behavior changes in `<stanPath>/system/stan.project.md`.
 - Editing policy:
-  - Do not hand‑edit the assembled monolith; update the relevant part(s)
-    and re‑generate.
-  - Incremental migration is okay — adding parts will override the
-    assembled monolith; leaving parts empty preserves the existing file.
+  - Do not hand‑edit the assembled monolith; update the relevant part(s) and re‑generate.
+  - Incremental migration is okay — adding parts will override the assembled monolith; leaving parts empty preserves the existing file.
 - Tests: `src/stan/system.gen.test.ts` exercises basic assembly behavior.
 
 ## README authoring (trim‑and‑link)
 
-- README.md is the human front door. Keep it concise:
-  value proposition, install, quick start (STAN loop), key CLI examples,
-  and links to full documentation.
-- For deep or evolving sections (full CLI semantics, detailed patch
-  walk‑throughs, design essays), prefer the docs site (Typedoc pages or
-  dedicated markdown under `docs/`) and link from README.
-- Community edits should remain easy (single README.md at repo root).
-  Avoid generating README unless necessary.
+- README.md is the human front door. Keep it concise: value proposition, install, quick start (STAN loop), key CLI examples, and links to full documentation.
+- For deep or evolving sections (full CLI semantics, detailed patch walk‑throughs, design essays), prefer the docs site (Typedoc pages or dedicated markdown under `docs/`) and link from README.
+- Community edits should remain easy (single README.md at repo root). Avoid generating README unless necessary.
 
 ## Documentation conventions (requirements vs plan)
 
-- This file (stan.project.md) is the canonical home for durable, repo‑specific
-  requirements, policies, and standards that should persist over time.
-- The development plan (stan.todo.md) is a short‑lived, actionable plan that
-  describes how we intend to move from the current state to the desired state.
-  It should remain concise and focused on what’s next.
-- When we discover cross‑cutting rules, rename conventions, guardrails, or
-  recurring decisions that apply going forward, promote them here (project
-  prompt). Keep stan.todo.md focused on the remaining steps to implement or
-  adopt those rules.
+- This file (stan.project.md) is the canonical home for durable, repo‑specific requirements, policies, and standards that should persist over time.
+- The development plan (stan.todo.md) is a short‑lived, actionable plan that describes how we intend to move from the current state to the desired state. It should remain concise and focused on what’s next.
+- When we discover cross‑cutting rules, rename conventions, guardrails, or recurring decisions that apply going forward, promote them here (project prompt). Keep stan.todo.md focused on the remaining steps to implement or adopt those rules.
 - Dev plan hygiene:
-  - Keep only a short “Completed (recent)” list (e.g., last 3–5 items or last
-    2 weeks) and prune older entries during routine updates.
+  - Keep only a short “Completed (recent)” list (e.g., last 3–5 items or last 2 weeks) and prune older entries during routine updates.
   - Rely on Git history and release notes for long‑term record of completed work.
-  - When a completed item establishes a durable policy, capture that policy
-    here (project prompt) and remove it from “Completed” in the dev plan.
+  - When a completed item establishes a durable policy, capture that policy here (project prompt) and remove it from “Completed” in the dev plan.
 
 ## Prompt scope boundaries (system vs project)
 
@@ -71,10 +49,8 @@ Note: The project prompt is created on demand when repo‑specific policies emer
   - `dist/cli` (executables, with shebang),
   - `dist/types` (d.ts bundle).
 - Use the `@` alias at build time via Rollup alias config.
-- d.ts bundling: apply the alias plugin alongside `rollup-plugin-dts` in the
-  types build to resolve `"@/..."` path aliases reliably.
-- The `stan.dist/` build is used for internal CLI testing (`npm run stan:build`)
-  and is cleaned after build.
+- d.ts bundling: apply the alias plugin alongside `rollup-plugin-dts` in the types build to resolve `"@/..."` path aliases reliably.
+- The `stan.dist/` build is used for internal CLI testing (`npm run stan:build`) and is cleaned after build.
 
 ## CLI defaults via configuration (cliDefaults)
 
@@ -95,6 +71,7 @@ cliDefaults:
     combine: boolean       # -c / -C
     keep: boolean          # -k / -K
     sequential: boolean    # -q / -Q
+    ding: boolean          # --ding / --no-ding
     scripts: boolean | string[]  # default selection when neither -s is omitted nor -S used:
                                  #   true => all, false => none, ["lint","test"] => only these keys
   snap:
@@ -102,6 +79,7 @@ cliDefaults:
 ```
 
 Built‑ins (when neither flags nor config specify): debug=false, boring=false; run: archive=true, combine=false, keep=false, sequential=false, scripts=true; snap: stash=false; patch file unset.
+
 ## CLI (repo tool behavior)
 
 - Root command: `stan` (supports `-d/--debug` globally).

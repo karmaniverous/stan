@@ -37,6 +37,7 @@ export const deriveRunParameters = (args: {
     keep?: boolean;
     sequential?: boolean;
     scripts?: boolean | string[];
+    ding?: boolean;
   };
 
   const src = (
@@ -57,6 +58,11 @@ export const deriveRunParameters = (args: {
     src && src('keep') === 'cli'
       ? Boolean((options as { keep?: unknown }).keep)
       : Boolean(runDefs.keep ?? false);
+
+  const ding =
+    src && src('ding') === 'cli'
+      ? Boolean((options as { ding?: unknown }).ding)
+      : Boolean(runDefs.ding ?? false);
 
   const archiveOpt = (options as { archive?: unknown }).archive as
     | boolean
@@ -106,6 +112,6 @@ export const deriveRunParameters = (args: {
   }
 
   const mode: ExecutionMode = sequential ? 'sequential' : 'concurrent';
-  const behavior: RunBehavior = { combine, keep, archive };
+  const behavior: RunBehavior = { combine, keep, archive, ding };
   return { selection, mode, behavior };
 };

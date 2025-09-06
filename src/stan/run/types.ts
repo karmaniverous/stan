@@ -19,4 +19,5 @@ export type RunBehavior = {
   combine?: boolean;
   keep?: boolean;
   archive?: boolean;
+  ding?: boolean;
 };

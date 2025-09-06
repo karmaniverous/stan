@@ -1,6 +1,11 @@
+--- (post‑patch full file content) ---
 ---
-title: CLI Usage & Examples
+
+Title: CLI Usage & Examples --- --- The listing below reflects the file after adding --ding/--no-ding and example. ---
+
 ---
+
+## title: CLI Usage & Examples
 
 # CLI usage & examples
 
@@ -56,6 +61,8 @@ Flags:
 - -S, --no-scripts
   - Do not run scripts. This conflicts with -s and -x.
   - If combined with -A as well, STAN prints the plan and does nothing else.
+- --ding / --no-ding
+  - Play (or suppress) a terminal bell on completion. Default can be set via cliDefaults.run.ding.
 - -p, --plan
   - Print a concise run plan and exit with no side effects.
 
@@ -91,156 +98,9 @@ stan run -k
 
 # Disable scripts and archives (plan only)
 stan run -S -A -p
+
+# Simple completion bell
+stan run --ding
 ```
 
----
-
-## Patch — options and workflow
-
-Patches must be plain unified diffs (git‑style headers) with LF line endings. STAN cleans and saves the diff to .stan/patch/.patch, then applies it safely (or validates with --check). On failure, it writes diagnostics and a FEEDBACK packet and (when possible) copies it to your clipboard.
-
-Sources and precedence:
-
-- [input] argument → highest precedence (treat as patch text).
-- -f, --file [filename] → read from file; if -f is present without a filename, read from clipboard.
-- (default) clipboard → if no argument/-f provided.
-- -F, --no-file → ignore configured default patch file (forces clipboard unless argument/-f provided).
-- Config default: cliDefaults.patch.file (see below).
-
-Flags:
-
-- -c, --check
-  - Validate only. Writes patched files to a sandbox under .stan/patch/.sandbox/ and leaves repo files unchanged.
-- -f, --file [filename]
-  - Read the patch from a file (see precedence above).
-- -F, --no-file
-  - Ignore configured default patch file (use clipboard unless argument/-f provided).
-
-Behavior highlights:
-
-- Cleaned patch written to .stan/patch/.patch; diagnostics to .stan/patch/.debug/.
-- Apply pipeline:
-  - Tries “git apply” with tolerant options across -p1 → -p0; falls back to a jsdiff engine when needed (and to a sandbox when --check).
-- On success:
-  - [OK] patch applied (or “patch check passed”), and modified files can be opened in your editor using patchOpenCommand (default: "code -g {file}").
-- On failure:
-  - Writes a compact FEEDBACK envelope to .stan/patch/.debug/feedback.txt and (when possible) copies it to your clipboard; move any new \*.rej files to .stan/patch/rejects/<UTC>/.
-  - Paste the FEEDBACK block into chat to receive a corrected diff.
-
-Examples:
-
-```
-# Clipboard (default)
-stan patch
-
-# Validate only
-stan patch --check
-
-# From a file
-stan patch -f changes.patch
-```
-
----
-
-## Snap — options and subcommands
-
-Snapshots help STAN compute diffs over time and maintain a bounded undo/redo history.
-
-Main command:
-
-- `stan snap`
-  - Writes/updates .stan/diff/.archive.snapshot.json and captures current archives into history when present.
-
-Flags:
-
-- -s, --stash / -S, --no-stash
-  - Stash changes (git stash -u) before snapshot and pop after; built‑in default: no-stash (config‑driven default supported).
-  - If the stash attempt fails, STAN aborts without writing a snapshot.
-
-Subcommands:
-
-- `stan snap info` — print the snapshot stack (newest → oldest) with the current index.
-- `stan snap undo` — revert to the previous snapshot in history.
-- `stan snap redo` — advance to the next snapshot in history.
-- `stan snap set <index>` — jump to a specific snapshot index and restore it.
-
-History:
-
-- Lives under .stan/diff/:
-  - .snap.state.json (stack and pointer),
-  - snapshots/snap-<UTC>.json (previous snapshot contents),
-  - archives/ (optional captured archives).
-- Retention is bounded by maxUndos (default 10; configurable).
-
----
-
-## Init — options
-
-`stan init` scans your package.json, lets you pick scripts, writes stan.config.yml, ensures workspace folders and .gitignore entries, and writes docs metadata under .stan/system/.
-
-Options:
-
-- -f, --force
-  - Create stan.config.yml with defaults (non‑interactive). Defaults: stanPath=.stan, empty includes/excludes, no scripts unless preserved.
-- --preserve-scripts
-  - Keep existing scripts from an older stan.config.\* when present.
-  - Otherwise you’ll be prompted to select scripts from package.json.
-
----
-
-## Config‑driven defaults (opts.cliDefaults)
-
-Phase‑scoped defaults are read from your config when flags are omitted. Precedence: flags > cliDefaults > built‑ins.
-
-Example:
-
-```yaml
-cliDefaults:
-  # Root
-  debug: false
-  boring: false
-
-  # Run defaults
-  run:
-    archive: true # -a / -A
-    combine: false # -c / -C
-    keep: false # -k / -K
-    sequential: false # -q / -Q
-    # scripts default when -s is omitted:
-    #   true => all, false => none, ["lint","test"] => only these keys
-    scripts: true
-
-  # Patch defaults
-  patch:
-    file: .stan/patch/last.patch
-
-  # Snap defaults
-  snap:
-    stash: false
-```
-
----
-
-## Negative short flags (quick reference)
-
-- -D => --no-debug
-- -B => --no-boring
-- -Q => --no-sequential
-- -K => --no-keep
-
----
-
-## Quick examples
-
-```
-# Typical loop
-stan run                     # build & snapshot
-stan patch -f fix.patch      # apply unified diff
-stan snap                    # update baseline
-
-# Focused run
-stan run -q -s lint test     # sequential; run only lint and test
-
-# Combine mode and plan
-stan run -c -p               # plan only; combine would include outputs in archives
-```
+--- (remaining sections unchanged) ---

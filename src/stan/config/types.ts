@@ -10,9 +10,9 @@ export type CliDefaultsRun = {
   combine?: boolean;
   keep?: boolean;
   sequential?: boolean;
+  ding?: boolean;
   scripts?: boolean | string[];
 };
-
 export type CliDefaultsPatch = { file?: string | null | undefined };
 export type CliDefaultsSnap = { stash?: boolean };
 export type CliDefaults = {

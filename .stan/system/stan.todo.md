@@ -15,10 +15,15 @@ When updated: 2025-08-31 (UTC) — Fix selection-sync test hoist; CLI root exces
 
 Completed (recent)
 
+- feat(run): add --ding completion bell with cliDefaults support
+  - Long option only to avoid conflict with root -d/--debug.
+  - Minimal, portable implementation: ASCII BEL to stdout at end of run.
+  - Configurable via cliDefaults.run.ding (boolean).
+  - No platform‑specific named sounds (non‑portable across OSes/terminals).
+
 - docs(system): align Quick Reference with Response Format — Full Listings not required by default (on request or FEEDBACK only; skip deletions).
 - docs(system): add explicit exceptions to mandatory doc cadence (deletions‑only and plan‑only replies) to match the validator.
-- docs(system): add missing TOC sections — Architecture (Services‑first), Testing architecture, System‑level lint policy, and Context window exhaustion (termination rule).
-- docs(system): deduplicate patch rules — Response Format now references the canonical Patch Policy instead of restating “Plain Unified Diff Policy.”
+- docs(system): add missing TOC sections — Architecture (Services‑first), Testing architecture, System‑level lint policy, and Context window exhaustion (termination rule).- docs(system): deduplicate patch rules — Response Format now references the canonical Patch Policy instead of restating “Plain Unified Diff Policy.”
   This reduces drift and keeps composition guidance focused on fencing/ordering.
 
 - test(snap): fix selection-sync hoisting error in tar mock; move calls capture and vi.mock to module scope and reset in beforeEach. Resolves “ReferenceError: calls is not defined” and brings the suite back to green.

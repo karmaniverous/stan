@@ -92,6 +92,10 @@ export const registerRunOptions = (
     'print run plan and exit (no side effects)',
   );
 
+  // Notification (terminal bell)
+  const optDing = new Option('--ding', 'play a terminal bell upon completion');
+  const optNoDing = new Option('--no-ding', 'do not play a terminal bell');
+
   cmd
     .addOption(optScripts)
     .addOption(optExcept)
@@ -104,10 +108,11 @@ export const registerRunOptions = (
     .addOption(optKeep)
     .addOption(optNoKeep)
     .addOption(optNoScripts)
+    .addOption(optDing)
+    .addOption(optNoDing)
     .addOption(optPlan);
 
-  // Track raw presence of selection flags during parse to enforce -S vs -s/-x conflicts.
-  let sawNoScriptsFlag = false;
+  // Track raw presence of selection flags during parse to enforce -S vs -s/-x conflicts.  let sawNoScriptsFlag = false;
   let sawScriptsFlag = false;
   let sawExceptFlag = false;
   cmd.on('option:no-scripts', () => {
@@ -132,6 +137,7 @@ export const registerRunOptions = (
       keep?: boolean;
       sequential?: boolean;
       scripts?: boolean | string[];
+      ding?: boolean;
     };
     const dArchive =
       typeof runDefs.archive === 'boolean' ? runDefs.archive : true;
@@ -140,18 +146,19 @@ export const registerRunOptions = (
     const dKeep = typeof runDefs.keep === 'boolean' ? runDefs.keep : false;
     const dSeq =
       typeof runDefs.sequential === 'boolean' ? runDefs.sequential : false;
+    const dDing = typeof runDefs.ding === 'boolean' ? runDefs.ding : false;
     tagDefault(dArchive ? optArchive : optNoArchive, true);
     tagDefault(dCombine ? optCombine : optNoCombine, true);
     tagDefault(dKeep ? optKeep : optNoKeep, true);
     tagDefault(dSeq ? optSequential : optNoSequential, true);
     if (runDefs.scripts === false) tagDefault(optNoScripts, true);
+    tagDefault(dDing ? optDing : optNoDing, true);
   } catch {
     tagDefault(optArchive, true);
     tagDefault(optNoCombine, true);
     tagDefault(optNoKeep, true);
     tagDefault(optNoSequential, true);
   }
-
   cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
 
   return {

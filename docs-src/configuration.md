@@ -141,10 +141,10 @@ cliDefaults:
     combine: false # -c / -C
     keep: false # -k / -K
     sequential: false # -q / -Q
+    ding: false # --ding / --no-ding
     # default script selection when neither -s nor -S is provided:
     #   true  => all scripts,
-    #   false => none,
-    #   ["a","b"] => only these keys
+    #   false => none,    #   ["a","b"] => only these keys
     scripts: true
   patch:
     # default patch file when no argument/-f is provided, unless -F/--no-file is used

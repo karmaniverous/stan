@@ -1,9 +1,8 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-06 (UTC) — Fix selection-sync test hoist; CLI root excess-args UX; snap snapshot honors includes/excludes; run -b/--bell flag rename and conflict-guard fix; unblocked build/docs by correcting bell test typing.
+When updated: 2025-09-11 (UTC) — Clean CLI examples front matter; ignore *.rej; remove stray reject.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
-
 - Long‑file monitoring and decomposition (Phase 3)
 
 - Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
@@ -15,10 +14,16 @@ When updated: 2025-09-06 (UTC) — Fix selection-sync test hoist; CLI root exces
 
 Completed (recent)
 
+- chore(git): ignore *.rej and remove stray reject
+  - Add '*.rej' to .gitignore to prevent accidental commits of patch rejects.
+  - Remove stray src/cli/stan/runner.ts.rej; future rejects are relocated under .stan/patch/rejects/ by the patch pipeline.
+
+- docs: normalize CLI examples front matter
+  - Replace residual patch markers at the top of docs-src/cli-examples.md with proper YAML front matter (title only); keep the rest of the content unchanged.
+
 - fix(test): correct stdout.write spy typing in ding.test.ts
   - Use precise generic form for vi.spyOn on process.stdout.write and a compatible mock implementation.
-  - Unblocks rollup/typecheck/typedoc (TS2322 no longer reported from tests during build/docs).
-  - Follow-up: target Writable and mockReturnValue(true) for a TS-safe, minimal spy across environments.
+  - Unblocks rollup/typecheck/typedoc (TS2322 no longer reported from tests during build/docs).  - Follow-up: target Writable and mockReturnValue(true) for a TS-safe, minimal spy across environments.
   - Finalize: avoid any by casting stdout to a minimal structural type via unknown; spy on that and return true. This removes lint warnings and keeps typecheck stable.
   - Note: the ASCII BEL (\\x07) is written; whether it produces an audible sound depends on terminal/OS settings. Many modern terminals disable audible bells; the flag remains a minimal, portable notification.- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell
   - CLI only; config default remains cliDefaults.run.ding.

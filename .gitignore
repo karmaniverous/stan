@@ -1,6 +1,7 @@
 .nyc_output/
 .rollup.cache/
 .tsbuildinfo
+*.rej
 *.local
 local/
 coverage/

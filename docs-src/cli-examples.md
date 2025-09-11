@@ -1,14 +1,8 @@
---- (post‑patch full file content) ---
 ---
-
-Title: CLI Usage & Examples --- --- The listing below reflects the file after adding -b/--bell and -B/--no-bell and example. ---
-
+title: CLI Usage & Examples
 ---
-
-## title: CLI Usage & Examples
 
 # CLI usage & examples
-
 This page documents all CLI options and shows practical examples. STAN’s CLI honors phase‑scoped defaults from your configuration (cliDefaults) when flags are omitted; see “Config‑driven defaults” below.
 
 ## Root (stan) options

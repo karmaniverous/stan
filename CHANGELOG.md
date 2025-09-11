@@ -2,9 +2,17 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.11](https://github.com/karmaniverous/stan/compare/0.5.10...0.5.11)
+
+- chore(docs,git): normalize CLI examples header; ignore *.rej; remove stray reject [`208a2dd`](https://github.com/karmaniverous/stan/commit/208a2dd77450e5c5ff9c228febd2537b4b5e261b)
+- updated changelog settings [`a470174`](https://github.com/karmaniverous/stan/commit/a470174007bbb6494f391cc8d8e69c4fc92a4684)
+
 #### [0.5.10](https://github.com/karmaniverous/stan/compare/0.5.9...0.5.10)
 
+> 6 September 2025
+
 - feat(run): add --ding completion bell (+cliDefaults) [`ee7b263`](https://github.com/karmaniverous/stan/commit/ee7b26337b35373b5857ed9241a97442b2b2983d)
+- chore: release v0.5.10 [`4be8845`](https://github.com/karmaniverous/stan/commit/4be8845232566e4684126ea71d4adc5c6a98b05f)
 - feat(run): rename completion bell flags to -b/--bell and -B/--no-bell [`3817006`](https://github.com/karmaniverous/stan/commit/38170069df7710dd1d5d7926002fc047d7d110e9)
 - chore(test): remove any casts in ding.test to satisfy ESLint [`5666b66`](https://github.com/karmaniverous/stan/commit/5666b66d8d6dc0d178b962d700e982047926297f)
 - fix(test): relax bell test spy typing to unblock build/docs/typecheck [`830ca30`](https://github.com/karmaniverous/stan/commit/830ca30fbc50414cb50948dd0d96de941f6e21f0)

@@ -2,9 +2,17 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.12](https://github.com/karmaniverous/stan/compare/0.5.11...0.5.12)
+
+- docs(system): refine handoff — drop Current State; add reasoning summary and fence-hygiene reminder [`58f6f46`](https://github.com/karmaniverous/stan/commit/58f6f46bcdd9d4ee65f7dda1462c07b1852c325a)
+- sorted excludes [`63767d7`](https://github.com/karmaniverous/stan/commit/63767d75d9170a32d20b4c74e3a0d9699358e644)
+
 #### [0.5.11](https://github.com/karmaniverous/stan/compare/0.5.10...0.5.11)
 
+> 11 September 2025
+
 - chore(docs,git): normalize CLI examples header; ignore *.rej; remove stray reject [`208a2dd`](https://github.com/karmaniverous/stan/commit/208a2dd77450e5c5ff9c228febd2537b4b5e261b)
+- chore: release v0.5.11 [`711d995`](https://github.com/karmaniverous/stan/commit/711d9956abda6a630e4439a834741f1f53dc15d9)
 - updated changelog settings [`a470174`](https://github.com/karmaniverous/stan/commit/a470174007bbb6494f391cc8d8e69c4fc92a4684)
 
 #### [0.5.10](https://github.com/karmaniverous/stan/compare/0.5.9...0.5.10)

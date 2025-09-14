@@ -1,11 +1,11 @@
 stanPath: .stan
 includes: []
 excludes:
+  - '*.local'
   - assets
+  - CHANGELOG.md
   - docs
   - package-lock.json
-  - "*.local"
-  - CHANGELOG.md
 scripts:
   typecheck: npm run typecheck
   lint: npm run lint:fix

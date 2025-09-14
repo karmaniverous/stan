@@ -1,10 +1,9 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-11 (UTC) — Clean CLI examples front matter; ignore *.rej; remove stray reject.
+When updated: 2025-09-14 (UTC) — Refine handoff: drop Current State; add Reasoning summary and fence‑hygiene reminder.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 - Long‑file monitoring and decomposition (Phase 3)
-
 - Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
 - Coverage follow‑ups
@@ -14,10 +13,14 @@ When updated: 2025-09-11 (UTC) — Clean CLI examples front matter; ignore *.rej
 
 Completed (recent)
 
+– docs(system): refine handoff format
+  - Remove “Current state (from last run)” (redundant with stan run outputs).
+  - Add “Reasoning summary (for context)” section to carry forward decisions/constraints succinctly.
+  - Add final “Reminders” section instructing next‑thread STAN to validate patch formatting & fence hygiene.
+
 - chore(git): ignore *.rej and remove stray reject
   - Add '*.rej' to .gitignore to prevent accidental commits of patch rejects.
   - Remove stray src/cli/stan/runner.ts.rej; future rejects are relocated under .stan/patch/rejects/ by the patch pipeline.
-
 - docs: normalize CLI examples front matter
   - Replace residual patch markers at the top of docs-src/cli-examples.md with proper YAML front matter (title only); keep the rest of the content unchanged.
 

@@ -407,18 +407,18 @@ Required structure (headings and order)
      - stanPath
      - Node version range or current (if known)
      - Primary docs location (e.g., “<stanPath>/system/”)
-  2. Current state (from last run)
-     - Summarize Build/Test/Lint/Typecheck/Docs/Knip status from the latest outputs, in one or two lines each.
-     - Include any notable prompt baseline changes if detected (e.g., system prompt parts updated and monolith rebuilt).
+  2. Reasoning summary (for context)
+     - A detailed summary capturing current understanding, key constraints/assumptions, decisions made so far, and notable risks/open questions. Keep it brief and factual (no step‑by‑step thought process).
   3. Outstanding tasks / near‑term focus
      - Derive from <stanPath>/system/stan.todo.md (“Next up” or open items).
      - Keep actionable and short.
   4. Assistant startup checklist (for the next thread)
-     - A concise checklist of assistant actions to perform on thread start, e.g.:
-       - Verify repository signature (package name, stanPath).
-       - Load artifacts from attached archives and validate prompt baseline.
-       - Execute immediate next steps from “Outstanding tasks” (or confirm no‑ops).
-       - Follow FEEDBACK rules on any patch failures.
+     - Verify repository signature (package name, stanPath).
+     - Load artifacts from attached archives and validate prompt baseline.
+     - Execute immediate next steps from “Outstanding tasks” (or confirm no‑ops).
+     - Follow FEEDBACK rules on any patch failures.
+  5. Reminders
+     - Validate patch formatting and fence hygiene per Response Format before sending replies (compute fences, one patch per file, commit message last).
 
 Notes
 

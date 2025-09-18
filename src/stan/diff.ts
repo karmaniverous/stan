@@ -14,7 +14,7 @@ import { yellow } from '@/stan/util/color';
 
 import { classifyForArchive } from './classifier';
 import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
-
+import { getVersionInfo } from './version';
 type TarLike = {
   create: (
     opts: {
@@ -99,7 +99,7 @@ export const writeArchiveSnapshot = async ({
  * @param args - Object with:
  *   - cwd: Repo root.
  *   - stanPath: STAN workspace folder.
- *   - baseName: Base archive name (e.g., `archive` -\> `archive.diff.tar`).
+ *   - baseName: Base archive name (e.g., `archive` -> `archive.diff.tar`).
  *   - includes: Allow‑list globs (overrides excludes).
  *   - excludes: Deny‑list globs.
  *   - updateSnapshot: Controls when the snapshot file is replaced.
@@ -124,6 +124,16 @@ export const createArchiveDiff = async ({
   includeOutputDirInDiff?: boolean;
 }): Promise<{ diffPath: string }> => {
   const { outDir, diffDir } = await ensureOutAndDiff(cwd, stanPath);
+
+  // Include <stanPath>/patch in diff archives only when developing STAN itself.
+  // Downstream repos should not include the patch workspace by default.
+  let includePatchDirInDiff = false;
+  try {
+    const v = await getVersionInfo(cwd);
+    includePatchDirInDiff = Boolean(v.isDevModuleRepo);
+  } catch {
+    includePatchDirInDiff = false;
+  }
 
   const patchRel = `${stanPath.replace(/\\/g, '/')}/patch`;
 
@@ -167,7 +177,11 @@ export const createArchiveDiff = async ({
 
   if (includeOutputDirInDiff) {
     const files = Array.from(
-      new Set([...changed, `${stanPath.replace(/\\/g, '/')}/output`, patchRel]),
+      new Set([
+        ...changed,
+        `${stanPath.replace(/\\/g, '/')}/output`,
+        ...(includePatchDirInDiff ? [patchRel] : []),
+      ]),
     );
     const isUnder = (prefix: string, p: string): boolean =>
       p === prefix || p.startsWith(`${prefix}/`);
@@ -188,13 +202,14 @@ export const createArchiveDiff = async ({
   } else if (changed.length === 0) {
     const sentinel = sentinelPathFor(diffDir);
     await writeFile(sentinel, 'no changes', 'utf8');
-    // Always include patch directory; tar from repo root to include sentinel path
-    await tar.create({ file: diffPath, cwd }, [
-      patchRel,
-      `${stanPath.replace(/\\/g, '/')}/diff/.stan_no_changes`,
-    ]);
+    // Tar from repo root to include sentinel path; include patch dir only when requested
+    const base = [`${stanPath.replace(/\\/g, '/')}/diff/.stan_no_changes`];
+    const files = includePatchDirInDiff ? [patchRel, ...base] : base;
+    await tar.create({ file: diffPath, cwd }, files);
   } else {
-    const files = Array.from(new Set([...changed, patchRel]));
+    const files = Array.from(
+      new Set([...changed, ...(includePatchDirInDiff ? [patchRel] : [])]),
+    );
     await tar.create({ file: diffPath, cwd }, files);
   }
 

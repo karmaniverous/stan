@@ -1,10 +1,9 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-14 (UTC) — Refine handoff: drop Current State; add Reasoning summary and fence‑hygiene reminder.
+When updated: 2025-09-18 (UTC) — Gate patch dir inclusion in diff archives to STAN dev repo; fix TS errors and adjust tests.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
-- Long‑file monitoring and decomposition (Phase 3)
-- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
+- Long‑file monitoring and decomposition (Phase 3)- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
 - Coverage follow‑ups
   - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed.
@@ -13,11 +12,16 @@ When updated: 2025-09-14 (UTC) — Refine handoff: drop Current State; add Reaso
 
 Completed (recent)
 
+- fix(diff): include patch dir in diff archives only for STAN dev repo
+  - Compute inclusion via getVersionInfo(cwd).isDevModuleRepo.
+  - Remove undefined includePatchDirInDiff usage and resolve TS2552 errors in src/stan/diff.ts.
+  - Update snap selection-sync test to expect only the sentinel (no forced patch dir) for downstream repos.
+  - Rationale: including .stan/patch in diff archives is only necessary when developing STAN itself; downstream consumers should not ship patch workspace by default.
+
 – docs(system): refine handoff format
   - Remove “Current state (from last run)” (redundant with stan run outputs).
   - Add “Reasoning summary (for context)” section to carry forward decisions/constraints succinctly.
   - Add final “Reminders” section instructing next‑thread STAN to validate patch formatting & fence hygiene.
-
 - chore(git): ignore *.rej and remove stray reject
   - Add '*.rej' to .gitignore to prevent accidental commits of patch rejects.
   - Remove stray src/cli/stan/runner.ts.rej; future rejects are relocated under .stan/patch/rejects/ by the patch pipeline.

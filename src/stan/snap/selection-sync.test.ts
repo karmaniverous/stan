@@ -127,13 +127,18 @@ describe('snap selection matches run selection (includes/excludes in sync)', () 
     expect(diffCall).toBeTruthy();
     const filesPacked = diffCall?.files ?? [];
 
-    // Zero-change branch should only include the patch dir and the sentinel; no services/**
+    // Zero-change branch should only include the sentinel; no services/**
     expect(filesPacked.some((p) => p.startsWith('services/'))).toBe(false);
     expect(filesPacked).toEqual(
       expect.arrayContaining([
-        `${cfg.stanPath.replace(/\\/g, '/')}/patch`,
         `${cfg.stanPath.replace(/\\/g, '/')}/diff/.stan_no_changes`,
       ]),
     );
+    // In downstream repos, patch workspace is not force-included in diff archives
+    expect(
+      filesPacked.some((p) =>
+        p.startsWith(`${cfg.stanPath.replace(/\\/g, '/')}/patch`),
+      ),
+    ).toBe(false);
   });
 });

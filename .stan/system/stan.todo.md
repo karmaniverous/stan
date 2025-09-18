@@ -3,6 +3,7 @@
 When updated: 2025-09-18 (UTC) — Gate patch dir inclusion in diff archives to STAN dev repo; fix TS errors and adjust tests.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
+
 - Long‑file monitoring and decomposition (Phase 3)- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
 - Coverage follow‑ups
@@ -12,25 +13,29 @@ When updated: 2025-09-18 (UTC) — Gate patch dir inclusion in diff archives to 
 
 Completed (recent)
 
+- chore(tsdoc): escape “>” in src/stan/diff.ts TSDoc
+  - Fix tsdoc/syntax warning by escaping “>” in angle-bracket tokens.
+  - No behavior changes.
+
 - fix(diff): include patch dir in diff archives only for STAN dev repo
   - Compute inclusion via getVersionInfo(cwd).isDevModuleRepo.
-  - Remove undefined includePatchDirInDiff usage and resolve TS2552 errors in src/stan/diff.ts.
-  - Update snap selection-sync test to expect only the sentinel (no forced patch dir) for downstream repos.
+  - Remove undefined includePatchDirInDiff usage and resolve TS2552 errors in src/stan/diff.ts. - Update snap selection-sync test to expect only the sentinel (no forced patch dir) for downstream repos.
   - Rationale: including .stan/patch in diff archives is only necessary when developing STAN itself; downstream consumers should not ship patch workspace by default.
 
 – docs(system): refine handoff format
-  - Remove “Current state (from last run)” (redundant with stan run outputs).
-  - Add “Reasoning summary (for context)” section to carry forward decisions/constraints succinctly.
-  - Add final “Reminders” section instructing next‑thread STAN to validate patch formatting & fence hygiene.
-- chore(git): ignore *.rej and remove stray reject
-  - Add '*.rej' to .gitignore to prevent accidental commits of patch rejects.
+
+- Remove “Current state (from last run)” (redundant with stan run outputs).
+- Add “Reasoning summary (for context)” section to carry forward decisions/constraints succinctly.
+- Add final “Reminders” section instructing next‑thread STAN to validate patch formatting & fence hygiene.
+- chore(git): ignore \*.rej and remove stray reject
+  - Add '\*.rej' to .gitignore to prevent accidental commits of patch rejects.
   - Remove stray src/cli/stan/runner.ts.rej; future rejects are relocated under .stan/patch/rejects/ by the patch pipeline.
 - docs: normalize CLI examples front matter
   - Replace residual patch markers at the top of docs-src/cli-examples.md with proper YAML front matter (title only); keep the rest of the content unchanged.
 
 - fix(test): correct stdout.write spy typing in ding.test.ts
   - Use precise generic form for vi.spyOn on process.stdout.write and a compatible mock implementation.
-  - Unblocks rollup/typecheck/typedoc (TS2322 no longer reported from tests during build/docs).  - Follow-up: target Writable and mockReturnValue(true) for a TS-safe, minimal spy across environments.
+  - Unblocks rollup/typecheck/typedoc (TS2322 no longer reported from tests during build/docs). - Follow-up: target Writable and mockReturnValue(true) for a TS-safe, minimal spy across environments.
   - Finalize: avoid any by casting stdout to a minimal structural type via unknown; spy on that and return true. This removes lint warnings and keeps typecheck stable.
   - Note: the ASCII BEL (\\x07) is written; whether it produces an audible sound depends on terminal/OS settings. Many modern terminals disable audible bells; the flag remains a minimal, portable notification.- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell
   - CLI only; config default remains cliDefaults.run.ding.

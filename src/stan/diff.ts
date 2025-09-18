@@ -99,7 +99,7 @@ export const writeArchiveSnapshot = async ({
  * @param args - Object with:
  *   - cwd: Repo root.
  *   - stanPath: STAN workspace folder.
- *   - baseName: Base archive name (e.g., `archive` -> `archive.diff.tar`).
+ *   - baseName: Base archive name (e.g., `archive` -\> `archive.diff.tar`).
  *   - includes: Allow‑list globs (overrides excludes).
  *   - excludes: Deny‑list globs.
  *   - updateSnapshot: Controls when the snapshot file is replaced.

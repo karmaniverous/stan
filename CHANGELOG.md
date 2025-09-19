@@ -2,8 +2,15 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.5.14](https://github.com/karmaniverous/stan/compare/0.5.13...0.5.14)
+
+- Emphasize fence hygiene & patch composition [`11a9a93`](https://github.com/karmaniverous/stan/commit/11a9a93fceadb7c208903ad3a3fbf1b706ee9c4e)
+
 #### [0.5.13](https://github.com/karmaniverous/stan/compare/0.5.12...0.5.13)
 
+> 18 September 2025
+
+- chore: release v0.5.13 [`bf11cd5`](https://github.com/karmaniverous/stan/commit/bf11cd5df5f864b88fd44be09f0d6fdf14119065)
 - fix(diff): gate patch dir in diff to STAN repo [`f9c6c34`](https://github.com/karmaniverous/stan/commit/f9c6c34664bbd80bbf80becda653ac14bf5402b3)
 - chore(tsdoc): escape “&gt;” in diff.ts TSDoc to satisfy lint [`081431d`](https://github.com/karmaniverous/stan/commit/081431df83a524a41b2a6fb6906b25f6810bea5e)
 - updated stan [`50cd589`](https://github.com/karmaniverous/stan/commit/50cd589136dff33b34fe7e55ba21335b9233fa37)

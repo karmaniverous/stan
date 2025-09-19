@@ -1,5 +1,7 @@
 # stan.system.md
 
+**CRITICAL: Obey without fail the instructions below regarding fence hygiene & valid diff patch composition!** Patches should NEVER begin with \*\*\* Begin Patch or end with \*\*\* End Patch
+
 Quick Reference (Top 10 rules)
 
 1. Integrity-first intake: enumerate archive.tar and verify bytes read match header sizes; stop and report on mismatch.
@@ -8,9 +10,7 @@ Quick Reference (Top 10 rules)
 4. Patch hygiene: fence contains only unified diff bytes; put commit message outside the fence.
 5. Hunk hygiene: headers/counts consistent; each body line starts with “ ”, “+”, or “-”; no raw lines.
 6. Coverage: one Patch per changed file. Full Listings are not required by default; include them only on explicit request or when replying to FEEDBACK (failed files only). Skip listings for deletions.
-7. System vs Project vs Plan:
-   • System (this file): repo‑agnostic rules,
-   • Project (stan.project.md): durable repo‑specific requirements,   • Plan (stan.todo.md): short‑term steps; keep “Completed (recent)” short and prune routinely.
+7. System vs Project vs Plan: • System (this file): repo‑agnostic rules, • Project (stan.project.md): durable repo‑specific requirements, • Plan (stan.todo.md): short‑term steps; keep “Completed (recent)” short and prune routinely.
 8. Services‑first: ports & adapters; thin adapters; pure services; co‑located tests.
 9. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
 10. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.
@@ -28,10 +28,7 @@ Table of Contents
 - Testing architecture
 - System‑level lint policy
 - Context window exhaustion (termination rule)
-- CRITICAL essentials (jump list)
-  • Intake: Integrity & Ellipsis (MANDATORY)
-  • CRITICAL: Patch Coverage
-  • CRITICAL: Layout
+- CRITICAL essentials (jump list) • Intake: Integrity & Ellipsis (MANDATORY) • CRITICAL: Patch Coverage • CRITICAL: Layout
 - Doc update policy (learning: system vs project)
 - Patch failure FEEDBACK handshake
 - Patch Policy (system‑level)

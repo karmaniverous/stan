@@ -1,8 +1,37 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-18 (UTC) — Gate patch dir inclusion in diff archives to STAN dev repo; fix TS errors and adjust tests.
+When updated: 2025-09-21 (UTC) — Plan TTY live run table, per‑script hang detection, and graceful cancellation (q).
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
+
+- TTY live run status table, hang detection, and graceful cancellation
+  - Live table (TTY only; controlled by --live/--no-live, default true; supports cliDefaults.run.live)
+    - Deps: log-update (in-place refresh), table (column layout), tree-kill (cross‑platform process tree termination)
+    - Columns: Script | Status | Time | Output (show output path only when done/error/cancelled/timed out)
+    - Status states:
+      - waiting, running…
+      - running (quiet: Xs) — no output yet past quietWarn
+      - running (stalled: Xs) — previously produced output then silent past hangWarn
+      - done, error, timed out, cancelled/killed
+    - Boring mode: drop emojis and colors, keep text; live UI still enabled unless --no-live or non‑TTY
+    - Non‑TTY: keep current line-per-event logs; no live table
+  - Hang detection (per script; concurrency‑safe)
+    - Track startAt and lastOutputAt; compute elapsed and quietFor
+    - Thresholds (configurable; defaults): quietWarn=60s (label only), hangWarn=120s (label only), hangKill=disabled, hangKillGrace=8s
+    - Only auto‑terminate on explicit wall‑clock timeout (hangKill): SIGTERM → grace → SIGKILL (tree‑kill)
+  - Manual termination (TTY + live): press q to cancel run gracefully
+    - Stop starting new scripts; SIGTERM all running; after grace, SIGKILL stragglers; mark cancelled/killed
+    - Skip archiving if cancelled before scripts complete; exit non‑zero; print concise summary
+    - Show “Press q to cancel” hint in the live UI
+  - CLI flags and defaults (with cliDefaults.run support)
+    - --live / --no-live (default true)
+    - --hang-warn <seconds> (default 120)
+    - --hang-kill <seconds> (default disabled)
+    - --hang-kill-grace <seconds> (default 8)
+  - Implementation outline
+    - ProgressRenderer: 1s tick; renders table via log-update + table
+    - ProcessSupervisor: track child PIDs; soft→hard kill; per‑script timers
+    - TTY key handler (raw mode) for q; always restore terminal state on exit
 
 - Long‑file monitoring and decomposition (Phase 3)- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
@@ -12,7 +41,6 @@ When updated: 2025-09-18 (UTC) — Gate patch dir inclusion in diff archives to 
   - Keep excludes limited to trivial barrels and types‑only modules.
 
 Completed (recent)
-
 - chore(tsdoc): escape “>” in src/stan/diff.ts TSDoc
   - Fix tsdoc/syntax warning by escaping “>” in angle-bracket tokens.
   - No behavior changes.

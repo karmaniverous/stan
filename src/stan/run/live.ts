@@ -6,6 +6,7 @@
  */
 import logUpdate from 'log-update';
 import { table } from 'table';
+import treeKill from 'tree-kill';
 
 import { bold, gray, green, red, yellow } from '@/stan/util/color';
 
@@ -268,12 +269,12 @@ export class ProgressRenderer {
       ? 'Press q to cancel'
       : gray('Press q to cancel');
 
-    // Pad one extra leading space on each line so the table aligns with the
-    // run plan body (which is indented in the CLI plan output).
+    // Indent each rendered line by exactly two spaces so the left edge aligns
+    // with the run plan body (which is indented in the CLI plan output).
     const raw = `${bodyTable.trimEnd()}\n\n${summary}\n${hint}`;
     const padded = raw
       .split('\n')
-      .map((l) => ` ${l}`)
+      .map((l) => `  ${l}`)
       .join('\n');
     try {
       logUpdate(padded);
@@ -325,22 +326,52 @@ export class ProcessSupervisor {
     >,
   ) {}
 
-  // Minimal scaffolding to establish a future control surface.
+  // Track script processes by stable row key (e.g., "script:<name>")
   private readonly pids = new Map<string, number>();
 
   // Track a spawned child (placeholder; no signaling yet)
+  // Synchronous for now to satisfy lint (no awaits yet).
   track(key: string, pid: number): void {
     this.pids.set(key, pid);
   }
 
-  // Graceful cancellation: TERM all tracked children (placeholder)
-  // Synchronous for now to satisfy lint (no awaits yet).
+  /**
+   * Graceful cancellation:
+   * - Send SIGTERM to all tracked PIDs.
+   * - After grace (behavior.hangKillGrace), send SIGKILL via tree-kill.
+   * - Clears the PID map to avoid duplicate signals.
+   */
   cancelAll(): void {
-    // Future: send SIGTERM and, after grace, SIGKILL (tree-kill on Windows).
-    for (const [k, pid] of this.pids) {
-      void k;
-      void pid;
+    const graceMs =
+      (typeof this.behavior.hangKillGrace === 'number'
+        ? this.behavior.hangKillGrace
+        : 8) * 1000;
+    const current = Array.from(this.pids.entries());
+    // First wave: SIGTERM best-effort
+    for (const [, pid] of current) {
+      try {
+        // On Windows, SIGTERM behaves like a no-op; we still follow with tree-kill.
+        if (Number.isFinite(pid)) process.kill(pid, 'SIGTERM');
+      } catch {
+        // ignore
+      }
     }
+    // Second wave after grace: hard kill process trees.
+    setTimeout(
+      () => {
+        for (const [, pid] of current) {
+          try {
+            if (Number.isFinite(pid)) treeKill(pid, 'SIGKILL');
+          } catch {
+            // ignore
+          }
+        }
+      },
+      Math.max(0, graceMs),
+    );
+    // Best-effort clear
     this.pids.clear();
   }
 }
+
+export type { ProcessSupervisor };

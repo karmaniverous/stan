@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Live UI: row order, final-frame flush, waiting glyph; alignment + header styling; tests added. Next: cancellation/key handling.
+When updated: 2025-09-22 (UTC) — Live UI: two‑space alignment; TTY key handler (q/Q) + SIGINT cancellation; ProcessSupervisor TERM→KILL; skip archive on cancel; tests added.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
@@ -10,33 +10,8 @@ When updated: 2025-09-22 (UTC) — Live UI: row order, final-frame flush, waitin
   - CLI copy example: Keep existing snapshot? (Y/n)
 
 - TTY live run status table, hang detection, and graceful cancellation
-  - Live table (TTY only; controlled by --live/--no-live, default true; supports cliDefaults.run.live)
-    - Deps: log-update (in-place refresh), table (column layout), tree-kill (cross‑platform process tree termination)
-    - Columns: Type | Item | Status | Time | Output (show output path only when done/error/cancelled/timed out)
-    - Status states:
-      - waiting, running…
-      - running (quiet: Xs) — no output yet past quietWarn
-      - running (stalled: Xs) — previously produced output then silent past hangWarn
-      - done, error, timed out, cancelled/killed
-    - Boring mode: drop emojis and colors, keep text; live UI still enabled unless --no-live or non‑TTY
-    - Non‑TTY: keep current line-per-event logs; no live table
-  - Hang detection (per script; concurrency‑safe)
-    - Track startAt and lastOutputAt; compute elapsed and quietFor
-    - Thresholds (configurable; defaults): quietWarn=60s (label only), hangWarn=120s (label only), hangKill=disabled, hangKillGrace=8s
-    - Only auto‑terminate on explicit wall‑clock timeout (hangKill): SIGTERM → grace → SIGKILL (tree‑kill)
-  - Manual termination (TTY + live): press q to cancel run gracefully
-    - Stop starting new scripts; SIGTERM all running; after grace, SIGKILL stragglers; mark cancelled/killed
-    - Skip archiving if cancelled before scripts complete; exit non‑zero; print concise summary
-    - Show “Press q to cancel” hint in the live UI
-  - (in progress) Row ordering & final-frame flush implemented; key handling and cancellation pipeline next
-  - CLI flags and defaults (with cliDefaults.run support) — IMPLEMENTED
-    - --live / --no-live (default true) — IMPLEMENTED
-    - --hang-warn <seconds> — IMPLEMENTED - --hang-kill <seconds> — IMPLEMENTED
-    - --hang-kill-grace <seconds> — IMPLEMENTED
-  - Implementation outline
-    - ProgressRenderer: 1s tick; renders table via log-update + table (columns updated; summary line; stop() only persists frame)
-    - ProcessSupervisor: track child PIDs; soft→hard kill; per‑script timers
-    - TTY key handler (raw mode) for q; always restore terminal state on exit
+  - (done) Two‑space alignment for table, summary, and hint (matches run plan).
+  - (done) TTY key handler (q/Q) + SIGINT parity; idempotent cancellation with TERM→grace→KILL via tree‑kill; stop scheduling; skip archive; non‑zero exit; always restore TTY state/listeners. Tests added.
 
 - Long‑file monitoring and decomposition (Phase 3)- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
@@ -44,6 +19,16 @@ When updated: 2025-09-22 (UTC) — Live UI: row order, final-frame flush, waitin
   - Keep excludes limited to trivial barrels and types‑only modules.
 
 Completed (recent)
+
+- feat(live/cancel): TTY key handler (q/Q) and SIGINT parity
+  - Install raw key handler in TTY live mode; pressing q/Q or Ctrl+C triggers a single cancellation pipeline.
+  - Pipeline: stop scheduling new scripts, send SIGTERM to all tracked children; after grace, send SIGKILL via tree‑kill; mark rows cancelled; skip archive if cancelled before archive; set process.exitCode=1; restore TTY state and listeners in all cases.
+  - Add ProcessSupervisor.cancelAll with TERM→KILL escalation and tree‑kill wiring (clears knip unused‑dep warning).
+  - Tests:
+    - cancel.sigint.test.ts: emit SIGINT; verify no archives created; exit code non‑zero.
+    - cancel.key.test.ts: simulate 'q' keypress; verify no archives created; exit code non‑zero.
+
+- feat(live): two‑space alignment for live renderer output (table, summary, hint); new test asserts two‑space indent under BORING TTY.
 
 - feat(live): scripts-first ordering, final-frame flush, and aligned waiting glyph
   - ProgressRenderer:

@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { cyan, green } from '@/stan/util/color';
 
 import type { ContextConfig } from '../config';
+import type { ProcessSupervisor } from './live';
 import type { ExecutionMode, Selection } from './types';
 
 type RunHooks = {
@@ -62,6 +63,7 @@ export const normalizeSelection = (
  * @param orderFile - Optional order file to append a single letter marker.
  * @param hooks - Optional lifecycle hooks and flags.
  * @param opts - Optional execution options (e.g., silent logging).
+ * @param supervisor - Optional process supervisor to track/terminate children.
  * @returns Absolute path to the generated output file.
  */
 export const runOne = async (
@@ -73,6 +75,7 @@ export const runOne = async (
   orderFile?: string,
   hooks?: RunHooks,
   opts?: { silent?: boolean },
+  supervisor?: ProcessSupervisor,
 ): Promise<string> => {
   if (!opts?.silent) console.log(`stan: start "${cyan(key)}"`);
   const outFile = resolve(outAbs, `${key}.txt`);
@@ -81,6 +84,13 @@ export const runOne = async (
   const child = spawn(cmd, { cwd, shell: true, windowsHide: true });
 
   const debug = process.env.STAN_DEBUG === '1';
+  try {
+    // Track PID for cancellation/kill escalation
+    if (typeof child.pid === 'number' && supervisor)
+      supervisor.track(`script:${key}`, child.pid);
+  } catch {
+    /* ignore */
+  }
   const stream = createWriteStream(outFile, { encoding: 'utf8' });
   child.stdout.on('data', (d: Buffer) => {
     stream.write(d);
@@ -123,6 +133,8 @@ export const runOne = async (
  * @param orderFile - Optional order file path (when present, records execution order).
  * @returns Absolute paths to generated output files.
  * @param opts - Optional execution options (e.g., silent logging).
+ * @param shouldContinue - Optional gate to stop scheduling new scripts when false (sequential mode).
+ * @param supervisor - Optional process supervisor for child tracking/termination.
  */
 export const runScripts = async (
   cwd: string,
@@ -134,6 +146,8 @@ export const runScripts = async (
   orderFile?: string,
   hooks?: RunHooks,
   opts?: { silent?: boolean },
+  shouldContinue?: () => boolean,
+  supervisor?: ProcessSupervisor,
 ): Promise<string[]> => {
   const created: string[] = [];
   const runner = async (k: string): Promise<void> => {
@@ -151,13 +165,21 @@ export const runScripts = async (
             ? hooks.silent
             : Boolean(opts?.silent),
       },
+      supervisor,
     );
     created.push(p);
   };
   if (mode === 'sequential') {
-    for (const k of toRun) await runner(k);
+    for (const k of toRun) {
+      if (typeof shouldContinue === 'function' && !shouldContinue()) break;
+      await runner(k);
+    }
   } else {
-    await Promise.all(toRun.map((k) => runner(k).then(() => void 0)));
+    const keys =
+      typeof shouldContinue === 'function'
+        ? toRun.filter(() => shouldContinue())
+        : toRun;
+    await Promise.all(keys.map((k) => runner(k).then(() => void 0)));
   }
   return created;
 };

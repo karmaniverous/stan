@@ -8,12 +8,12 @@ import { makeStanDirs } from '../paths';
 import { preflightDocsAndVersion } from '../preflight';
 import { archivePhase } from './archive';
 import { runScripts } from './exec';
-import { ProgressRenderer } from './live';
+import type { ScriptState } from './live';
+import { ProcessSupervisor, ProgressRenderer } from './live';
 import { renderRunPlan } from './plan';
 import type { ExecutionMode, RunBehavior } from './types';
 const shouldWriteOrder =
   process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
-
 /**
  * High‑level runner for `stan run`.
  *
@@ -42,6 +42,13 @@ export const runSelected = async (
   behaviorMaybe?: RunBehavior,
 ): Promise<string[]> => {
   const behavior: RunBehavior = behaviorMaybe ?? {};
+  let cancelled = false;
+  const cancelledKeys = new Set<string>();
+  const supervisor = new ProcessSupervisor({
+    hangWarn: behavior.hangWarn,
+    hangKill: behavior.hangKill,
+    hangKillGrace: behavior.hangKillGrace,
+  });
 
   // Preflight docs/version (non-blocking; best-effort)
   try {
@@ -77,18 +84,67 @@ export const runSelected = async (
     }
   }
 
+  // TTY key handler (q/Q or Ctrl+C) → single, idempotent cancellation pipeline
+  let restoreTty: (() => void) | null = null;
+  const installKeyHandlers = (): void => {
+    try {
+      const stdin = process.stdin as unknown as NodeJS.ReadStream & {
+        setRawMode?: (v: boolean) => void;
+      };
+      if (!stdin) return;
+      const isTty = Boolean(stdin.isTTY);
+      // SIGINT parity always enabled
+      const onSigint = () => triggerCancel();
+      process.on('SIGINT', onSigint);
+      if (!isTty) {
+        restoreTty = () => {
+          process.off('SIGINT', onSigint);
+        };
+        return;
+      }
+      stdin.setEncoding('utf8');
+      // Some environments omit setRawMode; guard accordingly
+      try {
+        stdin.setRawMode?.(true);
+      } catch {
+        /* ignore */
+      }
+      stdin.resume();
+      const onData = (data: string) => {
+        if (!data) return;
+        if (data === '\u0003' /* Ctrl+C */ || data.toLowerCase() === 'q') {
+          triggerCancel();
+        }
+      };
+      stdin.on('data', onData);
+      restoreTty = () => {
+        try {
+          stdin.off('data', onData);
+        } catch {
+          /* ignore */
+        }
+        try {
+          stdin.setRawMode?.(false);
+        } catch {
+          /* ignore */
+        }
+        process.off('SIGINT', onSigint);
+      };
+    } catch {
+      /* best-effort */
+    }
+  };
+
   // TTY-only live renderer (scaffold; no-op when not TTY or disabled)
   const stdoutLike = process.stdout as unknown as { isTTY?: boolean };
   const isTTY = Boolean(stdoutLike?.isTTY);
   const liveEnabled = (behavior.live ?? true) && isTTY;
   // Future: wire ProgressRenderer + ProcessSupervisor when liveEnabled === true.
-
   let renderer: ProgressRenderer | undefined;
   if (liveEnabled) {
     renderer = new ProgressRenderer({
       boring: process.env.STAN_BORING === '1',
-    });
-    // Pre-register archive rows when we intend to archive, so the UI
+    }); // Pre-register archive rows when we intend to archive, so the UI
     // shows them as "waiting" while scripts are running.
     if (behavior.archive) {
       renderer.update(
@@ -103,10 +159,11 @@ export const runSelected = async (
       );
     }
     renderer.start();
+    // Install key handlers only in TTY live mode
+    installKeyHandlers();
   }
 
-  // Build the run list:
-  // - When selection is null/undefined, run all scripts in config order.
+  // Build the run list:  // - When selection is null/undefined, run all scripts in config order.
   // - When selection is provided (even empty), respect the provided order.
   const selected = selection == null ? Object.keys(config.scripts) : selection;
 
@@ -124,6 +181,26 @@ export const runSelected = async (
         { type: 'script', item: k },
       );
   }
+
+  const triggerCancel = (): void => {
+    if (cancelled) return;
+    cancelled = true;
+    // Update live rows to cancelled; compute durations best-effort
+    if (renderer) {
+      const now = Date.now();
+      for (const k of toRun) {
+        const rowKey = `script:${k}`;
+        // Mark row as cancelled to prevent later "done" overwrite
+        cancelledKeys.add(rowKey);
+        renderer.update(rowKey, { kind: 'cancelled', durationMs: 0 });
+      }
+      renderer.update('archive:full', { kind: 'cancelled', durationMs: 0 });
+      renderer.update('archive:diff', { kind: 'cancelled', durationMs: 0 });
+      renderer.flush();
+    }
+    // Signal processes and escalate after grace
+    supervisor.cancelAll();
+  };
 
   const created: string[] = [];
   // Run scripts only when selection non-empty
@@ -149,8 +226,10 @@ export const runSelected = async (
               );
             },
             onEnd: (key, outFileAbs, startedAt, endedAt) => {
-              const rel = relative(cwd, outFileAbs).replace(/\\/g, '/');
+              // Skip "done" updates for rows already marked cancelled
               const rowKey = `script:${key}`;
+              if (cancelled && cancelledKeys.has(rowKey)) return;
+              const rel = relative(cwd, outFileAbs).replace(/\\/g, '/');
               renderer?.update(
                 rowKey,
                 {
@@ -165,11 +244,13 @@ export const runSelected = async (
           }
         : undefined,
       renderer ? { silent: true } : undefined,
+      () => !cancelled,
+      supervisor,
     );
     created.push(...scriptOutputs);
   }
   // ARCHIVE PHASE
-  if (behavior.archive) {
+  if (behavior.archive && !cancelled) {
     const includeOutputs = Boolean(behavior.combine);
     const { archivePath, diffPath } = await archivePhase(
       {
@@ -222,6 +303,23 @@ export const runSelected = async (
     renderer.stop();
   }
 
+  // Always restore TTY state/listeners
+  try {
+    restoreTty?.();
+  } catch {
+    /* ignore */
+  } finally {
+    restoreTty = null;
+  }
+
+  // Exit non‑zero when cancelled (service-level best-effort)
+  if (cancelled) {
+    try {
+      process.exitCode = 1;
+    } catch {
+      /* ignore */
+    }
+  }
   // Final notification (terminal bell) when requested.
   if (behavior.ding) {
     try {

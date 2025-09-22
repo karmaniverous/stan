@@ -1,11 +1,10 @@
 /* src/stan/run/input/keys.ts
  * Key handling using the "keypress" library, with SIGINT parity.
  * - Installs raw key handler on TTY to cancel on 'q' or Ctrl+C.
- * - Also wires process SIGINT to the same cancellation pipeline.
+ * - Also wires process SIGINT to the same cancellation pipeline, with a data-event fallback.
  * - Returns a single restore() that removes all listeners and raw mode.
  */
 import keypress from 'keypress';
-
 export type CancelSubscription = {
   restore: () => void;
 };
@@ -51,23 +50,42 @@ export const installCancelKeys = (onCancel: () => void): CancelSubscription => {
   }
   stdin.resume();
 
-  const onKeypress = (
-    _ch: string | undefined,
-    key?: { name?: string; ctrl?: boolean },
-  ) => {
+  const onKeypress = (...args: unknown[]): void => {
+    const key = args[1] as { name?: string; ctrl?: boolean } | undefined;
     if (!key) return;
     if ((key.ctrl && key.name === 'c') || key.name === 'q') onCancel();
   };
   stdin.on('keypress', onKeypress);
 
-  const remove = (event: 'keypress', handler: (...args: unknown[]) => void) => {
-    (stdin.off ?? stdin.removeListener)?.call(stdin, event, handler as never);
+  // Fallback: some test environments won’t provide setRawMode; ensure 'q' / Ctrl+C still cancel.
+  const onData = (d: unknown): void => {
+    try {
+      // Ctrl+C (ETX) => 0x03
+      if (typeof d === 'string') {
+        if (d === '\u0003' || d.toLowerCase() === 'q') onCancel();
+      } else if (Buffer.isBuffer(d)) {
+        if (d.includes(0x03) || d.toString('utf8').toLowerCase() === 'q')
+          onCancel();
+      }
+    } catch {
+      // best-effort
+    }
+  };
+  stdin.on('data', onData);
+
+  const removeAny = (event: string, handler: (...args: unknown[]) => void) => {
+    (stdin.off ?? stdin.removeListener)?.call(
+      stdin,
+      event as never,
+      handler as never,
+    );
   };
 
   return {
     restore: () => {
       try {
-        remove('keypress', onKeypress);
+        removeAny('keypress', onKeypress);
+        removeAny('data', onData);
         stdin.setRawMode?.(false);
         stdin.pause?.();
         process.off('SIGINT', onSigint);

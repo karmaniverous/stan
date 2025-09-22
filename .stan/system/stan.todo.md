@@ -2,16 +2,24 @@
 
 When updated: 2025-09-23 (UTC) — Fix TS2349 in run/service shutdown guard; prepare for TTY refactor.
 
+Completed (recent)
+
+- fix(live/cancel): add 'data' fallback to TTY key handler so pressing 'q' cancels reliably in test environments without raw mode; cancel.key test now passes.
+- fix(lint): remove unused variable in src/stan/run/input/keys.ts to satisfy @typescript-eslint/no-unused-vars.
+
+---
+
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
 Completed (recent)
-
+- fix(build): externalize 'keypress' in Rollup to avoid strict‑mode parse error ("Legacy octal escape") when bundling; runtime resolves the CJS module.
+- fix(types): broaden TTY key handler to (...args: unknown[]) and destructure to satisfy strict function type checks in typedoc/typecheck.
 - fix(typecheck): harden run/service shutdown cleanup with a callable guard before invoking restore; eliminates persistent TS2349 (“never not callable”) seen under typedoc/typecheck.
 - note(refactor prep): keypress-based TTY handling and live/decomposition to follow in a dedicated change set (smaller steps, easier review).
+  - Tests: all green after fallback (cancel.key) and lint clean.
 
 - Init snapshot prompt behavior- On "stan init": - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots. - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot. - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
   - CLI copy example: Keep existing snapshot? (Y/n)
-
 - TTY live run status table, hang detection, and graceful cancellation
   - (done) Two‑space alignment for table, summary, and hint (matches run plan).
   - (done) TTY key handler (q/Q) + SIGINT parity; idempotent cancellation with TERM→grace→KILL via tree‑kill; stop scheduling; skip archive; non‑zero exit; always restore TTY state/listeners. Tests added.

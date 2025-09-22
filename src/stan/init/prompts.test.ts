@@ -35,7 +35,6 @@ describe('promptForConfig', () => {
       includes: 'src,docs',
       excludes: 'dist/**',
       selectedScripts: ['test'],
-      resetDiff: true,
     });
 
     const out = await promptForConfig(dir, pkgScripts, undefined);
@@ -43,7 +42,6 @@ describe('promptForConfig', () => {
     expect(out.includes).toEqual(['src', 'docs']);
     expect(out.excludes).toEqual(['dist/**']);
     expect(out.scripts).toEqual({ test: 'npm run test' });
-    expect(out.resetDiff).toBe(true);
   });
 
   it('preserves scripts from defaults when requested', async () => {
@@ -61,7 +59,6 @@ describe('promptForConfig', () => {
       excludes: '',
       preserveScripts: true,
       selectedScripts: [],
-      resetDiff: false,
     });
 
     const out = await promptForConfig(dir, pkgScripts, defaults, true);
@@ -69,6 +66,5 @@ describe('promptForConfig', () => {
     expect(out.includes).toEqual([]);
     expect(out.excludes).toEqual([]);
     expect(out.scripts).toEqual(defaults.scripts);
-    expect(out.resetDiff).toBe(false);
   });
 });

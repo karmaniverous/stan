@@ -1,4 +1,5 @@
 /* src/stan/init/service.ts */
+import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -10,8 +11,7 @@ import { ensureOutputDir, findConfigPathSync, loadConfig } from '@/stan/config';
 import { writeArchiveSnapshot } from '../diff';
 import { ensureDocs } from './docs';
 import { ensureStanGitignore } from './gitignore';
-import { promptForConfig, readPackageJsonScripts } from './prompts';
-/**
+import { promptForConfig, readPackageJsonScripts } from './prompts'; /**
  * Initialize or update STAN configuration and workspace assets.
  *
  * Behavior:
@@ -20,11 +20,10 @@ import { promptForConfig, readPackageJsonScripts } from './prompts';
  * - Writes the existing stan.config.* file (json|yml|yaml) when present (preserves key order);
  *   creates `stan.config.yml` when none exists.
  * - Ensures `.gitignore` entries and ships docs.
- * - Optionally resets the diff snapshot.
+ * - Snapshot behavior: keep existing snapshot by default; create when missing.
  *
  * @param opts - Options `{ cwd, force, preserveScripts }`.
- * @returns Absolute path to the written `stan.config.yml`, or `null` on failure.
- */
+ * @returns Absolute path to the written `stan.config.yml`, or `null` on failure. */
 export const performInitService = async ({
   cwd = process.cwd(),
   force = false,
@@ -52,8 +51,6 @@ export const performInitService = async ({
       base = {};
     }
   }
-
-  let resetDiffNow = true;
 
   // Non-destructive migration: opts.cliDefaults -> cliDefaults
   try {
@@ -138,8 +135,6 @@ export const performInitService = async ({
           : 'code -g {file}';
       ensureKey(base, 'patchOpenCommand', poc);
     }
-
-    resetDiffNow = picked.resetDiff;
   } else {
     // --force: be non-destructive when a config already exists.
     // Only ensure required keys or migrate obsolete ones. If no config exists, create a minimal one.
@@ -202,16 +197,55 @@ export const performInitService = async ({
 
   console.log(`stan: wrote ${path.basename(targetPath)}`);
 
-  if (force || resetDiffNow) {
+  // Snapshot behavior:
+  // - If no snapshot exists, do not prompt; create it.
+  // - If a snapshot exists:
+  //   - Interactive: prompt "Keep existing snapshot?" (default Yes).
+  //   - Force: keep by default (no prompt).
+  const snapPath = path.join(cwd, stanPath, 'diff', '.archive.snapshot.json');
+  const snapExists = existsSync(snapPath);
+
+  const writeSnap = async (): Promise<void> => {
     await writeArchiveSnapshot({
       cwd,
       stanPath,
       includes: (base as { includes?: string[] }).includes ?? [],
       excludes: (base as { excludes?: string[] }).excludes ?? [],
     });
+  };
+
+  if (!snapExists) {
+    // No snapshot present — create it without asking.
+    await writeSnap();
     console.log('stan: snapshot updated');
   } else {
-    console.log('stan: snapshot unchanged');
+    if (force) {
+      // Keep snapshot by default in --force mode.
+      console.log('stan: snapshot unchanged');
+    } else {
+      try {
+        const { default: inquirer } = (await import('inquirer')) as {
+          default: { prompt: (qs: unknown[]) => Promise<unknown> };
+        };
+        const ans = (await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'keep',
+            message: 'Keep existing snapshot?',
+            default: true,
+          },
+        ])) as { keep?: boolean };
+        if (ans.keep === false) {
+          await writeSnap();
+          console.log('stan: snapshot updated');
+        } else {
+          console.log('stan: snapshot unchanged');
+        }
+      } catch {
+        // If prompting fails for any reason, err on the side of safety and keep the snapshot.
+        console.log('stan: snapshot unchanged');
+      }
+    }
   }
 
   return targetPath;

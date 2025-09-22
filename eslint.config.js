@@ -22,10 +22,10 @@ export default [
       'coverage/**',
       'node_modules/**',
       'docs/**',
+      'rollup.config-*.mjs',
       '.stan/**',
     ],
   },
-
   // Base JS
   eslint.configs.recommended,
 

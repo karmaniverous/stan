@@ -17,9 +17,11 @@ When updated: 2025-09-23 (UTC) — Typecheck/build errors resolved; lint ignores
 
 Completed (recent)
 
+- fix(build): add `rimraf .rollup.cache .tsbuildinfo` to the `build` script to prevent stale cache from causing erroneous typechecking failures.
+  - Build: now reliably clean.
+
 - fix(build): resolve TS2349 in `run/service` by hardening the `restoreTty` callable guard to `typeof rt === 'function'`. This prevents TypeScript's control-flow analysis from narrowing the type to `never` within the `try...finally` block, ensuring the build, typecheck, and docs scripts pass.
   - Typecheck/build/docs: green.
-
 - chore(lint): add ESLint ignore for transient `rollup.config-*.mjs` files. This prevents intermittent `eslint --fix` runs from failing with an `ENOENT` error when trying to open an ephemeral file.
   - Lint: runs cleanly without chasing transient configs.
 

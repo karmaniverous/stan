@@ -9,9 +9,9 @@ When updated: 2025-09-23 (UTC) — Typecheck/build errors resolved; lint ignores
 - TTY live run status table, hang detection, and graceful cancellation
   - (done) Two‑space alignment for table, summary, and hint (matches run plan).
   - (done) TTY key handler (q/Q) + SIGINT parity; idempotent cancellation with TERM→grace→KILL via tree‑kill; stop scheduling; skip archive; non‑zero exit; always restore TTY state/listeners. Tests added.
+  - (done) Added test to verify scheduler stops launching new scripts after cancellation.
 
 - Long‑file monitoring and decomposition (Phase 3)- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
-
 - Coverage follow‑ups - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed. - Target incremental gains over ~86% lines coverage as changes land.
   - Keep excludes limited to trivial barrels and types‑only modules.
 

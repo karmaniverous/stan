@@ -47,10 +47,15 @@ When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; p
 
 Completed (recent)
 
+- fix(live): resolve TS/ESLint issues in live renderer
+  - Replace ts-expect-error + short-circuit with type-safe optional call to
+    logUpdate.done() to clear TS2578 and no-unused-expressions.
+  - Remove an unused local variable in statusLabel() to satisfy ESLint.
+  - No runtime behavior change; live table remains visible in TTY; non‑TTY unchanged.
+
 - fix(eslint): replace deprecated eslint-plugin-vitest with @vitest/eslint-plugin
   - Resolves npm ERESOLVE peer conflict caused by eslint-plugin-vitest pinning ESLint ^8.
   - Adds @vitest/eslint-plugin (compatible with ESLint 9) and updates eslint.config.js import.
-
 - fix(typedoc/derive): extend run defaults typing for live/hang thresholds
   - Add live, hangWarn, hangKill, hangKillGrace to local typing in derive/options to satisfy TS checks under Typedoc.
   - No runtime behavior change; aligns with CliDefaultsRun in src/stan/config/types.ts.

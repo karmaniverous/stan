@@ -71,8 +71,9 @@ export class ProgressRenderer {
     this.render(true);
     // Persist last frame on screen for a moment
     try {
-      // @ts-expect-error types for log-update expose .done()
-      logUpdate.done && logUpdate.done();
+      // Type-safe optional call; some builds expose logUpdate.done()
+      const lu = logUpdate as unknown as { done?: () => void };
+      lu.done?.();
     } catch {
       // best-effort
     }
@@ -87,7 +88,6 @@ export class ProgressRenderer {
 
   private statusLabel(st: InternalState): string {
     const boring = this.opts.boring;
-    const icon = (s: string) => (boring ? s : s);
     switch (st.kind) {
       case 'waiting':
         return boring ? '[WAIT]' : yellow('⏳ wait');

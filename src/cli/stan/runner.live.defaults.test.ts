@@ -61,6 +61,8 @@ describe('run live defaults and overrides', () => {
       ].join('\n'),
       'utf8',
     );
+
+    // Defaults from config -> live=false
     let cli = new Command();
     applyCliSafety(cli);
     registerRun(cli);
@@ -68,13 +70,13 @@ describe('run live defaults and overrides', () => {
     let behavior = (recorded.pop()?.[4] ?? {}) as { live?: boolean };
     expect(behavior.live).toBe(false);
 
+    // CLI --live overrides default to true
     cli = new Command();
     applyCliSafety(cli);
     registerRun(cli);
-    await cli.parseAsync(
-      ['node', 'stan', 'run', '--live', '-s', 'a'],
-      { from: 'user' },
-    );
+    await cli.parseAsync(['node', 'stan', 'run', '--live', '-s', 'a'], {
+      from: 'user',
+    });
     behavior = (recorded.pop()?.[4] ?? {}) as { live?: boolean };
     expect(behavior.live).toBe(true);
   });
@@ -84,7 +86,28 @@ describe('run live defaults and overrides', () => {
     applyCliSafety(cli);
     registerRun(cli);
     await cli.parseAsync(
-      ['node', 'stan', 'run', '-s', 'a', '--hang-warn', '120', '--hang-kill', '300', '--hang-kill-grace', '10'],
+      [
+        'node',
+        'stan',
+        'run',
+        '-s',
+        'a',
+        '--hang-warn',
+        '120',
+        '--hang-kill',
+        '300',
+        '--hang-kill-grace',
+        '10',
+      ],
       { from: 'user' },
     );
-    const behavior = (recorded[0][4] ?? {})
+    const behavior = (recorded[0][4] ?? {}) as {
+      hangWarn?: number;
+      hangKill?: number;
+      hangKillGrace?: number;
+    };
+    expect(behavior.hangWarn).toBe(120);
+    expect(behavior.hangKill).toBe(300);
+    expect(behavior.hangKillGrace).toBe(10);
+  });
+});

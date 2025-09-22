@@ -168,11 +168,11 @@ export const registerRunOptions = (
       sequential?: boolean;
       scripts?: boolean | string[];
       ding?: boolean;
+      live?: boolean;
     };
     const dArchive =
       typeof runDefs.archive === 'boolean' ? runDefs.archive : true;
     const dLive = typeof runDefs.live === 'boolean' ? runDefs.live : true;
-
     const dCombine =
       typeof runDefs.combine === 'boolean' ? runDefs.combine : false;
     const dKeep = typeof runDefs.keep === 'boolean' ? runDefs.keep : false;

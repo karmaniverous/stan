@@ -37,6 +37,10 @@ export const deriveRunParameters = (args: {
     sequential?: boolean;
     scripts?: boolean | string[];
     ding?: boolean;
+    live?: boolean;
+    hangWarn?: number;
+    hangKill?: number;
+    hangKillGrace?: number;
   };
 
   const src = (

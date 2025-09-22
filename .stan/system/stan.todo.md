@@ -1,9 +1,8 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; preserve non‑TTY behavior.
+When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; preserve non‑TTY behavior. Resolve ESLint 9 peer conflict; fix live defaults typings/tests.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
-
 - Init snapshot prompt behavior
   - On "stan init":
     - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
@@ -48,10 +47,24 @@ When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; p
 
 Completed (recent)
 
+- fix(eslint): replace deprecated eslint-plugin-vitest with @vitest/eslint-plugin
+  - Resolves npm ERESOLVE peer conflict caused by eslint-plugin-vitest pinning ESLint ^8.
+  - Adds @vitest/eslint-plugin (compatible with ESLint 9) and updates eslint.config.js import.
+
+- fix(typedoc/derive): extend run defaults typing for live/hang thresholds
+  - Add live, hangWarn, hangKill, hangKillGrace to local typing in derive/options to satisfy TS checks under Typedoc.
+  - No runtime behavior change; aligns with CliDefaultsRun in src/stan/config/types.ts.
+
+- fix(tests): complete runner.live.defaults.test.ts
+  - Add missing closing braces and assert hang thresholds parsing from CLI flags.
+  - Unblocks build/docs/tests.
+
+- note: lints
+  - Remaining scaffolding in live/service preserved; integration wiring will address any residual lint notes when live UI is implemented.
+
 - feat(run): add live-mode flags and defaults; scaffold TTY live infrastructure
   - New runtime deps: log-update, table, tree-kill (no change to non‑TTY runs).
-  - Flags: --live/--no-live (default true), --hang-warn, --hang-kill, --hang-kill-grace.
-  - cliDefaults.run support for live/hang thresholds; docs updated.
+  - Flags: --live/--no-live (default true), --hang-warn, --hang-kill, --hang-kill-grace.  - cliDefaults.run support for live/hang thresholds; docs updated.
   - Behavior unchanged for now; ProgressRenderer/ProcessSupervisor scaffolds added and idle until wired.
   - Added focused tests for defaults/overrides parsing.
 

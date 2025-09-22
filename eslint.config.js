@@ -7,10 +7,9 @@ import jsoncParser from 'jsonc-eslint-parser';
 import prettierPlugin from 'eslint-plugin-prettier';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tsdoc from 'eslint-plugin-tsdoc';
-import vitest from 'eslint-plugin-vitest';
+import vitest from '@vitest/eslint-plugin';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.FlatConfig[]} */

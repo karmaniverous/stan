@@ -9,6 +9,16 @@ import { cyan, green } from '@/stan/util/color';
 import type { ContextConfig } from '../config';
 import type { ExecutionMode, Selection } from './types';
 
+type RunHooks = {
+  onStart?: (key: string) => void;
+  onEnd?: (
+    key: string,
+    outFileAbs: string,
+    startedAt: number,
+    endedAt: number,
+  ) => void;
+};
+
 const waitForStreamClose = (stream: NodeJS.WritableStream): Promise<void> =>
   new Promise<void>((resolveP, rejectP) => {
     stream.on('close', () => resolveP());
@@ -57,9 +67,12 @@ export const runOne = async (
   key: string,
   cmd: string,
   orderFile?: string,
+  hooks?: RunHooks,
 ): Promise<string> => {
   console.log(`stan: start "${cyan(key)}"`);
   const outFile = resolve(outAbs, `${key}.txt`);
+  const startedAt = Date.now();
+  hooks?.onStart?.(key);
   const child = spawn(cmd, { cwd, shell: true, windowsHide: true });
 
   const debug = process.env.STAN_DEBUG === '1';
@@ -80,6 +93,8 @@ export const runOne = async (
   });
   stream.end();
   await waitForStreamClose(stream);
+
+  hooks?.onEnd?.(key, outFile, startedAt, Date.now());
 
   if (orderFile) {
     await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
@@ -110,6 +125,7 @@ export const runScripts = async (
   toRun: string[],
   mode: ExecutionMode,
   orderFile?: string,
+  hooks?: RunHooks,
 ): Promise<string[]> => {
   const created: string[] = [];
   const runner = async (k: string): Promise<void> => {
@@ -120,6 +136,7 @@ export const runScripts = async (
       k,
       config.scripts[k],
       orderFile,
+      hooks,
     );
     created.push(p);
   };

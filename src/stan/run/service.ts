@@ -1,6 +1,6 @@
 // src/stan/run/service.ts
 import { writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 
 import type { ContextConfig } from '@/stan/config';
 import { ensureOutputDir } from '@/stan/config';
@@ -12,7 +12,6 @@ import { runScripts } from './exec';
 import { ProgressRenderer } from './live';
 import { renderRunPlan } from './plan';
 import type { ExecutionMode, RunBehavior } from './types';
-
 const shouldWriteOrder =
   process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
 
@@ -102,6 +101,11 @@ export const runSelected = async (
     Object.prototype.hasOwnProperty.call(config.scripts, k),
   );
 
+  // Initialize live table rows (TTY only) as "waiting"
+  if (renderer) {
+    for (const k of toRun) renderer.update(k, { kind: 'waiting' });
+  }
+
   const created: string[] = [];
 
   // Run scripts only when selection non-empty
@@ -115,10 +119,25 @@ export const runSelected = async (
       toRun,
       mode,
       orderFile,
+      renderer
+        ? {
+            onStart: (key) => {
+              // If we missed an earlier mark, fall back to "now"
+              renderer?.update(key, { kind: 'running', startedAt: Date.now() });
+            },
+            onEnd: (key, outFileAbs, startedAt, endedAt) => {
+              const rel = relative(cwd, outFileAbs).replace(/\\/g, '/');
+              renderer?.update(key, {
+                kind: 'done',
+                durationMs: Math.max(0, endedAt - startedAt),
+                outputPath: rel,
+              });
+            },
+          }
+        : undefined,
     );
     created.push(...scriptOutputs);
   }
-
   // ARCHIVE PHASE
   if (behavior.archive) {
     const includeOutputs = Boolean(behavior.combine);
@@ -131,7 +150,9 @@ export const runSelected = async (
   }
 
   // Stop live renderer (no-op render) if it was started.
-  if (renderer) renderer.stop();
+  if (renderer) {
+    renderer.stop();
+  }
 
   // Final notification (terminal bell) when requested.
   if (behavior.ding) {

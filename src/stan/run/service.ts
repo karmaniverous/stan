@@ -182,7 +182,7 @@ export const runSelected = async (
             // Live updates and silent console logging (suppress legacy start/done lines)
             silent: true,
             progress: {
-              start: (kind) => {
+              start: (kind: 'full' | 'diff') => {
                 const key = kind === 'full' ? 'archive:full' : 'archive:diff';
                 renderer?.update(
                   key,
@@ -193,7 +193,12 @@ export const runSelected = async (
                   },
                 );
               },
-              done: (kind, pathAbs, startedAt, endedAt) => {
+              done: (
+                kind: 'full' | 'diff',
+                pathAbs: string,
+                startedAt: number,
+                endedAt: number,
+              ) => {
                 const key = kind === 'full' ? 'archive:full' : 'archive:diff';
                 const rel = relative(cwd, pathAbs).replace(/\\/g, '/');
                 renderer?.update(key, {

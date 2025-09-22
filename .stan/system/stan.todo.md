@@ -1,7 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Live TTY: archive rows + hooks + summary coloring; suppress legacy archive logs under live; keep non‑TTY behavior unchanged.
-
+When updated: 2025-09-22 (UTC) — Fix: archivePhase typing/overload; typed progress callbacks; live archive integration remains as implemented.
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
 - Init snapshot prompt behavior
@@ -47,10 +46,14 @@ When updated: 2025-09-22 (UTC) — Live TTY: archive rows + hooks + summary colo
 
 Completed (recent)
 
+- fix(run/archive): remove erroneous overload/stub; single typed function with optional opts param
+  - Resolve TS/parse errors (redeclaration, '=>' expected).
+  - service: type progress callback params (kind/pathAbs/startedAt/endedAt) to satisfy TS/ESLint.
+  - Keep silent logging and live progress wiring unchanged.
+
 - feat(live/archive): pre-register archive rows and update via archivePhase hooks
   - service: when live is enabled and archive=true, register `archive:full` and `archive:diff` rows as waiting.
-  - archivePhase: added optional progress callbacks (start/done) and a `silent` flag to suppress legacy console logs.
-  - service: wire progress to live rows (running/done with relative output paths), pass `silent=true` to suppress console logs during live.
+  - archivePhase: added optional progress callbacks (start/done) and a `silent` flag to suppress legacy console logs.  - service: wire progress to live rows (running/done with relative output paths), pass `silent=true` to suppress console logs during live.
   - Non‑TTY behavior unchanged; existing tests remain stable.
 
 - feat(live): color summary counts (TTY)

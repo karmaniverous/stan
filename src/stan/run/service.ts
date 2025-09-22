@@ -293,6 +293,13 @@ export const runSelected = async (
   if (cancelled) {
     try {
       process.exitCode = 1;
+      // In CLI usage, exit promptly after cancelling children and stopping
+      // the live renderer. Avoid hard exit during tests.
+      if (process.env.NODE_ENV !== 'test') {
+        // Best-effort immediate exit to return control to the shell.
+        // Children have already been signaled via supervisor.cancelAll().
+        process.exit(1);
+      }
     } catch {
       /* ignore */
     }

@@ -4,23 +4,18 @@ When updated: 2025-09-23 (UTC) — Cancellation UX: preserve finished rows; fina
 
 Completed (recent)
 
-- fix(cancel/live): Preserve finished rows and keep their final values on cancel; finalize
-  durations for in‑flight rows at the moment of cancellation; do not clobber output
-  paths that have already been written.
-  - Renderer: add cancelPending() to mark only waiting/running/quiet/stalled rows as
-    cancelled; compute duration from startedAt; leave done/error/timedout/killed rows
-    untouched so their status/time/path remain visible.
-  - Service: on cancel, call renderer.cancelPending() and keep the cancelledKeys
-    suppression so late onEnd events do not flip cancelled rows to done.
-  - Outcome:
-    • Concurrent mode: program exits promptly; outputs stop once children are killed.
-    • Sequential mode: completed scripts remain OK; only pending/in‑flight show cancelled.
-    • Time and Output columns retain final values where applicable.
+- feat(live/summary): Add a dedicated CANCELLED count to the live summary using the same ◼ symbol shown in the table. Cancellations are no longer included in the FAIL count.
+  - TTY summary: “… • ⏱ <waiting> • ✔ <ok> • ◼ <cancelled> • ✖ <fail> • ⏱ <timeout>”
+  - BORING summary: “… • waiting N • OK N • CANCELLED N • FAIL N • TIMEOUT N”
+  - Status row rendering remains unchanged.
 
-- fix(cancel): On user‑initiated cancellation (q/Q/Ctrl+C), ignore hangKillGrace and escalate
-  SIGTERM → SIGKILL immediately; also flush+stop the live renderer and restore key
-  listeners right away. This prevents continued script output after cancel and allows  the process to exit promptly. hangKillGrace remains in effect for hang/timeout
-  scenarios; it simply does not delay user cancel.
+- fix(cancel/exit): Ensure `stan run` exits promptly after user cancellation (q/Q/Ctrl+C) in CLI runs by explicitly calling `process.exit(1)` once children are signaled and the live renderer has been stopped (skipped under tests). This returns control to the shell and prevents further script output after cancel.
+
+- fix(cancel/live): Preserve finished rows and keep their final values on cancel; finalize durations for in‑flight rows at the moment of cancellation; do not clobber output paths that have already been written. - Renderer: add cancelPending() to mark only waiting/running/quiet/stalled rows as cancelled; compute duration from startedAt; leave done/error/timedout/killed rows untouched so their status/time/path remain visible.
+  - Service: on cancel, call renderer.cancelPending() and keep the cancelledKeys suppression so late onEnd events do not flip cancelled rows to done.
+  - Outcome: • Concurrent mode: program exits promptly; outputs stop once children are killed. • Sequential mode: completed scripts remain OK; only pending/in‑flight show cancelled. • Time and Output columns retain final values where applicable.
+
+- fix(cancel): On user‑initiated cancellation (q/Q/Ctrl+C), ignore hangKillGrace and escalate SIGTERM → SIGKILL immediately; also flush+stop the live renderer and restore key listeners right away. This prevents continued script output after cancel and allows the process to exit promptly. hangKillGrace remains in effect for hang/timeout scenarios; it simply does not delay user cancel.
 
 - refactor(run/input): use Node’s readline.emitKeypressEvents for TTY key handling; drop external 'keypress' dependency and its type stub; keep SIGINT parity and 'data' fallback; update Rollup externals and package.json.
   - Rationale: reduce legacy CJS surface and simplify runtime/bundling.
@@ -29,11 +24,13 @@ Completed (recent)
 - chore(build): remove 'keypress' from Rollup externals; delete src/types/keypress.d.ts.
 - fix(live/cancel): add 'data' fallback to TTY key handler so pressing 'q' cancels reliably in test environments without raw mode; cancel.key test now passes.
 - fix(lint): remove unused variable in src/stan/run/input/keys.ts to satisfy @typescript-eslint/no-unused-vars.
+
 ---
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
 Completed (recent)
+
 - fix(build): externalize 'keypress' in Rollup to avoid strict‑mode parse error ("Legacy octal escape") when bundling; runtime resolves the CJS module.
 - fix(types): broaden TTY key handler to (...args: unknown[]) and destructure to satisfy strict function type checks in typedoc/typecheck.
 - fix(typecheck): harden run/service shutdown cleanup with a callable guard before invoking restore; eliminates persistent TS2349 (“never not callable”) seen under typedoc/typecheck.

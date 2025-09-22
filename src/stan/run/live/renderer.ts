@@ -279,11 +279,19 @@ export class ProgressRenderer {
     const counts = this.counts();
     const sep = ' • ';
     const summary = this.opts.boring
-      ? `${elapsed}${sep}waiting ${counts.waiting}${sep}OK ${counts.ok}${sep}FAIL ${counts.fail}${sep}TIMEOUT ${counts.timeout}`
+      ? [
+          `${elapsed}`,
+          `waiting ${counts.waiting.toString()}`,
+          `OK ${counts.ok.toString()}`,
+          `CANCELLED ${counts.cancelled.toString()}`,
+          `FAIL ${counts.fail.toString()}`,
+          `TIMEOUT ${counts.timeout.toString()}`,
+        ].join(sep)
       : [
           `${elapsed}`,
           yellow(`⏱ ${counts.waiting.toString()}`),
           green(`✔ ${counts.ok.toString()}`),
+          yellow(`◼ ${counts.cancelled.toString()}`),
           red(`✖ ${counts.fail.toString()}`),
           red(`⏱ ${counts.timeout.toString()}`),
         ].join(sep);
@@ -304,11 +312,13 @@ export class ProgressRenderer {
   private counts(): {
     waiting: number;
     ok: number;
+    cancelled: number;
     fail: number;
     timeout: number;
   } {
     let waiting = 0;
     let ok = 0;
+    let cancelled = 0;
     let fail = 0;
     let timeout = 0;
     for (const [, row] of this.rows.entries()) {
@@ -323,8 +333,10 @@ export class ProgressRenderer {
         case 'timedout':
           timeout += 1;
           break;
-        case 'error':
         case 'cancelled':
+          cancelled += 1;
+          break;
+        case 'error':
         case 'killed':
           fail += 1;
           break;
@@ -332,6 +344,6 @@ export class ProgressRenderer {
           break;
       }
     }
-    return { waiting, ok, fail, timeout };
+    return { waiting, ok, cancelled, fail, timeout };
   }
 }

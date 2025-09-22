@@ -68,6 +68,7 @@ export const runSelected = async (
       behavior,
     }),
   );
+  console.log(''); // exactly one blank line between plan and first live frame
 
   let orderFile: string | undefined;
   if (shouldWriteOrder) {
@@ -103,11 +104,15 @@ export const runSelected = async (
 
   // Initialize live table rows (TTY only) as "waiting"
   if (renderer) {
-    for (const k of toRun) renderer.update(k, { kind: 'waiting' });
+    for (const k of toRun)
+      renderer.update(
+        `script:${k}`,
+        { kind: 'waiting' },
+        { type: 'script', item: k },
+      );
   }
 
   const created: string[] = [];
-
   // Run scripts only when selection non-empty
   if (toRun.length > 0) {
     const outRel = dirs.outputRel;
@@ -123,15 +128,25 @@ export const runSelected = async (
         ? {
             onStart: (key) => {
               // If we missed an earlier mark, fall back to "now"
-              renderer?.update(key, { kind: 'running', startedAt: Date.now() });
+              const rowKey = `script:${key}`;
+              renderer?.update(
+                rowKey,
+                { kind: 'running', startedAt: Date.now() },
+                { type: 'script', item: key },
+              );
             },
             onEnd: (key, outFileAbs, startedAt, endedAt) => {
               const rel = relative(cwd, outFileAbs).replace(/\\/g, '/');
-              renderer?.update(key, {
-                kind: 'done',
-                durationMs: Math.max(0, endedAt - startedAt),
-                outputPath: rel,
-              });
+              const rowKey = `script:${key}`;
+              renderer?.update(
+                rowKey,
+                {
+                  kind: 'done',
+                  durationMs: Math.max(0, endedAt - startedAt),
+                  outputPath: rel,
+                },
+                { type: 'script', item: key },
+              );
             },
             silent: true,
           }

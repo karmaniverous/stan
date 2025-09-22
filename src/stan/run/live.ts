@@ -3,7 +3,8 @@
  * - ProgressRenderer: log-update + table to render a live table every ~1s.
  * - BORING mode: drops color/emojis but keeps the table visible.
  * - Non‑TTY and --no-live runs remain unchanged (renderer never started).
- */ import logUpdate from 'log-update';
+ */
+import logUpdate from 'log-update';
 import { table } from 'table';
 
 import { gray, green, red, yellow } from '@/stan/util/color';
@@ -33,6 +34,9 @@ export type ScriptState =
 
 type InternalState = ScriptState & { outputPath?: string };
 
+type RowMeta = { type: 'script' | 'archive'; item: string };
+type Row = RowMeta & { state: InternalState };
+
 const now = (): number => Date.now();
 const pad2 = (n: number): string => n.toString().padStart(2, '0');
 const fmtMs = (ms: number): string => {
@@ -44,7 +48,7 @@ const fmtMs = (ms: number): string => {
 };
 
 export class ProgressRenderer {
-  private readonly rows = new Map<string, InternalState>();
+  private readonly rows = new Map<string, Row>();
   private readonly opts: {
     boring: boolean;
     refreshMs: number;
@@ -67,8 +71,7 @@ export class ProgressRenderer {
   stop(): void {
     if (this.timer) clearInterval(this.timer);
     this.timer = undefined;
-    this.render(true);
-    // Persist last frame on screen for a moment
+    // Persist the most recently rendered frame; avoid a final re-render
     try {
       // Type-safe optional call; some builds expose logUpdate.done()
       const lu = logUpdate as unknown as { done?: () => void };
@@ -78,11 +81,49 @@ export class ProgressRenderer {
     }
   }
 
-  update(scriptKey: string, state: ScriptState): void {
-    // Preserve any optional outputPath the caller supplied
-    const prior = this.rows.get(scriptKey);
-    const merged: InternalState = { ...(prior ?? {}), ...state };
-    this.rows.set(scriptKey, merged);
+  /**
+   * Update a row by stable key. Optional meta lets callers register type/item explicitly.
+   * Keys:
+   *  - scripts:  "script:<name>"
+   *  - archives: "archive:full", "archive:diff"
+   */
+  update(key: string, state: ScriptState, meta?: RowMeta): void {
+    const prior = this.rows.get(key);
+    const resolvedMeta =
+      meta ??
+      this.deriveMetaFromKey(key) ??
+      (prior?.type
+        ? ({ type: prior.type, item: prior.item } as RowMeta)
+        : undefined);
+    if (!resolvedMeta) {
+      // Fallback: infer as a script with the whole key as item.
+      const fallback: RowMeta = { type: 'script', item: key };
+      this.rows.set(key, {
+        ...fallback,
+        state: { ...(prior?.state ?? {}), ...state },
+      });
+      return;
+    }
+    this.rows.set(key, {
+      ...resolvedMeta,
+      state: { ...(prior?.state ?? {}), ...state },
+    });
+  }
+
+  private deriveMetaFromKey(key: string): RowMeta | undefined {
+    if (key.startsWith('script:')) {
+      return {
+        type: 'script',
+        item: key.slice('script:'.length) || '(unnamed)',
+      };
+    }
+    if (key.startsWith('archive:')) {
+      return {
+        type: 'archive',
+        item: key.slice('archive:'.length) || '(unnamed)',
+      };
+    }
+    return undefined;
   }
 
   private statusLabel(st: InternalState): string {
@@ -118,8 +159,9 @@ export class ProgressRenderer {
         return '';
     }
   }
-  private render(final = false): void {
-    const header = ['Script', 'Status', 'Time', 'Output'];
+
+  private render(): void {
+    const header = ['Type', 'Item', 'Status', 'Time', 'Output'];
 
     const rows: string[][] = [];
     rows.push(header);
@@ -129,12 +171,14 @@ export class ProgressRenderer {
       const elapsed = fmtMs(now() - this.startedAt);
       rows.push([
         gray('—'),
+        gray('—'),
         gray(this.opts.boring ? '[IDLE]' : 'idle'),
         gray(elapsed),
         gray(''),
       ]);
     } else {
-      for (const [key, st] of this.rows.entries()) {
+      for (const [, row] of this.rows.entries()) {
+        const st = row.state;
         // Time column: elapsed (running) or duration/blank
         let time = '';
         if (
@@ -161,11 +205,11 @@ export class ProgressRenderer {
             ? (st.outputPath ?? '')
             : '';
 
-        rows.push([key, this.statusLabel(st), time, out ?? '']);
+        rows.push([row.type, row.item, this.statusLabel(st), time, out ?? '']);
       }
     }
 
-    const body = table(rows, {
+    const bodyTable = table(rows, {
       // Keep it compact and stable; avoid ANSI-heavy borders that flicker
       border: {
         topBody: ``,
@@ -187,20 +231,64 @@ export class ProgressRenderer {
       // No blank separators between rows
       drawHorizontalLine: () => false,
       columns: {
-        // Make Status a bit wider to fit icons/timers; Output grows naturally
-        1: { alignment: 'left' },
-        2: { alignment: 'right' },
+        // Status left; Time right-align; Output grows naturally
+        2: { alignment: 'left' },
+        3: { alignment: 'right' },
       },
     });
+
+    // Summary + hint
+    const elapsed = fmtMs(now() - this.startedAt);
+    const counts = this.counts();
+    const sep = ' • ';
+    const summary = this.opts.boring
+      ? `[${elapsed}]${sep}waiting ${counts.waiting}${sep}OK ${counts.ok}${sep}FAIL ${counts.fail}${sep}TIMEOUT ${counts.timeout}`
+      : `${elapsed}${sep}⏳ ${counts.waiting}${sep}✔ ${counts.ok}${sep}✖ ${counts.fail}${sep}⏱ ${counts.timeout}`;
+    const hint = this.opts.boring
+      ? 'Press q to cancel'
+      : gray('Press q to cancel');
+
+    const body = `${bodyTable.trimEnd()}\n\n${summary}\n${hint}`;
     try {
       logUpdate(body);
-      if (final) {
-        // Leave the last frame rendered; avoid clearing on completion
-        // (logUpdate.done is handled in stop()).
-      }
     } catch {
       // best-effort; never throw from renderer
     }
+  }
+
+  private counts(): {
+    waiting: number;
+    ok: number;
+    fail: number;
+    timeout: number;
+  } {
+    let waiting = 0;
+    let ok = 0;
+    let fail = 0;
+    let timeout = 0;
+    for (const [, row] of this.rows.entries()) {
+      const st = row.state;
+      switch (st.kind) {
+        case 'waiting':
+          waiting += 1;
+          break;
+        case 'done':
+          ok += 1;
+          break;
+        case 'timedout':
+          timeout += 1;
+          break;
+        case 'error':
+        case 'cancelled':
+        case 'killed':
+          fail += 1;
+          break;
+        default:
+          // running/quiet/stalled are not counted in summary buckets
+          break;
+      }
+    }
+    return { waiting, ok, fail, timeout };
   }
 }
 

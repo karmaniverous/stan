@@ -1,10 +1,9 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; preserve non‑TTY behavior. Resolve ESLint 9 peer conflict; fix live defaults typings/tests. Suppress duplicate logs; tidy table output.
+When updated: 2025-09-22 (UTC) — Live TTY: renderer columns/metadata + summary; spacing tweak; lint fix. Next: key handler and archive integration; maintain non‑TTY behavior.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
-- Init snapshot prompt behavior  - On "stan init":
-    - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
+- Init snapshot prompt behavior  - On "stan init":    - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
     - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot.
   - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
   - CLI copy example: Keep existing snapshot? (Y/n)
@@ -12,7 +11,7 @@ When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; p
 - TTY live run status table, hang detection, and graceful cancellation
   - Live table (TTY only; controlled by --live/--no-live, default true; supports cliDefaults.run.live)
     - Deps: log-update (in-place refresh), table (column layout), tree-kill (cross‑platform process tree termination)
-    - Columns: Script | Status | Time | Output (show output path only when done/error/cancelled/timed out)
+    - Columns: Type | Item | Status | Time | Output (show output path only when done/error/cancelled/timed out)
     - Status states:
       - waiting, running…
       - running (quiet: Xs) — no output yet past quietWarn
@@ -34,22 +33,32 @@ When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; p
     - --hang-kill <seconds> — IMPLEMENTED
     - --hang-kill-grace <seconds> — IMPLEMENTED
   - Implementation outline
-    - ProgressRenderer: 1s tick; renders table via log-update + table
+    - ProgressRenderer: 1s tick; renders table via log-update + table (columns updated; summary line; stop() only persists frame)
     - ProcessSupervisor: track child PIDs; soft→hard kill; per‑script timers
     - TTY key handler (raw mode) for q; always restore terminal state on exit
 
 - Long‑file monitoring and decomposition (Phase 3)- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
-- Coverage follow‑ups - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed.
-  - Target incremental gains over ~86% lines coverage as changes land.
+- Coverage follow‑ups - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed.  - Target incremental gains over ~86% lines coverage as changes land.
   - Keep excludes limited to trivial barrels and types‑only modules.
 
 Completed (recent)
 
+- feat(live): renderer metadata/columns + summary; stop() persist-only; spacing
+  - ProgressRenderer now tracks row identity with stable keys and metadata:
+    - keys: `script:<name>`, `archive:full`, `archive:diff`
+    - columns: [Type, Item, Status, Time, Output]
+  - Adds a compact live summary line below the table:
+    - “[elapsed] • [waiting] N • [ok] N • [error] N • [timeout] N” (BORING uses plain labels)
+  - Prints “Press q to cancel” hint under the summary (before key handler wiring).
+  - stop(): no final render; call logUpdate.done() to persist last frame (prevents doubled header/“weird on scroll”).
+  - service: print exactly one blank line between run plan and the first live frame.
+
+- fix(lint): remove unused Writable import from src/stan/run/exec.ts
+
 - fix(live): suppress per-script “start/done” logs when TTY live table is active
   - Add silent flag through runScripts → runOne; enable only when renderer is on.
-  - Keeps non‑TTY (tests/CI) unchanged (line‑per‑event logs remain).
-- fix(live): remove duplicate time in table and blank row separators
+  - Keeps non‑TTY (tests/CI) unchanged (line‑per‑event logs remain).- fix(live): remove duplicate time in table and blank row separators
   - Status column no longer includes elapsed; Time column is the single source.
   - Disable horizontal separators (previously rendered as blank lines).
   - Keep BORING styling; retain Output column only for terminal states.

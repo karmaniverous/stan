@@ -3,7 +3,6 @@ import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import type { Writable } from 'node:stream';
 
 import { cyan, green } from '@/stan/util/color';
 

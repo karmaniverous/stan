@@ -1,6 +1,7 @@
 /* src/stan/run/live/renderer.ts
  * TTY live progress rendering (ProgressRenderer).
  */
+
 import logUpdate from 'log-update';
 import { table } from 'table';
 
@@ -103,6 +104,42 @@ export class ProgressRenderer {
       ...resolvedMeta,
       state: { ...(prior?.state ?? {}), ...state },
     });
+  }
+
+  /**
+   * Mark all non‑final rows as "cancelled", preserving final values for rows
+   * that are already completed (done/error/timedout/killed). For in‑flight rows,
+   * compute a final duration at the moment of cancellation.
+   */
+  public cancelPending(): void {
+    const t = now();
+    for (const [key, row] of this.rows.entries()) {
+      const st = row.state;
+      switch (st.kind) {
+        case 'waiting': {
+          // Never started: cancelled with zero time
+          this.update(key, { kind: 'cancelled', durationMs: 0 });
+          break;
+        }
+        case 'running':
+        case 'quiet':
+        case 'stalled': {
+          // Finalize duration from startedAt; preserve any existing outputPath
+          const started =
+            typeof (st as { startedAt?: number }).startedAt === 'number'
+              ? (st as { startedAt: number }).startedAt
+              : undefined;
+          const dur =
+            typeof started === 'number' ? Math.max(0, t - started) : 0;
+          this.update(key, { kind: 'cancelled', durationMs: dur });
+          break;
+        }
+        // Leave rows that already carry a terminal status untouched so their final
+        // state, durations, and output paths remain visible.
+        default:
+          break;
+      }
+    }
   }
 
   private deriveMetaFromKey(key: string): RowMeta | undefined {

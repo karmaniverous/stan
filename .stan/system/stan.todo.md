@@ -1,13 +1,25 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-23 (UTC) — Cancellation: immediate exit on user cancel; ignore hangKillGrace for cancel.
+When updated: 2025-09-23 (UTC) — Cancellation UX: preserve finished rows; finalize durations and keep output paths on cancel.
 
 Completed (recent)
 
+- fix(cancel/live): Preserve finished rows and keep their final values on cancel; finalize
+  durations for in‑flight rows at the moment of cancellation; do not clobber output
+  paths that have already been written.
+  - Renderer: add cancelPending() to mark only waiting/running/quiet/stalled rows as
+    cancelled; compute duration from startedAt; leave done/error/timedout/killed rows
+    untouched so their status/time/path remain visible.
+  - Service: on cancel, call renderer.cancelPending() and keep the cancelledKeys
+    suppression so late onEnd events do not flip cancelled rows to done.
+  - Outcome:
+    • Concurrent mode: program exits promptly; outputs stop once children are killed.
+    • Sequential mode: completed scripts remain OK; only pending/in‑flight show cancelled.
+    • Time and Output columns retain final values where applicable.
+
 - fix(cancel): On user‑initiated cancellation (q/Q/Ctrl+C), ignore hangKillGrace and escalate
   SIGTERM → SIGKILL immediately; also flush+stop the live renderer and restore key
-  listeners right away. This prevents continued script output after cancel and allows
-  the process to exit promptly. hangKillGrace remains in effect for hang/timeout
+  listeners right away. This prevents continued script output after cancel and allows  the process to exit promptly. hangKillGrace remains in effect for hang/timeout
   scenarios; it simply does not delay user cancel.
 
 - refactor(run/input): use Node’s readline.emitKeypressEvents for TTY key handling; drop external 'keypress' dependency and its type stub; keep SIGINT parity and 'data' fallback; update Rollup externals and package.json.

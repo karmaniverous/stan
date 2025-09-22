@@ -140,16 +140,18 @@ export const runSelected = async (
     if (cancelled) return;
     cancelled = true;
     if (renderer) {
-      // Update live rows to cancelled (best-effort durations)
-      for (const k of toRun) {
-        const rowKey = `script:${k}`;
-        cancelledKeys.add(rowKey);
-        renderer.update(rowKey, { kind: 'cancelled', durationMs: 0 });
+      // Suppress any late "done" updates for scripts after cancel
+      for (const k of toRun) cancelledKeys.add(`script:${k}`);
+      // Finalize in‑flight rows as cancelled with accurate durations; keep
+      // completed rows (done/error/timedout/killed) untouched so their times
+      // and output paths remain visible.
+      try {
+        (renderer as { cancelPending?: () => void }).cancelPending?.();
+      } catch {
+        /* best‑effort */
       }
-      renderer.update('archive:full', { kind: 'cancelled', durationMs: 0 });
-      renderer.update('archive:diff', { kind: 'cancelled', durationMs: 0 });
-      // Flush a final frame, then stop the renderer so its interval
-      // doesn’t keep the event loop alive after user cancellation.
+      // Flush a final frame, then stop the renderer so its interval doesn’t
+      // keep the event loop alive after user cancellation.
       renderer.flush();
       try {
         renderer.stop();

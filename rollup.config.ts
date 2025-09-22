@@ -35,11 +35,7 @@ const nodeExternals = new Set([
 // Runtime deps that must not be bundled (rely on package assets / fallbacks)
 const externalPkgs = new Set<string>([
   'clipboardy', // requires platform fallback binaries at runtime; bundling breaks resolution
-  // CommonJS with legacy octal escapes; bundling triggers strict-mode parse error.
-  // Treat as external and let Node resolve it at runtime.
-  'keypress',
 ]);
-
 const copyDocsPlugin = (dest: string): Plugin => {
   return {    name: 'stan-copy-docs',
     async writeBundle() {

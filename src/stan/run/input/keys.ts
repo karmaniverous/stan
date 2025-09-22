@@ -4,7 +4,7 @@
  * - Also wires process SIGINT to the same cancellation pipeline, with a data-event fallback.
  * - Returns a single restore() that removes all listeners and raw mode.
  */
-import keypress from 'keypress';
+import { emitKeypressEvents } from 'node:readline';
 export type CancelSubscription = {
   restore: () => void;
 };
@@ -41,8 +41,8 @@ export const installCancelKeys = (onCancel: () => void): CancelSubscription => {
     };
   }
 
-  // TTY: enable keypress and raw mode
-  keypress(stdin);
+  // TTY: enable keypress events and raw mode using Node's readline
+  emitKeypressEvents(stdin);
   try {
     stdin.setRawMode?.(true);
   } catch {
@@ -50,10 +50,27 @@ export const installCancelKeys = (onCancel: () => void): CancelSubscription => {
   }
   stdin.resume();
 
-  const onKeypress = (...args: unknown[]): void => {
-    const key = args[1] as { name?: string; ctrl?: boolean } | undefined;
-    if (!key) return;
-    if ((key.ctrl && key.name === 'c') || key.name === 'q') onCancel();
+  // Prefer native 'keypress' events; infer from chunk as a guard if key object not provided.
+  const onKeypress = (chunk?: unknown, keyMaybe?: unknown): void => {
+    const key = keyMaybe as { name?: string; ctrl?: boolean } | undefined;
+    if (key) {
+      if ((key.ctrl && key.name === 'c') || key.name === 'q') onCancel();
+      return;
+    }
+    // Extra guard: derive from chunk when key object is missing
+    try {
+      if (typeof chunk === 'string') {
+        if (chunk === '\u0003' || chunk.toLowerCase() === 'q') onCancel();
+      } else if (Buffer.isBuffer(chunk)) {
+        if (
+          chunk.includes(0x03) ||
+          chunk.toString('utf8').toLowerCase() === 'q'
+        )
+          onCancel();
+      }
+    } catch {
+      // best-effort
+    }
   };
   stdin.on('keypress', onKeypress);
 

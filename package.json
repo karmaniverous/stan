@@ -20,13 +20,11 @@
     "diff": "^8.0.2",
     "ignore": "^7.0.5",
     "inquirer": "^12.9.4",
-    "keypress": "^0.2.1",
     "log-update": "^6.0.0",
     "package-directory": "^8.1.0",
     "picomatch": "^4.0.3",
     "table": "^6.8.1",
-    "tree-kill": "^1.2.2",
-    "yaml": "^2.8.1"
+    "tree-kill": "^1.2.2",    "yaml": "^2.8.1"
   },
   "description": "STAN is a CLI that bridges your IDE with your favorite LLM and drives a rapid, powerful, low-friction, design-first iterative development process. Real-world AI-assisted development for professional engineers!",
   "devDependencies": {

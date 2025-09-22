@@ -1,13 +1,19 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-21 (UTC) — Plan TTY live run table, per‑script hang detection, and graceful cancellation (q).
+When updated: 2025-09-21 (UTC) — Add init snapshot prompt behavior; keep existing snapshot by default.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
+- Init snapshot prompt behavior
+  - On "stan init":
+    - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
+    - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot.
+  - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
+  - CLI copy example: Keep existing snapshot? (Y/n)
+
 - TTY live run status table, hang detection, and graceful cancellation
   - Live table (TTY only; controlled by --live/--no-live, default true; supports cliDefaults.run.live)
-    - Deps: log-update (in-place refresh), table (column layout), tree-kill (cross‑platform process tree termination)
-    - Columns: Script | Status | Time | Output (show output path only when done/error/cancelled/timed out)
+    - Deps: log-update (in-place refresh), table (column layout), tree-kill (cross‑platform process tree termination)    - Columns: Script | Status | Time | Output (show output path only when done/error/cancelled/timed out)
     - Status states:
       - waiting, running…
       - running (quiet: Xs) — no output yet past quietWarn
@@ -32,11 +38,10 @@ When updated: 2025-09-21 (UTC) — Plan TTY live run table, per‑script hang de
     - ProgressRenderer: 1s tick; renders table via log-update + table
     - ProcessSupervisor: track child PIDs; soft→hard kill; per‑script timers
     - TTY key handler (raw mode) for q; always restore terminal state on exit
-
+ 
 - Long‑file monitoring and decomposition (Phase 3)- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
-- Coverage follow‑ups
-  - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed.
+- Coverage follow‑ups  - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed.
   - Target incremental gains over ~86% lines coverage as changes land.
   - Keep excludes limited to trivial barrels and types‑only modules.
 

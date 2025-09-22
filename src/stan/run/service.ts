@@ -309,7 +309,7 @@ export const runSelected = async (
   try {
     // Copy to a local and use a simple truthy guard to avoid plugin/transformer narrowing issues.
     const rt = restoreTty;
-    if (rt) {
+    if (typeof rt === 'function') {
       rt();
     }
   } catch {

@@ -1,9 +1,8 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Live UI alignment finalized; key-cancel parity; typecheck/docs/build fixed (restoreTty guard) without disabling type checking in tests; TTY restore pauses stdin to avoid EBUSY; BORING summary shows mm:ss without brackets.
+When updated: 2025-09-23 (UTC) — Typecheck/build errors resolved; lint ignores added for transient Rollup configs.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
-
 - Init snapshot prompt behavior- On "stan init": - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots. - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot. - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
   - CLI copy example: Keep existing snapshot? (Y/n)
 
@@ -18,9 +17,14 @@ When updated: 2025-09-22 (UTC) — Live UI alignment finalized; key-cancel parit
 
 Completed (recent)
 
+- fix(build): resolve TS2349 in `run/service` by hardening the `restoreTty` callable guard to `typeof rt === 'function'`. This prevents TypeScript's control-flow analysis from narrowing the type to `never` within the `try...finally` block, ensuring the build, typecheck, and docs scripts pass.
+  - Typecheck/build/docs: green.
+
+- chore(lint): add ESLint ignore for transient `rollup.config-*.mjs` files. This prevents intermittent `eslint --fix` runs from failing with an `ENOENT` error when trying to open an ephemeral file.
+  - Lint: runs cleanly without chasing transient configs.
+
 - fix(live/align): strip the single leading pad emitted by table() before adding the exact two‑space indent for table, summary, and hint. Ensures header/body left edge aligns with the run plan block in both BORING and TTY modes.
   - Tests: live.align passes header/summary/hint two‑space checks.
-
 - fix(run/service): resolve TS2349 on restoreTty by guarding via a local const typeof function check (avoids the TS transformer narrowing to never). Also ensure stdin.pause() is invoked in the restore handler so the event loop can exit cleanly (prevents Windows EBUSY on temp dir removal in sequential mode tests).
   - Typecheck/build/docs: green under rollup and typedoc.
   - Exit behavior: no lingering TTY/raw state; listeners removed; event loop allowed to drain.

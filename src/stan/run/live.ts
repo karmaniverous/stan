@@ -7,10 +7,9 @@
 import logUpdate from 'log-update';
 import { table } from 'table';
 
-import { gray, green, red, yellow } from '@/stan/util/color';
+import { bold, gray, green, red, yellow } from '@/stan/util/color';
 
 import type { RunBehavior } from './types';
-
 export type ScriptState =
   | { kind: 'waiting' }
   | { kind: 'running'; startedAt: number; lastOutputAt?: number }
@@ -165,11 +164,12 @@ export class ProgressRenderer {
   }
 
   private render(): void {
-    const header = ['Type', 'Item', 'Status', 'Time', 'Output'];
+    const header = ['Type', 'Item', 'Status', 'Time', 'Output'].map((h) =>
+      bold(h),
+    );
 
     const rows: string[][] = [];
     rows.push(header);
-
     if (this.rows.size === 0) {
       // Minimal but visible placeholder
       const elapsed = fmtMs(now() - this.startedAt);
@@ -268,14 +268,19 @@ export class ProgressRenderer {
       ? 'Press q to cancel'
       : gray('Press q to cancel');
 
-    const body = `${bodyTable.trimEnd()}\n\n${summary}\n${hint}`;
+    // Pad one extra leading space on each line so the table aligns with the
+    // run plan body (which is indented in the CLI plan output).
+    const raw = `${bodyTable.trimEnd()}\n\n${summary}\n${hint}`;
+    const padded = raw
+      .split('\n')
+      .map((l) => ` ${l}`)
+      .join('\n');
     try {
-      logUpdate(body);
+      logUpdate(padded);
     } catch {
       // best-effort; never throw from renderer
     }
   }
-
   private counts(): {
     waiting: number;
     ok: number;

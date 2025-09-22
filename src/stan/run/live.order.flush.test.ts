@@ -21,8 +21,8 @@ describe('live renderer (order + final-frame flush)', () => {
   let dir: string;
   const ttyBackup = (process.stdout as unknown as { isTTY?: boolean }).isTTY;
   const envBackup = { ...process.env };
-  // Spy on stdout to capture log-update frames
-  let writeSpy: ReturnType<typeof vi.spyOn>;
+  // Spy on stdout to capture log-update frames (use a minimal structural type to avoid TS signature friction)
+  let writeSpy: { mockRestore: () => void; mock: { calls: unknown[][] } };
 
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), 'stan-live-order-'));
@@ -33,10 +33,15 @@ describe('live renderer (order + final-frame flush)', () => {
     }
     // BORING: ensure stable, colorless labels in assertions
     process.env.STAN_BORING = '1';
+    const stdoutLike = process.stdout as unknown as {
+      write: (...args: unknown[]) => boolean;
+    };
     writeSpy = vi
-      .spyOn(process.stdout, 'write')
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      .mockImplementation(() => true as unknown as boolean);
+      .spyOn(stdoutLike, 'write')
+      .mockImplementation(() => true) as unknown as {
+      mockRestore: () => void;
+      mock: { calls: unknown[][] };
+    };
   });
 
   afterEach(async () => {
@@ -74,8 +79,13 @@ describe('live renderer (order + final-frame flush)', () => {
     // Helper to find the last index of a regex match
     const lastIndexOfRe = (s: string, re: RegExp): number => {
       let idx = -1;
-      for (const m of s.matchAll(re)) {
-        idx = m.index ?? -1;
+      // Ensure the regex is global when using matchAll
+      const hasG = re.flags.includes('g');
+      const reG = new RegExp(re.source, hasG ? re.flags : re.flags + 'g');
+      for (const m of s.matchAll(reG)) {
+        // m.index is defined in Node >= 12 for matchAll()
+        // Fallback safety if environment differs
+        idx = (m as unknown as { index?: number }).index ?? idx;
       }
       return idx;
     };

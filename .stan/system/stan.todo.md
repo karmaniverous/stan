@@ -1,12 +1,12 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Live UI: row order, final-frame flush, waiting glyph; tests added. Next: cancellation/key handling.
+When updated: 2025-09-22 (UTC) — Live UI: row order, final-frame flush, waiting glyph; alignment + header styling; tests added. Next: cancellation/key handling.
+
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
 - Init snapshot prompt behavior- On "stan init":
   - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
-  - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot.
-  - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
+  - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot. - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
   - CLI copy example: Keep existing snapshot? (Y/n)
 
 - TTY live run status table, hang detection, and graceful cancellation
@@ -31,7 +31,7 @@ When updated: 2025-09-22 (UTC) — Live UI: row order, final-frame flush, waitin
   - (in progress) Row ordering & final-frame flush implemented; key handling and cancellation pipeline next
   - CLI flags and defaults (with cliDefaults.run support) — IMPLEMENTED
     - --live / --no-live (default true) — IMPLEMENTED
-    - --hang-warn <seconds> — IMPLEMENTED    - --hang-kill <seconds> — IMPLEMENTED
+    - --hang-warn <seconds> — IMPLEMENTED - --hang-kill <seconds> — IMPLEMENTED
     - --hang-kill-grace <seconds> — IMPLEMENTED
   - Implementation outline
     - ProgressRenderer: 1s tick; renders table via log-update + table (columns updated; summary line; stop() only persists frame)
@@ -56,13 +56,26 @@ Completed (recent)
     - final frame includes archive:diff in OK state (flush).
   - Non‑TTY behavior unchanged (legacy per‑event logs).
 
+- feat(live): align table left edge with run plan; bold column headers
+  - Rendering:
+    - Prefix one extra leading space to each rendered line (table, summary, hint) so the table’s left edge aligns with the run plan body.
+    - Bold the column headers (Type, Item, Status, Time, Output) in TTY mode; BORING mode remains plain (no styling).
+  - Notes:
+    - Alignment is purely presentational; no content changes to row data.
+    - BORING output is unchanged except for the added one‑space indent to match plan alignment.
+
+- fix(tests): stabilize live.order.flush test
+  - Ensure regex scanning uses a global pattern when calling String.prototype.matchAll to avoid runtime error.
+  - Mirror the stdout write spy typing approach used in ding.test.ts to satisfy typecheck/docs builds.
+  - No behavior changes to runtime; tests/doc builds return to green.
+
 - fix(run/archive): remove erroneous overload/stub; single typed function with optional opts param
   - Resolve TS/parse errors (redeclaration, '=>' expected).
-  - service: type progress callback params (kind/pathAbs/startedAt/endedAt) to satisfy TS/ESLint.  - Keep silent logging and live progress wiring unchanged.
+  - service: type progress callback params (kind/pathAbs/startedAt/endedAt) to satisfy TS/ESLint. - Keep silent logging and live progress wiring unchanged.
 
 - feat(live/archive): pre-register archive rows and update via archivePhase hooks
   - service: when live is enabled and archive=true, register `archive:full` and `archive:diff` rows as waiting.
-  - archivePhase: added optional progress callbacks (start/done) and a `silent` flag to suppress legacy console logs.  - service: wire progress to live rows (running/done with relative output paths), pass `silent=true` to suppress console logs during live.
+  - archivePhase: added optional progress callbacks (start/done) and a `silent` flag to suppress legacy console logs. - service: wire progress to live rows (running/done with relative output paths), pass `silent=true` to suppress console logs during live.
   - Non‑TTY behavior unchanged; existing tests remain stable.
 
 - feat(live): color summary counts (TTY)

@@ -216,6 +216,9 @@ export const runSelected = async (
 
   // Stop live renderer (no-op render) if it was started.
   if (renderer) {
+    // Flush one final frame so the most recent states (e.g., archive diff ✔ ok)
+    // are included before persisting via stop().
+    renderer.flush();
     renderer.stop();
   }
 

@@ -63,6 +63,10 @@ export class ProgressRenderer {
     };
   }
 
+  /** Render one final frame (no stop/persist). */
+  public flush(): void {
+    this.render();
+  }
   start(): void {
     if (this.timer) return;
     this.timer = setInterval(() => this.render(), this.opts.refreshMs);
@@ -130,7 +134,7 @@ export class ProgressRenderer {
     const boring = this.opts.boring;
     switch (st.kind) {
       case 'waiting':
-        return boring ? '[WAIT]' : yellow('⏳ wait');
+        return boring ? '[WAIT]' : yellow('… wait');
       case 'running': {
         return boring ? '[RUN]' : yellow('▶ run');
       }
@@ -177,7 +181,13 @@ export class ProgressRenderer {
         gray(''),
       ]);
     } else {
-      for (const [, row] of this.rows.entries()) {
+      // Build a stable, grouped view: scripts first, then archives (regardless of registration timing).
+      const all = Array.from(this.rows.values());
+      const grouped = [
+        ...all.filter((r) => r.type === 'script'),
+        ...all.filter((r) => r.type === 'archive'),
+      ];
+      for (const row of grouped) {
         const st = row.state;
         // Time column: elapsed (running) or duration/blank
         let time = '';

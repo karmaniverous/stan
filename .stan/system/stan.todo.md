@@ -1,10 +1,9 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Fix: archivePhase typing/overload; typed progress callbacks; live archive integration remains as implemented.
+When updated: 2025-09-22 (UTC) — Live UI: row order, final-frame flush, waiting glyph; tests added. Next: cancellation/key handling.
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
-- Init snapshot prompt behavior
-- On "stan init":
+- Init snapshot prompt behavior- On "stan init":
   - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
   - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot.
   - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
@@ -29,10 +28,10 @@ When updated: 2025-09-22 (UTC) — Fix: archivePhase typing/overload; typed prog
     - Stop starting new scripts; SIGTERM all running; after grace, SIGKILL stragglers; mark cancelled/killed
     - Skip archiving if cancelled before scripts complete; exit non‑zero; print concise summary
     - Show “Press q to cancel” hint in the live UI
+  - (in progress) Row ordering & final-frame flush implemented; key handling and cancellation pipeline next
   - CLI flags and defaults (with cliDefaults.run support) — IMPLEMENTED
     - --live / --no-live (default true) — IMPLEMENTED
-    - --hang-warn <seconds> — IMPLEMENTED
-    - --hang-kill <seconds> — IMPLEMENTED
+    - --hang-warn <seconds> — IMPLEMENTED    - --hang-kill <seconds> — IMPLEMENTED
     - --hang-kill-grace <seconds> — IMPLEMENTED
   - Implementation outline
     - ProgressRenderer: 1s tick; renders table via log-update + table (columns updated; summary line; stop() only persists frame)
@@ -46,10 +45,20 @@ When updated: 2025-09-22 (UTC) — Fix: archivePhase typing/overload; typed prog
 
 Completed (recent)
 
+- feat(live): scripts-first ordering, final-frame flush, and aligned waiting glyph
+  - ProgressRenderer:
+    - Group rows so scripts render first and archives last (stable order within each group).
+    - Add flush() to render a final frame (stop() remains persist-only).
+    - Replace the double-width waiting emoji with a single-width glyph (“… wait”) to eliminate column drift.
+  - Service: call renderer.flush() before renderer.stop() so the last frame reliably shows archive:diff as OK with its Output path.
+  - Tests: add TTY‑guarded test to assert:
+    - scripts appear above archives in the live table, and
+    - final frame includes archive:diff in OK state (flush).
+  - Non‑TTY behavior unchanged (legacy per‑event logs).
+
 - fix(run/archive): remove erroneous overload/stub; single typed function with optional opts param
   - Resolve TS/parse errors (redeclaration, '=>' expected).
-  - service: type progress callback params (kind/pathAbs/startedAt/endedAt) to satisfy TS/ESLint.
-  - Keep silent logging and live progress wiring unchanged.
+  - service: type progress callback params (kind/pathAbs/startedAt/endedAt) to satisfy TS/ESLint.  - Keep silent logging and live progress wiring unchanged.
 
 - feat(live/archive): pre-register archive rows and update via archivePhase hooks
   - service: when live is enabled and archive=true, register `archive:full` and `archive:diff` rows as waiting.

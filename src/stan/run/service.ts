@@ -306,17 +306,17 @@ export const runSelected = async (
   }
 
   // Always restore TTY state/listeners
-  try {
-    // Copy to a local and use a simple truthy guard to avoid plugin/transformer narrowing issues.
-    const rt = restoreTty;
-    if (typeof rt === 'function') {
-      rt();
+  const toRestore = restoreTty;
+  restoreTty = null; // Nullify immediately
+  if (typeof toRestore === 'function') {
+    try {
+      toRestore();
+    } catch {
+      /* ignore */
     }
-  } catch {
-    /* ignore */
-  } finally {
-    restoreTty = null;
-  } // Exit non‑zero when cancelled (service-level best-effort)
+  }
+
+  // Exit non‑zero when cancelled (service-level best-effort)
   if (cancelled) {
     try {
       process.exitCode = 1;

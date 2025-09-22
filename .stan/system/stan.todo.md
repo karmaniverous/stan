@@ -3,6 +3,7 @@
 When updated: 2025-09-23 (UTC) — Typecheck/build errors resolved; lint ignores added for transient Rollup configs.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
+
 - Init snapshot prompt behavior- On "stan init": - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots. - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot. - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
   - CLI copy example: Keep existing snapshot? (Y/n)
 
@@ -17,12 +18,14 @@ When updated: 2025-09-23 (UTC) — Typecheck/build errors resolved; lint ignores
 
 Completed (recent)
 
+- fix(build): resolve all type and reference errors in `run/service`. A reference error (`k is not defined`) in the renderer callbacks was fixed. The persistent `TS2349` error was resolved by refactoring the `restoreTty` cleanup logic to a pattern that TypeScript's control-flow analysis can reliably validate.
+  - Typecheck/build/docs/tests: green.
+
 - fix(build): add `rimraf .rollup.cache .tsbuildinfo` to the `build` script to prevent stale cache from causing erroneous typechecking failures.
   - Build: now reliably clean.
 
 - fix(build): resolve TS2349 in `run/service` by hardening the `restoreTty` callable guard to `typeof rt === 'function'`. This prevents TypeScript's control-flow analysis from narrowing the type to `never` within the `try...finally` block, ensuring the build, typecheck, and docs scripts pass.
-  - Typecheck/build/docs: green.
-- chore(lint): add ESLint ignore for transient `rollup.config-*.mjs` files. This prevents intermittent `eslint --fix` runs from failing with an `ENOENT` error when trying to open an ephemeral file.
+  - Typecheck/build/docs: green.- chore(lint): add ESLint ignore for transient `rollup.config-*.mjs` files. This prevents intermittent `eslint --fix` runs from failing with an `ENOENT` error when trying to open an ephemeral file.
   - Lint: runs cleanly without chasing transient configs.
 
 - fix(live/align): strip the single leading pad emitted by table() before adding the exact two‑space indent for table, summary, and hint. Ensures header/body left edge aligns with the run plan block in both BORING and TTY modes.

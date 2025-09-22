@@ -261,7 +261,7 @@ export class ProgressRenderer {
     const counts = this.counts();
     const sep = ' • ';
     const summary = this.opts.boring
-      ? `[${elapsed}]${sep}waiting ${counts.waiting}${sep}OK ${counts.ok}${sep}FAIL ${counts.fail}${sep}TIMEOUT ${counts.timeout}`
+      ? `${elapsed}${sep}waiting ${counts.waiting}${sep}OK ${counts.ok}${sep}FAIL ${counts.fail}${sep}TIMEOUT ${counts.timeout}`
       : [
           `${elapsed}`,
           // waiting (yellow) — unify on single‑width ⏱

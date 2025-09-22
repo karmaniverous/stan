@@ -307,9 +307,11 @@ export const runSelected = async (
 
   // Always restore TTY state/listeners
   try {
-    // Copy to a local and use a typeof guard to avoid TS transformer confusion.
-    const fn = restoreTty;
-    if (typeof fn === 'function') fn();
+    // Copy to a local and use a simple truthy guard to avoid plugin/transformer narrowing issues.
+    const rt = restoreTty;
+    if (rt) {
+      rt();
+    }
   } catch {
     /* ignore */
   } finally {

@@ -8,12 +8,13 @@ import { makeStanDirs } from '../paths';
 import { preflightDocsAndVersion } from '../preflight';
 import { archivePhase } from './archive';
 import { runScripts } from './exec';
-import type { ScriptState } from './live';
 import { ProcessSupervisor, ProgressRenderer } from './live';
 import { renderRunPlan } from './plan';
 import type { ExecutionMode, RunBehavior } from './types';
+
 const shouldWriteOrder =
   process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
+
 /**
  * High‑level runner for `stan run`.
  *
@@ -83,7 +84,6 @@ export const runSelected = async (
       await writeFile(orderFile, '', 'utf8');
     }
   }
-
   // TTY key handler (q/Q or Ctrl+C) → single, idempotent cancellation pipeline
   let restoreTty: (() => void) | null = null;
   const installKeyHandlers = (): void => {
@@ -128,13 +128,18 @@ export const runSelected = async (
         } catch {
           /* ignore */
         }
+        try {
+          // Ensure the stream no longer holds the event loop open.
+          (stdin as unknown as { pause?: () => void }).pause?.();
+        } catch {
+          /* ignore */
+        }
         process.off('SIGINT', onSigint);
       };
     } catch {
       /* best-effort */
     }
   };
-
   // TTY-only live renderer (scaffold; no-op when not TTY or disabled)
   const stdoutLike = process.stdout as unknown as { isTTY?: boolean };
   const isTTY = Boolean(stdoutLike?.isTTY);
@@ -144,8 +149,7 @@ export const runSelected = async (
   if (liveEnabled) {
     renderer = new ProgressRenderer({
       boring: process.env.STAN_BORING === '1',
-    }); // Pre-register archive rows when we intend to archive, so the UI
-    // shows them as "waiting" while scripts are running.
+    }); // Pre-register archive rows when we intend to archive, so the UI    // shows them as "waiting" while scripts are running.
     if (behavior.archive) {
       renderer.update(
         'archive:full',
@@ -185,9 +189,8 @@ export const runSelected = async (
   const triggerCancel = (): void => {
     if (cancelled) return;
     cancelled = true;
-    // Update live rows to cancelled; compute durations best-effort
     if (renderer) {
-      const now = Date.now();
+      // Update live rows to cancelled (best-effort durations)
       for (const k of toRun) {
         const rowKey = `script:${k}`;
         // Mark row as cancelled to prevent later "done" overwrite
@@ -201,7 +204,6 @@ export const runSelected = async (
     // Signal processes and escalate after grace
     supervisor.cancelAll();
   };
-
   const created: string[] = [];
   // Run scripts only when selection non-empty
   if (toRun.length > 0) {
@@ -305,14 +307,14 @@ export const runSelected = async (
 
   // Always restore TTY state/listeners
   try {
-    restoreTty?.();
+    // Copy to a local and use a typeof guard to avoid TS transformer confusion.
+    const fn = restoreTty;
+    if (typeof fn === 'function') fn();
   } catch {
     /* ignore */
   } finally {
     restoreTty = null;
-  }
-
-  // Exit non‑zero when cancelled (service-level best-effort)
+  } // Exit non‑zero when cancelled (service-level best-effort)
   if (cancelled) {
     try {
       process.exitCode = 1;

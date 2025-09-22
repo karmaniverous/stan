@@ -1,11 +1,9 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Live UI: two‑space alignment; TTY key handler (q/Q) + SIGINT cancellation; ProcessSupervisor TERM→KILL; skip archive on cancel; tests added.
+When updated: 2025-09-22 (UTC) — Live UI alignment finalized; key-cancel parity; typecheck/docs/build fixed (restoreTty guard) without disabling type checking in tests; TTY restore pauses stdin to avoid EBUSY.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
-
-- Init snapshot prompt behavior- On "stan init":
-  - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
+- Init snapshot prompt behavior- On "stan init":  - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
   - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot. - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
   - CLI copy example: Keep existing snapshot? (Y/n)
 
@@ -20,10 +18,38 @@ When updated: 2025-09-22 (UTC) — Live UI: two‑space alignment; TTY key handl
 
 Completed (recent)
 
+- fix(live/align): strip the single leading pad emitted by table() before adding
+  the exact two‑space indent for table, summary, and hint. Ensures header/body
+  left edge aligns with the run plan block in both BORING and TTY modes.
+  - Tests: live.align passes header/summary/hint two‑space checks.
+
+- fix(run/service): resolve TS2349 on restoreTty by guarding via a local
+  const + typeof function check (avoids the TS transformer narrowing to never).
+  Also ensure stdin.pause() is invoked in the restore handler so the event loop
+  can exit cleanly (prevents Windows EBUSY on temp dir removal in sequential
+  mode tests).
+  - Typecheck/build/docs: green under rollup and typedoc.
+  - Exit behavior: no lingering TTY/raw state; listeners removed; event loop
+    allowed to drain.
+
+- fix(live/align): strip single leading pad emitted by table() before adding exactly two-space indent so header/body/summary/hint align with plan block.
+  - Tests: live.align now matches exactly two spaces on header/summary/hint.
+- fix(live/exports): remove duplicate/conflicting export in src/stan/run/live.ts that broke typecheck/build/docs.
+
+- fix(run/service): import ProcessSupervisor as a value (not type); remove unused ScriptState import; replace optional-call on restoreTty with explicit callable guard; remove unused local time var.
+  - Lint: resolves no-unused-vars.
+  - Typecheck/docs/build: green.
+
+- feat(live/glyphs): unify TTY waiting/timeout glyph to single‑width ⏱ in both
+  per‑row status and the summary; BORING remains [WAIT]/[TIMEOUT] text tokens.
+  - Keeps single‑line summary with bullet separators; no changes to BORING
+    labels beyond the existing textual tokens.
+
+- fix(tests): keep type checking in tests; adjust cancel.key test to avoid stubbing setRawMode with a mismatched signature. The handler tolerates missing setRawMode.
+  - Ensures “Do NOT disable type checking in tests.”
 - feat(live/cancel): TTY key handler (q/Q) and SIGINT parity
   - Install raw key handler in TTY live mode; pressing q/Q or Ctrl+C triggers a single cancellation pipeline.
-  - Pipeline: stop scheduling new scripts, send SIGTERM to all tracked children; after grace, send SIGKILL via tree‑kill; mark rows cancelled; skip archive if cancelled before archive; set process.exitCode=1; restore TTY state and listeners in all cases.
-  - Add ProcessSupervisor.cancelAll with TERM→KILL escalation and tree‑kill wiring (clears knip unused‑dep warning).
+  - Pipeline: stop scheduling new scripts, send SIGTERM to all tracked children; after grace, send SIGKILL via tree‑kill; mark rows cancelled; skip archive if cancelled before archive; set process.exitCode=1; restore TTY state and listeners in all cases.  - Add ProcessSupervisor.cancelAll with TERM→KILL escalation and tree‑kill wiring (clears knip unused‑dep warning).
   - Tests:
     - cancel.sigint.test.ts: emit SIGINT; verify no archives created; exit code non‑zero.
     - cancel.key.test.ts: simulate 'q' keypress; verify no archives created; exit code non‑zero.

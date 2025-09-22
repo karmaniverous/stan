@@ -37,9 +37,7 @@ describe('TTY key handler (q) cancels run', () => {
     }
     // TTY-like stdin with raw mode
     stdinLike.isTTY = true;
-    stdinLike.setRawMode = (_v: boolean) => {};
   });
-
   afterEach(async () => {
     try {
       (process.stdout as unknown as { isTTY?: boolean }).isTTY = ttyBackup;

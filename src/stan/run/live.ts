@@ -134,7 +134,7 @@ export class ProgressRenderer {
     const boring = this.opts.boring;
     switch (st.kind) {
       case 'waiting':
-        return boring ? '[WAIT]' : yellow('… wait');
+        return boring ? '[WAIT]' : yellow('⏱ waiting');
       case 'running': {
         return boring ? '[RUN]' : yellow('▶ run');
       }
@@ -248,6 +248,14 @@ export class ProgressRenderer {
       },
     });
 
+    // Normalize table left edge: the "table" function prepends a single leading
+    // space to each line. Strip exactly one such pad (when present) to avoid
+    // drifting one column beyond our intended two‑space indent.
+    const strippedTable = bodyTable
+      .split('\n')
+      .map((l) => (l.startsWith(' ') ? l.slice(1) : l))
+      .join('\n');
+
     // Summary + hint
     const elapsed = fmtMs(now() - this.startedAt);
     const counts = this.counts();
@@ -256,8 +264,8 @@ export class ProgressRenderer {
       ? `[${elapsed}]${sep}waiting ${counts.waiting}${sep}OK ${counts.ok}${sep}FAIL ${counts.fail}${sep}TIMEOUT ${counts.timeout}`
       : [
           `${elapsed}`,
-          // waiting (yellow)
-          yellow(`⏳ ${counts.waiting.toString()}`),
+          // waiting (yellow) — unify on single‑width ⏱
+          yellow(`⏱ ${counts.waiting.toString()}`),
           // ok (green)
           green(`✔ ${counts.ok.toString()}`),
           // fail (red)
@@ -268,10 +276,9 @@ export class ProgressRenderer {
     const hint = this.opts.boring
       ? 'Press q to cancel'
       : gray('Press q to cancel');
-
     // Indent each rendered line by exactly two spaces so the left edge aligns
     // with the run plan body (which is indented in the CLI plan output).
-    const raw = `${bodyTable.trimEnd()}\n\n${summary}\n${hint}`;
+    const raw = `${strippedTable.trimEnd()}\n\n${summary}\n${hint}`;
     const padded = raw
       .split('\n')
       .map((l) => `  ${l}`)
@@ -373,5 +380,3 @@ export class ProcessSupervisor {
     this.pids.clear();
   }
 }
-
-export type { ProcessSupervisor };

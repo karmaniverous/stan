@@ -148,10 +148,26 @@ export const runSelected = async (
       }
       renderer.update('archive:full', { kind: 'cancelled', durationMs: 0 });
       renderer.update('archive:diff', { kind: 'cancelled', durationMs: 0 });
+      // Flush a final frame, then stop the renderer so its interval
+      // doesn’t keep the event loop alive after user cancellation.
       renderer.flush();
+      try {
+        renderer.stop();
+      } catch {
+        /* ignore */
+      }
     }
-    // Signal processes and escalate after grace
-    supervisor.cancelAll();
+    // Tear down keypress/SIGINT wiring immediately upon cancellation.
+    if (restoreCancel) {
+      try {
+        restoreCancel();
+      } catch {
+        /* ignore */
+      }
+      restoreCancel = null;
+    }
+    // Signal processes and escalate to KILL without grace on user cancel.
+    supervisor.cancelAll({ immediate: true });
   };
 
   // Install cancel keys (q/Ctrl+C) + SIGINT parity once we know toRun (TTY only)

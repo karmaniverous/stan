@@ -19,11 +19,17 @@ export class ProcessSupervisor {
     this.pids.set(key, pid);
   }
 
-  cancelAll(): void {
-    const graceMs =
-      (typeof this.behavior.hangKillGrace === 'number'
+  /**
+   * Terminate all tracked processes.
+   * - Default: TERM, then KILL after hangKillGrace seconds.
+   * - immediate=true: TERM, then KILL without delay (user cancellation).
+   */
+  cancelAll(opts?: { immediate?: boolean }): void {
+    const graceSec =
+      typeof this.behavior.hangKillGrace === 'number'
         ? this.behavior.hangKillGrace
-        : 8) * 1000;
+        : 8;
+    const graceMs = opts?.immediate ? 0 : Math.max(0, graceSec * 1000);
     const current = Array.from(this.pids.entries());
     for (const [, pid] of current) {
       try {
@@ -32,18 +38,20 @@ export class ProcessSupervisor {
         // ignore
       }
     }
-    setTimeout(
-      () => {
-        for (const [, pid] of current) {
-          try {
-            if (Number.isFinite(pid)) treeKill(pid, 'SIGKILL');
-          } catch {
-            // ignore
-          }
+    const hardKill = () => {
+      for (const [, pid] of current) {
+        try {
+          if (Number.isFinite(pid)) treeKill(pid, 'SIGKILL');
+        } catch {
+          // ignore
         }
-      },
-      Math.max(0, graceMs),
-    );
+      }
+    };
+    if (graceMs <= 0) {
+      setTimeout(hardKill, 0);
+    } else {
+      setTimeout(hardKill, graceMs);
+    }
     this.pids.clear();
   }
 }

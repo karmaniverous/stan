@@ -1,15 +1,20 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-23 (UTC) — Refactor TTY input: replace external “keypress” with Node readline; remove dependency.
+When updated: 2025-09-23 (UTC) — Cancellation: immediate exit on user cancel; ignore hangKillGrace for cancel.
 
 Completed (recent)
+
+- fix(cancel): On user‑initiated cancellation (q/Q/Ctrl+C), ignore hangKillGrace and escalate
+  SIGTERM → SIGKILL immediately; also flush+stop the live renderer and restore key
+  listeners right away. This prevents continued script output after cancel and allows
+  the process to exit promptly. hangKillGrace remains in effect for hang/timeout
+  scenarios; it simply does not delay user cancel.
 
 - refactor(run/input): use Node’s readline.emitKeypressEvents for TTY key handling; drop external 'keypress' dependency and its type stub; keep SIGINT parity and 'data' fallback; update Rollup externals and package.json.
   - Rationale: reduce legacy CJS surface and simplify runtime/bundling.
   - Impact: no behavior changes; q/Ctrl+C cancellation remains idempotent; tests remain green.
 
 - chore(build): remove 'keypress' from Rollup externals; delete src/types/keypress.d.ts.
-
 - fix(live/cancel): add 'data' fallback to TTY key handler so pressing 'q' cancels reliably in test environments without raw mode; cancel.key test now passes.
 - fix(lint): remove unused variable in src/stan/run/input/keys.ts to satisfy @typescript-eslint/no-unused-vars.
 ---

@@ -1,10 +1,13 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Live TTY: renderer columns/metadata + summary; spacing tweak; lint fix. Next: key handler and archive integration; maintain non‑TTY behavior.
+When updated: 2025-09-22 (UTC) — Live TTY: archive rows + hooks + summary coloring; suppress legacy archive logs under live; keep non‑TTY behavior unchanged.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
-- Init snapshot prompt behavior  - On "stan init":    - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
-    - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot.
+
+- Init snapshot prompt behavior
+- On "stan init":
+  - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
+  - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot.
   - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
   - CLI copy example: Keep existing snapshot? (Y/n)
 
@@ -39,15 +42,27 @@ When updated: 2025-09-22 (UTC) — Live TTY: renderer columns/metadata + summary
 
 - Long‑file monitoring and decomposition (Phase 3)- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
-- Coverage follow‑ups - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed.  - Target incremental gains over ~86% lines coverage as changes land.
+- Coverage follow‑ups - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed. - Target incremental gains over ~86% lines coverage as changes land.
   - Keep excludes limited to trivial barrels and types‑only modules.
 
 Completed (recent)
 
+- feat(live/archive): pre-register archive rows and update via archivePhase hooks
+  - service: when live is enabled and archive=true, register `archive:full` and `archive:diff` rows as waiting.
+  - archivePhase: added optional progress callbacks (start/done) and a `silent` flag to suppress legacy console logs.
+  - service: wire progress to live rows (running/done with relative output paths), pass `silent=true` to suppress console logs during live.
+  - Non‑TTY behavior unchanged; existing tests remain stable.
+
+- feat(live): color summary counts (TTY)
+  - Summary line now colors both the emoji and the numeric counts using yellow/green/red (BORING remains plain labels).
+  - Keeps a single summary line under the table and the “Press q to cancel” hint.
+
+- test(live): TTY-guarded suppression of legacy archive logs when live is on
+  - New test ensures `stan: start/done "archive"` and `"archive (diff)"` lines are not printed during live runs.
+
 - feat(live): renderer metadata/columns + summary; stop() persist-only; spacing
   - ProgressRenderer now tracks row identity with stable keys and metadata:
-    - keys: `script:<name>`, `archive:full`, `archive:diff`
-    - columns: [Type, Item, Status, Time, Output]
+    - keys: `script:<name>`, `archive:full`, `archive:diff` - columns: [Type, Item, Status, Time, Output]
   - Adds a compact live summary line below the table:
     - “[elapsed] • [waiting] N • [ok] N • [error] N • [timeout] N” (BORING uses plain labels)
   - Prints “Press q to cancel” hint under the summary (before key handler wiring).
@@ -64,8 +79,7 @@ Completed (recent)
   - Keep BORING styling; retain Output column only for terminal states.
 
 - fix(live): resolve TS/ESLint issues in live renderer
-  - Replace ts-expect-error + short-circuit with type-safe optional call to
-    logUpdate.done() to clear TS2578 and no-unused-expressions.  - Remove an unused local variable in statusLabel() to satisfy ESLint.
+  - Replace ts-expect-error + short-circuit with type-safe optional call to logUpdate.done() to clear TS2578 and no-unused-expressions. - Remove an unused local variable in statusLabel() to satisfy ESLint.
   - No runtime behavior change; live table remains visible in TTY; non‑TTY unchanged.
 
 - fix(eslint): replace deprecated eslint-plugin-vitest with @vitest/eslint-plugin
@@ -84,7 +98,7 @@ Completed (recent)
 
 - feat(run): add live-mode flags and defaults; scaffold TTY live infrastructure
   - New runtime deps: log-update, table, tree-kill (no change to non‑TTY runs).
-  - Flags: --live/--no-live (default true), --hang-warn, --hang-kill, --hang-kill-grace.  - cliDefaults.run support for live/hang thresholds; docs updated.
+  - Flags: --live/--no-live (default true), --hang-warn, --hang-kill, --hang-kill-grace. - cliDefaults.run support for live/hang thresholds; docs updated.
   - Behavior unchanged for now; ProgressRenderer/ProcessSupervisor scaffolds added and idle until wired.
   - Added focused tests for defaults/overrides parsing.
 

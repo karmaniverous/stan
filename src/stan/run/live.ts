@@ -243,7 +243,17 @@ export class ProgressRenderer {
     const sep = ' • ';
     const summary = this.opts.boring
       ? `[${elapsed}]${sep}waiting ${counts.waiting}${sep}OK ${counts.ok}${sep}FAIL ${counts.fail}${sep}TIMEOUT ${counts.timeout}`
-      : `${elapsed}${sep}⏳ ${counts.waiting}${sep}✔ ${counts.ok}${sep}✖ ${counts.fail}${sep}⏱ ${counts.timeout}`;
+      : [
+          `${elapsed}`,
+          // waiting (yellow)
+          yellow(`⏳ ${counts.waiting.toString()}`),
+          // ok (green)
+          green(`✔ ${counts.ok.toString()}`),
+          // fail (red)
+          red(`✖ ${counts.fail.toString()}`),
+          // timeout (red)
+          red(`⏱ ${counts.timeout.toString()}`),
+        ].join(sep);
     const hint = this.opts.boring
       ? 'Press q to cancel'
       : gray('Press q to cancel');

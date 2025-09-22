@@ -14,10 +14,26 @@ import { createArchiveDiff } from '../diff';
 import { makeStanDirs } from '../paths';
 import { getVersionInfo } from '../version';
 
+type ArchiveProgress = {
+  /** Called when a phase starts (kind: 'full' | 'diff'). */
+  start?: (kind: 'full' | 'diff') => void;
+  /**
+   * Called when a phase completes.
+   * @param kind - 'full' | 'diff'
+   * @param pathAbs - Absolute path to the created archive
+   * @param startedAt - ms epoch
+   * @param endedAt - ms epoch
+   */
+  done?: (
+    kind: 'full' | 'diff',
+    pathAbs: string,
+    startedAt: number,
+    endedAt: number,
+  ) => void;
+};
 /**
  * Remove on‑disk script outputs after combine mode archived them.
- * Keeps `archive.tar` and `archive.diff.tar` in place.
- *
+ * Keeps `archive.tar` and `archive.diff.tar` in place. *
  * @param outAbs - Absolute path to `<stanPath>/output`.
  */
 const cleanupOutputsAfterCombine = async (outAbs: string): Promise<void> => {
@@ -177,16 +193,26 @@ export const archivePhase = async (args: {
   cwd: string;
   config: ContextConfig;
   includeOutputs: boolean;
-}): Promise<{ archivePath: string; diffPath: string }> => {
+}): Promise<{ archivePath: string; diffPath: string }>;
+export const archivePhase = async (
+  args: {
+    cwd: string;
+    config: ContextConfig;
+    includeOutputs: boolean;
+  },
+  opts?: { progress?: ArchiveProgress; silent?: boolean },
+): Promise<{ archivePath: string; diffPath: string }> => {
   const { cwd, config, includeOutputs } = args;
+  const silent = Boolean(opts?.silent);
   const dirs = makeStanDirs(cwd, config.stanPath);
 
-  console.log(`stan: start "${cyan('archive')}"`);
+  if (!silent) {
+    console.log(`stan: start "${cyan('archive')}"`);
+  }
   // In this repo, assemble the system monolith from parts before archiving.
   const vinfo = await getVersionInfo(cwd);
   let restore: () => Promise<void> = async () => {};
-  if (vinfo.isDevModuleRepo) {
-    try {
+  if (vinfo.isDevModuleRepo) {    try {
       await assembleSystemFromParts(cwd, config.stanPath);
     } catch {
       // best-effort
@@ -198,16 +224,21 @@ export const archivePhase = async (args: {
   let archivePath = '';
   let diffPath = '';
   try {
+    opts?.progress?.start?.('full');
+    const startedFull = Date.now();
     archivePath = await createArchive(cwd, config.stanPath, {
       includeOutputDir: includeOutputs,
       includes: config.includes ?? [],
       excludes: config.excludes ?? [],
     });
-    console.log(
-      `stan: ${green('done')} "${cyan('archive')}" -> ${cyan(
-        archivePath.replace(/\\/g, '/'),
-      )}`,
-    );
+    opts?.progress?.done?.('full', archivePath, startedFull, Date.now());
+    if (!silent) {
+      console.log(
+        `stan: ${green('done')} "${cyan('archive')}" -> ${cyan(
+          archivePath.replace(/\\/g, '/'),
+        )}`,
+      );
+    }
 
     // Important: restore any ephemeral packaged system prompt before computing the diff.
     // Otherwise, downstream repos (which do not maintain a local stan.system.md)
@@ -216,7 +247,9 @@ export const archivePhase = async (args: {
     // Prevent double-restore in the outer finally.
     restore = async () => {};
 
-    console.log(`stan: start "${cyan('archive (diff)')}"`);
+    if (!silent) console.log(`stan: start "${cyan('archive (diff)')}"`);
+    opts?.progress?.start?.('diff');
+    const startedDiff = Date.now();
     // We intentionally do not force-include the system prompt in the diff archive.
     ({ diffPath } = await createArchiveDiff({
       cwd,
@@ -227,17 +260,19 @@ export const archivePhase = async (args: {
       updateSnapshot: 'createIfMissing',
       includeOutputDirInDiff: includeOutputs,
     }));
-    console.log(
-      `stan: ${green('done')} "${cyan('archive (diff)')}" -> ${cyan(
-        diffPath.replace(/\\/g, '/'),
-      )}`,
-    );
+    opts?.progress?.done?.('diff', diffPath, startedDiff, Date.now());
+    if (!silent) {
+      console.log(
+        `stan: ${green('done')} "${cyan('archive (diff)')}" -> ${cyan(
+          diffPath.replace(/\\/g, '/'),
+        )}`,
+      );
+    }
   } finally {
     // No-op if already restored; otherwise remove/restore ephemeral system prompt (downstream only).
     await restore();
   }
-  if (includeOutputs) {
-    await cleanupOutputsAfterCombine(dirs.outputAbs);
+  if (includeOutputs) {    await cleanupOutputsAfterCombine(dirs.outputAbs);
   }
   await cleanupPatchDirAfterArchive(cwd, config.stanPath);
 

@@ -1,4 +1,3 @@
-// src/stan/run/service.ts
 import { writeFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 
@@ -89,6 +88,20 @@ export const runSelected = async (
     renderer = new ProgressRenderer({
       boring: process.env.STAN_BORING === '1',
     });
+    // Pre-register archive rows when we intend to archive, so the UI
+    // shows them as "waiting" while scripts are running.
+    if (behavior.archive) {
+      renderer.update(
+        'archive:full',
+        { kind: 'waiting' },
+        { type: 'archive', item: 'full' },
+      );
+      renderer.update(
+        'archive:diff',
+        { kind: 'waiting' },
+        { type: 'archive', item: 'diff' },
+      );
+    }
     renderer.start();
   }
 
@@ -154,14 +167,45 @@ export const runSelected = async (
       renderer ? { silent: true } : undefined,
     );
     created.push(...scriptOutputs);
-  } // ARCHIVE PHASE
+  }
+  // ARCHIVE PHASE
   if (behavior.archive) {
     const includeOutputs = Boolean(behavior.combine);
-    const { archivePath, diffPath } = await archivePhase({
-      cwd,
-      config,
-      includeOutputs,
-    });
+    const { archivePath, diffPath } = await archivePhase(
+      {
+        cwd,
+        config,
+        includeOutputs,
+      },
+      renderer
+        ? {
+            // Live updates and silent console logging (suppress legacy start/done lines)
+            silent: true,
+            progress: {
+              start: (kind) => {
+                const key = kind === 'full' ? 'archive:full' : 'archive:diff';
+                renderer?.update(
+                  key,
+                  { kind: 'running', startedAt: Date.now() },
+                  {
+                    type: 'archive',
+                    item: kind === 'full' ? 'full' : 'diff',
+                  },
+                );
+              },
+              done: (kind, pathAbs, startedAt, endedAt) => {
+                const key = kind === 'full' ? 'archive:full' : 'archive:diff';
+                const rel = relative(cwd, pathAbs).replace(/\\/g, '/');
+                renderer?.update(key, {
+                  kind: 'done',
+                  durationMs: Math.max(0, endedAt - startedAt),
+                  outputPath: rel,
+                });
+              },
+            },
+          }
+        : undefined,
+    );
     created.push(archivePath, diffPath);
   }
 

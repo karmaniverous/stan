@@ -59,9 +59,17 @@ Flags:
   - Play (or suppress) a terminal bell on completion. Default can be set via cliDefaults.run.ding.
 - -p, --plan
   - Print a concise run plan and exit with no side effects.
+- --live / --no-live
+  - Enable/disable a live progress table in TTY. Built‑in default: enabled.
+  - Non‑TTY runs (tests/CI) are unaffected and keep line‑per‑event logs.
+- --hang-warn <seconds>
+  - Label a running script as “stalled” after this many seconds of inactivity (TTY only).
+- --hang-kill <seconds>
+  - Terminate stalled scripts after this many seconds (SIGTERM → grace → SIGKILL; TTY only).
+- --hang-kill-grace <seconds>
+  - Grace period in seconds before SIGKILL after SIGTERM (TTY only).
 
 Conflicts and special cases:
-
 - -c conflicts with -A (combine implies archives).
 - -S conflicts with -s and -x.
 - -S plus -A (scripts disabled and archives disabled) => “nothing to do; plan only”.

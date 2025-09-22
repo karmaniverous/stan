@@ -4,7 +4,6 @@ import type { ContextConfig } from '@/stan/config';
 import type { ExecutionMode, RunBehavior } from '@/stan/run';
 
 import { deriveRunInvocation } from '../run-args';
-
 export type DerivedRun = {
   selection: string[];
   mode: ExecutionMode;
@@ -46,6 +45,17 @@ export const deriveRunParameters = (args: {
     }
   ).getOptionValueSource?.bind(cmd);
 
+  const toInt = (v: unknown): number | undefined => {
+    if (typeof v === 'number' && Number.isFinite(v)) return Math.floor(v);
+    if (typeof v === 'string') {
+      const s = v.trim();
+      if (s.length) {
+        const n = Number.parseInt(s, 10);
+        if (Number.isFinite(n)) return Math.floor(n);
+      }
+    }
+    return undefined;
+  };
   const combine =
     src && src('combine') === 'cli'
       ? Boolean((options as { combine?: unknown }).combine)
@@ -63,6 +73,26 @@ export const deriveRunParameters = (args: {
     src && src('ding') === 'cli'
       ? Boolean((options as { ding?: unknown }).ding)
       : Boolean(runDefs.ding ?? false);
+
+  const live =
+    src && src('live') === 'cli'
+      ? Boolean((options as { live?: unknown }).live)
+      : typeof runDefs.live === 'boolean'
+        ? runDefs.live
+        : true;
+
+  const hangWarn =
+    src && src('hangWarn') === 'cli'
+      ? toInt((options as { hangWarn?: unknown }).hangWarn)
+      : toInt((runDefs as { hangWarn?: unknown }).hangWarn);
+  const hangKill =
+    src && src('hangKill') === 'cli'
+      ? toInt((options as { hangKill?: unknown }).hangKill)
+      : toInt((runDefs as { hangKill?: unknown }).hangKill);
+  const hangKillGrace =
+    src && src('hangKillGrace') === 'cli'
+      ? toInt((options as { hangKillGrace?: unknown }).hangKillGrace)
+      : toInt((runDefs as { hangKillGrace?: unknown }).hangKillGrace);
 
   const archiveOpt = (options as { archive?: unknown }).archive as
     | boolean
@@ -112,6 +142,15 @@ export const deriveRunParameters = (args: {
   }
 
   const mode: ExecutionMode = sequential ? 'sequential' : 'concurrent';
-  const behavior: RunBehavior = { combine, keep, archive, ding };
+  const behavior: RunBehavior = {
+    combine,
+    keep,
+    archive,
+    ding,
+    live,
+    hangWarn,
+    hangKill,
+    hangKillGrace,
+  };
   return { selection, mode, behavior };
 };

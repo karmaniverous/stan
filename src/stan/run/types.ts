@@ -20,4 +20,8 @@ export type RunBehavior = {
   keep?: boolean;
   archive?: boolean;
   ding?: boolean;
+  live?: boolean;
+  hangWarn?: number;
+  hangKill?: number;
+  hangKillGrace?: number;
 };

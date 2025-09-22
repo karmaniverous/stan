@@ -10,7 +10,7 @@ import { preflightDocsAndVersion } from '../preflight';
 import { archivePhase } from './archive';
 import { runScripts } from './exec';
 import { renderRunPlan } from './plan';
-import type { ExecutionMode, RunBehavior, Selection } from './types';
+import type { ExecutionMode, RunBehavior } from './types';
 
 const shouldWriteOrder =
   process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
@@ -38,7 +38,7 @@ const shouldWriteOrder =
 export const runSelected = async (
   cwd: string,
   config: ContextConfig,
-  selection: Selection = null,
+  selection: string[] | null = null,
   mode: ExecutionMode = 'concurrent',
   behaviorMaybe?: RunBehavior,
 ): Promise<string[]> => {
@@ -76,6 +76,12 @@ export const runSelected = async (
       await writeFile(orderFile, '', 'utf8');
     }
   }
+
+  // TTY-only live renderer (scaffold; no-op when not TTY or disabled)
+  const stdoutLike = process.stdout as unknown as { isTTY?: boolean };
+  const isTTY = Boolean(stdoutLike?.isTTY);
+  const liveEnabled = (behavior.live ?? true) && isTTY;
+  // Future: wire ProgressRenderer + ProcessSupervisor when liveEnabled === true.
 
   // Build the run list:
   // - When selection is null/undefined, run all scripts in config order.

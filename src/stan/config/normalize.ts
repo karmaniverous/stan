@@ -39,6 +39,16 @@ export const asStringArray = (v: unknown): string[] | undefined => {
   return out.length ? out : [];
 };
 
+const asInt = (v: unknown): number | undefined => {
+  if (typeof v === 'number' && Number.isFinite(v)) return Math.floor(v);
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (!s.length) return undefined;
+    const n = Number.parseInt(s, 10);
+    if (Number.isFinite(n)) return Math.floor(n);
+  }
+  return undefined;
+};
 export const normalizeCliDefaults = (v: unknown): CliDefaults | undefined => {
   if (!v || typeof v !== 'object') return undefined;
   const o = v as Record<string, unknown>;
@@ -60,6 +70,14 @@ export const normalizeCliDefaults = (v: unknown): CliDefaults | undefined => {
   if (typeof rk === 'boolean') run.keep = rk;
   if (typeof rq === 'boolean') run.sequential = rq;
   const rd = asBool(runIn.ding);
+  const rl = asBool(runIn.live);
+  if (typeof rl === 'boolean') run.live = rl;
+  const rWarn = asInt(runIn.hangWarn);
+  if (typeof rWarn === 'number' && rWarn > 0) run.hangWarn = rWarn;
+  const rKill = asInt(runIn.hangKill);
+  if (typeof rKill === 'number' && rKill > 0) run.hangKill = rKill;
+  const rGrace = asInt(runIn.hangKillGrace);
+  if (typeof rGrace === 'number' && rGrace > 0) run.hangKillGrace = rGrace;
   if (typeof rd === 'boolean') run.ding = rd;
   if (typeof runIn.scripts === 'boolean') {
     run.scripts = runIn.scripts;

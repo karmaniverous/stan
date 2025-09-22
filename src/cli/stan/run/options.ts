@@ -42,6 +42,27 @@ export const registerRunOptions = (
     '-x, --except-scripts <keys...>',
     'script keys to exclude (reduces from --scripts or from full set)',
   );
+  // Live TTY progress and hang thresholds
+  const optLive = new Option(
+    '--live',
+    'enable live progress table (TTY only; default true)',
+  );
+  const optNoLive = new Option(
+    '--no-live',
+    'disable live progress table (TTY only)',
+  );
+  const optHangWarn = new Option(
+    '--hang-warn <seconds>',
+    'label “stalled” after N seconds of inactivity (TTY only)',
+  );
+  const optHangKill = new Option(
+    '--hang-kill <seconds>',
+    'terminate stalled scripts after N seconds (SIGTERM→grace→SIGKILL; TTY only)',
+  );
+  const optHangKillGrace = new Option(
+    '--hang-kill-grace <seconds>',
+    'grace period in seconds before SIGKILL after SIGTERM (TTY only)',
+  );
 
   // Mode flags
   const optSequential = new Option(
@@ -109,6 +130,11 @@ export const registerRunOptions = (
     .addOption(optCombine)
     .addOption(optNoCombine)
     .addOption(optKeep)
+    .addOption(optLive)
+    .addOption(optNoLive)
+    .addOption(optHangWarn)
+    .addOption(optHangKill)
+    .addOption(optHangKillGrace)
     .addOption(optNoKeep)
     .addOption(optNoScripts)
     .addOption(optBell)
@@ -145,6 +171,8 @@ export const registerRunOptions = (
     };
     const dArchive =
       typeof runDefs.archive === 'boolean' ? runDefs.archive : true;
+    const dLive = typeof runDefs.live === 'boolean' ? runDefs.live : true;
+
     const dCombine =
       typeof runDefs.combine === 'boolean' ? runDefs.combine : false;
     const dKeep = typeof runDefs.keep === 'boolean' ? runDefs.keep : false;
@@ -154,6 +182,7 @@ export const registerRunOptions = (
     tagDefault(dArchive ? optArchive : optNoArchive, true);
     tagDefault(dCombine ? optCombine : optNoCombine, true);
     tagDefault(dKeep ? optKeep : optNoKeep, true);
+    tagDefault(dLive ? optLive : optNoLive, true);
     tagDefault(dSeq ? optSequential : optNoSequential, true);
     if (runDefs.scripts === false) tagDefault(optNoScripts, true);
     tagDefault(dDing ? optBell : optNoBell, true);

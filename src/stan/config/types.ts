@@ -10,6 +10,10 @@ export type CliDefaultsRun = {
   combine?: boolean;
   keep?: boolean;
   sequential?: boolean;
+  live?: boolean;
+  hangWarn?: number;
+  hangKill?: number;
+  hangKillGrace?: number;
   ding?: boolean;
   scripts?: boolean | string[];
 };

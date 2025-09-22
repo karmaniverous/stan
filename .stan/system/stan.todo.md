@@ -1,6 +1,6 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-21 (UTC) — Add init snapshot prompt behavior; keep existing snapshot by default.
+When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; preserve non‑TTY behavior.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
 
@@ -13,7 +13,8 @@ When updated: 2025-09-21 (UTC) — Add init snapshot prompt behavior; keep exist
 
 - TTY live run status table, hang detection, and graceful cancellation
   - Live table (TTY only; controlled by --live/--no-live, default true; supports cliDefaults.run.live)
-    - Deps: log-update (in-place refresh), table (column layout), tree-kill (cross‑platform process tree termination)    - Columns: Script | Status | Time | Output (show output path only when done/error/cancelled/timed out)
+    - Deps: log-update (in-place refresh), table (column layout), tree-kill (cross‑platform process tree termination)
+    - Columns: Script | Status | Time | Output (show output path only when done/error/cancelled/timed out)
     - Status states:
       - waiting, running…
       - running (quiet: Xs) — no output yet past quietWarn
@@ -29,23 +30,31 @@ When updated: 2025-09-21 (UTC) — Add init snapshot prompt behavior; keep exist
     - Stop starting new scripts; SIGTERM all running; after grace, SIGKILL stragglers; mark cancelled/killed
     - Skip archiving if cancelled before scripts complete; exit non‑zero; print concise summary
     - Show “Press q to cancel” hint in the live UI
-  - CLI flags and defaults (with cliDefaults.run support)
-    - --live / --no-live (default true)
-    - --hang-warn <seconds> (default 120)
-    - --hang-kill <seconds> (default disabled)
-    - --hang-kill-grace <seconds> (default 8)
+  - CLI flags and defaults (with cliDefaults.run support) — IMPLEMENTED
+    - --live / --no-live (default true) — IMPLEMENTED
+    - --hang-warn <seconds> — IMPLEMENTED
+    - --hang-kill <seconds> — IMPLEMENTED
+    - --hang-kill-grace <seconds> — IMPLEMENTED
   - Implementation outline
     - ProgressRenderer: 1s tick; renders table via log-update + table
     - ProcessSupervisor: track child PIDs; soft→hard kill; per‑script timers
     - TTY key handler (raw mode) for q; always restore terminal state on exit
- 
+
 - Long‑file monitoring and decomposition (Phase 3)- Continue to monitor near‑threshold modules; propose splits if any trend toward or exceed ~300 LOC in future changes.
 
-- Coverage follow‑ups  - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed.
+- Coverage follow‑ups - Ensure tests remain strong for src/stan/config/{discover/load/normalize/output}; consider small additional cases for load.ts branches as needed.
   - Target incremental gains over ~86% lines coverage as changes land.
   - Keep excludes limited to trivial barrels and types‑only modules.
 
 Completed (recent)
+
+- feat(run): add live-mode flags and defaults; scaffold TTY live infrastructure
+  - New runtime deps: log-update, table, tree-kill (no change to non‑TTY runs).
+  - Flags: --live/--no-live (default true), --hang-warn, --hang-kill, --hang-kill-grace.
+  - cliDefaults.run support for live/hang thresholds; docs updated.
+  - Behavior unchanged for now; ProgressRenderer/ProcessSupervisor scaffolds added and idle until wired.
+  - Added focused tests for defaults/overrides parsing.
+
 - chore(tsdoc): escape “>” in src/stan/diff.ts TSDoc
   - Fix tsdoc/syntax warning by escaping “>” in angle-bracket tokens.
   - No behavior changes.
@@ -70,7 +79,7 @@ Completed (recent)
   - Use precise generic form for vi.spyOn on process.stdout.write and a compatible mock implementation.
   - Unblocks rollup/typecheck/typedoc (TS2322 no longer reported from tests during build/docs). - Follow-up: target Writable and mockReturnValue(true) for a TS-safe, minimal spy across environments.
   - Finalize: avoid any by casting stdout to a minimal structural type via unknown; spy on that and return true. This removes lint warnings and keeps typecheck stable.
-  - Note: the ASCII BEL (\\x07) is written; whether it produces an audible sound depends on terminal/OS settings. Many modern terminals disable audible bells; the flag remains a minimal, portable notification.- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell
+  - Note: the ASCII BEL (\x07) is written; whether it produces an audible sound depends on terminal/OS settings. Many modern terminals disable audible bells; the flag remains a minimal, portable notification.- feat(run): rename completion bell flags to -b/--bell and -B/--no-bell
   - CLI only; config default remains cliDefaults.run.ding.
   - Help/docs updated; example uses `stan run -b`. - Note: root `-b/--boring` remains at the root command; Commander scopes `-b` correctly when used after `run` (e.g., `stan run -b` toggles the bell).
 

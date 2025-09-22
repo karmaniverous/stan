@@ -72,13 +72,22 @@ export class ProcessSupervisor {
     >,
   ) {}
 
-  // Track a spawned child (placeholder)
-  track(_key: string, _pid: number): void {
-    // no-op for now
+  // Minimal scaffolding to satisfy lint and establish a future control surface.
+  private readonly pids = new Map<string, number>();
+
+  // Track a spawned child (placeholder; no signaling yet)
+  track(key: string, pid: number): void {
+    this.pids.set(key, pid);
   }
 
   // Graceful cancellation: TERM all tracked children (placeholder)
   async cancelAll(): Promise<void> {
-    // no-op for now
+    // Placeholder: iterate tracked entries to mark usage and clear the set.
+    // Future: send SIGTERM and, after grace, SIGKILL (tree-kill on Windows).
+    for (const [k, pid] of this.pids) {
+      void k; // intentional no-op usage
+      void pid;
+    }
+    this.pids.clear();
   }
 }

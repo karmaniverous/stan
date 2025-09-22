@@ -9,6 +9,7 @@ import { makeStanDirs } from '../paths';
 import { preflightDocsAndVersion } from '../preflight';
 import { archivePhase } from './archive';
 import { runScripts } from './exec';
+import { ProgressRenderer } from './live';
 import { renderRunPlan } from './plan';
 import type { ExecutionMode, RunBehavior } from './types';
 
@@ -83,6 +84,14 @@ export const runSelected = async (
   const liveEnabled = (behavior.live ?? true) && isTTY;
   // Future: wire ProgressRenderer + ProcessSupervisor when liveEnabled === true.
 
+  let renderer: ProgressRenderer | undefined;
+  if (liveEnabled) {
+    renderer = new ProgressRenderer({
+      boring: process.env.STAN_BORING === '1',
+    });
+    renderer.start();
+  }
+
   // Build the run list:
   // - When selection is null/undefined, run all scripts in config order.
   // - When selection is provided (even empty), respect the provided order.
@@ -120,6 +129,9 @@ export const runSelected = async (
     });
     created.push(archivePath, diffPath);
   }
+
+  // Stop live renderer (no-op render) if it was started.
+  if (renderer) renderer.stop();
 
   // Final notification (terminal bell) when requested.
   if (behavior.ding) {

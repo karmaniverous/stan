@@ -8,7 +8,9 @@ import { makeStanDirs } from '../paths';
 import { preflightDocsAndVersion } from '../preflight';
 import { archivePhase } from './archive';
 import { runScripts } from './exec';
-import { ProcessSupervisor, ProgressRenderer } from './live';
+import { installCancelKeys } from './input/keys';
+import { ProgressRenderer } from './live/renderer';
+import { ProcessSupervisor } from './live/supervisor';
 import { renderRunPlan } from './plan';
 import type { ExecutionMode, RunBehavior } from './types';
 
@@ -28,7 +30,7 @@ const shouldWriteOrder =
  *     platform‑specific sound dependencies.
  * - Execute selected scripts (in the chosen mode).
  * - Optionally create regular and diff archives (combine/keep behaviors).
- * * @param cwd - Repo root for execution.
+ * @param cwd - Repo root for execution.
  * @param config - Resolved configuration.
  * @param selection - Explicit list of script keys (or `null` to run all).
  * @param mode - Execution mode (`concurrent` by default).
@@ -84,72 +86,20 @@ export const runSelected = async (
       await writeFile(orderFile, '', 'utf8');
     }
   }
-  // TTY key handler (q/Q or Ctrl+C) → single, idempotent cancellation pipeline
-  let restoreTty: (() => void) | null = null;
-  const installKeyHandlers = (): void => {
-    try {
-      const stdin = process.stdin as unknown as NodeJS.ReadStream & {
-        setRawMode?: (v: boolean) => void;
-      };
-      if (!stdin) return;
-      const isTty = Boolean(stdin.isTTY);
-      // SIGINT parity always enabled
-      const onSigint = () => triggerCancel();
-      process.on('SIGINT', onSigint);
-      if (!isTty) {
-        restoreTty = () => {
-          process.off('SIGINT', onSigint);
-        };
-        return;
-      }
-      stdin.setEncoding('utf8');
-      // Some environments omit setRawMode; guard accordingly
-      try {
-        stdin.setRawMode?.(true);
-      } catch {
-        /* ignore */
-      }
-      stdin.resume();
-      const onData = (data: string) => {
-        if (!data) return;
-        if (data === '\u0003' /* Ctrl+C */ || data.toLowerCase() === 'q') {
-          triggerCancel();
-        }
-      };
-      stdin.on('data', onData);
-      restoreTty = () => {
-        try {
-          stdin.off('data', onData);
-        } catch {
-          /* ignore */
-        }
-        try {
-          stdin.setRawMode?.(false);
-        } catch {
-          /* ignore */
-        }
-        try {
-          // Ensure the stream no longer holds the event loop open.
-          (stdin as unknown as { pause?: () => void }).pause?.();
-        } catch {
-          /* ignore */
-        }
-        process.off('SIGINT', onSigint);
-      };
-    } catch {
-      /* best-effort */
-    }
-  };
-  // TTY-only live renderer (scaffold; no-op when not TTY or disabled)
+
+  // TTY-only live renderer
   const stdoutLike = process.stdout as unknown as { isTTY?: boolean };
   const isTTY = Boolean(stdoutLike?.isTTY);
   const liveEnabled = (behavior.live ?? true) && isTTY;
-  // Future: wire ProgressRenderer + ProcessSupervisor when liveEnabled === true.
+
   let renderer: ProgressRenderer | undefined;
+  let restoreCancel: (() => void) | null = null;
+
   if (liveEnabled) {
     renderer = new ProgressRenderer({
       boring: process.env.STAN_BORING === '1',
-    }); // Pre-register archive rows when we intend to archive, so the UI    // shows them as "waiting" while scripts are running.
+    });
+    // Pre-register archive rows when we intend to archive so the UI shows "waiting"
     if (behavior.archive) {
       renderer.update(
         'archive:full',
@@ -163,11 +113,10 @@ export const runSelected = async (
       );
     }
     renderer.start();
-    // Install key handlers only in TTY live mode
-    installKeyHandlers();
   }
 
-  // Build the run list:  // - When selection is null/undefined, run all scripts in config order.
+  // Build the run list:
+  // - When selection is null/undefined, run all scripts in config order.
   // - When selection is provided (even empty), respect the provided order.
   const selected = selection == null ? Object.keys(config.scripts) : selection;
 
@@ -186,6 +135,7 @@ export const runSelected = async (
       );
   }
 
+  // Idempotent cancellation pipeline
   const triggerCancel = (): void => {
     if (cancelled) return;
     cancelled = true;
@@ -193,7 +143,6 @@ export const runSelected = async (
       // Update live rows to cancelled (best-effort durations)
       for (const k of toRun) {
         const rowKey = `script:${k}`;
-        // Mark row as cancelled to prevent later "done" overwrite
         cancelledKeys.add(rowKey);
         renderer.update(rowKey, { kind: 'cancelled', durationMs: 0 });
       }
@@ -204,6 +153,13 @@ export const runSelected = async (
     // Signal processes and escalate after grace
     supervisor.cancelAll();
   };
+
+  // Install cancel keys (q/Ctrl+C) + SIGINT parity once we know toRun (TTY only)
+  if (liveEnabled) {
+    const sub = installCancelKeys(triggerCancel);
+    restoreCancel = sub.restore;
+  }
+
   const created: string[] = [];
   // Run scripts only when selection non-empty
   if (toRun.length > 0) {
@@ -219,7 +175,6 @@ export const runSelected = async (
       renderer
         ? {
             onStart: (key) => {
-              // If we missed an earlier mark, fall back to "now"
               const rowKey = `script:${key}`;
               renderer?.update(
                 rowKey,
@@ -251,6 +206,7 @@ export const runSelected = async (
     );
     created.push(...scriptOutputs);
   }
+
   // ARCHIVE PHASE
   if (behavior.archive && !cancelled) {
     const includeOutputs = Boolean(behavior.combine);
@@ -299,15 +255,14 @@ export const runSelected = async (
 
   // Stop live renderer (no-op render) if it was started.
   if (renderer) {
-    // Flush one final frame so the most recent states (e.g., archive diff ✔ ok)
-    // are included before persisting via stop().
+    // Flush one final frame so the most recent states are included
     renderer.flush();
     renderer.stop();
   }
 
-  // Always restore TTY state/listeners
-  const toRestore = restoreTty;
-  restoreTty = null; // Nullify immediately
+  // Always restore keypress/SIGINT wiring
+  const toRestore = restoreCancel;
+  restoreCancel = null; // Nullify immediately
   if (typeof toRestore === 'function') {
     try {
       toRestore();

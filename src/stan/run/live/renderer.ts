@@ -1,16 +1,11 @@
-/* src/stan/run/live.ts
- * TTY live progress rendering and (future) process supervision.
- * - ProgressRenderer: log-update + table to render a live table every ~1s.
- * - BORING mode: drops color/emojis but keeps the table visible.
- * - Non‑TTY and --no-live runs remain unchanged (renderer never started).
+/* src/stan/run/live/renderer.ts
+ * TTY live progress rendering (ProgressRenderer).
  */
 import logUpdate from 'log-update';
 import { table } from 'table';
-import treeKill from 'tree-kill';
 
 import { bold, gray, green, red, yellow } from '@/stan/util/color';
 
-import type { RunBehavior } from './types';
 export type ScriptState =
   | { kind: 'waiting' }
   | { kind: 'running'; startedAt: number; lastOutputAt?: number }
@@ -75,11 +70,8 @@ export class ProgressRenderer {
   stop(): void {
     if (this.timer) clearInterval(this.timer);
     this.timer = undefined;
-    // Persist the most recently rendered frame; avoid a final re-render
     try {
-      // Type-safe optional call; some builds expose logUpdate.done()
-      const lu = logUpdate as unknown as { done?: () => void };
-      lu.done?.();
+      (logUpdate as unknown as { done?: () => void }).done?.();
     } catch {
       // best-effort
     }
@@ -100,7 +92,6 @@ export class ProgressRenderer {
         ? ({ type: prior.type, item: prior.item } as RowMeta)
         : undefined);
     if (!resolvedMeta) {
-      // Fallback: infer as a script with the whole key as item.
       const fallback: RowMeta = { type: 'script', item: key };
       this.rows.set(key, {
         ...fallback,
@@ -172,7 +163,6 @@ export class ProgressRenderer {
     const rows: string[][] = [];
     rows.push(header);
     if (this.rows.size === 0) {
-      // Minimal but visible placeholder
       const elapsed = fmtMs(now() - this.startedAt);
       rows.push([
         gray('—'),
@@ -182,7 +172,6 @@ export class ProgressRenderer {
         gray(''),
       ]);
     } else {
-      // Build a stable, grouped view: scripts first, then archives (regardless of registration timing).
       const all = Array.from(this.rows.values());
       const grouped = [
         ...all.filter((r) => r.type === 'script'),
@@ -190,7 +179,6 @@ export class ProgressRenderer {
       ];
       for (const row of grouped) {
         const st = row.state;
-        // Time column: elapsed (running) or duration/blank
         let time = '';
         if (
           st.kind === 'running' ||
@@ -221,7 +209,6 @@ export class ProgressRenderer {
     }
 
     const bodyTable = table(rows, {
-      // Keep it compact and stable; avoid ANSI-heavy borders that flicker
       border: {
         topBody: ``,
         topJoin: ``,
@@ -239,24 +226,18 @@ export class ProgressRenderer {
         joinRight: ``,
         joinJoin: ``,
       },
-      // No blank separators between rows
       drawHorizontalLine: () => false,
       columns: {
-        // Status left; Time right-align; Output grows naturally
         2: { alignment: 'left' },
         3: { alignment: 'right' },
       },
     });
 
-    // Normalize table left edge: the "table" function prepends a single leading
-    // space to each line. Strip exactly one such pad (when present) to avoid
-    // drifting one column beyond our intended two‑space indent.
     const strippedTable = bodyTable
       .split('\n')
       .map((l) => (l.startsWith(' ') ? l.slice(1) : l))
       .join('\n');
 
-    // Summary + hint
     const elapsed = fmtMs(now() - this.startedAt);
     const counts = this.counts();
     const sep = ' • ';
@@ -264,20 +245,14 @@ export class ProgressRenderer {
       ? `${elapsed}${sep}waiting ${counts.waiting}${sep}OK ${counts.ok}${sep}FAIL ${counts.fail}${sep}TIMEOUT ${counts.timeout}`
       : [
           `${elapsed}`,
-          // waiting (yellow) — unify on single‑width ⏱
           yellow(`⏱ ${counts.waiting.toString()}`),
-          // ok (green)
           green(`✔ ${counts.ok.toString()}`),
-          // fail (red)
           red(`✖ ${counts.fail.toString()}`),
-          // timeout (red)
           red(`⏱ ${counts.timeout.toString()}`),
         ].join(sep);
     const hint = this.opts.boring
       ? 'Press q to cancel'
       : gray('Press q to cancel');
-    // Indent each rendered line by exactly two spaces so the left edge aligns
-    // with the run plan body (which is indented in the CLI plan output).
     const raw = `${strippedTable.trimEnd()}\n\n${summary}\n${hint}`;
     const padded = raw
       .split('\n')
@@ -286,7 +261,7 @@ export class ProgressRenderer {
     try {
       logUpdate(padded);
     } catch {
-      // best-effort; never throw from renderer
+      // best-effort
     }
   }
   private counts(): {
@@ -317,66 +292,9 @@ export class ProgressRenderer {
           fail += 1;
           break;
         default:
-          // running/quiet/stalled are not counted in summary buckets
           break;
       }
     }
     return { waiting, ok, fail, timeout };
-  }
-}
-
-export class ProcessSupervisor {
-  constructor(
-    private readonly behavior: Pick<
-      RunBehavior,
-      'hangWarn' | 'hangKill' | 'hangKillGrace'
-    >,
-  ) {}
-
-  // Track script processes by stable row key (e.g., "script:<name>")
-  private readonly pids = new Map<string, number>();
-
-  // Track a spawned child (placeholder; no signaling yet)
-  // Synchronous for now to satisfy lint (no awaits yet).
-  track(key: string, pid: number): void {
-    this.pids.set(key, pid);
-  }
-
-  /**
-   * Graceful cancellation:
-   * - Send SIGTERM to all tracked PIDs.
-   * - After grace (behavior.hangKillGrace), send SIGKILL via tree-kill.
-   * - Clears the PID map to avoid duplicate signals.
-   */
-  cancelAll(): void {
-    const graceMs =
-      (typeof this.behavior.hangKillGrace === 'number'
-        ? this.behavior.hangKillGrace
-        : 8) * 1000;
-    const current = Array.from(this.pids.entries());
-    // First wave: SIGTERM best-effort
-    for (const [, pid] of current) {
-      try {
-        // On Windows, SIGTERM behaves like a no-op; we still follow with tree-kill.
-        if (Number.isFinite(pid)) process.kill(pid, 'SIGTERM');
-      } catch {
-        // ignore
-      }
-    }
-    // Second wave after grace: hard kill process trees.
-    setTimeout(
-      () => {
-        for (const [, pid] of current) {
-          try {
-            if (Number.isFinite(pid)) treeKill(pid, 'SIGKILL');
-          } catch {
-            // ignore
-          }
-        }
-      },
-      Math.max(0, graceMs),
-    );
-    // Best-effort clear
-    this.pids.clear();
   }
 }

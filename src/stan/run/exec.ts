@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 import { cyan, green } from '@/stan/util/color';
 
 import type { ContextConfig } from '../config';
-import type { ProcessSupervisor } from './live';
+import type { ProcessSupervisor } from './live/supervisor';
 import type { ExecutionMode, Selection } from './types';
 
 type RunHooks = {

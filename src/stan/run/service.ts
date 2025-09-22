@@ -133,12 +133,13 @@ export const runSelected = async (
                 outputPath: rel,
               });
             },
+            silent: true,
           }
         : undefined,
+      renderer ? { silent: true } : undefined,
     );
     created.push(...scriptOutputs);
-  }
-  // ARCHIVE PHASE
+  } // ARCHIVE PHASE
   if (behavior.archive) {
     const includeOutputs = Boolean(behavior.combine);
     const { archivePath, diffPath } = await archivePhase({

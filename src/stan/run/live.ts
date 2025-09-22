@@ -3,8 +3,7 @@
  * - ProgressRenderer: log-update + table to render a live table every ~1s.
  * - BORING mode: drops color/emojis but keeps the table visible.
  * - Non‑TTY and --no-live runs remain unchanged (renderer never started).
- */
-import logUpdate from 'log-update';
+ */ import logUpdate from 'log-update';
 import { table } from 'table';
 
 import { gray, green, red, yellow } from '@/stan/util/color';
@@ -92,48 +91,33 @@ export class ProgressRenderer {
       case 'waiting':
         return boring ? '[WAIT]' : yellow('⏳ wait');
       case 'running': {
-        const elapsed = fmtMs(now() - st.startedAt);
-        return boring ? `[RUN] ${elapsed}` : yellow(`▶ ${elapsed}`);
+        return boring ? '[RUN]' : yellow('▶ run');
       }
       case 'quiet': {
-        const elapsed = fmtMs(now() - st.startedAt);
-        const q = fmtMs(st.quietFor * 1000);
-        return boring
-          ? `[RUN quiet ${q}] ${elapsed}`
-          : yellow(`△ ${elapsed} quiet ${q}`);
+        return boring ? '[QUIET]' : yellow('△ quiet');
       }
       case 'stalled': {
-        const elapsed = fmtMs(now() - st.startedAt);
-        const q = fmtMs(st.stalledFor * 1000);
-        return boring
-          ? `[RUN stalled ${q}] ${elapsed}`
-          : yellow(`△ ${elapsed} stalled ${q}`);
+        return boring ? '[STALLED]' : yellow('△ stalled');
       }
       case 'done': {
-        const t = fmtMs(st.durationMs);
-        return boring ? `[OK] ${t}` : green(`✔ ${t}`);
+        return boring ? '[OK]' : green('✔ ok');
       }
       case 'error': {
-        const t = fmtMs(st.durationMs);
-        return boring ? `[FAIL] ${t}` : red(`✖ ${t}`);
+        return boring ? '[FAIL]' : red('✖ fail');
       }
       case 'timedout': {
-        const t = fmtMs(st.durationMs);
-        return boring ? `[TIMEOUT] ${t}` : red(`⏱ ${t}`);
+        return boring ? '[TIMEOUT]' : red('⏱ timeout');
       }
       case 'cancelled': {
-        const t = st.durationMs ? fmtMs(st.durationMs) : '';
-        return boring ? `[CANCELLED] ${t}` : yellow(`◼ ${t}`);
+        return boring ? '[CANCELLED]' : yellow('◼ cancelled');
       }
       case 'killed': {
-        const t = st.durationMs ? fmtMs(st.durationMs) : '';
-        return boring ? `[KILLED] ${t}` : red(`◼ ${t}`);
+        return boring ? '[KILLED]' : red('◼ killed');
       }
       default:
         return '';
     }
   }
-
   private render(final = false): void {
     const header = ['Script', 'Status', 'Time', 'Output'];
 
@@ -145,7 +129,7 @@ export class ProgressRenderer {
       const elapsed = fmtMs(now() - this.startedAt);
       rows.push([
         gray('—'),
-        gray(this.opts.boring ? `[IDLE] ${elapsed}` : `idle ${elapsed}`),
+        gray(this.opts.boring ? '[IDLE]' : 'idle'),
         gray(elapsed),
         gray(''),
       ]);
@@ -200,14 +184,14 @@ export class ProgressRenderer {
         joinRight: ``,
         joinJoin: ``,
       },
-      drawHorizontalLine: () => true,
+      // No blank separators between rows
+      drawHorizontalLine: () => false,
       columns: {
         // Make Status a bit wider to fit icons/timers; Output grows naturally
         1: { alignment: 'left' },
         2: { alignment: 'right' },
       },
     });
-
     try {
       logUpdate(body);
       if (final) {

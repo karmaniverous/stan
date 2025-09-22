@@ -1,10 +1,9 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; preserve non‑TTY behavior. Resolve ESLint 9 peer conflict; fix live defaults typings/tests.
+When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; preserve non‑TTY behavior. Resolve ESLint 9 peer conflict; fix live defaults typings/tests. Suppress duplicate logs; tidy table output.
 
 <!-- validator moved to Completed (initial library). Integration into composition remains a separate track and will be planned when the composition layer is introduced in-repo. -->
-- Init snapshot prompt behavior
-  - On "stan init":
+- Init snapshot prompt behavior  - On "stan init":
     - If no snapshot exists at <stanPath>/diff/.archive.snapshot.json, do not prompt about snapshots.
     - If a snapshot DOES exist, prompt: “Keep existing snapshot?” (default Yes). If answered “No”, replace/reset the snapshot.
   - Interactive only; in --force mode, keep existing snapshot by default (future override flag TBD).
@@ -47,10 +46,17 @@ When updated: 2025-09-22 (UTC) — Live TTY: add deps, flags, and scaffolding; p
 
 Completed (recent)
 
+- fix(live): suppress per-script “start/done” logs when TTY live table is active
+  - Add silent flag through runScripts → runOne; enable only when renderer is on.
+  - Keeps non‑TTY (tests/CI) unchanged (line‑per‑event logs remain).
+- fix(live): remove duplicate time in table and blank row separators
+  - Status column no longer includes elapsed; Time column is the single source.
+  - Disable horizontal separators (previously rendered as blank lines).
+  - Keep BORING styling; retain Output column only for terminal states.
+
 - fix(live): resolve TS/ESLint issues in live renderer
   - Replace ts-expect-error + short-circuit with type-safe optional call to
-    logUpdate.done() to clear TS2578 and no-unused-expressions.
-  - Remove an unused local variable in statusLabel() to satisfy ESLint.
+    logUpdate.done() to clear TS2578 and no-unused-expressions.  - Remove an unused local variable in statusLabel() to satisfy ESLint.
   - No runtime behavior change; live table remains visible in TTY; non‑TTY unchanged.
 
 - fix(eslint): replace deprecated eslint-plugin-vitest with @vitest/eslint-plugin

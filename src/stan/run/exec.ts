@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import type { Writable } from 'node:stream';
 
 import { cyan, green } from '@/stan/util/color';
 
@@ -17,6 +18,8 @@ type RunHooks = {
     startedAt: number,
     endedAt: number,
   ) => void;
+  /** When true, suppress per-script console logs ("stan: start/done"). */
+  silent?: boolean;
 };
 
 const waitForStreamClose = (stream: NodeJS.WritableStream): Promise<void> =>
@@ -58,6 +61,8 @@ export const normalizeSelection = (
  * @param key - Script key (for logs and filename).
  * @param cmd - Shell command to execute.
  * @param orderFile - Optional order file to append a single letter marker.
+ * @param hooks - Optional lifecycle hooks and flags.
+ * @param opts - Optional execution options (e.g., silent logging).
  * @returns Absolute path to the generated output file.
  */
 export const runOne = async (
@@ -68,8 +73,9 @@ export const runOne = async (
   cmd: string,
   orderFile?: string,
   hooks?: RunHooks,
+  opts?: { silent?: boolean },
 ): Promise<string> => {
-  console.log(`stan: start "${cyan(key)}"`);
+  if (!opts?.silent) console.log(`stan: start "${cyan(key)}"`);
   const outFile = resolve(outAbs, `${key}.txt`);
   const startedAt = Date.now();
   hooks?.onStart?.(key);
@@ -99,12 +105,13 @@ export const runOne = async (
   if (orderFile) {
     await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
   }
-  console.log(
-    `stan: ${green('done')} "${cyan(key)}" -> ${cyan(`${outRel}/${key}.txt`)}`,
-  );
+  if (!opts?.silent) {
+    console.log(
+      `stan: ${green('done')} "${cyan(key)}" -> ${cyan(`${outRel}/${key}.txt`)}`,
+    );
+  }
   return outFile;
 };
-
 /**
  * Run a set of scripts concurrently or sequentially.
  *
@@ -116,6 +123,7 @@ export const runOne = async (
  * @param mode - Execution mode.
  * @param orderFile - Optional order file path (when present, records execution order).
  * @returns Absolute paths to generated output files.
+ * @param opts - Optional execution options (e.g., silent logging).
  */
 export const runScripts = async (
   cwd: string,
@@ -126,6 +134,7 @@ export const runScripts = async (
   mode: ExecutionMode,
   orderFile?: string,
   hooks?: RunHooks,
+  opts?: { silent?: boolean },
 ): Promise<string[]> => {
   const created: string[] = [];
   const runner = async (k: string): Promise<void> => {
@@ -137,6 +146,12 @@ export const runScripts = async (
       config.scripts[k],
       orderFile,
       hooks,
+      {
+        silent:
+          typeof hooks?.silent === 'boolean'
+            ? hooks.silent
+            : Boolean(opts?.silent),
+      },
     );
     created.push(p);
   };

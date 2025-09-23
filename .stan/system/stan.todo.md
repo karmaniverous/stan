@@ -1,9 +1,12 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-23 (UTC) — LoggerUI cancellation unified; archive helpers & assembler consolidation; workspace bootstrapper dedup; CLI defaults tagging DRY.
+When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
+- fix(run/cancel): race scripts against cancellation; skip archive and return immediately when cancelled
+  - Added a cancellation rendezvous in runSelected and a Promise.race around script execution so q/CtrlC stop the run promptly without waiting on long children.
+  - Guarded an early return before the archive phase to ensure no archives are written on cancel; addresses failing cancel.\* tests.
 - feat(run/scripts): treat non‑zero exit code as failure (without suppressing artifacts)
   - Capture each script’s exit code and mark the live row as error when exit ≠ 0.
   - Set process.exitCode = 1 when any selected script fails so CI and shells can detect failure.
@@ -21,7 +24,7 @@ Completed (recent)
 
 - feat(live/summary): represent all statuses and update emojis
   - Waiting emoji switched to ⏳; Timeout emoji switched to ⌛.
-  - Summary now includes counts for running, quiet, and stalled; all statuses are represented.  - Quiet remains yellow; stalled is now orange to distinguish it from quiet.
+  - Summary now includes counts for running, quiet, and stalled; all statuses are represented. - Quiet remains yellow; stalled is now orange to distinguish it from quiet.
   - Ordering near the end of the summary is now: quiet | stalled | timeout.
   - Implementation details:
     - Added orange() helper in util/color; live renderer summary and row labels updated accordingly.

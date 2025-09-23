@@ -39,10 +39,21 @@ describe('SIGINT cancellation skips archive and restores state', () => {
       // ignore
     }
     process.exitCode = exitBackup ?? 0;
+    // Leave the temp dir before removal and release handles (Windows EBUSY mitigation)
+    try {
+      process.chdir(os.tmpdir());
+    } catch {
+      // ignore
+    }
+    try {
+      (process.stdin as unknown as { pause?: () => void }).pause?.();
+    } catch {
+      // ignore
+    }
+    await new Promise((r) => setTimeout(r, 10));
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
-
   it('emits SIGINT to cancel run and does not create archives', async () => {
     const cfg: ContextConfig = {
       stanPath: 'stan',

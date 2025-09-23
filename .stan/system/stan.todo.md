@@ -3,7 +3,6 @@
 When updated: 2025-09-23 (UTC)
 
 Next up (priority order)
-
 1. Targeted unit coverage - Add/keep small unit tests where integration coverage is thin: - Packaged prompt path resolution (getPackagedSystemPromptPath).
    - System monolith assembly edge cases (already covered partially).
 2. CI stability monitoring (Windows)
@@ -19,10 +18,17 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Cancel tests (Windows): await runner teardown on cancel
+  - In run service, when a cancel is triggered, briefly await the in‑flight
+    runner (with a bounded timeout) before returning so child processes and
+    output streams release handles. Reduces EBUSY/ENOTEMPTY on temp dir removal.
+- SIGINT cancel test teardown (Windows): harden afterEach
+  - Add cwd reset to os.tmpdir(), pause stdin, and a brief settle before
+    removing the temp directory in src/stan/run/cancel.sigint.test.ts to
+    align with the stable pattern used in other cancel tests.
 - Cancel tests (Windows): stabilize teardown in cancel.key/schedule tests
   - Align with the parity test pattern to avoid EBUSY/ENOTEMPTY on temp dir removal:
-    - chdir to os.tmpdir() before rm,
-    - pause stdin,
+    - chdir to os.tmpdir() before rm,    - pause stdin,
     - brief settle (~10ms) before deleting the temp directory.
 - Init: remove redundant reset-diff prompt
   - Eliminate the interactive “Reset diff snapshot now?” question from `stan init`.

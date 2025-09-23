@@ -182,18 +182,19 @@ export const runSelected = async (
       }
       // intentionally do not set process.exitCode or exit here
     };
-    // Install cancel keys (q/Ctrl+C) + SIGINT parity via UI (no-op for LoggerUI)
+    // Install cancel keys (q/Ctrl+C/SIGINT) + SIGINT parity via UI (no-op for LoggerUI)
     ui.installCancellation(
       triggerCancel,
       liveEnabled ? triggerRestart : undefined,
     );
     const created: string[] = [];
+    let collectPromise: Promise<void> | null = null;
     // Run scripts only when selection non-empty
     if (toRun.length > 0) {
       const outRel = dirs.outputRel;
       // Start scripts and collect outputs as they finish. Race against cancel/restart
       // so we do not wait for all children to settle when the user hits 'r'.
-      const collect = runScripts(
+      collectPromise = runScripts(
         cwd,
         outAbs,
         outRel,
@@ -251,8 +252,8 @@ export const runSelected = async (
         created.push(...outs);
       });
       // Prevent unhandled rejections if we abandon the await on cancel/restart.
-      void collect.catch(() => {});
-      await Promise.race([collect, cancelOrRestart]);
+      void collectPromise.catch?.(() => {});
+      await Promise.race([collectPromise, cancelOrRestart]);
     }
 
     // If the user cancelled (q/Ctrl+C/SIGINT), skip any further work (including
@@ -272,6 +273,17 @@ export const runSelected = async (
       } catch {
         /* ignore */
       }
+      // Give any in-flight runner a brief moment to release file handles (Windows EBUSY mitigation).
+      try {
+        if (collectPromise) {
+          await Promise.race([
+            collectPromise,
+            new Promise<void>((r) => setTimeout(r, 120)),
+          ]);
+        }
+      } catch {
+        /* ignore */
+      }
       // Live restart: loop and run again; non-live or explicit cancel: return.
       if (restartRequested) {
         // next iteration
@@ -279,7 +291,7 @@ export const runSelected = async (
       }
       // Allow a brief settle so streams/child handles can release (Windows EBUSY mitigation).
       try {
-        await new Promise((r) => setTimeout(r, 40));
+        await new Promise((r) => setTimeout(r, 60));
       } catch {
         /* ignore */
       }

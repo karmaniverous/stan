@@ -109,18 +109,18 @@ See [STAN Configuration](https://docs.karmanivero.us/stan/documents/Stan_Configu
 - **Run** (build & snapshot)
   ```bash
   stan run                 # runs all configured scripts and writes archives
+  stan run -s test         # run only “test”
+  stan run -S              # do not run scripts (combine with -A/-p)
+  stan run -x test         # run all except “test”
+  stan run -q -s lint test # sequential run subset in provided order
+  stan run -c -s test      # combine archives & outputs
+  stan run -A              # do not create archives
   stan run -p              # print plan only, no side effects
   stan run -P              # do not print the plan first
-  stan run -S              # do not run scripts (combine with -A/-p)
-  stan run -A              # do not create archives
-  stan run -c -s test      # combine archives & outputs
-  stan run -q -s lint test # sequential run subset in provided order
-  stan run -x test         # run all except “test”
   ```
 - **Snap** (share & baseline)
   ```bash
-  stan snap
-  stan snap undo | redo | set <index> | info
+  stan snap  stan snap undo | redo | set <index> | info
   stan snap -s # stash before snap; pop after
   ```
 - **Patch** (discuss & patch)

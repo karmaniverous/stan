@@ -4,18 +4,19 @@ When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
+- fix(cli/run): honor -P/--no-plan to suppress run plan
+  - Commander sets `options.plan === false` for negated options.
+  - Update src/cli/stan/run/action.ts to detect `planOpt === false` and pass `behavior.plan = false` so the plan is not printed ahead of execution.
+  - Verified other negated options already use the correct pattern.
+
 - test(open): switch test openCommand to inert
-  - In src/stan/patch/open.test.ts, replace 'code -g {file}' with
-    'node -e "process.exit(0)" {file}' to avoid launching a real
-    editor if spawn mocking is bypassed (prevents temp “b.ts” opening).
+  - In src/stan/patch/open.test.ts, replace 'code -g {file}' with 'node -e "process.exit(0)" {file}' to avoid launching a real editor if spawn mocking is bypassed (prevents temp “b.ts” opening).
 - fix(types/run): add `plan?: boolean` to RunBehavior
   - Resolves TS2339 in src/stan/run/service.ts when checking behavior.plan.
   - typedoc/docs/typecheck now pass this gate.
 - fix(run/cancel): skip archive phase immediately after user cancel
-  - Early‑return after script execution when `cancelled === true` to ensure
-    no archives are created post‑cancel in both live and no‑live modes.
-  - Stabilizes cancel.sigint.test.ts and cancel.parity.test.ts expectations
-    (archives absent; non‑zero exit; prompt stop).
+  - Early‑return after script execution when `cancelled === true` to ensure no archives are created post‑cancel in both live and no‑live modes.
+  - Stabilizes cancel.sigint.test.ts and cancel.parity.test.ts expectations (archives absent; non‑zero exit; prompt stop).
 
 - feat(run): add -P/--no-plan and suppress plan printing when used
   - New flag sits immediately after -p/--plan in help and parsing order.
@@ -125,8 +126,8 @@ Next up
 ---
 
 - feat(live/summary): Add a dedicated CANCELLED count to the live summary using the same ◼ symbol shown in the table. Cancellations are no longer included in the FAIL count.
-  - TTY summary: “… • ⏱ <waiting> • ✔ <ok> • ◼ <cancelled> • ✖ <fail> • ⏱ <timeout>”
-  - BORING summary: “… • waiting N • OK N • CANCELLED N • FAIL N • TIMEOUT N” - Status row rendering remains unchanged.
+  - TTY summary: “… • ⏱ <waiting> • ✔ <ok> • ◼ <cancelled> • ✖ <fail> • ⏱ <quiet> • ⏱ <stalled> • ⏱ <timeout>”
+  - BORING summary: “… • waiting N • running N • OK N • CANCELLED N • FAIL N • quiet N • stalled N • TIMEOUT N” - Status row rendering remains unchanged.
 - fix(cancel/exit): Ensure `stan run` exits promptly after user cancellation (q/Q/Ctrl+C) in CLI runs by explicitly calling `process.exit(1)` once children are signaled and the live renderer has been stopped (skipped under tests). This returns control to the shell and prevents further script output after cancel.
 
 - fix(cancel/live): Preserve finished rows and keep their final values on cancel; finalize durations for in‑flight rows at the moment of cancellation; do not clobber output paths that have already been written. - Renderer: add cancelPending() to mark only waiting/running/quiet/stalled rows as cancelled; compute duration from startedAt; leave done/error/timedout/killed rows untouched so their status/time/path remain visible.
@@ -140,7 +141,6 @@ Next up
   - Impact: no behavior changes; q/Ctrl+C cancellation remains idempotent; tests remain green.
 
 - chore(build): remove 'keypress' from Rollup externals; delete src/types/keypress.d.ts.
-- fix(live/cancel): add 'data' fallback to TTY key handler so pressing 'q' cancels reliably in test environments without raw mode; cancel.key test now passes.
 - fix(lint): remove unused variable in src/stan/run/input/keys.ts to satisfy @typescript-eslint/no-unused-vars.
 
 ---
@@ -171,9 +171,6 @@ Completed (recent)
 - fix(build): resolve all type and reference errors in `run/service`. A reference error (`k is not defined`) in the renderer callbacks was fixed. The persistent `TS2349` error was resolved by refactoring the `restoreTty` cleanup logic to a pattern that TypeScript's control-flow analysis can reliably validate.
   - Typecheck/build/docs/tests: green.
 
-- fix(build): add `rimraf .rollup.cache .tsbuildinfo` to the `build` script to prevent stale cache from causing erroneous typechecking failures.
-  - Build: now reliably clean.
-
 - fix(build): resolve TS2349 in `run/service` by hardening the `restoreTty` callable guard to `typeof rt === 'function'`. This prevents TypeScript's control-flow analysis from narrowing the type to `never` within the `try...finally` block, ensuring the build, typecheck, and docs scripts pass.
   - Typecheck/build/docs: green.- chore(lint): add ESLint ignore for transient `rollup.config-*.mjs` files. This prevents intermittent `eslint --fix` runs from failing with an `ENOENT` error when trying to open an ephemeral file.
   - Lint: runs cleanly without chasing transient configs.
@@ -181,7 +178,7 @@ Completed (recent)
 - fix(live/align): strip the single leading pad emitted by table() before adding the exact two‑space indent for table, summary, and hint. Ensures header/body left edge aligns with the run plan block in both BORING and TTY modes.
   - Tests: live.align passes header/summary/hint two‑space checks.
 - fix(run/service): resolve TS2349 on restoreTty by guarding via a local const typeof function check (avoids the TS transformer narrowing to never). Also ensure stdin.pause() is invoked in the restore handler so the event loop can exit cleanly (prevents Windows EBUSY on temp dir removal in sequential mode tests).
-  - Typecheck/build/docs: green under rollup and typedoc.
+  - Typecheck/build/docs: green.
   - Exit behavior: no lingering TTY/raw state; listeners removed; event loop allowed to drain.
 
 - fix(live/summary): in BORING mode, remove brackets around the elapsed time so the summary line matches the expected “mm:ss • …” pattern with exactly a two‑space indent. TTY summary remains emoji‑styled; BORING uses plain labels with the same bullet separators. No change to counts or glyph policy (⏱ for waiting/timeout in TTY; [WAIT]/[TIMEOUT] labels in BORING remain).

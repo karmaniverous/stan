@@ -4,10 +4,12 @@ When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
+- docs(typedoc): export BlockKind in validate/response to include the referenced
+  type in generated docs and remove the TypeDoc warning.
+
 - fix(run/cancel): race scripts against cancellation; skip archive and return immediately when cancelled
   - Added a cancellation rendezvous in runSelected and a Promise.race around script execution so q/CtrlC stop the run promptly without waiting on long children.
-  - Guarded an early return before the archive phase to ensure no archives are written on cancel; addresses failing cancel.\* tests.
-- feat(run/scripts): treat non‑zero exit code as failure (without suppressing artifacts)
+  - Guarded an early return before the archive phase to ensure no archives are written on cancel; addresses failing cancel.\* tests.- feat(run/scripts): treat non‑zero exit code as failure (without suppressing artifacts)
   - Capture each script’s exit code and mark the live row as error when exit ≠ 0.
   - Set process.exitCode = 1 when any selected script fails so CI and shells can detect failure.
   - Preserve behavior of writing outputs and archives so chat context remains complete.

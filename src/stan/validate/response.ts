@@ -8,8 +8,11 @@
  * - "## Commit Message" exists and is the final section.
  * - If any Patch exists, there is also a Patch for ".stan/system/stan.todo.md".
  */
-
-type BlockKind = 'patch' | 'full' | 'commit';
+/**
+ * Kind tag for validator blocks. Exported so it appears in generated
+ * documentation and to eliminate TypeDoc’s “referenced but not documented” warning.
+ */
+export type BlockKind = 'patch' | 'full' | 'commit';
 
 export type Block = {
   kind: BlockKind;

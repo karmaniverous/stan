@@ -130,6 +130,7 @@ Built‑ins (when neither flags nor config specify): debug=false, boring=false; 
   - Writes both `archive.tar` and `archive.diff.tar`.
 - Planning and toggles:
   - `-p, --plan` prints the run plan and exits without side effects.
+  - `-P, --no-plan` executes without printing the run plan first.
   - `-S, --no-scripts` disables script execution.
   - `-A, --no-archive` disables archives (default is ON unless explicitly negated).
   - `-c, --combine` includes outputs inside archives and removes them on disk (implies `--archive`).
@@ -140,6 +141,15 @@ Built‑ins (when neither flags nor config specify): debug=false, boring=false; 
 - Conflicts:
   - `-S` conflicts with `-s`/`-x`.
   - `-c` conflicts with `-A` (parse‑time via Commander conflicts).
+  - Live progress & thresholds (TTY):
+    - `-l, --live` / `-L, --no-live` toggle the live progress table (default: live enabled).
+    - `--hang-warn <s>` label a running script as “stalled” after N seconds of inactivity.
+    - `--hang-kill <s>` terminate stalled scripts after N seconds (SIGTERM → grace → SIGKILL).
+    - `--hang-kill-grace <s>` grace period before SIGKILL after SIGTERM.
+    - Built‑in defaults (when not specified via flags or cliDefaults.run):
+      - hang‑warn: 120s
+      - hang‑kill: 300s
+      - hang‑kill‑grace: 10s
 
 Short negative flags:
 
@@ -192,7 +202,8 @@ Short negative flags:
 ## Logging
 
 - At the start of `stan run`, print a concise plan.
-- For each script/archive action, log `stan: start "<key>"` and `stan: done "<key>" -> <path>"`.
+- For each script/archive action in no‑live mode, log `stan: start "<key>"` and `stan: done "<key>" -> <path>"`.
+  - In live (TTY) mode, these legacy start/done lines are suppressed; progress is rendered in the live table with status colors and durations.
 - Archive warnings: do not write a warnings file. Print a console summary of excluded binaries and large text files when creating archives.
 
 ## Assistant reply ordering (local policy)

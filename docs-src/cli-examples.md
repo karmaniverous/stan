@@ -95,6 +95,7 @@ Notes:
 
 - In BORING mode (or non‑TTY), statuses render as bracketed tokens (e.g., [WAIT], [RUN], [OK], [CANCELLED], [FAIL], [QUIET], [STALLED], [TIMEOUT]) without color.
 - No‑live parity: with --no-live and thresholds set, STAN logs concise inactivity events (“stalled/timeout/killed”) and preserves artifact parity with live runs (archives skipped on user cancel; outputs/archives otherwise identical given the same inputs and flags).
+- Live mode suppresses legacy “stan: start/done …” archive lines; progress is rendered in the live table. In no‑live mode, those lines are printed as concise console logs.
 
 Conflicts and special cases:
 
@@ -266,6 +267,7 @@ cliDefaults:
 
 - -D => --no-debug
 - -B => --no-boring
+- -P => --no-plan
 - -Q => --no-sequential
 - -K => --no-keep
 

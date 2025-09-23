@@ -2,11 +2,7 @@
 
 # STAN — STAN Tames Autoregressive Nonsense
 
-[![npm version](https://img.shields.io/npm/v/@karmaniverous/stan.svg)](https://www.npmjs.com/package/@karmaniverous/stan)
-![Node Current](https://img.shields.io/node/v/@karmaniverous/stan) <!-- TYPEDOC_EXCLUDE -->
-[![docs](https://img.shields.io/badge/docs-website-blue)](https://docs.karmanivero.us/stan)
-[![changelog](https://img.shields.io/badge/changelog-latest-blue.svg)](https://github.com/karmaniverous/stan/tree/main/CHANGELOG.md)<!-- /TYPEDOC_EXCLUDE -->
-[![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://github.com/karmaniverous/stan/tree/main/LICENSE.md)
+[![npm version](https://img.shields.io/npm/v/@karmaniverous/stan.svg)](https://www.npmjs.com/package/@karmaniverous/stan) ![Node Current](https://img.shields.io/node/v/@karmaniverous/stan) <!-- TYPEDOC_EXCLUDE --> [![docs](https://img.shields.io/badge/docs-website-blue)](https://docs.karmanivero.us/stan) [![changelog](https://img.shields.io/badge/changelog-latest-blue.svg)](https://github.com/karmaniverous/stan/tree/main/CHANGELOG.md)<!-- /TYPEDOC_EXCLUDE --> [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://github.com/karmaniverous/stan/tree/main/LICENSE.md)
 
 ![STAN Loop](https://github.com/karmaniverous/stan/raw/main/assets/stan-loop.png)
 
@@ -114,6 +110,7 @@ See [STAN Configuration](https://docs.karmanivero.us/stan/documents/Stan_Configu
   ```bash
   stan run                 # runs all configured scripts and writes archives
   stan run -p              # print plan only, no side effects
+  stan run -P              # do not print the plan first
   stan run -S              # do not run scripts (combine with -A/-p)
   stan run -A              # do not create archives
   stan run -c -s test      # combine archives & outputs
@@ -143,11 +140,10 @@ See [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage_
 - Guides:
   - [Getting Started](https://docs.karmanivero.us/stan/documents/Getting_Started.html) — Install the CLI, initialize a repo, attach archives in chat, and use the bootloader with TypingMind (GPT‑5, High reasoning, 128k tokens).
   - [The STAN Loop](https://docs.karmanivero.us/stan/documents/The_STAN_Loop.html) — How Build & Snapshot → Share & Baseline → Discuss & Patch work together.
-  - [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html) — Common flags and invocation patterns, including `-p`, `-S`, `-A`, and `-c`.
+  - [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html) — Common flags and invocation patterns, including `-p`, `-P`, `-S`, `-A`, and `-c`.
   - [Stan Configuration](https://docs.karmanivero.us/stan/documents/Stan_Configuration.html) — All config keys, includes/excludes semantics, and phase‑scoped CLI defaults.
   - [Patch Workflow & FEEDBACK](https://docs.karmanivero.us/stan/documents/Patch_Workflow___FEEDBACK.html) — Unified diff policy, FEEDBACK envelopes, and assistant expectations.
-  - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/Archives___Snapshots.html) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history.
-    Additional references:
+  - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/Archives___Snapshots.html) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history. Additional references:
 
 - The following documents are maintained by STAN and live under `<stanPath>/system/` in your repo:
   - `stan.project.md` contains your evolving project requirements.

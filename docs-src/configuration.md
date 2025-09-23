@@ -94,7 +94,7 @@ excludes:
   - '**/generated/**'
 ```
 
-Tip: Use excludes to reduce archive noise (tool state folders, large generated code) and use includes to bring back specific assets you want the assistant to read.
+Tip: Use excludes to reduce archive noise (tool state folders, large generated code) and use includes to bring back specific assets you want to share.
 
 ### maxUndos (number)
 
@@ -141,10 +141,16 @@ cliDefaults:
     combine: false # -c / -C
     keep: false # -k / -K
     sequential: false # -q / -Q
+    live: true # -l / -L
+    hangWarn: 120
+    hangKill: 300
+    hangKillGrace: 10
     # default script selection when neither -s nor -S is provided:
     #   true  => all scripts,
-    #   false => none,    #   ["a","b"] => only these keys
-    scripts: true  patch:
+    #   false => none,
+    #   ["a","b"] => only these keys
+    scripts: true
+  patch:
     # default patch file when no argument/-f is provided, unless -F/--no-file is used
     file: .stan/patch/last.patch
   snap:
@@ -219,9 +225,10 @@ includes:
 
 ## CLI defaults & precedence
 
-- Flags override everything.- If a flag is omitted, STAN consults `cliDefaults`.
+- Flags override everything.
+- If a flag is omitted, STAN consults `cliDefaults`.
 - If not in `cliDefaults`, STAN uses built‑ins:
-  - `run.archive=true`, `run.combine=false`, `run.keep=false`, `run.sequential=false`, `run.scripts=true`
+  - `run.archive=true`, `run.combine=false`, `run.keep=false`, `run.sequential=false`, `run.scripts=true`, `run.live=true`
   - Hang thresholds (TTY-oriented):
     - `run.hangWarn=120` (seconds before labeling “stalled”),
     - `run.hangKill=300` (seconds before escalating from SIGTERM→SIGKILL),
@@ -245,20 +252,11 @@ stan run
 stan run -a   # force archives this time
 ```
 
-- Default script selection:
-
-```yaml
-cliDefaults:
-  run:
-    scripts: ['lint', 'test']
-```
+- Plan toggles:
 
 ```bash
-# No -s/-S:
-stan run         # runs "lint", "test"
-
-# Negated default:
-stan run -S      # run no scripts (conflicts if -s/-x also provided)
+stan run -p   # print the plan and exit
+stan run -P   # execute without printing the plan first
 ```
 
 ## Practical snippets
@@ -310,6 +308,10 @@ cliDefaults:
       "combine": false,
       "keep": false,
       "sequential": false,
+      "live": true,
+      "hangWarn": 120,
+      "hangKill": 300,
+      "hangKillGrace": 10,
       "scripts": true
     },
     "patch": {

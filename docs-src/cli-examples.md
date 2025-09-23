@@ -37,15 +37,20 @@ By default, `stan run`:
 - runs all configured scripts (concurrent),
 - writes both archive.tar and archive.diff.tar.
 
-Flags:
+Flags (presented in the same order as `stan run --help`):
 
 - -s, --scripts [keys...]
   - Select specific script keys. If provided with keys, runs them (order preserved with -q). If provided without keys, selects all known scripts.
   - When -s is omitted, the default selection comes from config (see “Config‑driven defaults”).
+- -S, --no-scripts
+  - Do not run scripts. This conflicts with -s and -x.
+  - If combined with -A as well, STAN prints the plan and does nothing else.
 - -x, --except-scripts <keys...>
   - Exclude these keys. If -s is present, reduces the -s selection; otherwise reduces from the full set of known scripts.
+
 - -q, --sequential / -Q, --no-sequential
   - Run sequentially (preserves -s order) or concurrently (default).
+
 - -a, --archive / -A, --no-archive
   - Create (or skip) archive.tar and archive.diff.tar. Built‑in default: archive enabled unless explicitly negated. Note: -c implies -a.
 - -c, --combine / -C, --no-combine
@@ -53,30 +58,33 @@ Flags:
   - Conflicts with -A (cannot combine while disabling archives).
 - -k, --keep / -K, --no-keep
   - Keep (do not clear) the output directory across runs.
-- -l, --live / -L, --no-live
-  - Enable/disable a live progress table in TTY. Built‑in default: enabled.
-- -S, --no-scripts
-  - Do not run scripts. This conflicts with -s and -x.
-  - If combined with -A as well, STAN prints the plan and does nothing else.
+
 - -p, --plan
   - Print a concise run plan and exit with no side effects.
 - -P, --no-plan
   - Execute without printing the run plan first.
-- --live / --no-live
+
+- -l, --live / -L, --no-live
   - Enable/disable a live progress table in TTY. Built‑in default: enabled.
-  - Non‑TTY runs (tests/CI) are unaffected and keep line‑per‑event logs.- --hang-warn <seconds>
+  - Non‑TTY runs (tests/CI) are unaffected and keep line‑per‑event logs.
+- --hang-warn <seconds>
   - Label a running script as “stalled” after this many seconds of inactivity (TTY only).
 - --hang-kill <seconds>
   - Terminate stalled scripts after this many seconds (SIGTERM → grace → SIGKILL; TTY only).
 - --hang-kill-grace <seconds>
   - Grace period in seconds before SIGKILL after SIGTERM (TTY only).
 
-Defaults (built-in unless overridden by cliDefaults or flags): hang-warn 120s; hang-kill 300s; hang-kill-grace 10s.
+Defaults (built‑in unless overridden by cliDefaults or flags):
+
+- hang-warn 120s
+- hang-kill 300s
+- hang-kill-grace 10s
 
 Conflicts and special cases:
 
 - -c conflicts with -A (combine implies archives).
-- -S conflicts with -s and -x.- -S plus -A (scripts disabled and archives disabled) => “nothing to do; plan only”.
+- -S conflicts with -s and -x.
+- -S plus -A (scripts disabled and archives disabled) => “nothing to do; plan only”.
 
 Examples:
 
@@ -134,11 +142,15 @@ Behavior highlights:
 - Cleaned patch written to .stan/patch/.patch; diagnostics to .stan/patch/.debug/.
 - Apply pipeline:
   - Tries “git apply” with tolerant options across -p1 → -p0; falls back to a jsdiff engine when needed (and to a sandbox when --check).
-- On success:
-  - [OK] patch applied (or “patch check passed”), and modified files can be opened in your editor using patchOpenCommand (default: "code -g {file}").
-- On failure:
-  - Writes a compact FEEDBACK envelope to .stan/patch/.debug/feedback.txt and (when possible) copies it to your clipboard; move any new \*.rej files to .stan/patch/rejects/<UTC>/.
-  - Paste the FEEDBACK block into chat to receive a corrected diff.
+
+On success:
+
+- [OK] patch applied (or “patch check passed”), and modified files can be opened in your editor using patchOpenCommand (default: "code -g {file}").
+
+On failure:
+
+- Writes a compact FEEDBACK envelope to .stan/patch/.debug/feedback.txt and (when possible) copies it to your clipboard; move any new \*.rej files to .stan/patch/rejects/<UTC>/.
+- Paste the FEEDBACK block into chat to receive a corrected diff.
 
 Examples:
 

@@ -90,6 +90,12 @@ stan patch -f fix.patch # read from a file
 
 On failure, STAN writes a compact FEEDBACK packet and (when possible) copies it to your clipboard—paste it into chat to get a corrected diff.
 
+Tips:
+
+- Use `stan run -p` to print the plan and exit; use `stan run -P` to execute without printing the plan first.
+- Use `-q` for sequential execution (preserves `-s` order).
+- Use `-c` to include outputs inside archives and remove them from disk (combine mode).
+
 ## 5) Use the bootloader prompt (for chat clients)
 
 STAN ships a small “bootloader” system prompt that reliably loads your attached system prompt from archives:

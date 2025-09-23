@@ -18,7 +18,8 @@ STAN establishes a simple, reproducible loop for AI‑assisted development.
 - Archive warnings are written to the console (binaries excluded; large text call‑outs).
 
 Tips:
-- Use `stan run -p` to print the plan without side effects.
+
+- Use `stan run -p` to print the plan without side effects; use `stan run -P` to execute without printing the plan first.
 - Use `-q` for sequential execution (preserves `-s` order).
 - Use `-c` to include outputs inside archives and remove them from disk (combine mode).
 
@@ -29,11 +30,13 @@ Tips:
 - In chat, STAN reads the system prompt from the archive and verifies integrity before proceeding.
 
 Notes:
+
 - The bootloader system prompt ensures the correct `stan.system.md` is loaded from the archive (see Getting Started).
 - Starting a new thread? Ask STAN to generate a “handoff” block and paste it at the top of your new chat (see step 4 below).
 - If the system prompt appears to differ from the packaged baseline or docs were updated, CLI preflight prints a concise nudge.
 
 ## 3) Discuss & Patch
+
 - Iterate in chat to refine requirements and approach.
 - STAN generates plain unified diffs with adequate context (no base64).
 - Apply patches:
@@ -57,11 +60,12 @@ Sometimes you need a fresh chat (for example, when the context window is exhaust
    - Attach the latest `.stan/output/archive.tar` (and `archive.diff.tar` if present).
    - STAN will verify the signature, load the prompt from the archive, and execute the startup checklist.
 
-Note: If you paste an existing handoff block into an ongoing chat, STAN treats it as input (it will not generate a new handoff unless you explicitly ask). 
+Note: If you paste an existing handoff block into an ongoing chat, STAN treats it as input (it will not generate a new handoff unless you explicitly ask).
 
 ## Rinse and repeat
 
 - Return to step 1 and continue until the feature is complete, CI is green, and the plan (`.stan/system/stan.todo.md`) is up‑to‑date.
+
 ## Why this loop?
 
 - Reproducible context: all inputs to the discussion are deterministic (source snapshot + text outputs).

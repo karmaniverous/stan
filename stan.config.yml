@@ -1,9 +1,10 @@
 cliDefaults:
   run:
     plan: false
+    sequential: true
 includes: []
 excludes:
-  - "*.local"
+  - '*.local'
   - assets
   - CHANGELOG.md
   - docs

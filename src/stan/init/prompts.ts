@@ -25,9 +25,7 @@ export const readPackageJsonScripts = async (
 type Picked = Pick<
   ContextConfig,
   'stanPath' | 'includes' | 'excludes' | 'scripts'
-> & {
-  resetDiff: boolean;
-};
+>;
 
 /** Ask user for config values; preserve script set optionally. */
 export const promptForConfig = async (
@@ -39,7 +37,6 @@ export const promptForConfig = async (
   const { default: inquirer } = (await import('inquirer')) as {
     default: { prompt: (qs: unknown[]) => Promise<unknown> };
   };
-
   const scriptKeys = Object.keys(pkgScripts);
   const defaultSelected = defaults?.scripts
     ? Object.keys(defaults.scripts).filter((k) => scriptKeys.includes(k))
@@ -98,26 +95,18 @@ export const promptForConfig = async (
           },
         ]
       : []),
-    {
-      type: 'confirm',
-      name: 'resetDiff',
-      message: 'Reset diff snapshot now?',
-      default: true,
-    },
   ])) as {
     stanPath: string;
     includes: string;
     excludes: string;
     preserveScripts?: boolean;
     selectedScripts?: string[];
-    resetDiff: boolean;
   };
 
   const outStan =
     typeof answers.stanPath === 'string' && answers.stanPath
       ? answers.stanPath.trim()
       : (defaults?.stanPath ?? '.stan');
-
   const includesCsv = answers.includes ?? '';
   const excludesCsv = answers.excludes ?? '';
 
@@ -140,6 +129,5 @@ export const promptForConfig = async (
     includes: includesCsv ? parseCsv(includesCsv) : [],
     excludes: excludesCsv ? parseCsv(excludesCsv) : [],
     scripts,
-    resetDiff: Boolean(answers.resetDiff),
   };
 };

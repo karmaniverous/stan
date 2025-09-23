@@ -19,9 +19,13 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Init: remove redundant reset-diff prompt
+  - Eliminate the interactive “Reset diff snapshot now?” question from `stan init`.
+  - Snapshot behavior is now:
+    - If no snapshot exists, create it without asking.
+    - If a snapshot exists, ask “Keep existing snapshot?” (default Yes). If the user answers “No”, replace it.
 - Typecheck/docs build fix: resolve TS2339 in run action
   - Load config as ContextConfig in src/cli/stan/run/action.ts and keep the debug fallback; remove the narrow type guard that hid optional properties (cliDefaults). This unblocks build, docs, and typecheck.
-
 - Windows test stability: cancel parity teardown
   - In src/stan/run/cancel.parity.test.ts, leave the temp directory before rm, pause stdin, and wait briefly to avoid EBUSY on rmdir. Mirrors the stability pattern used elsewhere and removes the last flake in this suite.
 

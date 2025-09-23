@@ -12,7 +12,6 @@ import { ProcessSupervisor } from './live/supervisor';
 import { renderRunPlan } from './plan';
 import type { ExecutionMode, RunBehavior } from './types';
 import { LiveUI, LoggerUI, type RunnerUI } from './ui';
-
 const shouldWriteOrder =
   process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
 
@@ -103,22 +102,51 @@ export const runSelected = async (
     Object.prototype.hasOwnProperty.call(config.scripts, k),
   );
 
+  // Pre-register all planned rows as "waiting" so the UI shows the full schedule at start.
+  // Scripts:
+  for (const k of toRun) {
+    ui.onScriptQueued(k);
+  }
+  // Archives (when enabled):
+  if (behavior.archive) {
+    ui.onArchiveQueued('full');
+    ui.onArchiveQueued('diff');
+  }
+
   // Track cancelled keys to avoid late "done" flips after cancellation
   const cancelledKeys = new Set<string>();
 
   // Idempotent cancellation pipeline
   const triggerCancel = (): void => {
     if (cancelled) return;
-    cancelled = true;
-    // Mark and finalize UI; escalate processes immediately
+    cancelled = true; // Mark and finalize UI; escalate processes immediately
     for (const k of toRun) cancelledKeys.add(`script:${k}`);
-    ui.onCancelled();
-    supervisor.cancelAll({ immediate: true });
+    // Stop live renderer / restore stdin and remove listeners best‑effort
+    try {
+      ui.onCancelled();
+    } catch {
+      /* ignore */
+    }
+    // Send TERM → immediate KILL escalation to all tracked children
+    try {
+      supervisor.cancelAll({ immediate: true });
+    } catch {
+      /* ignore */
+    }
+    // Return control to the shell immediately in real CLI runs.
+    // Tests keep the process alive to allow assertions.
+    try {
+      process.exitCode = 1;
+      if (process.env.NODE_ENV !== 'test') {
+        process.exit(1);
+      }
+    } catch {
+      /* ignore */
+    }
   };
 
   // Install cancel keys (q/Ctrl+C) + SIGINT parity via UI (no-op for LoggerUI)
   ui.installCancellation(triggerCancel);
-
   const created: string[] = [];
   // Run scripts only when selection non-empty
   if (toRun.length > 0) {
@@ -184,19 +212,8 @@ export const runSelected = async (
 
   // Exit non‑zero when cancelled (service-level best-effort)
   if (cancelled) {
-    try {
-      process.exitCode = 1; // In CLI usage, exit promptly after cancelling children and stopping
-      // the live renderer. Avoid hard exit during tests.
-      if (process.env.NODE_ENV !== 'test') {
-        // Best-effort immediate exit to return control to the shell.
-        // Children have already been signaled via supervisor.cancelAll().
-        process.exit(1);
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-  // Final notification (terminal bell) when requested.
+    // Already handled inside triggerCancel for immediate exit.
+  } // Final notification (terminal bell) when requested.
   if (behavior.ding) {
     try {
       // ASCII BEL (may be disabled in some terminals; intentionally simple and portable)

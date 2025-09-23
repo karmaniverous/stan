@@ -13,6 +13,7 @@ export type ArchiveKind = 'full' | 'diff';
 export type RunnerUI = {
   start(): void;
   onPlan(planBody: string): void;
+  onScriptQueued(key: string): void;
   onScriptStart(key: string): void;
   onScriptEnd(
     key: string,
@@ -21,6 +22,7 @@ export type RunnerUI = {
     startedAt: number,
     endedAt: number,
   ): void;
+  onArchiveQueued(kind: ArchiveKind): void;
   onArchiveStart(kind: ArchiveKind): void;
   onArchiveEnd(
     kind: ArchiveKind,
@@ -42,12 +44,18 @@ export class LoggerUI implements RunnerUI {
   onPlan(planBody: string): void {
     console.log(planBody);
   }
+  onScriptQueued(): void {
+    // no-op (logger UI does not render waiting rows)
+  }
   onScriptStart(key: string): void {
     console.log(`stan: start "${key}"`);
   }
   onScriptEnd(key: string, outAbs: string, cwd: string): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
     console.log(`stan: done "${key}" -> ${rel}`);
+  }
+  onArchiveQueued(): void {
+    // no-op (logger UI does not render waiting rows)
   }
   onArchiveStart(kind: ArchiveKind): void {
     console.log(
@@ -104,6 +112,14 @@ export class LiveUI implements RunnerUI {
   onPlan(planBody: string): void {
     console.log(planBody);
   }
+  onScriptQueued(key: string): void {
+    // Pre-register a script row in "waiting" state so it appears at run start.
+    this.renderer?.update(
+      `script:${key}`,
+      { kind: 'waiting' },
+      { type: 'script', item: key },
+    );
+  }
   onScriptStart(key: string): void {
     this.renderer?.update(
       `script:${key}`,
@@ -127,6 +143,14 @@ export class LiveUI implements RunnerUI {
         outputPath: rel,
       },
       { type: 'script', item: key },
+    );
+  }
+  onArchiveQueued(kind: ArchiveKind): void {
+    const item = kind === 'full' ? 'full' : 'diff';
+    this.renderer?.update(
+      `archive:${item}`,
+      { kind: 'waiting' },
+      { type: 'archive', item },
     );
   }
   onArchiveStart(kind: ArchiveKind): void {

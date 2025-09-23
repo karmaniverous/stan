@@ -117,8 +117,9 @@ export class ProgressRenderer {
       const st = row.state;
       switch (st.kind) {
         case 'waiting': {
-          // Never started: cancelled with zero time
-          this.update(key, { kind: 'cancelled', durationMs: 0 });
+          // Never started: mark as cancelled with NO duration so the Time column renders blank.
+          // This avoids misleading “00:00” for items that were never run.
+          this.update(key, { kind: 'cancelled' });
           break;
         }
         case 'running':

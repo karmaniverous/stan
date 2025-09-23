@@ -4,10 +4,21 @@ When updated: 2025-09-23 (UTC) — LoggerUI cancellation unified; archive helper
 
 Completed (recent)
 
+- fix(live/cancelled‑time): show blank Time for never‑started rows
+  - Previously, cancelling while a row was still “waiting” rendered “00:00” in the Time column, which implied the step ran for 0 seconds. We now omit duration for never‑started rows so the Time column is blank.
+  - Affects both script rows and archive rows that never actually started.
+
+- fix(cancel/exit‑latency): exit immediately on user cancel (q/Ctrl+C)
+  - Move the hard exit into the cancellation pipeline after stopping the UI and signalling children with immediate TERM→KILL escalation.
+  - Result: control returns to the shell right away.
+- fix(run/live): pre-register all planned steps as “waiting” at run start
+  - Scripts: enqueue all selected keys so the live table shows them immediately.
+  - Archives: enqueue “full” and “diff” rows whenever archives are enabled. - LoggerUI remains a no-op for queueing; presentation parity retained.
+  - Result: sequential and concurrent modes differ only in execution order; scheduling/presentation is identical.
+
 - test(setup): pause stdin and add a brief delay in global afterEach to mitigate transient EBUSY/ENOTEMPTY on Windows when removing temp dirs.
 
 - tests(module): add unit coverage for getPackagedSystemPromptPath() resolving both null/exists branches.
-
 - tests(assemble): add unit for assembleSystemMonolith() “skipped-no-md” behavior when parts contain no .md files.
 
 - refactor(gen-system): reuse centralized config discovery/stanPath resolution from src/stan/config (findConfigPathSync + loadConfig) instead of a local resolver in gen-system.ts to avoid drift.

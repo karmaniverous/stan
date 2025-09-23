@@ -9,7 +9,6 @@ import { utcStamp } from '../util/time';
 import { captureSnapshotAndArchives } from './capture';
 import { resolveContext } from './context';
 import { runGit } from './git';
-import { ensureDirs } from './shared';
 export const handleSnap = async (opts?: { stash?: boolean }): Promise<void> => {
   const { cwd, stanPath, maxUndos } = await resolveContext(process.cwd());
   // Always-on prompt/version/docs checks (best-effort; consistent with run/patch)
@@ -71,7 +70,6 @@ export const handleSnap = async (opts?: { stash?: boolean }): Promise<void> => {
   }
 
   const ts = utcStamp();
-  await ensureDirs([]); // guard
   await captureSnapshotAndArchives({
     cwd,
     stanPath,

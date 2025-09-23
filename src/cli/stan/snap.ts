@@ -9,14 +9,13 @@ import {
   handleInfo,
   handleRedo,
   handleSet,
-  handleSnap,
   handleUndo,
-} from '@/stan/snap/handlers';
+} from '@/stan/snap/history';
+import { handleSnap } from '@/stan/snap/snap-run';
 
 import { applyCliSafety, tagDefault } from './cli-utils';
 
-/**
- * Register the `snap` subcommand on the provided root CLI.
+/** * Register the `snap` subcommand on the provided root CLI.
  * * @param cli - Commander root command.
  * @returns The same root command for chaining.
  */ export const registerSnap = (cli: Commander): Command => {

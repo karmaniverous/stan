@@ -5,7 +5,7 @@
 import logUpdate from 'log-update';
 import { table } from 'table';
 
-import { bold, gray, green, red, yellow } from '@/stan/util/color';
+import { bold, gray, green, magenta, red, yellow } from '@/stan/util/color';
 
 export type ScriptState =
   | { kind: 'waiting' }
@@ -163,7 +163,7 @@ export class ProgressRenderer {
     const boring = this.opts.boring;
     switch (st.kind) {
       case 'waiting':
-        return boring ? '[WAIT]' : yellow('⏱ waiting');
+        return boring ? '[WAIT]' : yellow('⏸ waiting');
       case 'running': {
         return boring ? '[RUN]' : yellow('▶ run');
       }
@@ -171,7 +171,7 @@ export class ProgressRenderer {
         return boring ? '[QUIET]' : yellow('△ quiet');
       }
       case 'stalled': {
-        return boring ? '[STALLED]' : yellow('△ stalled');
+        return boring ? '[STALLED]' : magenta('△ stalled');
       }
       case 'done': {
         return boring ? '[OK]' : green('✔ ok');
@@ -283,17 +283,23 @@ export class ProgressRenderer {
       ? [
           `${elapsed}`,
           `waiting ${counts.waiting.toString()}`,
+          `running ${counts.running.toString()}`,
           `OK ${counts.ok.toString()}`,
           `CANCELLED ${counts.cancelled.toString()}`,
           `FAIL ${counts.fail.toString()}`,
+          `quiet ${counts.quiet.toString()}`,
+          `stalled ${counts.stalled.toString()}`,
           `TIMEOUT ${counts.timeout.toString()}`,
         ].join(sep)
       : [
           `${elapsed}`,
-          yellow(`⏱ ${counts.waiting.toString()}`),
+          yellow(`⏸ ${counts.waiting.toString()}`),
+          yellow(`▶ ${counts.running.toString()}`),
           green(`✔ ${counts.ok.toString()}`),
           yellow(`◼ ${counts.cancelled.toString()}`),
           red(`✖ ${counts.fail.toString()}`),
+          yellow(`△ ${counts.quiet.toString()}`),
+          magenta(`△ ${counts.stalled.toString()}`),
           red(`⏱ ${counts.timeout.toString()}`),
         ].join(sep);
     const hint = this.opts.boring
@@ -312,12 +318,18 @@ export class ProgressRenderer {
   }
   private counts(): {
     waiting: number;
+    running: number;
+    quiet: number;
+    stalled: number;
     ok: number;
     cancelled: number;
     fail: number;
     timeout: number;
   } {
     let waiting = 0;
+    let running = 0;
+    let quiet = 0;
+    let stalled = 0;
     let ok = 0;
     let cancelled = 0;
     let fail = 0;
@@ -327,6 +339,15 @@ export class ProgressRenderer {
       switch (st.kind) {
         case 'waiting':
           waiting += 1;
+          break;
+        case 'running':
+          running += 1;
+          break;
+        case 'quiet':
+          quiet += 1;
+          break;
+        case 'stalled':
+          stalled += 1;
           break;
         case 'done':
           ok += 1;
@@ -345,6 +366,6 @@ export class ProgressRenderer {
           break;
       }
     }
-    return { waiting, ok, cancelled, fail, timeout };
+    return { waiting, running, quiet, stalled, ok, cancelled, fail, timeout };
   }
 }

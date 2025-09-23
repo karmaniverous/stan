@@ -1,5 +1,3 @@
-import { basename } from 'node:path';
-
 /**
  * UTC timestamp in YYYYMMDD-HHMMSS for filenames and logs.
  */
@@ -33,12 +31,3 @@ export const formatUtcStampLocal = (ts: string): string => {
   const SS = pad(dt.getSeconds());
   return `${yyyy}-${MM}-${DD} ${HH}:${MMi}:${SS}`;
 };
-
-/**
- * Extract base file name from a path (utility kept here for convenience).
- *
- * @param p - Path whose base name should be returned.
- * @returns Base name rendered with POSIX separators.
- */
-export const fileNameOf = (p: string): string =>
-  basename(p).replace(/\\/g, '/');

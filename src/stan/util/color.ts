@@ -57,3 +57,9 @@ export const dim = (s: string): string => (isBoring() ? s : chalk.dim(s));
  * @returns Styled or unstyled text depending on mode. */
 export const underline = (s: string): string =>
   isBoring() ? s : chalk.underline(s);
+
+/** Render magenta text (used for "stalled") when not in boring mode.
+ * @param s - Text to colorize.
+ * @returns Potentially colored string (unstyled in boring/non‑TTY). */
+export const magenta = (s: string): string =>
+  isBoring() ? s : chalk.magenta(s);

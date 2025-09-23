@@ -6,17 +6,12 @@ import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const snapSpy = vi.fn(async (_opts?: { stash?: boolean }) => Promise.resolve());
-vi.mock('@/stan/snap/handlers', () => ({
+vi.mock('@/stan/snap/snap-run', () => ({
   __esModule: true,
-  handleInfo: async () => {},
-  handleRedo: async () => {},
-  handleSet: async () => {},
-  handleUndo: async () => {},
   handleSnap: (opts?: { stash?: boolean }) => snapSpy(opts),
 }));
 
 import { registerSnap } from '@/cli/stan/snap';
-
 describe('snap defaults (opts.cliDefaults.snap.stash) and -S override', () => {
   let dir: string;
   beforeEach(async () => {

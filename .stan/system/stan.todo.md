@@ -4,10 +4,26 @@ When updated: 2025-09-23 (UTC) — LoggerUI cancellation unified; archive helper
 
 Completed (recent)
 
+- chore(clean): remove dead type stubs and unused utility
+  - Deleted src/types/keypress.d.ts and src/types/istextorbinary.d.ts (no longer referenced).
+  - Removed unused fileNameOf() export from src/stan/util/time.ts.
+- refactor(cli/run): inline selection helper and drop extra file
+  - Inlined deriveRunInvocation into src/cli/stan/run/derive.ts; removed src/cli/stan/run-args.ts.
+- refactor(snap): drop handlers re‑export; import concrete modules directly
+  - Updated CLI (snap) to import from '@/stan/snap/history' and '@/stan/snap/snap-run'.
+  - Adjusted snap.defaults.test.ts mocks accordingly.
+- chore(snap): remove no‑op ensureDirs([]) guard in snap‑run.ts and its unused import.
+
+- feat(live/summary): represent all statuses and update emojis
+  - Waiting emoji switched to ⏳; Timeout emoji switched to ⌛.
+  - Summary now includes counts for running, quiet, and stalled; all statuses are represented.  - Quiet remains yellow; stalled is now orange to distinguish it from quiet.
+  - Ordering near the end of the summary is now: quiet | stalled | timeout.
+  - Implementation details:
+    - Added orange() helper in util/color; live renderer summary and row labels updated accordingly.
+
 - fix(live/cancelled‑time): show blank Time for never‑started rows
   - Previously, cancelling while a row was still “waiting” rendered “00:00” in the Time column, which implied the step ran for 0 seconds. We now omit duration for never‑started rows so the Time column is blank.
   - Affects both script rows and archive rows that never actually started.
-
 - fix(cancel/exit‑latency): exit immediately on user cancel (q/Ctrl+C)
   - Move the hard exit into the cancellation pipeline after stopping the UI and signalling children with immediate TERM→KILL escalation.
   - Result: control returns to the shell right away.

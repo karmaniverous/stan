@@ -135,11 +135,10 @@ export const runSelected = async (
       for (const k of toRun) cancelledKeys.add(`script:${k}`);
       // Stop live renderer / restore stdin and remove listeners best‑effort
       try {
-        ui.onCancelled();
+        ui.onCancelled('cancel');
       } catch {
         /* ignore */
-      }
-      // Send TERM → immediate KILL escalation to all tracked children
+      } // Send TERM → immediate KILL escalation to all tracked children
       try {
         supervisor.cancelAll({ immediate: true });
       } catch {
@@ -167,7 +166,7 @@ export const runSelected = async (
       restartRequested = true;
       cancelled = true;
       try {
-        ui.onCancelled();
+        ui.onCancelled('restart');
       } catch {
         /* ignore */
       }

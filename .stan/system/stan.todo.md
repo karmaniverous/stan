@@ -20,11 +20,14 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Live-mode cancel final-frame persistence
+  - Pressing q now leaves the final live frame visible (persisted) instead of clearing it.
+    Restart (r) still clears the frame so the next run reuses the same UI area without duplication.
+
 - Live restart immediate cancel
   - Pressing r in --live now cancels all running child processes immediately (TERM -> KILL without grace) and restarts the run without waiting for tasks to settle. Previously, tasks could continue executing in the background and restart was delayed. Implementation races script execution against a cancel/restart signal.
 - Live UI restart uses the same UI
-  - On restart, clear the previous live frame (via log-update clear) instead of persisting it. This prevents the live table from appearing twice (the old persisted frame plus the new one) and ensures the restart happens “in the same UI” as expected.
-- Live UI restart key
+  - On restart, clear the previous live frame (via log-update clear) instead of persisting it. This prevents the live table from appearing twice (the old persisted frame plus the new one) and ensures the restart happens “in the same UI” as expected.- Live UI restart key
   - In --live mode, added r/R to restart the run. Pressing r cancels current processes without exiting and re-runs immediately in the same session. Hint updated to “Press q to cancel, r to restart” with bold “r” in non-boring mode.
 - No-live LoggerUI status parity with live UI
   - LoggerUI now emits the same status labels and colors as the live table: waiting/run/ok/fail (error)/cancelled/quiet/stalled/timeout/killed. - Adds a “waiting” line when scripts are queued for execution.

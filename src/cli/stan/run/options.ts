@@ -128,15 +128,15 @@ export const registerRunOptions = (
     .addOption(optCombine)
     .addOption(optNoCombine)
     .addOption(optKeep)
+    .addOption(optNoKeep)
+    // plan
+    .addOption(optPlan)
     // live & thresholds
     .addOption(optLive)
     .addOption(optNoLive)
     .addOption(optHangWarn)
     .addOption(optHangKill)
-    .addOption(optHangKillGrace)
-    // remaining toggles & plan
-    .addOption(optNoKeep)
-    .addOption(optPlan);
+    .addOption(optHangKillGrace);
 
   // Track raw presence of selection flags during parse to enforce -S vs -s/-x conflicts.
   let sawNoScriptsFlag = false;

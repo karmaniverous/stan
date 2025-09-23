@@ -4,10 +4,15 @@ When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
+- test(open): mitigate Windows EBUSY during teardown
+  - In src/stan/patch/open.test.ts, pause stdin and add a brief delay
+    before removing the temp directory in afterEach. This mirrors the
+    global EBUSY mitigations and prevents intermittent rmdir failures
+    on Windows (EBUSY/ENOTEMPTY) observed in CI and local runs.
+
 - feat(run/options): remove -b/--bell across CLI, behavior, types, and docs
   - Deleted bell options and all related code paths; removed run.ding from
-    CliDefaults schema/types/normalize and the ASCII BEL write.
-  - Removed obsolete test src/stan/run/ding.test.ts.
+    CliDefaults schema/types/normalize and the ASCII BEL write.  - Removed obsolete test src/stan/run/ding.test.ts.
   - Docs: dropped bell references and examples.
   - Minor change; changelog untouched per instruction.
 

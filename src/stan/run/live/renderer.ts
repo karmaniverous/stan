@@ -168,10 +168,10 @@ export class ProgressRenderer {
         return boring ? '[RUN]' : yellow('▶ run');
       }
       case 'quiet': {
-        return boring ? '[QUIET]' : yellow('△ quiet');
+        return boring ? '[QUIET]' : yellow('⏱ quiet');
       }
       case 'stalled': {
-        return boring ? '[STALLED]' : magenta('△ stalled');
+        return boring ? '[STALLED]' : magenta('⏱ stalled');
       }
       case 'done': {
         return boring ? '[OK]' : green('✔ ok');
@@ -298,8 +298,8 @@ export class ProgressRenderer {
           green(`✔ ${counts.ok.toString()}`),
           yellow(`◼ ${counts.cancelled.toString()}`),
           red(`✖ ${counts.fail.toString()}`),
-          yellow(`△ ${counts.quiet.toString()}`),
-          magenta(`△ ${counts.stalled.toString()}`),
+          yellow(`⏱ ${counts.quiet.toString()}`),
+          magenta(`⏱ ${counts.stalled.toString()}`),
           red(`⏱ ${counts.timeout.toString()}`),
         ].join(sep);
     const hint = this.opts.boring

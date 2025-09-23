@@ -42,10 +42,18 @@ describe('openFilesInEditor — spawn behavior and guards', () => {
     } catch {
       // ignore
     }
+    // Mitigate transient Windows EBUSY/ENOTEMPTY on teardown:
+    // - Pause stdin (mirrors global test setup)
+    // - Allow a short tick for handles to settle before rm()
+    try {
+      (process.stdin as unknown as { pause?: () => void }).pause?.();
+    } catch {
+      // ignore
+    }
+    await new Promise((r) => setTimeout(r, 10));
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
-
   const load = async () => {
     // Ensure open.ts is (re)loaded after mocks/env are set
     vi.resetModules();

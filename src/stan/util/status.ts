@@ -2,7 +2,7 @@ import { green, red, yellow } from '@/stan/util/color';
 
 /**
  * Status line helpers with BORING/TTY-aware styling.
- * - TTY: symbols with color (✔ / ✖ / △).
+ * - TTY: symbols with color (✔ / ✖ / ⏱).
  * - BORING or non-TTY: bracketed tokens ([OK] / [FAIL] / [PARTIAL]).
  */
 
@@ -38,7 +38,7 @@ export const statusFail = (s: string): string =>
  * Decorate a message as a partial/indeterminate status line.
  *
  * @param s - Message to decorate.
- * @returns Styled string (TTY: colored "△"; BORING/non‑TTY: "[PARTIAL] ...").
+ * @returns Styled string (TTY: colored "⏱"; BORING/non‑TTY: "[PARTIAL] ...").
  */
 export const statusPartial = (s: string): string =>
-  isBoring() ? `[PARTIAL] ${s}` : yellow(`△ ${s}`);
+  isBoring() ? `[PARTIAL] ${s}` : yellow(`⏱ ${s}`);

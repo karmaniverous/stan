@@ -2,10 +2,21 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.6.1](https://github.com/karmaniverous/stan/compare/0.6.0...0.6.1)
+
+- test: stabilize Windows cancel flows; await runner cleanup and harden SIGINT teardown [`7941fa5`](https://github.com/karmaniverous/stan/commit/7941fa5b8e9dfc9d28183eff646d096575e3c23c)
+- test: fix Windows EBUSY in cancel key/schedule tests [`11162de`](https://github.com/karmaniverous/stan/commit/11162def4827a16a4cf46e5cc065acaa56a32405)
+- fix(run/live): print trailing newline on exit; increase cancel settle to reduce Windows EBUSY [`b13de4e`](https://github.com/karmaniverous/stan/commit/b13de4ebfdac71258b74e0eedfd25d3028af9776)
+- init: remove redundant reset‑diff prompt [`539da20`](https://github.com/karmaniverous/stan/commit/539da20325e506a08234ee9bb04204bad48a84b3)
+- update stan [`e133dd4`](https://github.com/karmaniverous/stan/commit/e133dd46caf0467f41eb226638e01c4d6169d0dc)
+
 #### [0.6.0](https://github.com/karmaniverous/stan/compare/0.5.14...0.6.0)
+
+> 23 September 2025
 
 - feat(run): add live flags + deps; scaffold TTY live [`0002ab3`](https://github.com/karmaniverous/stan/commit/0002ab3b2341b50be424c4b65a41f59d7cff60ee)
 - fix: migrate to @vitest/eslint-plugin and repair live defaults tests/typing [`061b7eb`](https://github.com/karmaniverous/stan/commit/061b7eba028817ca0e2399f042e0e7ff6f4d3143)
+- chore: release v0.6.0 [`ce646fc`](https://github.com/karmaniverous/stan/commit/ce646fc24b123f5d9b5836e9e5f9e56cd0a25739)
 - feat(run/tty): integrate keypress; split live modules; fix TS2349 in service [`ba74eff`](https://github.com/karmaniverous/stan/commit/ba74effb90595cd6992835f4125fbc97b93621e5)
 - feat(live): TTY cancel pipeline (q/SIGINT), two‑space alignment, and supervisor kill [`3a07601`](https://github.com/karmaniverous/stan/commit/3a076016d132b3a245ef92ce70e58b57acf12f9f)
 - feat(run): live-mode restart on r/R; update hint [`c383de4`](https://github.com/karmaniverous/stan/commit/c383de40b02abb403fea43439681bcdd148d4b4d)

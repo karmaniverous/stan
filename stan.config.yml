@@ -3,7 +3,7 @@ cliDefaults:
     plan: false
 includes: []
 excludes:
-  - '*.local'
+  - "*.local"
   - assets
   - CHANGELOG.md
   - docs

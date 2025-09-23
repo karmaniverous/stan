@@ -71,7 +71,6 @@ cliDefaults:
     combine: boolean       # -c / -C
     keep: boolean          # -k / -K
     sequential: boolean    # -q / -Q
-    ding: boolean          # --ding / --no-ding
     scripts: boolean | string[]  # default selection when neither -s is omitted nor -S used:
                                  #   true => all, false => none, ["lint","test"] => only these keys
   snap:

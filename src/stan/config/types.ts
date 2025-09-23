@@ -14,7 +14,6 @@ export type CliDefaultsRun = {
   hangWarn?: number;
   hangKill?: number;
   hangKillGrace?: number;
-  ding?: boolean;
   scripts?: boolean | string[];
 };
 export type CliDefaultsPatch = { file?: string | null | undefined };

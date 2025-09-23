@@ -9,7 +9,6 @@ export const RUN_BASE_DEFAULTS = {
   combine: false,
   keep: false,
   sequential: false,
-  ding: false,
   live: true,
   hangWarn: 120,
   hangKill: 300,

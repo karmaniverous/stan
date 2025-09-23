@@ -4,9 +4,22 @@ When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
+- feat(run/options): remove -b/--bell across CLI, behavior, types, and docs
+  - Deleted bell options and all related code paths; removed run.ding from
+    CliDefaults schema/types/normalize and the ASCII BEL write.
+  - Removed obsolete test src/stan/run/ding.test.ts.
+  - Docs: dropped bell references and examples.
+  - Minor change; changelog untouched per instruction.
+
+- feat(run/help): add -l/--live and -L/--no-live; reorder and retag defaults
+  - Live now has short forms (-l/-L); pairs are adjacent with the positive
+    short option first; short-form options precede long-only options.
+  - For booleans, Commander no longer prints “(default: true|false)”. We tag
+    the defaulted member of each pair with “(default)”. Numeric thresholds
+    keep “(default: N)”.
+
 - feat(run/help): display numeric defaults for hang thresholds and patch default file
-  - Run help now appends “(DEFAULT: Ns)” for:
-    - --hang-warn (120s by default),
+  - Run help now appends “(DEFAULT: Ns)” for:    - --hang-warn (120s by default),
     - --hang-kill (300s by default),
     - --hang-kill-grace (10s by default),
     overriding with cliDefaults.run when present.

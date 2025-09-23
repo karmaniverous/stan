@@ -22,10 +22,6 @@ const shouldWriteOrder =
  * - Preflight docs/version (best‑effort).
  * - Ensure output/diff directories.
  * - Print the run plan.
- * - Optional notification:
- *   - When behavior.ding is true, play a terminal bell (ASCII BEL) once at the
- *     end of the run. This is the most portable cross‑platform option and avoids
- *     platform‑specific sound dependencies.
  * - Execute selected scripts (in the chosen mode).
  * - Optionally create regular and diff archives (combine/keep behaviors). * @param cwd - Repo root for execution.
  * @param config - Resolved configuration.
@@ -216,14 +212,6 @@ export const runSelected = async (
   // Exit non‑zero when cancelled (service-level best-effort)
   if (cancelled) {
     // Already handled inside triggerCancel for immediate exit.
-  } // Final notification (terminal bell) when requested.
-  if (behavior.ding) {
-    try {
-      // ASCII BEL (may be disabled in some terminals; intentionally simple and portable)
-      process.stdout.write('\x07');
-    } catch {
-      // best‑effort; ignore failures
-    }
   }
   return created;
 };

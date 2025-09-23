@@ -3,6 +3,7 @@ title: CLI Usage & Examples
 ---
 
 # CLI usage & examples
+
 This page documents all CLI options and shows practical examples. STAN’s CLI honors phase‑scoped defaults from your configuration (cliDefaults) when flags are omitted; see “Config‑driven defaults” below.
 
 ## Root (stan) options
@@ -52,11 +53,11 @@ Flags:
   - Conflicts with -A (cannot combine while disabling archives).
 - -k, --keep / -K, --no-keep
   - Keep (do not clear) the output directory across runs.
+- -l, --live / -L, --no-live
+  - Enable/disable a live progress table in TTY. Built‑in default: enabled.
 - -S, --no-scripts
   - Do not run scripts. This conflicts with -s and -x.
   - If combined with -A as well, STAN prints the plan and does nothing else.
-- -b, --bell / -B, --no-bell
-  - Play (or suppress) a terminal bell on completion. Default can be set via cliDefaults.run.ding.
 - -p, --plan
   - Print a concise run plan and exit with no side effects.
 - --live / --no-live
@@ -72,6 +73,7 @@ Flags:
 Defaults (built-in unless overridden by cliDefaults or flags): hang-warn 120s; hang-kill 300s; hang-kill-grace 10s.
 
 Conflicts and special cases:
+
 - -c conflicts with -A (combine implies archives).
 - -S conflicts with -s and -x.- -S plus -A (scripts disabled and archives disabled) => “nothing to do; plan only”.
 
@@ -101,9 +103,6 @@ stan run -k
 
 # Disable scripts and archives (plan only)
 stan run -S -A -p
-
-# Simple completion bell
-stan run -b
 ```
 
 ## Patch — options and workflow

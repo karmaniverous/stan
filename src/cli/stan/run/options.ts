@@ -3,7 +3,7 @@ import { Command, Option } from 'commander';
 import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 
-import { applyCliSafety } from '../cli-utils';
+import { applyCliSafety, tagDefault } from '../cli-utils';
 import { RUN_BASE_DEFAULTS } from './defaults';
 
 export type FlagPresence = {
@@ -32,18 +32,19 @@ export const registerRunOptions = (
     '-s, --scripts [keys...]',
     'script keys to run (all scripts if omitted)',
   );
+  const optNoScripts = new Option('-S, --no-scripts', 'do not run scripts');
   const optExcept = new Option(
     '-x, --except-scripts <keys...>',
     'script keys to exclude (reduces from --scripts or from full set)',
   );
 
-  // Live TTY progress and hang thresholds (defaults will be applied below)
+  // Live TTY progress and hang thresholds
   const optLive = new Option(
-    '--live',
-    'enable live progress table (TTY only; default true)',
+    '-l, --live',
+    'enable live progress table (TTY only)',
   );
   const optNoLive = new Option(
-    '--no-live',
+    '-L, --no-live',
     'disable live progress table (TTY only)',
   );
   const parsePositiveInt = (v: string): number => {
@@ -96,7 +97,7 @@ export const registerRunOptions = (
   optCombine.conflicts('archive');
   optNoArchive.conflicts('combine');
 
-  // Output dir & scripts suppressor
+  // Output dir
   const optKeep = new Option(
     '-k, --keep',
     'keep (do not clear) the output directory',
@@ -105,7 +106,6 @@ export const registerRunOptions = (
     '-K, --no-keep',
     'do not keep the output directory (negated form)',
   );
-  const optNoScripts = new Option('-S, --no-scripts', 'do not run scripts');
 
   // Plan
   const optPlan = new Option(
@@ -113,33 +113,29 @@ export const registerRunOptions = (
     'print run plan and exit (no side effects)',
   );
 
-  // Notification (terminal bell)
-  const optBell = new Option(
-    '-b, --bell',
-    'play a terminal bell upon completion',
-  );
-  const optNoBell = new Option('-B, --no-bell', 'do not play a terminal bell');
-
-  // Register options
+  // Register options in desired order
   cmd
+    // selection first; -S directly after -s
     .addOption(optScripts)
+    .addOption(optNoScripts)
     .addOption(optExcept)
+    // mode
     .addOption(optSequential)
     .addOption(optNoSequential)
+    // archives & outputs
     .addOption(optArchive)
     .addOption(optNoArchive)
     .addOption(optCombine)
     .addOption(optNoCombine)
     .addOption(optKeep)
+    // live & thresholds
     .addOption(optLive)
     .addOption(optNoLive)
     .addOption(optHangWarn)
     .addOption(optHangKill)
     .addOption(optHangKillGrace)
+    // remaining toggles & plan
     .addOption(optNoKeep)
-    .addOption(optNoScripts)
-    .addOption(optBell)
-    .addOption(optNoBell)
     .addOption(optPlan);
 
   // Track raw presence of selection flags during parse to enforce -S vs -s/-x conflicts.
@@ -169,7 +165,6 @@ export const registerRunOptions = (
         keep?: boolean;
         sequential?: boolean;
         scripts?: boolean | string[];
-        ding?: boolean;
         live?: boolean;
         hangWarn?: number;
         hangKill?: number;
@@ -196,10 +191,6 @@ export const registerRunOptions = (
           typeof runDefs.sequential === 'boolean'
             ? runDefs.sequential
             : RUN_BASE_DEFAULTS.sequential,
-        ding:
-          typeof runDefs.ding === 'boolean'
-            ? runDefs.ding
-            : RUN_BASE_DEFAULTS.ding,
         hangWarn:
           typeof runDefs.hangWarn === 'number' && runDefs.hangWarn > 0
             ? runDefs.hangWarn
@@ -219,13 +210,14 @@ export const registerRunOptions = (
   };
   const eff = resolveRunDefaults();
 
-  // Apply Commander defaults so help shows (default: …)
-  optArchive.default(eff.archive);
-  optCombine.default(eff.combine);
-  optKeep.default(eff.keep);
-  optSequential.default(eff.sequential);
-  optLive.default(eff.live);
-  optBell.default(eff.ding);
+  // Tag defaulted boolean choices with (default)
+  tagDefault(eff.archive ? optArchive : optNoArchive, true);
+  tagDefault(eff.combine ? optCombine : optNoCombine, true);
+  tagDefault(eff.keep ? optKeep : optNoKeep, true);
+  tagDefault(eff.sequential ? optSequential : optNoSequential, true);
+  tagDefault(eff.live ? optLive : optNoLive, true);
+
+  // Apply Commander defaults for numeric thresholds so help shows (default: N)
   optHangWarn.default(eff.hangWarn);
   optHangKill.default(eff.hangKill);
   optHangKillGrace.default(eff.hangKillGrace);

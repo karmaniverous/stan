@@ -82,7 +82,7 @@ export const applyCliSafety = (cmd: Command): void => {
 
 /** Tag an Option description with (DEFAULT) when active. */
 export const tagDefault = (opt: Option, on: boolean): void => {
-  if (on && !opt.description.includes('(DEFAULT)')) {
-    opt.description = `${opt.description} (DEFAULT)`;
+  if (on && !opt.description.includes('(default)')) {
+    opt.description = `${opt.description} (default)`;
   }
 };

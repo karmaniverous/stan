@@ -293,23 +293,23 @@ export class ProgressRenderer {
           `${elapsed}`,
           `waiting ${counts.waiting.toString()}`,
           `running ${counts.running.toString()}`,
-          `OK ${counts.ok.toString()}`,
-          `CANCELLED ${counts.cancelled.toString()}`,
-          `FAIL ${counts.fail.toString()}`,
           `quiet ${counts.quiet.toString()}`,
           `stalled ${counts.stalled.toString()}`,
           `TIMEOUT ${counts.timeout.toString()}`,
+          `OK ${counts.ok.toString()}`,
+          `FAIL ${counts.fail.toString()}`,
+          `CANCELLED ${counts.cancelled.toString()}`,
         ].join(sep)
       : [
           `${elapsed}`,
           gray(`⏸ ${counts.waiting.toString()}`),
           blue(`▶ ${counts.running.toString()}`),
-          green(`✔ ${counts.ok.toString()}`),
-          black(`◼ ${counts.cancelled.toString()}`),
-          red(`✖ ${counts.fail.toString()}`),
           cyan(`⏱ ${counts.quiet.toString()}`),
           magenta(`⏱ ${counts.stalled.toString()}`),
           red(`⏱ ${counts.timeout.toString()}`),
+          green(`✔ ${counts.ok.toString()}`),
+          red(`✖ ${counts.fail.toString()}`),
+          black(`◼ ${counts.cancelled.toString()}`),
         ].join(sep);
     const hint = this.opts.boring
       ? 'Press q to cancel'

@@ -6,6 +6,7 @@ import { ensureOutputDir } from '@/stan/config';
 
 import { makeStanDirs } from '../paths';
 import { preflightDocsAndVersion } from '../preflight';
+import { magenta, red } from '../util/color';
 import { archivePhase } from './archive';
 import { runScripts } from './exec';
 import { ProcessSupervisor } from './live/supervisor';
@@ -171,21 +172,21 @@ export const runSelected = async (
         onHangWarn: (key, seconds) => {
           if (!liveEnabled) {
             console.log(
-              `stan: stalled "${key}" after ${seconds.toString()}s of inactivity`,
+              `stan: ${magenta('stalled')} "${key}" after ${seconds.toString()}s of inactivity`,
             );
           }
         },
         onHangTimeout: (key, seconds) => {
           if (!liveEnabled) {
             console.log(
-              `stan: timeout "${key}" after ${seconds.toString()}s; sending SIGTERM`,
+              `stan: ${red('timeout')} "${key}" after ${seconds.toString()}s; sending SIGTERM`,
             );
           }
         },
         onHangKilled: (key, grace) => {
           if (!liveEnabled) {
             console.log(
-              `stan: killed "${key}" after ${grace.toString()}s grace`,
+              `stan: ${red('killed')} "${key}" after ${grace.toString()}s grace`,
             );
           }
         },

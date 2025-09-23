@@ -5,7 +5,16 @@
 import logUpdate from 'log-update';
 import { table } from 'table';
 
-import { bold, gray, green, magenta, red, yellow } from '@/stan/util/color';
+import {
+  black,
+  blue,
+  bold,
+  cyan,
+  gray,
+  green,
+  magenta,
+  red,
+} from '@/stan/util/color';
 
 export type ScriptState =
   | { kind: 'waiting' }
@@ -163,12 +172,12 @@ export class ProgressRenderer {
     const boring = this.opts.boring;
     switch (st.kind) {
       case 'waiting':
-        return boring ? '[WAIT]' : yellow('⏸ waiting');
+        return boring ? '[WAIT]' : gray('⏸ waiting');
       case 'running': {
-        return boring ? '[RUN]' : yellow('▶ run');
+        return boring ? '[RUN]' : blue('▶ run');
       }
       case 'quiet': {
-        return boring ? '[QUIET]' : yellow('⏱ quiet');
+        return boring ? '[QUIET]' : cyan('⏱ quiet');
       }
       case 'stalled': {
         return boring ? '[STALLED]' : magenta('⏱ stalled');
@@ -183,7 +192,7 @@ export class ProgressRenderer {
         return boring ? '[TIMEOUT]' : red('⏱ timeout');
       }
       case 'cancelled': {
-        return boring ? '[CANCELLED]' : yellow('◼ cancelled');
+        return boring ? '[CANCELLED]' : black('◼ cancelled');
       }
       case 'killed': {
         return boring ? '[KILLED]' : red('◼ killed');
@@ -293,12 +302,12 @@ export class ProgressRenderer {
         ].join(sep)
       : [
           `${elapsed}`,
-          yellow(`⏸ ${counts.waiting.toString()}`),
-          yellow(`▶ ${counts.running.toString()}`),
+          gray(`⏸ ${counts.waiting.toString()}`),
+          blue(`▶ ${counts.running.toString()}`),
           green(`✔ ${counts.ok.toString()}`),
-          yellow(`◼ ${counts.cancelled.toString()}`),
+          black(`◼ ${counts.cancelled.toString()}`),
           red(`✖ ${counts.fail.toString()}`),
-          yellow(`⏱ ${counts.quiet.toString()}`),
+          cyan(`⏱ ${counts.quiet.toString()}`),
           magenta(`⏱ ${counts.stalled.toString()}`),
           red(`⏱ ${counts.timeout.toString()}`),
         ].join(sep);

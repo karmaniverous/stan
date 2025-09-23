@@ -27,6 +27,9 @@ export const yellow = (s: string): string => (isBoring() ? s : chalk.yellow(s));
  * @returns Potentially colored string (unstyled in boring/non‑TTY). */
 export const cyan = (s: string): string => (isBoring() ? s : chalk.cyan(s));
 
+/** Colorize text as informational/emphasis (blue). */
+export const blue = (s: string): string => (isBoring() ? s : chalk.blue(s));
+
 /** Colorize text as an error (red).
  * @param s - Text to colorize.
  * @returns Potentially colored string (unstyled in boring/non‑TTY). */
@@ -63,3 +66,8 @@ export const underline = (s: string): string =>
  * @returns Potentially colored string (unstyled in boring/non‑TTY). */
 export const magenta = (s: string): string =>
   isBoring() ? s : chalk.magenta(s);
+
+/** Render black text (used for "cancelled") when not in boring mode.
+ * @param s - Text to colorize.
+ * @returns Potentially colored string (unstyled in boring/non‑TTY). */
+export const black = (s: string): string => (isBoring() ? s : chalk.black(s));

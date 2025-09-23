@@ -4,10 +4,19 @@ When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
+- feat(live/colors): align TTY status colors to docs and add color to no‑live logs
+  - Live (TTY) status label colors now match docs:
+    - waiting: gray; run: blue; ok: green; cancelled: black; error: red;
+      quiet: cyan; stalled: magenta; timeout: red.
+  - Summary counts use the same palette.
+  - No‑live mode: inactivity events use colorized labels when not in BORING
+    mode (TTY): stalled (magenta), timeout (red), killed (red).
+  - Docs: CLI usage updated to note that “patch -f” help shows (DEFAULT: <path>)
+    when configured; add -P to negative short flags quick reference.
+
 - fix(cli/run): honor -P/--no-plan to suppress run plan
   - Commander sets `options.plan === false` for negated options.
-  - Update src/cli/stan/run/action.ts to detect `planOpt === false` and pass `behavior.plan = false` so the plan is not printed ahead of execution.
-  - Verified other negated options already use the correct pattern.
+  - Update src/cli/stan/run/action.ts to detect `planOpt === false` and pass `behavior.plan = false` so the plan is not printed ahead of execution.  - Verified other negated options already use the correct pattern.
 
 - test(open): switch test openCommand to inert
   - In src/stan/patch/open.test.ts, replace 'code -g {file}' with 'node -e "process.exit(0)" {file}' to avoid launching a real editor if spawn mocking is bypassed (prevents temp “b.ts” opening).

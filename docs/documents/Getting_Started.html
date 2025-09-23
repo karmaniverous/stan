@@ -51,6 +51,12 @@
 </code><button type="button">Copy</button></pre>
 
 <p>On failure, STAN writes a compact FEEDBACK packet and (when possible) copies it to your clipboard—paste it into chat to get a corrected diff.</p>
+<p>Tips:</p>
+<ul>
+<li>Use <code>stan run -p</code> to print the plan and exit; use <code>stan run -P</code> to execute without printing the plan first.</li>
+<li>Use <code>-q</code> for sequential execution (preserves <code>-s</code> order).</li>
+<li>Use <code>-c</code> to include outputs inside archives and remove them from disk (combine mode).</li>
+</ul>
 <h2 id="5-use-the-bootloader-prompt-for-chat-clients" class="tsd-anchor-link">5) Use the bootloader prompt (for chat clients)<a href="#5-use-the-bootloader-prompt-for-chat-clients" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>STAN ships a small “bootloader” system prompt that reliably loads your attached system prompt from archives:</p>
 <ul>
 <li>Bootloader prompt (source): <a href="https://github.com/karmaniverous/stan/blob/main/.stan/system/stan.bootloader.md" target="_blank" class="external">.stan/system/stan.bootloader.md</a></li>

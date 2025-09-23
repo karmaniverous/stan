@@ -1,7 +1,7 @@
 stanPath: .stan
 includes: []
 excludes:
-  - "*.local"
+  - '*.local'
   - assets
   - CHANGELOG.md
   - docs
@@ -9,7 +9,7 @@ excludes:
 scripts:
   typecheck: npm run typecheck
   lint: npm run lint:fix
-  test: npm run test
+  test: npm run test -- --no-color
   build: npm run stan:build
   docs: npm run stan:docs
   knip: npm run knip

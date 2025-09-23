@@ -16,10 +16,18 @@ beforeEach(() => {
   }
 });
 
-afterEach(() => {
+afterEach(async () => {
   try {
     process.chdir(tmpdir());
   } catch {
     // ignore
   }
+  // On Windows, ensure stdin is paused and allow a brief tick for
+  // any lingering handles to release before test teardown removes temp dirs.
+  try {
+    (process.stdin as unknown as { pause?: () => void }).pause?.();
+  } catch {
+    // ignore
+  }
+  await new Promise((r) => setTimeout(r, 5));
 });

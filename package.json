@@ -24,7 +24,8 @@
     "package-directory": "^8.1.0",
     "picomatch": "^4.0.3",
     "table": "^6.8.1",
-    "tree-kill": "^1.2.2",    "yaml": "^2.8.1"
+    "tree-kill": "^1.2.2",
+    "yaml": "^2.8.1"
   },
   "description": "STAN is a CLI that bridges your IDE with your favorite LLM and drives a rapid, powerful, low-friction, design-first iterative development process. Real-world AI-assisted development for professional engineers!",
   "devDependencies": {
@@ -170,7 +171,7 @@
     "stan": "tsx src/cli/stan/stan.ts",
     "stan:build": "tsx gen-system.ts && rimraf stan.dist && rollup --config stan.rollup.config.ts --configPlugin @rollup/plugin-typescript && rimraf stan.dist",
     "stan:docs": "typedoc --emit none",
-    "test": "vitest --run --coverage",
+    "test": "vitest --run --coverage --silent",
     "typecheck": "tsc"
   },
   "type": "module",

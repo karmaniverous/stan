@@ -4,10 +4,15 @@ When updated: 2025-09-23 (UTC) — LoggerUI cancellation unified; archive helper
 
 Completed (recent)
 
+- test(setup): pause stdin and add a brief delay in global afterEach to mitigate transient EBUSY/ENOTEMPTY on Windows when removing temp dirs.
+
+- tests(module): add unit coverage for getPackagedSystemPromptPath() resolving both null/exists branches.
+
+- tests(assemble): add unit for assembleSystemMonolith() “skipped-no-md” behavior when parts contain no .md files.
+
 - refactor(gen-system): reuse centralized config discovery/stanPath resolution from src/stan/config (findConfigPathSync + loadConfig) instead of a local resolver in gen-system.ts to avoid drift.
 
-- refactor(cli): centralize (DEFAULT) help tag helper in cli-utils and adopt in index/run.options/snap (removed duplicate local helpers).
-- refactor(archive): share tar exclusion filter and archive warnings logger; adopt in archive.ts and diff.ts for consistent behavior.
+- refactor(cli): centralize (DEFAULT) help tag helper in cli-utils and adopt in index/run.options/snap (removed duplicate local helpers).- refactor(archive): share tar exclusion filter and archive warnings logger; adopt in archive.ts and diff.ts for consistent behavior.
 - refactor(fs): introduce ensureStanWorkspace() and refactor ensureOutAndDiff/ensureOutputDir to prevent drift in workspace directory creation.
 - feat(run/input): add sigintOnly option to installCancelKeys to allow SIGINT‑only wiring (no raw mode/keypress) for no‑live/CI; LoggerUI now uses the unified handler (SIGINT only).
 - refactor(system): extract parts→monolith assembler to src/stan/system/assemble.ts; adopt in dev script (gen-system.ts) and runtime archive path for the dev repo.
@@ -24,14 +29,16 @@ Next up
 - Keep monitoring recent test timeouts on Windows EBUSY/ENOTEMPTY; schedule follow-up stabilization if they persist after unrelated changes.
 
 ---- refactor(run/ui): Introduce RunnerUI with two adapters:
-  - LoggerUI (no‑live): prints legacy “stan: start/done …” lines for scripts and archives; plan remains printed.  - LiveUI (live): owns ProgressRenderer and key handling; archive/script progress forwarded only through the UI.  - Engine (runSelected/runScripts/runOne/archivePhase) now always runs “silent” and reports lifecycle into the UI; live/no‑live is a pure UI swap.
-  - Cancellation pipeline calls ui.onCancelled() to finalize live frame and restore listeners; ProcessSupervisor.cancelAll({ immediate: true }) unchanged.
-  - Outcome: no behavior change for artifacts; UI cannot influence process control or I/O anymore.
+
+- LoggerUI (no‑live): prints legacy “stan: start/done …” lines for scripts and archives; plan remains printed. - LiveUI (live): owns ProgressRenderer and key handling; archive/script progress forwarded only through the UI. - Engine (runSelected/runScripts/runOne/archivePhase) now always runs “silent” and reports lifecycle into the UI; live/no‑live is a pure UI swap.
+- Cancellation pipeline calls ui.onCancelled() to finalize live frame and restore listeners; ProcessSupervisor.cancelAll({ immediate: true }) unchanged.
+- Outcome: no behavior change for artifacts; UI cannot influence process control or I/O anymore.
 
 ---
+
 - feat(live/summary): Add a dedicated CANCELLED count to the live summary using the same ◼ symbol shown in the table. Cancellations are no longer included in the FAIL count.
   - TTY summary: “… • ⏱ <waiting> • ✔ <ok> • ◼ <cancelled> • ✖ <fail> • ⏱ <timeout>”
-  - BORING summary: “… • waiting N • OK N • CANCELLED N • FAIL N • TIMEOUT N”  - Status row rendering remains unchanged.
+  - BORING summary: “… • waiting N • OK N • CANCELLED N • FAIL N • TIMEOUT N” - Status row rendering remains unchanged.
 - fix(cancel/exit): Ensure `stan run` exits promptly after user cancellation (q/Q/Ctrl+C) in CLI runs by explicitly calling `process.exit(1)` once children are signaled and the live renderer has been stopped (skipped under tests). This returns control to the shell and prevents further script output after cancel.
 
 - fix(cancel/live): Preserve finished rows and keep their final values on cancel; finalize durations for in‑flight rows at the moment of cancellation; do not clobber output paths that have already been written. - Renderer: add cancelPending() to mark only waiting/running/quiet/stalled rows as cancelled; compute duration from startedAt; leave done/error/timedout/killed rows untouched so their status/time/path remain visible.

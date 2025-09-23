@@ -33,9 +33,18 @@ export default defineConfig({
         'src/stan/run/types.ts',
       ],
     },
+    reporters: [
+      [
+        'default',
+        {
+          summary: false,
+        },
+      ],
+    ],
     setupFiles: [
       resolve(rootDir, 'src/test/setup.ts'),
-      resolve(rootDir, 'src/test/mock-tar.ts'),    ],
+      resolve(rootDir, 'src/test/mock-tar.ts'),
+    ],
     testTimeout: 15000,
     hookTimeout: 10000,
   },

@@ -14,6 +14,7 @@ export type ExecutionMode = 'concurrent' | 'sequential';
  * - `archive`: create archive.tar and archive.diff.tar.
  * - `combine`: include script outputs inside archives and remove them on disk.
  * - `keep`: do not clear the output directory before running.
+ * - `plan`: when false, suppress printing the run plan before execution.
  */
 export type RunBehavior = {
   combine?: boolean;
@@ -23,4 +24,5 @@ export type RunBehavior = {
   hangWarn?: number;
   hangKill?: number;
   hangKillGrace?: number;
+  plan?: boolean;
 };

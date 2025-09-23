@@ -4,10 +4,19 @@ When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
+- fix(types/run): add `plan?: boolean` to RunBehavior
+  - Resolves TS2339 in src/stan/run/service.ts when checking behavior.plan.
+  - typedoc/docs/typecheck now pass this gate.
+
+- fix(run/cancel): skip archive phase immediately after user cancel
+  - Early‑return after script execution when `cancelled === true` to ensure
+    no archives are created post‑cancel in both live and no‑live modes.
+  - Stabilizes cancel.sigint.test.ts and cancel.parity.test.ts expectations
+    (archives absent; non‑zero exit; prompt stop).
+
 - feat(run): add -P/--no-plan and suppress plan printing when used
   - New flag sits immediately after -p/--plan in help and parsing order.
   - Behavior: -p prints the plan and exits (no side effects); -P runs without printing the plan first; default remains printing plan.
-
 - feat(run/plan): include live flag and hang thresholds in run plan
   - Run plan now prints: live yes/no, hang warn|kill|grace seconds.
   - Gives clear visibility into all active run options except --plan.

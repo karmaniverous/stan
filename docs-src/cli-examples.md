@@ -60,10 +60,11 @@ Flags:
   - If combined with -A as well, STAN prints the plan and does nothing else.
 - -p, --plan
   - Print a concise run plan and exit with no side effects.
+- -P, --no-plan
+  - Execute without printing the run plan first.
 - --live / --no-live
   - Enable/disable a live progress table in TTY. Built‑in default: enabled.
-  - Non‑TTY runs (tests/CI) are unaffected and keep line‑per‑event logs.
-- --hang-warn <seconds>
+  - Non‑TTY runs (tests/CI) are unaffected and keep line‑per‑event logs.- --hang-warn <seconds>
   - Label a running script as “stalled” after this many seconds of inactivity (TTY only).
 - --hang-kill <seconds>
   - Terminate stalled scripts after this many seconds (SIGTERM → grace → SIGKILL; TTY only).
@@ -86,9 +87,11 @@ stan run
 # Plan only (no side effects)
 stan run -p
 
+# Execute without printing the plan first
+stan run -P
+
 # Run a subset
 stan run -s test lint
-
 # Run all except a subset
 stan run -x test
 

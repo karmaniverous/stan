@@ -207,6 +207,17 @@ export const runSelected = async (
     created.push(...scriptOutputs);
   }
 
+  // If the user cancelled (q/Ctrl+C/SIGINT), skip any further work (including
+  // archiving) and return immediately. This guarantees no archives are created
+  // post‑cancel in either live or no‑live modes and aligns with test parity.
+  if (cancelled) {
+    try {
+      ui.stop();
+    } catch {
+      /* ignore */
+    }
+    return created;
+  }
   // If any script failed (exit code != 0), signal failure at the process level.
   // Archives are still produced to preserve artifacts for chat/diagnosis.
   if (hadFailures) {

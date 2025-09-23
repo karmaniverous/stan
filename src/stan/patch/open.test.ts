@@ -87,10 +87,12 @@ describe('openFilesInEditor — spawn behavior and guards', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     const openFilesInEditor = await load();
+    // Use an inert command that includes {file} but does nothing; this
+    // prevents launching a real editor if spawn mocking is bypassed.
     openFilesInEditor({
       cwd: dir,
       files: [existing, missing],
-      openCommand: 'code -g {file}',
+      openCommand: 'node -e "process.exit(0)" {file}',
     });
 
     // Observable behavior: an "open -> ..." log for the existing file

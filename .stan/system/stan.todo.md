@@ -4,10 +4,13 @@ When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
+- test(open): switch test openCommand to inert
+  - In src/stan/patch/open.test.ts, replace 'code -g {file}' with
+    'node -e "process.exit(0)" {file}' to avoid launching a real
+    editor if spawn mocking is bypassed (prevents temp “b.ts” opening).
 - fix(types/run): add `plan?: boolean` to RunBehavior
   - Resolves TS2339 in src/stan/run/service.ts when checking behavior.plan.
   - typedoc/docs/typecheck now pass this gate.
-
 - fix(run/cancel): skip archive phase immediately after user cancel
   - Early‑return after script execution when `cancelled === true` to ensure
     no archives are created post‑cancel in both live and no‑live modes.

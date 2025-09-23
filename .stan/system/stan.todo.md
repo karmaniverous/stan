@@ -3,8 +3,7 @@
 When updated: 2025-09-23 (UTC)
 
 Next up (priority order)
-1. Targeted unit coverage   - Add/keep small unit tests where integration coverage is thin:
-     - Packaged prompt path resolution (getPackagedSystemPromptPath).
+1. Targeted unit coverage   - Add/keep small unit tests where integration coverage is thin:     - Packaged prompt path resolution (getPackagedSystemPromptPath).
      - System monolith assembly edge cases (already covered partially).
 
 2. CI stability monitoring (Windows)
@@ -20,10 +19,15 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Live restart immediate cancel
+  - Pressing r in --live now cancels all running child processes
+    immediately (TERM -> KILL without grace) and restarts the run
+    without waiting for tasks to settle. Previously, tasks could
+    continue executing in the background and restart was delayed.
+    Implementation races script execution against a cancel/restart signal.
 - Live UI restart key
   - In --live mode, added r/R to restart the run. Pressing r cancels
-    current processes without exiting and re-runs immediately in the
-    same session. Hint updated to “Press q to cancel, r to restart”
+    current processes without exiting and re-runs immediately in the    same session. Hint updated to “Press q to cancel, r to restart”
     with bold “r” in non-boring mode.
 - No-live LoggerUI status parity with live UI
   - LoggerUI now emits the same status labels and colors as the live table:

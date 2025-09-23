@@ -73,6 +73,11 @@ export const runSelected = async (
   for (;;) {
     hadFailures = false;
     let cancelled = false;
+    // Signal to break out of the current run loop immediately on cancel/restart
+    let wakeCancelOrRestart: (() => void) | null = null;
+    const cancelOrRestart = new Promise<void>((resolveWake) => {
+      wakeCancelOrRestart = resolveWake;
+    });
     let restartRequested = false;
     const supervisor = new ProcessSupervisor({
       hangWarn: behavior.hangWarn,
@@ -143,6 +148,11 @@ export const runSelected = async (
       // Return control to the shell immediately in real CLI runs.
       // Tests keep the process alive to allow assertions.
       try {
+        wakeCancelOrRestart?.();
+      } catch {
+        /* ignore */
+      }
+      try {
         process.exitCode = 1;
         if (process.env.NODE_ENV !== 'test') {
           process.exit(1);
@@ -166,9 +176,13 @@ export const runSelected = async (
       } catch {
         /* ignore */
       }
+      try {
+        wakeCancelOrRestart?.();
+      } catch {
+        /* ignore */
+      }
       // intentionally do not set process.exitCode or exit here
     };
-
     // Install cancel keys (q/Ctrl+C) + SIGINT parity via UI (no-op for LoggerUI)
     ui.installCancellation(
       triggerCancel,
@@ -178,7 +192,9 @@ export const runSelected = async (
     // Run scripts only when selection non-empty
     if (toRun.length > 0) {
       const outRel = dirs.outputRel;
-      const scriptOutputs = await runScripts(
+      // Start scripts and collect outputs as they finish. Race against cancel/restart
+      // so we do not wait for all children to settle when the user hits 'r'.
+      const collect = runScripts(
         cwd,
         outAbs,
         outRel,
@@ -232,8 +248,12 @@ export const runSelected = async (
         },
         () => !cancelled,
         supervisor,
-      );
-      created.push(...scriptOutputs);
+      ).then((outs) => {
+        created.push(...outs);
+      });
+      // Prevent unhandled rejections if we abandon the await on cancel/restart.
+      void collect.catch(() => {});
+      await Promise.race([collect, cancelOrRestart]);
     }
 
     // If the user cancelled (q/Ctrl+C/SIGINT), skip any further work (including

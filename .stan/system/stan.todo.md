@@ -1,13 +1,21 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-23 (UTC) — Cancellation UX: preserve finished rows; finalize durations and keep output paths on cancel.
+When updated: 2025-09-23 (UTC) — Runner UI split: engine made silent; LoggerUI/LiveUI adapters own logging, progress, and key handling.
 
 Completed (recent)
 
+- refactor(run/ui): Introduce RunnerUI with two adapters:
+  - LoggerUI (no‑live): prints legacy “stan: start/done …” lines for scripts and archives; plan remains printed.
+  - LiveUI (live): owns ProgressRenderer and key handling; archive/script progress forwarded only through the UI.
+  - Engine (runSelected/runScripts/runOne/archivePhase) now always runs “silent” and reports lifecycle into the UI; live/no‑live is a pure UI swap.
+  - Cancellation pipeline calls ui.onCancelled() to finalize live frame and restore listeners; ProcessSupervisor.cancelAll({ immediate: true }) unchanged.
+  - Outcome: no behavior change for artifacts; UI cannot influence process control or I/O anymore.
+
+---
+
 - feat(live/summary): Add a dedicated CANCELLED count to the live summary using the same ◼ symbol shown in the table. Cancellations are no longer included in the FAIL count.
   - TTY summary: “… • ⏱ <waiting> • ✔ <ok> • ◼ <cancelled> • ✖ <fail> • ⏱ <timeout>”
-  - BORING summary: “… • waiting N • OK N • CANCELLED N • FAIL N • TIMEOUT N”
-  - Status row rendering remains unchanged.
+  - BORING summary: “… • waiting N • OK N • CANCELLED N • FAIL N • TIMEOUT N”  - Status row rendering remains unchanged.
 
 - fix(cancel/exit): Ensure `stan run` exits promptly after user cancellation (q/Q/Ctrl+C) in CLI runs by explicitly calling `process.exit(1)` once children are signaled and the live renderer has been stopped (skipped under tests). This returns control to the shell and prevents further script output after cancel.
 

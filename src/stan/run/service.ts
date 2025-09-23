@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 import type { ContextConfig } from '@/stan/config';
 import { ensureOutputDir } from '@/stan/config';
@@ -8,11 +8,10 @@ import { makeStanDirs } from '../paths';
 import { preflightDocsAndVersion } from '../preflight';
 import { archivePhase } from './archive';
 import { runScripts } from './exec';
-import { installCancelKeys } from './input/keys';
-import { ProgressRenderer } from './live/renderer';
 import { ProcessSupervisor } from './live/supervisor';
 import { renderRunPlan } from './plan';
 import type { ExecutionMode, RunBehavior } from './types';
+import { LiveUI, LoggerUI, type RunnerUI } from './ui';
 
 const shouldWriteOrder =
   process.env.NODE_ENV === 'test' || process.env.STAN_WRITE_ORDER === '1';
@@ -29,8 +28,7 @@ const shouldWriteOrder =
  *     end of the run. This is the most portable cross‑platform option and avoids
  *     platform‑specific sound dependencies.
  * - Execute selected scripts (in the chosen mode).
- * - Optionally create regular and diff archives (combine/keep behaviors).
- * @param cwd - Repo root for execution.
+ * - Optionally create regular and diff archives (combine/keep behaviors). * @param cwd - Repo root for execution.
  * @param config - Resolved configuration.
  * @param selection - Explicit list of script keys (or `null` to run all).
  * @param mode - Execution mode (`concurrent` by default).
@@ -46,13 +44,11 @@ export const runSelected = async (
 ): Promise<string[]> => {
   const behavior: RunBehavior = behaviorMaybe ?? {};
   let cancelled = false;
-  const cancelledKeys = new Set<string>();
   const supervisor = new ProcessSupervisor({
     hangWarn: behavior.hangWarn,
     hangKill: behavior.hangKill,
     hangKillGrace: behavior.hangKillGrace,
   });
-
   // Preflight docs/version (non-blocking; best-effort)
   try {
     await preflightDocsAndVersion(cwd);
@@ -68,16 +64,13 @@ export const runSelected = async (
   const dirs = makeStanDirs(cwd, config.stanPath);
   const outAbs = dirs.outputAbs;
 
-  // Multi-line plan summary
-  console.log(
-    renderRunPlan(cwd, {
-      selection,
-      config,
-      mode,
-      behavior,
-    }),
-  );
-  console.log(''); // exactly one blank line between plan and first live frame
+  // Multi-line plan summary (delegated to UI a few lines below)
+  const planBody = renderRunPlan(cwd, {
+    selection,
+    config,
+    mode,
+    behavior,
+  });
 
   let orderFile: string | undefined;
   if (shouldWriteOrder) {
@@ -87,96 +80,44 @@ export const runSelected = async (
     }
   }
 
-  // TTY-only live renderer
+  // TTY-only live UI (otherwise legacy logger UI)
   const stdoutLike = process.stdout as unknown as { isTTY?: boolean };
   const isTTY = Boolean(stdoutLike?.isTTY);
   const liveEnabled = (behavior.live ?? true) && isTTY;
 
-  let renderer: ProgressRenderer | undefined;
-  let restoreCancel: (() => void) | null = null;
+  const ui: RunnerUI = liveEnabled
+    ? new LiveUI({ boring: process.env.STAN_BORING === '1' })
+    : new LoggerUI();
 
-  if (liveEnabled) {
-    renderer = new ProgressRenderer({
-      boring: process.env.STAN_BORING === '1',
-    });
-    // Pre-register archive rows when we intend to archive so the UI shows "waiting"
-    if (behavior.archive) {
-      renderer.update(
-        'archive:full',
-        { kind: 'waiting' },
-        { type: 'archive', item: 'full' },
-      );
-      renderer.update(
-        'archive:diff',
-        { kind: 'waiting' },
-        { type: 'archive', item: 'diff' },
-      );
-    }
-    renderer.start();
-  }
+  // Print plan and one trailing blank line to keep previous spacing semantics
+  ui.onPlan(planBody);
+  console.log('');
+  ui.start();
 
   // Build the run list:
   // - When selection is null/undefined, run all scripts in config order.
   // - When selection is provided (even empty), respect the provided order.
   const selected = selection == null ? Object.keys(config.scripts) : selection;
-
   // Filter to known script keys to avoid spawning undefined commands.
   const toRun = selected.filter((k) =>
     Object.prototype.hasOwnProperty.call(config.scripts, k),
   );
 
-  // Initialize live table rows (TTY only) as "waiting"
-  if (renderer) {
-    for (const k of toRun)
-      renderer.update(
-        `script:${k}`,
-        { kind: 'waiting' },
-        { type: 'script', item: k },
-      );
-  }
+  // Track cancelled keys to avoid late "done" flips after cancellation
+  const cancelledKeys = new Set<string>();
 
   // Idempotent cancellation pipeline
   const triggerCancel = (): void => {
     if (cancelled) return;
     cancelled = true;
-    if (renderer) {
-      // Suppress any late "done" updates for scripts after cancel
-      for (const k of toRun) cancelledKeys.add(`script:${k}`);
-      // Finalize in‑flight rows as cancelled with accurate durations; keep
-      // completed rows (done/error/timedout/killed) untouched so their times
-      // and output paths remain visible.
-      try {
-        (renderer as { cancelPending?: () => void }).cancelPending?.();
-      } catch {
-        /* best‑effort */
-      }
-      // Flush a final frame, then stop the renderer so its interval doesn’t
-      // keep the event loop alive after user cancellation.
-      renderer.flush();
-      try {
-        renderer.stop();
-      } catch {
-        /* ignore */
-      }
-    }
-    // Tear down keypress/SIGINT wiring immediately upon cancellation.
-    if (restoreCancel) {
-      try {
-        restoreCancel();
-      } catch {
-        /* ignore */
-      }
-      restoreCancel = null;
-    }
-    // Signal processes and escalate to KILL without grace on user cancel.
+    // Mark and finalize UI; escalate processes immediately
+    for (const k of toRun) cancelledKeys.add(`script:${k}`);
+    ui.onCancelled();
     supervisor.cancelAll({ immediate: true });
   };
 
-  // Install cancel keys (q/Ctrl+C) + SIGINT parity once we know toRun (TTY only)
-  if (liveEnabled) {
-    const sub = installCancelKeys(triggerCancel);
-    restoreCancel = sub.restore;
-  }
+  // Install cancel keys (q/Ctrl+C) + SIGINT parity via UI (no-op for LoggerUI)
+  ui.installCancellation(triggerCancel);
 
   const created: string[] = [];
   // Run scripts only when selection non-empty
@@ -190,35 +131,17 @@ export const runSelected = async (
       toRun,
       mode,
       orderFile,
-      renderer
-        ? {
-            onStart: (key) => {
-              const rowKey = `script:${key}`;
-              renderer?.update(
-                rowKey,
-                { kind: 'running', startedAt: Date.now() },
-                { type: 'script', item: key },
-              );
-            },
-            onEnd: (key, outFileAbs, startedAt, endedAt) => {
-              // Skip "done" updates for rows already marked cancelled
-              const rowKey = `script:${key}`;
-              if (cancelled && cancelledKeys.has(rowKey)) return;
-              const rel = relative(cwd, outFileAbs).replace(/\\/g, '/');
-              renderer?.update(
-                rowKey,
-                {
-                  kind: 'done',
-                  durationMs: Math.max(0, endedAt - startedAt),
-                  outputPath: rel,
-                },
-                { type: 'script', item: key },
-              );
-            },
-            silent: true,
-          }
-        : undefined,
-      renderer ? { silent: true } : undefined,
+      {
+        onStart: (key) => {
+          ui.onScriptStart(key);
+        },
+        onEnd: (key, outFileAbs, startedAt, endedAt) => {
+          if (cancelled && cancelledKeys.has(`script:${key}`)) return;
+          ui.onScriptEnd(key, outFileAbs, cwd, startedAt, endedAt);
+        },
+        silent: true,
+      },
+      { silent: true },
       () => !cancelled,
       supervisor,
     );
@@ -234,66 +157,35 @@ export const runSelected = async (
         config,
         includeOutputs,
       },
-      renderer
-        ? {
-            // Live updates and silent console logging (suppress legacy start/done lines)
-            silent: true,
-            progress: {
-              start: (kind: 'full' | 'diff') => {
-                const key = kind === 'full' ? 'archive:full' : 'archive:diff';
-                renderer?.update(
-                  key,
-                  { kind: 'running', startedAt: Date.now() },
-                  {
-                    type: 'archive',
-                    item: kind === 'full' ? 'full' : 'diff',
-                  },
-                );
-              },
-              done: (
-                kind: 'full' | 'diff',
-                pathAbs: string,
-                startedAt: number,
-                endedAt: number,
-              ) => {
-                const key = kind === 'full' ? 'archive:full' : 'archive:diff';
-                const rel = relative(cwd, pathAbs).replace(/\\/g, '/');
-                renderer?.update(key, {
-                  kind: 'done',
-                  durationMs: Math.max(0, endedAt - startedAt),
-                  outputPath: rel,
-                });
-              },
-            },
-          }
-        : undefined,
+      {
+        silent: true,
+        progress: {
+          start: (kind: 'full' | 'diff') => {
+            ui.onArchiveStart(kind);
+          },
+          done: (
+            kind: 'full' | 'diff',
+            pathAbs: string,
+            startedAt: number,
+            endedAt: number,
+          ) => {
+            ui.onArchiveEnd(kind, pathAbs, cwd, startedAt, endedAt);
+          },
+        },
+      },
     );
     created.push(archivePath, diffPath);
   }
 
-  // Stop live renderer (no-op render) if it was started.
-  if (renderer) {
-    // Flush one final frame so the most recent states are included
-    renderer.flush();
-    renderer.stop();
-  }
+  // Stop UI (flush/teardown for live; no-op for logger UI).
+  ui.stop();
 
-  // Always restore keypress/SIGINT wiring
-  const toRestore = restoreCancel;
-  restoreCancel = null; // Nullify immediately
-  if (typeof toRestore === 'function') {
-    try {
-      toRestore();
-    } catch {
-      /* ignore */
-    }
-  }
+  // UI teardown moved into ui.stop()/onCancelled()
 
   // Exit non‑zero when cancelled (service-level best-effort)
   if (cancelled) {
     try {
-      process.exitCode = 1;
-      // In CLI usage, exit promptly after cancelling children and stopping
+      process.exitCode = 1; // In CLI usage, exit promptly after cancelling children and stopping
       // the live renderer. Avoid hard exit during tests.
       if (process.env.NODE_ENV !== 'test') {
         // Best-effort immediate exit to return control to the shell.

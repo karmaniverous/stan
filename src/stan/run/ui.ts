@@ -133,7 +133,8 @@ export class LoggerUI implements RunnerUI {
     const label = kind === 'full' ? 'archive' : 'archive (diff)';
     console.log(`stan: ${statusLabel('ok')} "${label}" -> ${rel}`);
   }
-  onCancelled(_mode?: 'cancel' | 'restart'): void {
+  onCancelled(mode?: 'cancel' | 'restart'): void {
+    void mode;
     try {
       this.restoreCancel?.();
     } catch {
@@ -260,9 +261,9 @@ export class LiveUI implements RunnerUI {
       /* ignore */
     }
     try {
-      // For a final cancel, persist the last frame; for restart, clear to avoid duplication.
+      // For restart, do NOT flush a final frame (which can reprint the table).
+      // Clear immediately to ensure the next run reuses the same UI area without duplication.
       if (mode === 'restart') {
-        this.renderer?.flush();
         (this.renderer as unknown as { clear?: () => void })?.clear?.();
         this.renderer?.stop();
       } else {
@@ -278,6 +279,9 @@ export class LiveUI implements RunnerUI {
       /* ignore */
     }
     this.restoreCancel = null;
+    // Drop the renderer so the next run starts from a clean slate.
+    // (A fresh ProgressRenderer instance will be constructed by start().)
+    this.renderer = null;
   }
   installCancellation(triggerCancel: () => void, onRestart?: () => void): void {
     try {

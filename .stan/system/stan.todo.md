@@ -20,10 +20,11 @@ Backlog (nice to have)
 
 Completed (recent)
 
-- Live-mode cancel final-frame persistence
-  - Pressing q now leaves the final live frame visible (persisted) instead of clearing it.
-    Restart (r) still clears the frame so the next run reuses the same UI area without duplication.
+- Lint fix (LoggerUI.onCancelled)
+  - Remove “unused param” lint by referencing the optional mode parameter (void mode) to satisfy @typescript-eslint/no-unused-vars.
 
+- Live-mode cancel final-frame persistence
+  - Pressing q now leaves the final live frame visible (persisted) instead of clearing it. Restart (r) still clears the frame so the next run reuses the same UI area without duplication.
 - Live restart immediate cancel
   - Pressing r in --live now cancels all running child processes immediately (TERM -> KILL without grace) and restarts the run without waiting for tasks to settle. Previously, tasks could continue executing in the background and restart was delayed. Implementation races script execution against a cancel/restart signal.
 - Live UI restart uses the same UI

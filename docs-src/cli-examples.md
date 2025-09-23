@@ -80,6 +80,22 @@ Defaults (built‑in unless overridden by cliDefaults or flags):
 - hang-kill 300s
 - hang-kill-grace 10s
 
+Live UI status legend (TTY)
+
+- waiting: grey
+- run: blue
+- ok: green
+- cancelled: black
+- error: red
+- quiet: cyan
+- stalled: magenta
+- timeout: red
+
+Notes:
+
+- In BORING mode (or non‑TTY), statuses render as bracketed tokens (e.g., [WAIT], [RUN], [OK], [CANCELLED], [FAIL], [QUIET], [STALLED], [TIMEOUT]) without color.
+- No‑live parity: with --no-live and thresholds set, STAN logs concise inactivity events (“stalled/timeout/killed”) and preserves artifact parity with live runs (archives skipped on user cancel; outputs/archives otherwise identical given the same inputs and flags).
+
 Conflicts and special cases:
 
 - -c conflicts with -A (combine implies archives).
@@ -128,14 +144,14 @@ Sources and precedence:
 - -F, --no-file → ignore configured default patch file (forces clipboard unless argument/-f provided).
 - Config default: cliDefaults.patch.file (see below).
 
-Flags:
+Flags (presented to match `stan patch --help`):
 
-- -c, --check
-  - Validate only. Writes patched files to a sandbox under .stan/patch/.sandbox/ and leaves repo files unchanged.
 - -f, --file [filename]
   - Read the patch from a file (see precedence above).
 - -F, --no-file
   - Ignore configured default patch file (use clipboard unless argument/-f provided).
+- -c, --check
+  - Validate only. Writes patched files to a sandbox under .stan/patch/.sandbox/ and leaves repo files unchanged.
 
 Behavior highlights:
 

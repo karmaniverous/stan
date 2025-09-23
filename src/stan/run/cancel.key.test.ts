@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ContextConfig } from '@/stan/config';
 import { runSelected } from '@/stan/run';
-
 // Lightweight tar
 vi.mock('tar', () => ({
   __esModule: true,
@@ -45,10 +44,21 @@ describe('TTY key handler (q) cancels run', () => {
       // ignore
     }
     process.exitCode = exitBackup ?? 0;
+    // Leave the temp dir before removal and release handles (Windows EBUSY mitigation)
+    try {
+      process.chdir(os.tmpdir());
+    } catch {
+      // ignore
+    }
+    try {
+      (process.stdin as unknown as { pause?: () => void }).pause?.();
+    } catch {
+      // ignore
+    }
+    await new Promise((r) => setTimeout(r, 10));
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
-
   it('pressing q cancels and skips archive', async () => {
     const cfg: ContextConfig = {
       stanPath: 'stan',

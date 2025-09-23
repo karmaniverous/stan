@@ -19,6 +19,11 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Cancel tests (Windows): stabilize teardown in cancel.key/schedule tests
+  - Align with the parity test pattern to avoid EBUSY/ENOTEMPTY on temp dir removal:
+    - chdir to os.tmpdir() before rm,
+    - pause stdin,
+    - brief settle (~10ms) before deleting the temp directory.
 - Init: remove redundant reset-diff prompt
   - Eliminate the interactive “Reset diff snapshot now?” question from `stan init`.
   - Snapshot behavior is now:
@@ -27,8 +32,7 @@ Completed (recent)
 - Typecheck/docs build fix: resolve TS2339 in run action
   - Load config as ContextConfig in src/cli/stan/run/action.ts and keep the debug fallback; remove the narrow type guard that hid optional properties (cliDefaults). This unblocks build, docs, and typecheck.
 - Live run UX: print a trailing newline after `stan run --live` exits so the shell prompt resumes on a clean line.
-- Cancel parity (Windows) stability: increase settle delay after cancellation to give child processes time to terminate
-  before test teardown removes temp directories (reduces EBUSY/ENOTEMPTY during rm of temp dirs).
+- Cancel parity (Windows) stability: increase settle delay after cancellation to give child processes time to terminate before test teardown removes temp directories (reduces EBUSY/ENOTEMPTY during rm of temp dirs).
 
 - Windows test stability: cancel parity teardown
   - In src/stan/run/cancel.parity.test.ts, leave the temp directory before rm, pause stdin, and wait briefly to avoid EBUSY on rmdir. Mirrors the stability pattern used elsewhere and removes the last flake in this suite.

@@ -21,6 +21,7 @@ export type RunnerUI = {
     cwd: string,
     startedAt: number,
     endedAt: number,
+    exitCode?: number,
   ): void;
   onArchiveQueued(kind: ArchiveKind): void;
   onArchiveStart(kind: ArchiveKind): void;
@@ -50,9 +51,18 @@ export class LoggerUI implements RunnerUI {
   onScriptStart(key: string): void {
     console.log(`stan: start "${key}"`);
   }
-  onScriptEnd(key: string, outAbs: string, cwd: string): void {
+  onScriptEnd(
+    key: string,
+    outAbs: string,
+    cwd: string,
+    _startedAt: number,
+    _endedAt: number,
+    exitCode?: number,
+  ): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
-    console.log(`stan: done "${key}" -> ${rel}`);
+    console.log(
+      `stan: done "${key}" -> ${rel}${exitCode && exitCode !== 0 ? ` (exit ${exitCode})` : ''}`,
+    );
   }
   onArchiveQueued(): void {
     // no-op (logger UI does not render waiting rows)
@@ -133,15 +143,22 @@ export class LiveUI implements RunnerUI {
     cwd: string,
     startedAt: number,
     endedAt: number,
+    exitCode?: number,
   ): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
     this.renderer?.update(
       `script:${key}`,
-      {
-        kind: 'done',
-        durationMs: Math.max(0, endedAt - startedAt),
-        outputPath: rel,
-      },
+      exitCode && exitCode !== 0
+        ? {
+            kind: 'error',
+            durationMs: Math.max(0, endedAt - startedAt),
+            outputPath: rel,
+          }
+        : {
+            kind: 'done',
+            durationMs: Math.max(0, endedAt - startedAt),
+            outputPath: rel,
+          },
       { type: 'script', item: key },
     );
   }

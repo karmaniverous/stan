@@ -42,6 +42,7 @@ export const runSelected = async (
   behaviorMaybe?: RunBehavior,
 ): Promise<string[]> => {
   const behavior: RunBehavior = behaviorMaybe ?? {};
+  let hadFailures = false;
   let cancelled = false;
   const supervisor = new ProcessSupervisor({
     hangWarn: behavior.hangWarn,
@@ -163,9 +164,10 @@ export const runSelected = async (
         onStart: (key) => {
           ui.onScriptStart(key);
         },
-        onEnd: (key, outFileAbs, startedAt, endedAt) => {
+        onEnd: (key, outFileAbs, startedAt, endedAt, code) => {
           if (cancelled && cancelledKeys.has(`script:${key}`)) return;
-          ui.onScriptEnd(key, outFileAbs, cwd, startedAt, endedAt);
+          ui.onScriptEnd(key, outFileAbs, cwd, startedAt, endedAt, code);
+          if (typeof code === 'number' && code !== 0) hadFailures = true;
         },
         silent: true,
       },
@@ -176,15 +178,16 @@ export const runSelected = async (
     created.push(...scriptOutputs);
   }
 
+  // If any script failed (exit code != 0), signal failure at the process level.
+  // Archives are still produced to preserve artifacts for chat/diagnosis.
+  if (hadFailures) {
+    process.exitCode = 1;
+  }
   // ARCHIVE PHASE
   if (behavior.archive && !cancelled) {
     const includeOutputs = Boolean(behavior.combine);
     const { archivePath, diffPath } = await archivePhase(
-      {
-        cwd,
-        config,
-        includeOutputs,
-      },
+      { cwd, config, includeOutputs },
       {
         silent: true,
         progress: {

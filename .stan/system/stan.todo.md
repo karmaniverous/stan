@@ -4,10 +4,15 @@ When updated: 2025-09-23 (UTC) — LoggerUI cancellation unified; archive helper
 
 Completed (recent)
 
+- feat(run/scripts): treat non‑zero exit code as failure (without suppressing artifacts)
+  - Capture each script’s exit code and mark the live row as error when exit ≠ 0.
+  - Set process.exitCode = 1 when any selected script fails so CI and shells can detect failure.
+  - Preserve behavior of writing outputs and archives so chat context remains complete.
+  - LoggerUI appends “(exit N)” to the “done” line when a script exits non‑zero.
+
 - chore(clean): remove dead type stubs and unused utility
   - Deleted src/types/keypress.d.ts and src/types/istextorbinary.d.ts (no longer referenced).
-  - Removed unused fileNameOf() export from src/stan/util/time.ts.
-- refactor(cli/run): inline selection helper and drop extra file
+  - Removed unused fileNameOf() export from src/stan/util/time.ts.- refactor(cli/run): inline selection helper and drop extra file
   - Inlined deriveRunInvocation into src/cli/stan/run/derive.ts; removed src/cli/stan/run-args.ts.
 - refactor(snap): drop handlers re‑export; import concrete modules directly
   - Updated CLI (snap) to import from '@/stan/snap/history' and '@/stan/snap/snap-run'.

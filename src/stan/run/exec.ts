@@ -15,6 +15,7 @@ type RunHooks = {
     outFileAbs: string,
     startedAt: number,
     endedAt: number,
+    exitCode: number,
   ) => void;
   /** When true, suppress per-script console logs ("stan: start/done"). */
   silent?: boolean;
@@ -97,16 +98,16 @@ export const runOne = async (
     stream.write(d);
     if (debug) process.stderr.write(d);
   });
-  await new Promise<void>((resolveP, rejectP) => {
+  const exitCode = await new Promise<number>((resolveP, rejectP) => {
     child.on('error', (e) =>
       rejectP(e instanceof Error ? e : new Error(String(e))),
     );
-    child.on('close', () => resolveP());
+    child.on('close', (code) => resolveP(code ?? 0));
   });
   stream.end();
   await waitForStreamClose(stream);
 
-  hooks?.onEnd?.(key, outFile, startedAt, Date.now());
+  hooks?.onEnd?.(key, outFile, startedAt, Date.now(), exitCode);
 
   if (orderFile) {
     await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
@@ -115,8 +116,7 @@ export const runOne = async (
 };
 /**
  * Run a set of scripts concurrently or sequentially.
- *
- * @param cwd - Working directory for child processes.
+ * * @param cwd - Working directory for child processes.
  * @param outAbs - Absolute output directory.
  * @param outRel - Relative output directory (for logs).
  * @param config - Resolved configuration.

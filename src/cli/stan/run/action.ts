@@ -1,9 +1,10 @@
-// src/cli/stan/run/action.ts
+/// src/cli/stan/run/action.ts
 import path from 'node:path';
 
 import type { Command } from 'commander';
 import { CommanderError } from 'commander';
 
+import type { ContextConfig } from '@/stan/config';
 import { findConfigPathSync, loadConfig } from '@/stan/config';
 import { runSelected } from '@/stan/run';
 import { renderRunPlan } from '@/stan/run/plan';
@@ -32,9 +33,10 @@ export const registerRunAction = (
     const cfgPath = findConfigPathSync(cwdInitial);
     const runCwd = cfgPath ? path.dirname(cfgPath) : cwdInitial;
 
-    let maybe: unknown;
+    // Load repo config as ContextConfig; on failure, fall back to sane minimal defaults.
+    let config: ContextConfig;
     try {
-      maybe = await loadConfig(runCwd);
+      config = await loadConfig(runCwd);
     } catch (err) {
       if (process.env.STAN_DEBUG === '1') {
         const msg =
@@ -45,19 +47,8 @@ export const registerRunAction = (
               : String(err);
         console.error('stan: failed to load config', msg);
       }
-      maybe = undefined;
+      config = { stanPath: 'stan', scripts: {} };
     }
-    const isContextConfig = (
-      v: unknown,
-    ): v is { stanPath: string; scripts: Record<string, string> } =>
-      !!v &&
-      typeof v === 'object' &&
-      typeof (v as { stanPath?: unknown }).stanPath === 'string' &&
-      typeof (v as { scripts?: unknown }).scripts === 'object';
-
-    const config = isContextConfig(maybe)
-      ? maybe
-      : { stanPath: 'stan', scripts: {} as Record<string, string> };
 
     // Derive run parameters
     const derived = deriveRunParameters({ options, cmd, config });

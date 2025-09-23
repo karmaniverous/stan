@@ -3,9 +3,9 @@
 When updated: 2025-09-23 (UTC)
 
 Next up (priority order)
+
 1. Targeted unit coverage - Add/keep small unit tests where integration coverage is thin: - Packaged prompt path resolution (getPackagedSystemPromptPath).
    - System monolith assembly edge cases (already covered partially).
-
 2. CI stability monitoring (Windows)
    - Continue watching for teardown flakiness; keep stdin pause + cwd reset + brief settle pattern; adjust as needed.
 
@@ -18,12 +18,18 @@ Backlog (nice to have)
 - Additional doc cross‑checks to keep CLI help and site pages in sync.
 
 Completed (recent)
+
+- Typecheck/docs build fix: resolve TS2339 in run action
+  - Load config as ContextConfig in src/cli/stan/run/action.ts and keep the debug fallback; remove the narrow type guard that hid optional properties (cliDefaults). This unblocks build, docs, and typecheck.
+
+- Windows test stability: cancel parity teardown
+  - In src/stan/run/cancel.parity.test.ts, leave the temp directory before rm, pause stdin, and wait briefly to avoid EBUSY on rmdir. Mirrors the stability pattern used elsewhere and removes the last flake in this suite.
+
 - CLI defaults: support run.plan; plan header default now respects cliDefaults.run.plan (default true). Action wiring keeps -p (plan-only) and -P (no plan) semantics unchanged.
 - Cancellation tests stability (Windows): add brief settle before returning on cancel to avoid EBUSY/ENOTEMPTY on rm of temp dirs.
 
 - Patch CLI test teardown stability (Windows)
-  - In src/cli/stan/patch.test.ts, pause stdin and allow a brief settle    before removing the temp dir in afterEach to prevent EBUSY/timeout
-    flakes (mirrors the pattern used in openFilesInEditor tests).
+  - In src/cli/stan/patch.test.ts, pause stdin and allow a brief settle before removing the temp dir in afterEach to prevent EBUSY/timeout flakes (mirrors the pattern used in openFilesInEditor tests).
 
 - Lint fix (LoggerUI.onCancelled)
   - Remove “unused param” lint by referencing the optional mode parameter (void mode) to satisfy @typescript-eslint/no-unused-vars.

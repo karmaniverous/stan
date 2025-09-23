@@ -39,11 +39,23 @@ describe('cancel parity: no-live mode responds to SIGINT (no archives; non-zero 
     } catch {
       // ignore
     }
+    // Leave the temp dir before removal (Windows EBUSY mitigation)
+    try {
+      process.chdir(os.tmpdir());
+    } catch {
+      // ignore
+    }
     process.exitCode = exitBackup ?? 0;
+    // Pause stdin and allow a brief settle so handles release before rm()
+    try {
+      (process.stdin as unknown as { pause?: () => void }).pause?.();
+    } catch {
+      // ignore
+    }
+    await new Promise((r) => setTimeout(r, 10));
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
-
   it('sequential scheduling stops and archives are skipped after SIGINT', async () => {
     const cfg: ContextConfig = {
       stanPath: 'stan',

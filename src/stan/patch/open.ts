@@ -11,7 +11,6 @@ import { cyan, red, yellow } from '@/stan/util/color';
 
 const isDeleted = (cwd: string, rel: string): boolean =>
   !existsSync(path.resolve(cwd, rel));
-
 /**
  * Open modified files in the configured editor.
  *
@@ -43,17 +42,18 @@ export const openFilesInEditor = (args: {
     return;
   }
 
-  // In tests, avoid spawning editors which can keep directories locked on Windows,
-  // unless explicitly forced via STAN_FORCE_OPEN=1. Evaluate dynamically so tests
-  // can set the env after import.
-  const isTest = process.env.NODE_ENV === 'test';
-  const allowOpenInTests = process.env.STAN_FORCE_OPEN === '1';
-  if (isTest && !allowOpenInTests) {
-    return;
-  }
-
   for (const rel of safeFiles) {
     const cmdLine = openCommand.replaceAll('{file}', rel);
+    // Log first so tests can assert behavior without requiring a real spawn.
+    console.log(`stan: open -> ${cyan(rel)}`);
+
+    // In tests, do not spawn at all. Detached child processes can keep the
+    // working directory locked briefly on Windows and cause EBUSY/ENOTEMPTY
+    // during teardown. The log above provides sufficient observability.
+    if (process.env.NODE_ENV === 'test') {
+      continue;
+    }
+
     try {
       const child = spawn(cmdLine, {
         cwd,
@@ -63,7 +63,6 @@ export const openFilesInEditor = (args: {
         detached: true,
       });
       child.unref();
-      console.log(`stan: open -> ${cyan(rel)}`);
     } catch {
       console.log(
         red(

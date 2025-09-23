@@ -5,9 +5,10 @@
  */
 import { relative } from 'node:path';
 
+import { blue, green, red } from '@/stan/util/color';
+
 import { installCancelKeys } from './input/keys';
 import { ProgressRenderer } from './live/renderer';
-
 export type ArchiveKind = 'full' | 'diff';
 
 export type RunnerUI = {
@@ -49,7 +50,7 @@ export class LoggerUI implements RunnerUI {
     // no-op (logger UI does not render waiting rows)
   }
   onScriptStart(key: string): void {
-    console.log(`stan: start "${key}"`);
+    console.log(`stan: ${blue('start')} "${key}"`);
   }
   onScriptEnd(
     key: string,
@@ -60,23 +61,21 @@ export class LoggerUI implements RunnerUI {
     exitCode?: number,
   ): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
-    console.log(
-      `stan: done "${key}" -> ${rel}${exitCode && exitCode !== 0 ? ` (exit ${exitCode})` : ''}`,
-    );
+    const done = exitCode && exitCode !== 0 ? red('done') : green('done');
+    const tail = exitCode && exitCode !== 0 ? ` (exit ${exitCode})` : '';
+    console.log(`stan: ${done} "${key}" -> ${rel}${tail}`);
   }
   onArchiveQueued(): void {
     // no-op (logger UI does not render waiting rows)
   }
   onArchiveStart(kind: ArchiveKind): void {
-    console.log(
-      `stan: start "${kind === 'full' ? 'archive' : 'archive (diff)'}"`,
-    );
+    const label = kind === 'full' ? 'archive' : 'archive (diff)';
+    console.log(`stan: ${blue('start')} "${label}"`);
   }
   onArchiveEnd(kind: ArchiveKind, outAbs: string, cwd: string): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
-    console.log(
-      `stan: done "${kind === 'full' ? 'archive' : 'archive (diff)'}" -> ${rel}`,
-    );
+    const label = kind === 'full' ? 'archive' : 'archive (diff)';
+    console.log(`stan: ${green('done')} "${label}" -> ${rel}`);
   }
   onCancelled(): void {
     try {

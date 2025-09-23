@@ -38,8 +38,9 @@ describe('patch help shows default file from cliDefaults.patch.file', () => {
     registerPatch(cli);
     const sub = cli.commands.find((c) => c.name() === 'patch')!;
     const out = sub.helpInformation();
+    // Help lines may wrap; allow newlines between DEFAULT: and the path.
     expect(out).toMatch(
-      /\\-f,\s*--file .*DEFAULT:\s*\.stan\/patch\/last\.patch/i,
+      /-f,\s*--file[\s\S]*DEFAULT:\s*\.stan\/patch\/last\.patch/i,
     );
   });
 });

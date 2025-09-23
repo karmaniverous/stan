@@ -9,7 +9,6 @@ export type DerivedRun = {
   mode: ExecutionMode;
   behavior: RunBehavior;
 };
-
 /**
  * Derive selection/mode/behavior given parsed options, the configured defaults,
  * and Commander option sources.
@@ -19,7 +18,7 @@ export const deriveRunParameters = (args: {
   cmd: Command;
   config: ContextConfig;
 }): DerivedRun => {
-  const { options, cmd, config } = args;
+  const { options, config } = args;
 
   const scriptsOpt = (options as { scripts?: unknown }).scripts;
   const exceptOpt = (options as { exceptScripts?: unknown }).exceptScripts;
@@ -28,92 +27,25 @@ export const deriveRunParameters = (args: {
   const exceptProvided =
     Array.isArray(exceptOpt) && (exceptOpt as unknown[]).length > 0;
 
-  const runDefs = ((
-    config as { cliDefaults?: { run?: Record<string, unknown> } }
-  ).cliDefaults?.run ?? {}) as {
-    archive?: boolean;
-    combine?: boolean;
-    keep?: boolean;
-    sequential?: boolean;
-    scripts?: boolean | string[];
-    ding?: boolean;
-    live?: boolean;
-    hangWarn?: number;
-    hangKill?: number;
-    hangKillGrace?: number;
-  };
-
-  const src = (
-    cmd as unknown as {
-      getOptionValueSource?: (name: string) => string | undefined;
-    }
-  ).getOptionValueSource?.bind(cmd);
-
-  const toInt = (v: unknown): number | undefined => {
-    if (typeof v === 'number' && Number.isFinite(v)) return Math.floor(v);
-    if (typeof v === 'string') {
-      const s = v.trim();
-      if (s.length) {
-        const n = Number.parseInt(s, 10);
-        if (Number.isFinite(n)) return Math.floor(n);
-      }
-    }
-    return undefined;
-  };
-  const combine =
-    src && src('combine') === 'cli'
-      ? Boolean((options as { combine?: unknown }).combine)
-      : Boolean(runDefs.combine ?? false);
-  const sequential =
-    src && src('sequential') === 'cli'
-      ? Boolean((options as { sequential?: unknown }).sequential)
-      : Boolean(runDefs.sequential ?? false);
-  const keep =
-    src && src('keep') === 'cli'
-      ? Boolean((options as { keep?: unknown }).keep)
-      : Boolean(runDefs.keep ?? false);
-
-  const ding =
-    src && src('ding') === 'cli'
-      ? Boolean((options as { ding?: unknown }).ding)
-      : Boolean(runDefs.ding ?? false);
-
-  const live =
-    src && src('live') === 'cli'
-      ? Boolean((options as { live?: unknown }).live)
-      : typeof runDefs.live === 'boolean'
-        ? runDefs.live
-        : true;
-
-  const hangWarn =
-    src && src('hangWarn') === 'cli'
-      ? toInt((options as { hangWarn?: unknown }).hangWarn)
-      : toInt((runDefs as { hangWarn?: unknown }).hangWarn);
-  const hangKill =
-    src && src('hangKill') === 'cli'
-      ? toInt((options as { hangKill?: unknown }).hangKill)
-      : toInt((runDefs as { hangKill?: unknown }).hangKill);
-  const hangKillGrace =
-    src && src('hangKillGrace') === 'cli'
-      ? toInt((options as { hangKillGrace?: unknown }).hangKillGrace)
-      : toInt((runDefs as { hangKillGrace?: unknown }).hangKillGrace);
-
-  // Built-in defaults for hang thresholds when absent from CLI/config.
-  // Warn after 120s, kill after 300s, 10s grace between TERM and KILL.
-  const hangWarnFinal = typeof hangWarn === 'number' ? hangWarn : 120;
-  const hangKillFinal = typeof hangKill === 'number' ? hangKill : 300;
-  const hangKillGraceFinal =
-    typeof hangKillGrace === 'number' ? hangKillGrace : 10;
+  // From Commander: all booleans/numerics already have defaults applied (config-aware via options.ts).
+  const combine = Boolean((options as { combine?: unknown }).combine);
+  const sequential = Boolean((options as { sequential?: unknown }).sequential);
+  const keep = Boolean((options as { keep?: unknown }).keep);
+  const ding = Boolean((options as { ding?: unknown }).ding);
+  const live = Boolean((options as { live?: unknown }).live);
+  const hangWarnFinal = Number((options as { hangWarn?: unknown }).hangWarn);
+  const hangKillFinal = Number((options as { hangKill?: unknown }).hangKill);
+  const hangKillGraceFinal = Number(
+    (options as { hangKillGrace?: unknown }).hangKillGrace,
+  );
 
   const archiveOpt = (options as { archive?: unknown }).archive as
     | boolean
     | undefined;
-  const archiveFlag = archiveOpt === true;
   const noArchiveFlag = archiveOpt === false;
-  let archive = true;
+  // Combine implies archive; otherwise honor CLI boolean produced by Commander defaults.
+  let archive = Boolean(archiveOpt) || combine;
   if (noArchiveFlag) archive = false;
-  else if (archiveFlag || combine) archive = true;
-  else archive = typeof runDefs.archive === 'boolean' ? runDefs.archive : true;
 
   const derivedBase = deriveRunInvocation({
     scriptsProvided,
@@ -135,13 +67,14 @@ export const deriveRunParameters = (args: {
   } else if (scriptsProvided) {
     selection = derivedBase.selection;
   } else {
-    const sdef = runDefs.scripts;
+    const sdef = (
+      (config.cliDefaults ?? {}) as { run?: { scripts?: boolean | string[] } }
+    ).run?.scripts;
     let base: string[] = [];
     if (sdef === false) base = [];
     else if (sdef === true || typeof sdef === 'undefined') base = [...allKeys];
     else if (Array.isArray(sdef))
       base = allKeys.filter((k) => sdef.includes(k));
-
     const exceptList = Array.isArray(exceptOpt)
       ? (exceptOpt as string[]).filter((k) => typeof k === 'string')
       : [];

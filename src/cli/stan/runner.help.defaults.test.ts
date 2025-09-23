@@ -21,8 +21,9 @@ describe('run help shows numeric defaults for hang thresholds', () => {
     run?.outputHelp();
     spy.mockRestore();
 
-    expect(printed).toMatch(/--hang-warn .*DEFAULT:\s*120s/i);
-    expect(printed).toMatch(/--hang-kill .*DEFAULT:\s*300s/i);
-    expect(printed).toMatch(/--hang-kill-grace .*DEFAULT:\s*10s/i);
+    // Commander now shows built-in defaults as "(default: N)"; allow line wrapping with [\s\S].
+    expect(printed).toMatch(/--hang-warn[\s\S]*?\(default:\s*120\)/i);
+    expect(printed).toMatch(/--hang-kill[\s\S]*?\(default:\s*300\)/i);
+    expect(printed).toMatch(/--hang-kill-grace[\s\S]*?\(default:\s*10\)/i);
   });
 });

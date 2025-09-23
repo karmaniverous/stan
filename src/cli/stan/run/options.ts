@@ -3,14 +3,14 @@ import { Command, Option } from 'commander';
 import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 
-import { applyCliSafety, tagDefault } from '../cli-utils';
+import { applyCliSafety } from '../cli-utils';
+import { RUN_BASE_DEFAULTS } from './defaults';
 
 export type FlagPresence = {
   sawNoScriptsFlag: boolean;
   sawScriptsFlag: boolean;
   sawExceptFlag: boolean;
 };
-
 /**
  * Register the `run` subcommand options and default tagging.
  * Returns the configured subcommand and a getter for raw flag presence.
@@ -37,7 +37,7 @@ export const registerRunOptions = (
     'script keys to exclude (reduces from --scripts or from full set)',
   );
 
-  // Live TTY progress and hang thresholds
+  // Live TTY progress and hang thresholds (defaults will be applied below)
   const optLive = new Option(
     '--live',
     'enable live progress table (TTY only; default true)',
@@ -46,18 +46,25 @@ export const registerRunOptions = (
     '--no-live',
     'disable live progress table (TTY only)',
   );
+  const parsePositiveInt = (v: string): number => {
+    const n = Number.parseInt(v, 10);
+    if (!Number.isFinite(n) || n <= 0) {
+      throw new Error('seconds must be a positive integer');
+    }
+    return n;
+  };
   const optHangWarn = new Option(
     '--hang-warn <seconds>',
     'label “stalled” after N seconds of inactivity (TTY only)',
-  );
+  ).argParser(parsePositiveInt);
   const optHangKill = new Option(
     '--hang-kill <seconds>',
     'terminate stalled scripts after N seconds (SIGTERM→grace→SIGKILL; TTY only)',
-  );
+  ).argParser(parsePositiveInt);
   const optHangKillGrace = new Option(
     '--hang-kill-grace <seconds>',
     'grace period in seconds before SIGKILL after SIGTERM (TTY only)',
-  );
+  ).argParser(parsePositiveInt);
 
   // Mode flags
   const optSequential = new Option(
@@ -151,64 +158,77 @@ export const registerRunOptions = (
 
   applyCliSafety(cmd);
 
-  // Tag defaults (config overrides > built-ins)
-  try {
-    const p = findConfigPathSync(process.cwd());
-    const cfg = p ? loadConfigSync(process.cwd()) : null;
-    const runDefs = (cfg?.cliDefaults?.run ?? {}) as {
-      archive?: boolean;
-      combine?: boolean;
-      keep?: boolean;
-      sequential?: boolean;
-      scripts?: boolean | string[];
-      ding?: boolean;
-      live?: boolean;
-      hangWarn?: number;
-      hangKill?: number;
-      hangKillGrace?: number;
-    };
-    const dArchive =
-      typeof runDefs.archive === 'boolean' ? runDefs.archive : true;
-    const dLive = typeof runDefs.live === 'boolean' ? runDefs.live : true;
-    const dCombine =
-      typeof runDefs.combine === 'boolean' ? runDefs.combine : false;
-    const dKeep = typeof runDefs.keep === 'boolean' ? runDefs.keep : false;
-    const dSeq =
-      typeof runDefs.sequential === 'boolean' ? runDefs.sequential : false;
-    const dDing = typeof runDefs.ding === 'boolean' ? runDefs.ding : false; // config key remains "ding"
+  // Compute effective defaults from config (cliDefaults.run) over baseline
+  const resolveRunDefaults = () => {
+    try {
+      const p = findConfigPathSync(process.cwd());
+      const cfg = p ? loadConfigSync(process.cwd()) : null;
+      const runDefs = (cfg?.cliDefaults?.run ?? {}) as {
+        archive?: boolean;
+        combine?: boolean;
+        keep?: boolean;
+        sequential?: boolean;
+        scripts?: boolean | string[];
+        ding?: boolean;
+        live?: boolean;
+        hangWarn?: number;
+        hangKill?: number;
+        hangKillGrace?: number;
+      };
+      return {
+        archive:
+          typeof runDefs.archive === 'boolean'
+            ? runDefs.archive
+            : RUN_BASE_DEFAULTS.archive,
+        live:
+          typeof runDefs.live === 'boolean'
+            ? runDefs.live
+            : RUN_BASE_DEFAULTS.live,
+        combine:
+          typeof runDefs.combine === 'boolean'
+            ? runDefs.combine
+            : RUN_BASE_DEFAULTS.combine,
+        keep:
+          typeof runDefs.keep === 'boolean'
+            ? runDefs.keep
+            : RUN_BASE_DEFAULTS.keep,
+        sequential:
+          typeof runDefs.sequential === 'boolean'
+            ? runDefs.sequential
+            : RUN_BASE_DEFAULTS.sequential,
+        ding:
+          typeof runDefs.ding === 'boolean'
+            ? runDefs.ding
+            : RUN_BASE_DEFAULTS.ding,
+        hangWarn:
+          typeof runDefs.hangWarn === 'number' && runDefs.hangWarn > 0
+            ? runDefs.hangWarn
+            : RUN_BASE_DEFAULTS.hangWarn,
+        hangKill:
+          typeof runDefs.hangKill === 'number' && runDefs.hangKill > 0
+            ? runDefs.hangKill
+            : RUN_BASE_DEFAULTS.hangKill,
+        hangKillGrace:
+          typeof runDefs.hangKillGrace === 'number' && runDefs.hangKillGrace > 0
+            ? runDefs.hangKillGrace
+            : RUN_BASE_DEFAULTS.hangKillGrace,
+      };
+    } catch {
+      return { ...RUN_BASE_DEFAULTS };
+    }
+  };
+  const eff = resolveRunDefaults();
 
-    // Resolve numeric defaults (config > built-ins)
-    const dWarn =
-      typeof runDefs.hangWarn === 'number' && runDefs.hangWarn > 0
-        ? runDefs.hangWarn
-        : 120;
-    const dKill =
-      typeof runDefs.hangKill === 'number' && runDefs.hangKill > 0
-        ? runDefs.hangKill
-        : 300;
-    const dGrace =
-      typeof runDefs.hangKillGrace === 'number' && runDefs.hangKillGrace > 0
-        ? runDefs.hangKillGrace
-        : 10;
-
-    // Append numeric defaults to option descriptions
-    optHangWarn.description = `${optHangWarn.description} (DEFAULT: ${dWarn.toString()}s)`;
-    optHangKill.description = `${optHangKill.description} (DEFAULT: ${dKill.toString()}s)`;
-    optHangKillGrace.description = `${optHangKillGrace.description} (DEFAULT: ${dGrace.toString()}s)`;
-
-    tagDefault(dArchive ? optArchive : optNoArchive, true);
-    tagDefault(dCombine ? optCombine : optNoCombine, true);
-    tagDefault(dKeep ? optKeep : optNoKeep, true);
-    tagDefault(dLive ? optLive : optNoLive, true);
-    tagDefault(dSeq ? optSequential : optNoSequential, true);
-    if (runDefs.scripts === false) tagDefault(optNoScripts, true);
-    tagDefault(dDing ? optBell : optNoBell, true);
-  } catch {
-    tagDefault(optArchive, true);
-    tagDefault(optNoCombine, true);
-    tagDefault(optNoKeep, true);
-    tagDefault(optNoSequential, true);
-  }
+  // Apply Commander defaults so help shows (default: …)
+  optArchive.default(eff.archive);
+  optCombine.default(eff.combine);
+  optKeep.default(eff.keep);
+  optSequential.default(eff.sequential);
+  optLive.default(eff.live);
+  optBell.default(eff.ding);
+  optHangWarn.default(eff.hangWarn);
+  optHangKill.default(eff.hangKill);
+  optHangKillGrace.default(eff.hangKillGrace);
 
   // Help footer
   cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));

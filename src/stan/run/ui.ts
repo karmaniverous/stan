@@ -256,6 +256,9 @@ export class LiveUI implements RunnerUI {
     }
     try {
       this.renderer?.flush();
+      // Clear the previous live frame so a restart reuses the same UI area
+      // instead of persisting and printing a duplicate table below it.
+      (this.renderer as unknown as { clear?: () => void })?.clear?.();
       this.renderer?.stop();
     } catch {
       /* ignore */

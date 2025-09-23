@@ -77,6 +77,15 @@ export class ProgressRenderer {
     this.timer = setInterval(() => this.render(), this.opts.refreshMs);
   }
 
+  /** Clear any rendered output without persisting it. */
+  public clear(): void {
+    try {
+      (logUpdate as unknown as { clear?: () => void }).clear?.();
+    } catch {
+      // best-effort
+    }
+  }
+
   stop(): void {
     if (this.timer) clearInterval(this.timer);
     this.timer = undefined;
@@ -86,7 +95,6 @@ export class ProgressRenderer {
       // best-effort
     }
   }
-
   /**
    * Update a row by stable key. Optional meta lets callers register type/item explicitly.
    * Keys:

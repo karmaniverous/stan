@@ -3,6 +3,7 @@
  */
 import { Command, Option } from 'commander';
 
+import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import { runPatch } from '@/stan/patch/service';
 
 import { applyCliSafety } from './cli-utils';
@@ -21,8 +22,28 @@ export const registerPatch = (cli: Command): Command => {
     .description(
       'Apply a git patch from clipboard (default), a file (-f), or argument.',
     )
-    .argument('[input]', 'Patch data (unified diff)')
-    .option('-f, --file [filename]', 'Read patch from file as source')
+    .argument('[input]', 'Patch data (unified diff)');
+
+  // Build -f option and append default file path from config when present
+  const optFile = new Option(
+    '-f, --file [filename]',
+    'Read patch from file as source',
+  );
+  try {
+    const p = findConfigPathSync(process.cwd());
+    if (p) {
+      const cfg = loadConfigSync(process.cwd());
+      const df = cfg.cliDefaults?.patch?.file;
+      if (typeof df === 'string' && df.trim().length > 0) {
+        optFile.description = `${optFile.description} (DEFAULT: ${df.trim()})`;
+      }
+    }
+  } catch {
+    // best-effort
+  }
+
+  sub
+    .addOption(optFile)
     .addOption(
       new Option(
         '-F, --no-file',
@@ -30,7 +51,6 @@ export const registerPatch = (cli: Command): Command => {
       ),
     )
     .option('-c, --check', 'Validate patch without applying any changes');
-
   applyCliSafety(sub);
 
   sub.action(

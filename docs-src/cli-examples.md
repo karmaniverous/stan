@@ -69,10 +69,11 @@ Flags:
 - --hang-kill-grace <seconds>
   - Grace period in seconds before SIGKILL after SIGTERM (TTY only).
 
+Defaults (built-in unless overridden by cliDefaults or flags): hang-warn 120s; hang-kill 300s; hang-kill-grace 10s.
+
 Conflicts and special cases:
 - -c conflicts with -A (combine implies archives).
-- -S conflicts with -s and -x.
-- -S plus -A (scripts disabled and archives disabled) => “nothing to do; plan only”.
+- -S conflicts with -s and -x.- -S plus -A (scripts disabled and archives disabled) => “nothing to do; plan only”.
 
 Examples:
 

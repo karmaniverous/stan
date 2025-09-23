@@ -119,4 +119,25 @@ describe('run defaults from opts.cliDefaults.run', () => {
     const args = recorded[0];
     expect(args[2] as string[]).toEqual(['b']);
   });
+
+  it('defaults hang thresholds to built-ins when not specified in CLI/config', async () => {
+    // Config with no cliDefaults.run thresholds
+    await writeFile(
+      path.join(dir, 'stan.config.yml'),
+      ['stanPath: stan', 'scripts:', '  a: echo a'].join('\n'),
+      'utf8',
+    );
+    const cli = new Command();
+    applyCliSafety(cli);
+    registerRun(cli);
+    await cli.parseAsync(['node', 'stan', 'run', '-s', 'a'], { from: 'user' });
+    const behavior = (recorded.pop()?.[4] ?? {}) as {
+      hangWarn?: number;
+      hangKill?: number;
+      hangKillGrace?: number;
+    };
+    expect(behavior.hangWarn).toBe(120);
+    expect(behavior.hangKill).toBe(300);
+    expect(behavior.hangKillGrace).toBe(10);
+  });
 });

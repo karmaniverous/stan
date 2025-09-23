@@ -4,9 +4,26 @@ When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
+- feat(run/help): display numeric defaults for hang thresholds and patch default file
+  - Run help now appends “(DEFAULT: Ns)” for:
+    - --hang-warn (120s by default),
+    - --hang-kill (300s by default),
+    - --hang-kill-grace (10s by default),
+    overriding with cliDefaults.run when present.
+  - Patch help appends “(DEFAULT: <path>)” to -f/--file when cliDefaults.patch.file is set.
+  - Added tests:
+    - runner.help.defaults.test.ts ensures defaults appear in run help,
+    - patch.help.defaults.test.ts ensures default file path appears in patch help.
+
+- feat(run/defaults): adopt rational built-in hang thresholds and align supervisor grace
+  - Built-in defaults (when flags/config absent):
+    - hangWarn=120s, hangKill=300s, hangKillGrace=10s.
+  - deriveRunParameters applies these defaults to behavior.
+  - ProcessSupervisor default grace changed from 8s to 10s for consistency.
+  - Added a test in runner.defaults.test.ts to assert built-in threshold behavior.
+
 - docs(typedoc): export BlockKind in validate/response to include the referenced
   type in generated docs and remove the TypeDoc warning.
-
 - fix(run/cancel): race scripts against cancellation; skip archive and return immediately when cancelled
   - Added a cancellation rendezvous in runSelected and a Promise.race around script execution so q/CtrlC stop the run promptly without waiting on long children.
   - Guarded an early return before the archive phase to ensure no archives are written on cancel; addresses failing cancel.\* tests.- feat(run/scripts): treat non‑zero exit code as failure (without suppressing artifacts)
@@ -138,10 +155,11 @@ Completed (recent)
   - Tests: live.align now matches exactly two spaces on header/summary/hint.
 - fix(live/exports): remove duplicate/conflicting export in src/stan/run/live.ts that broke typecheck/build/docs.
 
+- docs: cli/config updates documenting built-in hang threshold defaults.
+
 - fix(run/service): import ProcessSupervisor as a value (not type); remove unused ScriptState import; replace optional-call on restoreTty with explicit callable guard; remove unused local time var.
   - Lint: resolves no-unused-vars.
   - Typecheck/docs/build: green.
-
 - feat(live/glyphs): unify TTY waiting/timeout glyph to single‑width ⏱ in both per‑row status and the summary; BORING remains [WAIT]/[TIMEOUT] text tokens.
   - Keeps single‑line summary with bullet separators; no changes to BORING labels beyond the existing textual tokens.
 

@@ -98,6 +98,13 @@ export const deriveRunParameters = (args: {
       ? toInt((options as { hangKillGrace?: unknown }).hangKillGrace)
       : toInt((runDefs as { hangKillGrace?: unknown }).hangKillGrace);
 
+  // Built-in defaults for hang thresholds when absent from CLI/config.
+  // Warn after 120s, kill after 300s, 10s grace between TERM and KILL.
+  const hangWarnFinal = typeof hangWarn === 'number' ? hangWarn : 120;
+  const hangKillFinal = typeof hangKill === 'number' ? hangKill : 300;
+  const hangKillGraceFinal =
+    typeof hangKillGrace === 'number' ? hangKillGrace : 10;
+
   const archiveOpt = (options as { archive?: unknown }).archive as
     | boolean
     | undefined;
@@ -152,9 +159,9 @@ export const deriveRunParameters = (args: {
     archive,
     ding,
     live,
-    hangWarn,
-    hangKill,
-    hangKillGrace,
+    hangWarn: hangWarnFinal,
+    hangKill: hangKillFinal,
+    hangKillGrace: hangKillGraceFinal,
   };
   return { selection, mode, behavior };
 };

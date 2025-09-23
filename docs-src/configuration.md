@@ -208,8 +208,7 @@ Combine mode (`stan run -c`) behavior:
 
 STAN excludes nested sub‑packages by default to reduce noise:
 
-- Any directory (at any depth) that contains its own `package.json` is treated
-  as an independent sub‑package and excluded from the base selection.
+- Any directory (at any depth) that contains its own `package.json` is treated as an independent sub‑package and excluded from the base selection.
 - The repository root itself (root‑level `package.json`) is not excluded.
 - Reserved exclusions still apply (see above).
 
@@ -225,6 +224,10 @@ includes:
 - Flags override everything.- If a flag is omitted, STAN consults `cliDefaults`.
 - If not in `cliDefaults`, STAN uses built‑ins:
   - `run.archive=true`, `run.combine=false`, `run.keep=false`, `run.sequential=false`, `run.scripts=true`
+  - Hang thresholds (TTY-oriented):
+    - `run.hangWarn=120` (seconds before labeling “stalled”),
+    - `run.hangKill=300` (seconds before escalating from SIGTERM→SIGKILL),
+    - `run.hangKillGrace=10` (seconds grace between TERM and KILL).
   - `patch.file` unset
   - `snap.stash=false`
   - root: `debug=false`, `boring=false`

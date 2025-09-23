@@ -28,7 +28,7 @@ export class ProcessSupervisor {
     const graceSec =
       typeof this.behavior.hangKillGrace === 'number'
         ? this.behavior.hangKillGrace
-        : 8;
+        : 10;
     const graceMs = opts?.immediate ? 0 : Math.max(0, graceSec * 1000);
     const current = Array.from(this.pids.entries());
     for (const [, pid] of current) {

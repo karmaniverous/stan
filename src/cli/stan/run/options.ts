@@ -13,7 +13,8 @@ export type FlagPresence = {
 
 /**
  * Register the `run` subcommand options and default tagging.
- * Returns the configured subcommand and a getter for raw flag presence. */
+ * Returns the configured subcommand and a getter for raw flag presence.
+ */
 export const registerRunOptions = (
   cli: Command,
 ): {
@@ -35,6 +36,7 @@ export const registerRunOptions = (
     '-x, --except-scripts <keys...>',
     'script keys to exclude (reduces from --scripts or from full set)',
   );
+
   // Live TTY progress and hang thresholds
   const optLive = new Option(
     '--live',
@@ -84,8 +86,6 @@ export const registerRunOptions = (
     'do not include outputs inside archives',
   );
   // Parse-time conflict: -c conflicts with -A (combine implies archives).
-  // Commander expects option names (string), not Option objects, for conflicts().
-  // Use attribute names: 'archive' (for -a/--archive or -A/--no-archive) and 'combine'.
   optCombine.conflicts('archive');
   optNoArchive.conflicts('combine');
 
@@ -113,6 +113,7 @@ export const registerRunOptions = (
   );
   const optNoBell = new Option('-B, --no-bell', 'do not play a terminal bell');
 
+  // Register options
   cmd
     .addOption(optScripts)
     .addOption(optExcept)
@@ -162,6 +163,9 @@ export const registerRunOptions = (
       scripts?: boolean | string[];
       ding?: boolean;
       live?: boolean;
+      hangWarn?: number;
+      hangKill?: number;
+      hangKillGrace?: number;
     };
     const dArchive =
       typeof runDefs.archive === 'boolean' ? runDefs.archive : true;
@@ -172,6 +176,26 @@ export const registerRunOptions = (
     const dSeq =
       typeof runDefs.sequential === 'boolean' ? runDefs.sequential : false;
     const dDing = typeof runDefs.ding === 'boolean' ? runDefs.ding : false; // config key remains "ding"
+
+    // Resolve numeric defaults (config > built-ins)
+    const dWarn =
+      typeof runDefs.hangWarn === 'number' && runDefs.hangWarn > 0
+        ? runDefs.hangWarn
+        : 120;
+    const dKill =
+      typeof runDefs.hangKill === 'number' && runDefs.hangKill > 0
+        ? runDefs.hangKill
+        : 300;
+    const dGrace =
+      typeof runDefs.hangKillGrace === 'number' && runDefs.hangKillGrace > 0
+        ? runDefs.hangKillGrace
+        : 10;
+
+    // Append numeric defaults to option descriptions
+    optHangWarn.description = `${optHangWarn.description} (DEFAULT: ${dWarn.toString()}s)`;
+    optHangKill.description = `${optHangKill.description} (DEFAULT: ${dKill.toString()}s)`;
+    optHangKillGrace.description = `${optHangKillGrace.description} (DEFAULT: ${dGrace.toString()}s)`;
+
     tagDefault(dArchive ? optArchive : optNoArchive, true);
     tagDefault(dCombine ? optCombine : optNoCombine, true);
     tagDefault(dKeep ? optKeep : optNoKeep, true);
@@ -185,6 +209,8 @@ export const registerRunOptions = (
     tagDefault(optNoKeep, true);
     tagDefault(optNoSequential, true);
   }
+
+  // Help footer
   cmd.addHelpText('after', () => renderAvailableScriptsHelp(process.cwd()));
 
   return {

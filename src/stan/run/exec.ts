@@ -4,10 +4,11 @@ import { createWriteStream } from 'node:fs';
 import { appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import treeKill from 'tree-kill';
+
 import type { ContextConfig } from '../config';
 import type { ProcessSupervisor } from './live/supervisor';
 import type { ExecutionMode, Selection } from './types';
-
 type RunHooks = {
   onStart?: (key: string) => void;
   onEnd?: (
@@ -19,6 +20,12 @@ type RunHooks = {
   ) => void;
   /** When true, suppress per-script console logs ("stan: start/done"). */
   silent?: boolean;
+  /** Called when a script exceeds hangWarn inactivity (seconds). */
+  onHangWarn?: (key: string, seconds: number) => void;
+  /** Called when a script exceeds hangKill inactivity (seconds) and is being terminated. */
+  onHangTimeout?: (key: string, seconds: number) => void;
+  /** Called when a script did not exit after grace and was SIGKILLed. */
+  onHangKilled?: (key: string, graceSeconds: number) => void;
 };
 
 const waitForStreamClose = (stream: NodeJS.WritableStream): Promise<void> =>
@@ -73,7 +80,12 @@ export const runOne = async (
   cmd: string,
   orderFile?: string,
   hooks?: RunHooks,
-  opts?: { silent?: boolean },
+  opts?: {
+    silent?: boolean;
+    hangWarn?: number;
+    hangKill?: number;
+    hangKillGrace?: number;
+  },
   supervisor?: ProcessSupervisor,
 ): Promise<string> => {
   const outFile = resolve(outAbs, `${key}.txt`);
@@ -82,6 +94,21 @@ export const runOne = async (
   const child = spawn(cmd, { cwd, shell: true, windowsHide: true });
 
   const debug = process.env.STAN_DEBUG === '1';
+  // Inactivity tracking for hang detection
+  const hangWarnSec =
+    typeof opts?.hangWarn === 'number' && opts.hangWarn > 0 ? opts.hangWarn : 0;
+  const hangKillSec =
+    typeof opts?.hangKill === 'number' && opts.hangKill > 0 ? opts.hangKill : 0;
+  const hangGraceSec =
+    typeof opts?.hangKillGrace === 'number' && opts.hangKillGrace > 0
+      ? opts.hangKillGrace
+      : 10;
+  let lastActivity = Date.now();
+  let warned = false;
+  let terminated = false;
+  let interval: NodeJS.Timeout | undefined;
+  let killTimer: NodeJS.Timeout | undefined;
+
   try {
     // Track PID for cancellation/kill escalation
     if (typeof child.pid === 'number' && supervisor)
@@ -93,17 +120,53 @@ export const runOne = async (
   child.stdout.on('data', (d: Buffer) => {
     stream.write(d);
     if (debug) process.stdout.write(d);
+    lastActivity = Date.now();
   });
   child.stderr.on('data', (d: Buffer) => {
     stream.write(d);
     if (debug) process.stderr.write(d);
+    lastActivity = Date.now();
   });
+
+  // Periodic inactivity checks
+  if (hangWarnSec > 0 || hangKillSec > 0) {
+    interval = setInterval(() => {
+      const now = Date.now();
+      const inactiveMs = now - lastActivity;
+      if (!warned && hangWarnSec > 0 && inactiveMs >= hangWarnSec * 1000) {
+        warned = true;
+        hooks?.onHangWarn?.(key, hangWarnSec);
+      }
+      if (!terminated && hangKillSec > 0 && inactiveMs >= hangKillSec * 1000) {
+        terminated = true;
+        try {
+          if (typeof child.pid === 'number') process.kill(child.pid, 'SIGTERM');
+        } catch {
+          // best-effort
+        }
+        hooks?.onHangTimeout?.(key, hangKillSec);
+        // escalate to SIGKILL after grace
+        const graceMs = Math.max(0, hangGraceSec * 1000);
+        killTimer = setTimeout(() => {
+          try {
+            if (typeof child.pid === 'number') treeKill(child.pid, 'SIGKILL');
+          } catch {
+            // ignore
+          }
+          hooks?.onHangKilled?.(key, hangGraceSec);
+        }, graceMs);
+      }
+    }, 1000);
+  }
+
   const exitCode = await new Promise<number>((resolveP, rejectP) => {
     child.on('error', (e) =>
       rejectP(e instanceof Error ? e : new Error(String(e))),
     );
     child.on('close', (code) => resolveP(code ?? 0));
   });
+  if (interval) clearInterval(interval);
+  if (killTimer) clearTimeout(killTimer);
   stream.end();
   await waitForStreamClose(stream);
 
@@ -151,11 +214,16 @@ export const runScripts = async (
       config.scripts[k],
       orderFile,
       hooks,
+      // Pass thresholds down if provided
       {
         silent:
           typeof hooks?.silent === 'boolean'
             ? hooks.silent
             : Boolean(opts?.silent),
+        hangWarn: (opts as unknown as { hangWarn?: number })?.hangWarn,
+        hangKill: (opts as unknown as { hangKill?: number })?.hangKill,
+        hangKillGrace: (opts as unknown as { hangKillGrace?: number })
+          ?.hangKillGrace,
       },
       supervisor,
     );

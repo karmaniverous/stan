@@ -1,33 +1,38 @@
-# STAN Development Plan (tracked in .stan/system/stan.todo.md)
+# STAN Development Plan
 
 When updated: 2025-09-23 (UTC)
 
 Completed (recent)
 
-- test(open): mitigate Windows EBUSY during teardown
-  - In src/stan/patch/open.test.ts, pause stdin and add a brief delay
-    before removing the temp directory in afterEach. This mirrors the
-    global EBUSY mitigations and prevents intermittent rmdir failures
-    on Windows (EBUSY/ENOTEMPTY) observed in CI and local runs.
+- feat(run): add -P/--no-plan and suppress plan printing when used
+  - New flag sits immediately after -p/--plan in help and parsing order.
+  - Behavior: -p prints the plan and exits (no side effects); -P runs without printing the plan first; default remains printing plan.
 
+- feat(run/plan): include live flag and hang thresholds in run plan
+  - Run plan now prints: live yes/no, hang warn|kill|grace seconds.
+  - Gives clear visibility into all active run options except --plan.
+
+- feat(exec/logger): apply hang-warn/kill/grace to no-live mode with logs
+  - In the engine, track inactivity per script and:
+    - on warn threshold: log “stalled” with seconds,
+    - on kill threshold: log timeout then SIGTERM,
+    - after grace: log that SIGKILL was sent.
+  - Live mode remains table-driven; no-live prints concise lines.
+- test(open): mitigate Windows EBUSY during teardown
+  - In src/stan/patch/open.test.ts, pause stdin and add a brief delay before removing the temp directory in afterEach. This mirrors the global EBUSY mitigations and prevents intermittent rmdir failures on Windows (EBUSY/ENOTEMPTY) observed in CI and local runs.
 - feat(run/options): remove -b/--bell across CLI, behavior, types, and docs
-  - Deleted bell options and all related code paths; removed run.ding from
-    CliDefaults schema/types/normalize and the ASCII BEL write.  - Removed obsolete test src/stan/run/ding.test.ts.
+  - Deleted bell options and all related code paths; removed run.ding from CliDefaults schema/types/normalize and the ASCII BEL write. - Removed obsolete test src/stan/run/ding.test.ts.
   - Docs: dropped bell references and examples.
   - Minor change; changelog untouched per instruction.
 
 - feat(run/help): add -l/--live and -L/--no-live; reorder and retag defaults
-  - Live now has short forms (-l/-L); pairs are adjacent with the positive
-    short option first; short-form options precede long-only options.
-  - For booleans, Commander no longer prints “(default: true|false)”. We tag
-    the defaulted member of each pair with “(default)”. Numeric thresholds
-    keep “(default: N)”.
+  - Live now has short forms (-l/-L); pairs are adjacent with the positive short option first; short-form options precede long-only options.
+  - For booleans, Commander no longer prints “(default: true|false)”. We tag the defaulted member of each pair with “(default)”. Numeric thresholds keep “(default: N)”.
 
 - feat(run/help): display numeric defaults for hang thresholds and patch default file
-  - Run help now appends “(DEFAULT: Ns)” for:    - --hang-warn (120s by default),
+  - Run help now appends “(DEFAULT: Ns)” for: - --hang-warn (120s by default),
     - --hang-kill (300s by default),
-    - --hang-kill-grace (10s by default),
-    overriding with cliDefaults.run when present.
+    - --hang-kill-grace (10s by default), overriding with cliDefaults.run when present.
   - Patch help appends “(DEFAULT: <path>)” to -f/--file when cliDefaults.patch.file is set.
   - Added tests:
     - runner.help.defaults.test.ts ensures defaults appear in run help,
@@ -40,8 +45,7 @@ Completed (recent)
   - ProcessSupervisor default grace changed from 8s to 10s for consistency.
   - Added a test in runner.defaults.test.ts to assert built-in threshold behavior.
 
-- docs(typedoc): export BlockKind in validate/response to include the referenced
-  type in generated docs and remove the TypeDoc warning.
+- docs(typedoc): export BlockKind in validate/response to include the referenced type in generated docs and remove the TypeDoc warning.
 - fix(run/cancel): race scripts against cancellation; skip archive and return immediately when cancelled
   - Added a cancellation rendezvous in runSelected and a Promise.race around script execution so q/CtrlC stop the run promptly without waiting on long children.
   - Guarded an early return before the archive phase to ensure no archives are written on cancel; addresses failing cancel.\* tests.- feat(run/scripts): treat non‑zero exit code as failure (without suppressing artifacts)

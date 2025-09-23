@@ -69,6 +69,9 @@ export const registerRunAction = (
       behavior: derived.behavior,
     });
 
+    // no-plan: execute without printing plan first
+    const noPlan = Boolean((options as { noPlan?: unknown }).noPlan);
+
     const noScripts = (options as { scripts?: unknown }).scripts === false;
     if (noScripts && derived.behavior.archive === false) {
       console.log(
@@ -82,6 +85,13 @@ export const registerRunAction = (
     if (planOnly) {
       console.log(planBody);
       return;
+    }
+
+    // Carry the no-plan flag through to the service (behavior.plan)
+    try {
+      (derived.behavior as { plan?: boolean }).plan = !noPlan;
+    } catch {
+      /* ignore */
     }
 
     await runSelected(

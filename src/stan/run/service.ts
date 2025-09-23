@@ -86,13 +86,14 @@ export const runSelected = async (
     : new LoggerUI();
 
   // Print plan and one trailing blank line to keep previous spacing semantics
-  ui.onPlan(planBody);
-  console.log('');
+  if (behavior.plan !== false) {
+    ui.onPlan(planBody);
+    console.log('');
+  }
   ui.start();
 
   // Build the run list:
-  // - When selection is null/undefined, run all scripts in config order.
-  // - When selection is provided (even empty), respect the provided order.
+  // - When selection is null/undefined, run all scripts in config order.  // - When selection is provided (even empty), respect the provided order.
   const selected = selection == null ? Object.keys(config.scripts) : selection;
   // Filter to known script keys to avoid spawning undefined commands.
   const toRun = selected.filter((k) =>
@@ -166,8 +167,40 @@ export const runSelected = async (
           if (typeof code === 'number' && code !== 0) hadFailures = true;
         },
         silent: true,
+        // In no-live mode, surface hang events as concise console logs.
+        onHangWarn: (key, seconds) => {
+          if (!liveEnabled) {
+            console.log(
+              `stan: stalled "${key}" after ${seconds.toString()}s of inactivity`,
+            );
+          }
+        },
+        onHangTimeout: (key, seconds) => {
+          if (!liveEnabled) {
+            console.log(
+              `stan: timeout "${key}" after ${seconds.toString()}s; sending SIGTERM`,
+            );
+          }
+        },
+        onHangKilled: (key, grace) => {
+          if (!liveEnabled) {
+            console.log(
+              `stan: killed "${key}" after ${grace.toString()}s grace`,
+            );
+          }
+        },
       },
-      { silent: true },
+      {
+        silent: true,
+        hangWarn: behavior.hangWarn,
+        hangKill: behavior.hangKill,
+        hangKillGrace: behavior.hangKillGrace,
+      } as unknown as {
+        silent?: boolean;
+        hangWarn?: number;
+        hangKill?: number;
+        hangKillGrace?: number;
+      },
       () => !cancelled,
       supervisor,
     );

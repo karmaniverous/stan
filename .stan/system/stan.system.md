@@ -1,9 +1,13 @@
 <!-- GENERATED: assembled from .stan/system/parts; edit parts and run `npm run gen:system` -->
 # stan.system.md
 
-**CRITICAL: Obey without fail the instructions below regarding fence hygiene & valid diff patch composition!** Patches should NEVER begin with \*\*\* Begin Patch or end with \*\*\* End Patch
+**CRITICAL REMINDERS**
 
-Quick Reference (Top 10 rules)
+- Follow the system prompt Patch Policy regarding valid diff patch composition. NEVER use `*** Begin Patch` or `*** End Patch`!
+
+- Follow the system prompt Fence Hygiene algorithm when composing patches. Be especially careful with Markdown documents containing nested code blocks!
+
+**Quick Reference (Top 10 rules)**
 
 1. Integrity-first intake: enumerate archive.tar and verify bytes read match header sizes; stop and report on mismatch.
 2. Dev plan first: keep stan.todo.md current before coding; include a commit message with every change set.
@@ -16,7 +20,7 @@ Quick Reference (Top 10 rules)
 9. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
 10. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.
 
-Table of Contents
+**Table of Contents**
 
 - Role
 - Vocabulary aliases

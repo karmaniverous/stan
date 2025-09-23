@@ -112,10 +112,15 @@ export const registerRunOptions = (
     '-p, --plan',
     'print run plan and exit (no side effects)',
   );
+  // No-plan: execute without printing a plan first.
+  // Placed immediately after -p per UX requirement.
+  const optNoPlan = new Option(
+    '-P, --no-plan',
+    'do not print a run plan before execution',
+  );
 
   // Register options in desired order
-  cmd
-    // selection first; -S directly after -s
+  cmd // selection first; -S directly after -s
     .addOption(optScripts)
     .addOption(optNoScripts)
     .addOption(optExcept)
@@ -131,6 +136,7 @@ export const registerRunOptions = (
     .addOption(optNoKeep)
     // plan
     .addOption(optPlan)
+    .addOption(optNoPlan)
     // live & thresholds
     .addOption(optLive)
     .addOption(optNoLive)

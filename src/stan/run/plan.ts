@@ -40,6 +40,14 @@ export const renderRunPlan = (
     `archive: ${behavior.archive ? 'yes' : 'no'}`,
     `combine: ${behavior.combine ? 'yes' : 'no'}`,
     `keep output dir: ${behavior.keep ? 'yes' : 'no'}`,
+    `live: ${behavior.live ? 'yes' : 'no'}`,
+    `hang warn: ${typeof behavior.hangWarn === 'number' ? behavior.hangWarn.toString() : 'n/a'}s`,
+    `hang kill: ${typeof behavior.hangKill === 'number' ? behavior.hangKill.toString() : 'n/a'}s`,
+    `hang kill grace: ${
+      typeof behavior.hangKillGrace === 'number'
+        ? behavior.hangKillGrace.toString()
+        : 'n/a'
+    }s`,
   ];
   return `stan:\n  ${lines.join('\n  ')}`;
 };

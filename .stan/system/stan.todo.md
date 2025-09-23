@@ -1,22 +1,25 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-23 (UTC) — Runner UI split: engine made silent; LoggerUI/LiveUI adapters own logging, progress, and key handling.
+When updated: 2025-09-23 (UTC) — Runner UI split: engine made silent; LoggerUI/LiveUI adapters own logging, progress, and key handling. Parity tests added; SIGINT parity for no‑live.
 
 Completed (recent)
 
+- refactor(run/exec): Remove direct console logging; engine is now fully “silent” and reports lifecycle only via hooks. LoggerUI/LiveUI remain the only presentation layers.
+- feat(run/ui Logger): Add SIGINT parity in no‑live mode. LoggerUI now installs a SIGINT handler to trigger the same single cancellation pipeline used by LiveUI, ensuring consistent behavior across modes.
+- test(run): UI parity — run the same selection with live and no‑live; assert identical outputs and archive decisions.
+- test(run): Cancel parity — in no‑live mode, emit SIGINT during execution (sequential); assert no archives, non‑zero exit, completed scripts remain OK, and scheduling stops before the next item.
+
+---
 - refactor(run/ui): Introduce RunnerUI with two adapters:
   - LoggerUI (no‑live): prints legacy “stan: start/done …” lines for scripts and archives; plan remains printed.
-  - LiveUI (live): owns ProgressRenderer and key handling; archive/script progress forwarded only through the UI.
-  - Engine (runSelected/runScripts/runOne/archivePhase) now always runs “silent” and reports lifecycle into the UI; live/no‑live is a pure UI swap.
+  - LiveUI (live): owns ProgressRenderer and key handling; archive/script progress forwarded only through the UI.  - Engine (runSelected/runScripts/runOne/archivePhase) now always runs “silent” and reports lifecycle into the UI; live/no‑live is a pure UI swap.
   - Cancellation pipeline calls ui.onCancelled() to finalize live frame and restore listeners; ProcessSupervisor.cancelAll({ immediate: true }) unchanged.
   - Outcome: no behavior change for artifacts; UI cannot influence process control or I/O anymore.
 
 ---
-
 - feat(live/summary): Add a dedicated CANCELLED count to the live summary using the same ◼ symbol shown in the table. Cancellations are no longer included in the FAIL count.
   - TTY summary: “… • ⏱ <waiting> • ✔ <ok> • ◼ <cancelled> • ✖ <fail> • ⏱ <timeout>”
   - BORING summary: “… • waiting N • OK N • CANCELLED N • FAIL N • TIMEOUT N”  - Status row rendering remains unchanged.
-
 - fix(cancel/exit): Ensure `stan run` exits promptly after user cancellation (q/Q/Ctrl+C) in CLI runs by explicitly calling `process.exit(1)` once children are signaled and the live renderer has been stopped (skipped under tests). This returns control to the shell and prevents further script output after cancel.
 
 - fix(cancel/live): Preserve finished rows and keep their final values on cancel; finalize durations for in‑flight rows at the moment of cancellation; do not clobber output paths that have already been written. - Renderer: add cancelPending() to mark only waiting/running/quiet/stalled rows as cancelled; compute duration from startedAt; leave done/error/timedout/killed rows untouched so their status/time/path remain visible.

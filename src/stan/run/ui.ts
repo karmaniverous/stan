@@ -35,6 +35,7 @@ export type RunnerUI = {
 };
 
 export class LoggerUI implements RunnerUI {
+  private restoreCancel: (() => void) | null = null;
   start(): void {
     // no-op
   }
@@ -60,13 +61,36 @@ export class LoggerUI implements RunnerUI {
     );
   }
   onCancelled(): void {
-    // no-op
+    try {
+      this.restoreCancel?.();
+    } catch {
+      /* ignore */
+    }
+    this.restoreCancel = null;
   }
-  installCancellation(): void {
-    // no-op in no-live mode
+  installCancellation(triggerCancel: () => void): void {
+    // Provide SIGINT parity even in no-live mode so cancellation semantics match.
+    const onSigint = () => triggerCancel();
+    try {
+      process.on('SIGINT', onSigint);
+      this.restoreCancel = () => {
+        try {
+          process.off('SIGINT', onSigint);
+        } catch {
+          /* ignore */
+        }
+      };
+    } catch {
+      this.restoreCancel = null;
+    }
   }
   stop(): void {
-    // no-op
+    try {
+      this.restoreCancel?.();
+    } catch {
+      /* ignore */
+    }
+    this.restoreCancel = null;
   }
 }
 

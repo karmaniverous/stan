@@ -3,11 +3,10 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { packageDirectorySync } from 'package-directory';
+import { getModuleRoot } from '@/stan/module';
 
 /**
- * Ensure <stanPath>/system contains the shipped docs and record package version
- * to <stanPath>/system/.docs.meta.json.
+ * Ensure <stanPath>/system contains the shipped docs and record package version * to <stanPath>/system/.docs.meta.json.
  *
  * @param cwd - Repository root.
  * @param stanPath - STAN workspace folder (for example, ".stan").
@@ -19,7 +18,7 @@ export const ensureDocs = async (
 ): Promise<void> => {
   const thisFile = fileURLToPath(import.meta.url);
   const thisDir = path.dirname(thisFile);
-  const moduleRoot = packageDirectorySync({ cwd: thisDir }) ?? thisDir;
+  const moduleRoot = getModuleRoot() ?? thisDir;
 
   // Ensure the <stanPath>/system directory exists for metadata
   const systemDir = path.join(cwd, stanPath, 'system');

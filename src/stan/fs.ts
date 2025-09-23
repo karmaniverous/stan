@@ -180,22 +180,38 @@ export const filterFiles = async (
 
   return base;
 };
-/** * Ensure `stanPath/output` and `stanPath/diff` exist (and `stanPath/patch` so
- * patch payloads can be archived), returning their absolute paths.
- *
- * @param cwd - Repo root.
- * @param stanPath - STAN workspace folder.
- * @returns `{ outDir, diffDir }` absolute paths.
+/**
+ * Ensure `<stanPath>` workspace exists (root/output/diff/patch).
+ * Returns the resolved directory set.
  */
-export const ensureOutAndDiff = async (
+export const ensureStanWorkspace = async (
   cwd: string,
   stanPath: string,
-): Promise<{ outDir: string; diffDir: string }> => {
+): Promise<{
+  rootAbs: string;
+  outputAbs: string;
+  diffAbs: string;
+  patchAbs: string;
+}> => {
   const dirs = makeStanDirs(cwd, stanPath);
   await mkdir(dirs.rootAbs, { recursive: true });
   await mkdir(dirs.outputAbs, { recursive: true });
   await mkdir(dirs.diffAbs, { recursive: true });
   // Ensure patch workspace exists so archives can always include it safely
   await mkdir(dirs.patchAbs, { recursive: true });
-  return { outDir: dirs.outputAbs, diffDir: dirs.diffAbs };
+  return {
+    rootAbs: dirs.rootAbs,
+    outputAbs: dirs.outputAbs,
+    diffAbs: dirs.diffAbs,
+    patchAbs: dirs.patchAbs,
+  };
+};
+
+/** Back-compat: ensureOutAndDiff returns just output/diff absolute paths. */
+export const ensureOutAndDiff = async (
+  cwd: string,
+  stanPath: string,
+): Promise<{ outDir: string; diffDir: string }> => {
+  const w = await ensureStanWorkspace(cwd, stanPath);
+  return { outDir: w.outputAbs, diffDir: w.diffAbs };
 };

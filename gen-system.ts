@@ -4,10 +4,11 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import YAML from 'yaml';
 
+import { assembleSystemMonolith } from './src/stan/system/assemble';
+
 /** * Resolve the repository root (directory containing stan.config.* if present)
  * and the configured stanPath. Falls back to ".stan" then "stan".
- */
-const resolveRootAndStanPath = async (
+ */const resolveRootAndStanPath = async (
   cwd: string,
 ): Promise<{ root: string; stanPath: string }> => {
   const CONFIG_CANDIDATES = [
@@ -78,44 +79,23 @@ export const assembleSystemPrompt = async (cwd: string): Promise<string> => {
   const target = path.join(sysRoot, 'stan.system.md');
 
   await mkdir(sysRoot, { recursive: true });
-
-  if (!existsSync(partsDir)) {
-    // Nothing to do if parts folder hasn't been created yet.
-    const rel = path.relative(root, partsDir).replace(/\\/g, '/');
+  const res = await assembleSystemMonolith(root, stanPath);
+  if (res.action === 'skipped-no-parts') {
+    const rel = path.relative(root, res.partsDir).replace(/\\/g, '/');
     console.log(`stan: gen-system: skipped (no parts at ${rel})`);
-    return target;
+    return res.target;
   }
-
-  const entries = await readdir(partsDir, { withFileTypes: true });
-  const partFiles = entries    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.md'))
-    .map((e) => e.name)
-    // numeric/lexicographic order by prefix, then name
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-  if (partFiles.length === 0) {
-    // No parts present; leave existing monolith untouched.
+  if (res.action === 'skipped-no-md') {
     const rel = path.relative(root, partsDir).replace(/\\/g, '/');
     console.log(
       `stan: gen-system: no *.md parts found in ${rel}; leaving monolith as-is`,
     );
-    return target;
+    return res.target;
   }
-
-  const bodies: string[] = [];
-  for (const name of partFiles) {    const abs = path.join(partsDir, name);
-    const body = toLF(await readFile(abs, 'utf8')).trimEnd();
-    bodies.push(body);
-  }
-
-  // Separate parts with exactly one blank line; prepend dynamic header
-  const assembled = headerFor(stanPath) + bodies.join('\n\n') + '\n';
-  await writeFile(target, assembled, 'utf8');
-
-  const rel = path.relative(root, target).replace(/\\/g, '/');
+  const rel = path.relative(root, res.target).replace(/\\/g, '/');
   console.log(`stan: gen-system -> ${rel}`);
-  return target;
+  return res.target;
 };
-
 const main = async (): Promise<void> => {
   try {
     await assembleSystemPrompt(process.cwd());

@@ -6,14 +6,13 @@ import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, realpath as realpathAsync } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { packageDirectorySync } from 'package-directory';
 
 import { loadConfigSync, resolveStanPathSync } from '@/stan/config';
+import { getModuleRoot } from '@/stan/module';
 
 import { makeStanDirs } from './paths';
-
 export type VersionInfo = {
   packageVersion: string | null;
   nodeVersion: string;
@@ -36,16 +35,6 @@ export type VersionInfo = {
 const sha256 = async (abs: string): Promise<string> => {
   const body = await readFile(abs);
   return createHash('sha256').update(body).digest('hex');
-};
-
-const getModuleRoot = (): string | null => {
-  const self = fileURLToPath(import.meta.url);
-  const here = path.dirname(self);
-  try {
-    return packageDirectorySync({ cwd: here }) ?? null;
-  } catch {
-    return null;
-  }
 };
 
 const realAbs = async (

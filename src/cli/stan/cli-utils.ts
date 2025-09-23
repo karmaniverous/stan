@@ -2,11 +2,10 @@
  * DRY the repeated exitOverride + parse normalization across subcommands.
  */
 
-import type { Command } from 'commander';
+import type { Command, Option } from 'commander';
 
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
-
 /** Normalize argv from unit tests like ["node","stan", ...] -\> [...] */
 export const normalizeArgv = (
   argv?: readonly string[],
@@ -79,4 +78,11 @@ export const installExitOverride = (cmd: Command): void => {
 export const applyCliSafety = (cmd: Command): void => {
   installExitOverride(cmd);
   patchParseMethods(cmd);
+};
+
+/** Tag an Option description with (DEFAULT) when active. */
+export const tagDefault = (opt: Option, on: boolean): void => {
+  if (on && !opt.description.includes('(DEFAULT)')) {
+    opt.description = `${opt.description} (DEFAULT)`;
+  }
 };

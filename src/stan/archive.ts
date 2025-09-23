@@ -14,8 +14,7 @@ import { existsSync } from 'node:fs';
 import { copyFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { yellow } from '@/stan/util/color';
-
+import { logArchiveWarnings, makeTarFilter } from './archive/util';
 import { classifyForArchive } from './classifier';
 import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
 
@@ -93,16 +92,9 @@ export const createArchive = async (
   const { textFiles, warningsBody } = await classifyForArchive(cwd, files);
   const filesForArchive = textFiles;
 
-  // Log warnings to console instead of writing a file.
-  const trimmed = (warningsBody ?? '').trim();
-  if (trimmed && trimmed !== 'No archive warnings.') {
-    console.log(`${yellow('stan: archive warnings')}\n${trimmed}`);
-  }
+  logArchiveWarnings(warningsBody ?? '');
 
   const tar = (await import('tar')) as unknown as TarLike;
-
-  const isUnder = (prefix: string, p: string): boolean =>
-    p === prefix || p.startsWith(`${prefix}/`);
 
   if (includeOutputDir) {
     // Force-include <stanPath>/output and exclude <stanPath>/diff and archive files.
@@ -114,13 +106,7 @@ export const createArchive = async (
       {
         file: archivePath,
         cwd,
-        filter: (p: string) =>
-          !(
-            isUnder(`${stanPath}/diff`, p) ||
-            p === `${stanPath}/output/archive.tar` ||
-            p === `${stanPath}/output/archive.diff.tar` ||
-            p === `${stanPath}/output/archive.warnings.txt`
-          ),
+        filter: makeTarFilter(stanPath),
       },
       filesToPack,
     );
@@ -130,18 +116,11 @@ export const createArchive = async (
       {
         file: archivePath,
         cwd,
-        filter: (p: string) =>
-          !(
-            isUnder(`${stanPath}/diff`, p) ||
-            p === `${stanPath}/output/archive.tar` ||
-            p === `${stanPath}/output/archive.diff.tar` ||
-            p === `${stanPath}/output/archive.warnings.txt`
-          ),
+        filter: makeTarFilter(stanPath),
       },
       filesForArchive,
     );
   }
-
   // Ensure prev exists on first run.
   if (!existsSync(prevPath)) {
     try {

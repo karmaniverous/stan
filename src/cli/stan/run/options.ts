@@ -3,7 +3,7 @@ import { Command, Option } from 'commander';
 import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 
-import { applyCliSafety } from '../cli-utils';
+import { applyCliSafety, tagDefault } from '../cli-utils';
 
 export type FlagPresence = {
   sawNoScriptsFlag: boolean;
@@ -11,16 +11,9 @@ export type FlagPresence = {
   sawExceptFlag: boolean;
 };
 
-const tagDefault = (opt: Option, on: boolean): void => {
-  if (on && !opt.description.includes('(DEFAULT)')) {
-    opt.description = `${opt.description} (DEFAULT)`;
-  }
-};
-
 /**
  * Register the `run` subcommand options and default tagging.
- * Returns the configured subcommand and a getter for raw flag presence.
- */
+ * Returns the configured subcommand and a getter for raw flag presence. */
 export const registerRunOptions = (
   cli: Command,
 ): {

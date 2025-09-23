@@ -2,28 +2,28 @@ import { existsSync } from 'node:fs';
 import { readdir, rm } from 'node:fs/promises';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path, { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import { packageDirectorySync } from 'package-directory';
 
 import { cyan, green } from '@/stan/util/color';
 
 import { createArchive } from '../archive';
 import type { ContextConfig } from '../config';
 import { createArchiveDiff } from '../diff';
+import { getPackagedSystemPromptPath } from '../module';
 import { makeStanDirs } from '../paths';
+import { assembleSystemMonolith } from '../system/assemble';
 import { getVersionInfo } from '../version';
 
 // Progress callbacks for live renderer integration
 type ArchiveProgress = {
   /** Called when a phase starts (kind: 'full' | 'diff'). */
-  start?: (kind: 'full' | 'diff') => void /**
+  start?: (kind: 'full' | 'diff') => void;
+  /**
    * Called when a phase completes.
    * @param kind - 'full' | 'diff'
    * @param pathAbs - Absolute path to the created archive
    * @param startedAt - ms epoch
    * @param endedAt - ms epoch
-   */;
+   */
   done?: (
     kind: 'full' | 'diff',
     pathAbs: string,
@@ -33,7 +33,7 @@ type ArchiveProgress = {
 };
 /**
  * Remove on‑disk script outputs after combine mode archived them.
- * Keeps `archive.tar` and `archive.diff.tar` in place. *
+ * Keeps `archive.tar` and `archive.diff.tar` in place.
  * @param outAbs - Absolute path to `<stanPath>/output`.
  */
 const cleanupOutputsAfterCombine = async (outAbs: string): Promise<void> => {
@@ -51,15 +51,7 @@ const cleanupOutputsAfterCombine = async (outAbs: string): Promise<void> => {
  * Resolve the packaged system monolith (dist/stan.system.md) from this module.
  */
 const resolvePackagedSystemMonolith = (): string | null => {
-  try {
-    const here = path.dirname(fileURLToPath(import.meta.url));
-    const moduleRoot = packageDirectorySync({ cwd: here });
-    if (!moduleRoot) return null;
-    const p = path.join(moduleRoot, 'dist', 'stan.system.md');
-    return existsSync(p) ? p : null;
-  } catch {
-    return null;
-  }
+  return getPackagedSystemPromptPath();
 };
 
 /**
@@ -124,29 +116,11 @@ const assembleSystemFromParts = async (
   cwd: string,
   stanPath: string,
 ): Promise<void> => {
-  const sysRoot = path.resolve(cwd, stanPath, 'system');
-  const partsDir = path.join(sysRoot, 'parts');
-  await mkdir(sysRoot, { recursive: true });
-  if (!existsSync(partsDir)) return;
-
-  const entries = await readdir(partsDir, { withFileTypes: true });
-  const partFiles = entries
-    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.md'))
-    .map((e) => e.name)
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-  if (partFiles.length === 0) return;
-
-  const toLF = (s: string) => s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const bodies: string[] = [];
-  for (const name of partFiles) {
-    const abs = path.join(partsDir, name);
-    const body = toLF(await readFile(abs, 'utf8')).trimEnd();
-    bodies.push(body);
+  try {
+    await assembleSystemMonolith(cwd, stanPath);
+  } catch {
+    // best-effort
   }
-  const header = `<!-- GENERATED: assembled from ${stanPath}/system/parts; edit parts and run \`npm run gen:system\` -->\n`;
-  const assembled = header + bodies.join('\n\n') + '\n';
-  await writeFile(path.join(sysRoot, 'stan.system.md'), assembled, 'utf8');
 };
 
 /**

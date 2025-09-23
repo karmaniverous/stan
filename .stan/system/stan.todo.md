@@ -1,16 +1,27 @@
 # STAN Development Plan (tracked in .stan/system/stan.todo.md)
 
-When updated: 2025-09-23 (UTC) — Runner UI split: engine made silent; LoggerUI/LiveUI adapters own logging, progress, and key handling. Parity tests added; SIGINT parity for no‑live.
+When updated: 2025-09-23 (UTC) — LoggerUI cancellation unified; archive helpers & assembler consolidation; workspace bootstrapper dedup; CLI defaults tagging DRY.
 
 Completed (recent)
+
+- refactor(cli): centralize (DEFAULT) help tag helper in cli-utils and adopt in index/run.options/snap (removed duplicate local helpers).
+- refactor(archive): share tar exclusion filter and archive warnings logger; adopt in archive.ts and diff.ts for consistent behavior.
+- refactor(fs): introduce ensureStanWorkspace() and refactor ensureOutAndDiff/ensureOutputDir to prevent drift in workspace directory creation.
+- feat(run/input): add sigintOnly option to installCancelKeys to allow SIGINT‑only wiring (no raw mode/keypress) for no‑live/CI; LoggerUI now uses the unified handler (SIGINT only).
+- refactor(system): extract parts→monolith assembler to src/stan/system/assemble.ts; adopt in dev script (gen-system.ts) and runtime archive path for the dev repo.
+- refactor(module): add getModuleRoot()/getPackagedSystemPromptPath(); adopt in archive/version/init/docs for a single source of module/dist discovery.
 
 - refactor(run/exec): Remove direct console logging; engine is now fully “silent” and reports lifecycle only via hooks. LoggerUI/LiveUI remain the only presentation layers.
 - feat(run/ui Logger): Add SIGINT parity in no‑live mode. LoggerUI now installs a SIGINT handler to trigger the same single cancellation pipeline used by LiveUI, ensuring consistent behavior across modes.
 - test(run): UI parity — run the same selection with live and no‑live; assert identical outputs and archive decisions.
 - test(run): Cancel parity — in no‑live mode, emit SIGINT during execution (sequential); assert no archives, non‑zero exit, completed scripts remain OK, and scheduling stops before the next item.
 
----
-- refactor(run/ui): Introduce RunnerUI with two adapters:
+Next up
+
+- Consider migrating gen-system.ts configuration discovery to reuse src/stan/config/discover/load to avoid any future drift (currently kept self‑contained).
+- Add small unit around getPackagedSystemPromptPath() and assembleSystemMonolith() if gaps are observed (current integration tests cover behavior indirectly).
+
+---- refactor(run/ui): Introduce RunnerUI with two adapters:
   - LoggerUI (no‑live): prints legacy “stan: start/done …” lines for scripts and archives; plan remains printed.
   - LiveUI (live): owns ProgressRenderer and key handling; archive/script progress forwarded only through the UI.  - Engine (runSelected/runScripts/runOne/archivePhase) now always runs “silent” and reports lifecycle into the UI; live/no‑live is a pure UI swap.
   - Cancellation pipeline calls ui.onCancelled() to finalize live frame and restore listeners; ProcessSupervisor.cancelAll({ immediate: true }) unchanged.

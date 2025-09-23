@@ -10,8 +10,7 @@ import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import { yellow } from '@/stan/util/color';
-
+import { logArchiveWarnings, makeTarFilter } from './archive/util';
 import { classifyForArchive } from './classifier';
 import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
 import { getVersionInfo } from './version';
@@ -164,17 +163,10 @@ export const createArchiveDiff = async ({
   const { textFiles, warningsBody } = await classifyForArchive(cwd, changedRaw);
   const changed = textFiles;
 
-  // Log warnings to console (same as regular archive).
-  {
-    const trimmed = (warningsBody ?? '').trim();
-    if (trimmed && trimmed !== 'No archive warnings.') {
-      console.log(`${yellow('stan: archive warnings')}\n${trimmed}`);
-    }
-  }
+  logArchiveWarnings(warningsBody ?? '');
 
   const diffPath = join(outDir, `${baseName}.diff.tar`);
   const tar = (await import('tar')) as unknown as TarLike;
-
   if (includeOutputDirInDiff) {
     const files = Array.from(
       new Set([
@@ -183,19 +175,12 @@ export const createArchiveDiff = async ({
         ...(includePatchDirInDiff ? [patchRel] : []),
       ]),
     );
-    const isUnder = (prefix: string, p: string): boolean =>
-      p === prefix || p.startsWith(`${prefix}/`);
+
     await tar.create(
       {
         file: diffPath,
         cwd,
-        filter: (p: string) =>
-          !(
-            isUnder(`${stanPath}/diff`, p) ||
-            p === `${stanPath}/output/archive.tar` ||
-            p === `${stanPath}/output/archive.diff.tar` ||
-            p === `${stanPath}/output/archive.warnings.txt`
-          ),
+        filter: makeTarFilter(stanPath),
       },
       files,
     );

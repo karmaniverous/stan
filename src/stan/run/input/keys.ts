@@ -9,10 +9,12 @@ export type CancelSubscription = {
   restore: () => void;
 };
 
-export const installCancelKeys = (onCancel: () => void): CancelSubscription => {
+export const installCancelKeys = (
+  onCancel: () => void,
+  opts?: { sigintOnly?: boolean },
+): CancelSubscription => {
   const stdin = process.stdin as unknown as NodeJS.ReadStream & {
     setRawMode?: (v: boolean) => void;
-    off?: (event: string, handler: (...args: unknown[]) => void) => void;
     removeListener?: (
       event: string,
       handler: (...args: unknown[]) => void,
@@ -28,6 +30,19 @@ export const installCancelKeys = (onCancel: () => void): CancelSubscription => {
   const onSigint = () => onCancel();
   process.on('SIGINT', onSigint);
 
+  // SIGINT-only mode: used by LoggerUI (no-live) and CI. Never touch raw mode.
+  if (opts?.sigintOnly) {
+    return {
+      restore: () => {
+        try {
+          process.off('SIGINT', onSigint);
+        } catch {
+          /* ignore */
+        }
+      },
+    };
+  }
+
   if (!isTTY) {
     // Non‑TTY: only SIGINT is used; provide a minimal restore
     return {
@@ -40,7 +55,6 @@ export const installCancelKeys = (onCancel: () => void): CancelSubscription => {
       },
     };
   }
-
   // TTY: enable keypress events and raw mode using Node's readline
   emitKeypressEvents(stdin);
   try {
@@ -75,6 +89,7 @@ export const installCancelKeys = (onCancel: () => void): CancelSubscription => {
   stdin.on('keypress', onKeypress);
 
   // Fallback: some test environments won’t provide setRawMode; ensure 'q' / Ctrl+C still cancel.
+
   const onData = (d: unknown): void => {
     try {
       // Ctrl+C (ETX) => 0x03
@@ -91,13 +106,14 @@ export const installCancelKeys = (onCancel: () => void): CancelSubscription => {
   stdin.on('data', onData);
 
   const removeAny = (event: string, handler: (...args: unknown[]) => void) => {
-    (stdin.off ?? stdin.removeListener)?.call(
+    // Avoid relying on off() signature in older Node shims
+
+    (stdin.removeListener ?? (stdin as unknown as { off?: unknown }).off)?.call(
       stdin,
       event as never,
       handler as never,
     );
   };
-
   return {
     restore: () => {
       try {

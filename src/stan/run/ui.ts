@@ -69,17 +69,10 @@ export class LoggerUI implements RunnerUI {
     this.restoreCancel = null;
   }
   installCancellation(triggerCancel: () => void): void {
-    // Provide SIGINT parity even in no-live mode so cancellation semantics match.
-    const onSigint = () => triggerCancel();
+    // Reuse unified cancel keys wiring, but restrict to SIGINT only (no TTY raw key handlers).
     try {
-      process.on('SIGINT', onSigint);
-      this.restoreCancel = () => {
-        try {
-          process.off('SIGINT', onSigint);
-        } catch {
-          /* ignore */
-        }
-      };
+      const sub = installCancelKeys(triggerCancel, { sigintOnly: true });
+      this.restoreCancel = sub.restore;
     } catch {
       this.restoreCancel = null;
     }

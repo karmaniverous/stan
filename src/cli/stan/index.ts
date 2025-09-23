@@ -12,21 +12,14 @@ import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { printVersionInfo } from '@/stan/version';
 
-import { applyCliSafety } from './cli-utils';
+import { applyCliSafety, tagDefault } from './cli-utils';
 import { performInit, registerInit } from './init';
 import { registerPatch } from './patch';
 import { registerRun } from './runner';
 import { registerSnap } from './snap';
 
-const tagDefault = (opt: Option, on: boolean): void => {
-  if (on && !opt.description.includes('(DEFAULT)')) {
-    opt.description = `${opt.description} (DEFAULT)`;
-  }
-};
-
 /**
- * Build the root CLI (`stan`) without side effects (safe for tests).
- *
+ * Build the root CLI (`stan`) without side effects (safe for tests). *
  * Registers the `run`, `init`, `snap`, and `patch` subcommands, installs
  * global `--debug` and `--boring` options, and renders the help footer
  * with available script keys.
@@ -34,8 +27,7 @@ const tagDefault = (opt: Option, on: boolean): void => {
  * @returns New Commander `Command` instance.
  */
 export const makeCli = (): Command => {
-  const cli = new Command();
-  // Resolve effective defaults from config (when present); fall back to built‑ins.
+  const cli = new Command(); // Resolve effective defaults from config (when present); fall back to built‑ins.
   let cfgDefaults: { debug?: boolean; boring?: boolean } = {};
   try {
     const cwd = process.cwd();

@@ -2,13 +2,14 @@
  * Ensure STAN workspace subdirectories and manage output/diff.
  */
 import { existsSync, rmSync } from 'node:fs';
-import { copyFile, mkdir, readdir } from 'node:fs/promises';
+import { copyFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { ensureStanWorkspace } from '@/stan/fs';
 import { makeStanDirs } from '@/stan/paths';
 
 /**
- * Ensure the STAN workspace exists and manage output/diff subdirectories.
+ * Ensure the STAN workspace exists and manage output/diff.
  *
  * Behavior:
  * - Always ensure `stanPath/output` and `stanPath/diff` exist.
@@ -27,12 +28,8 @@ export const ensureOutputDir = async (
   keep = false,
 ): Promise<string> => {
   const dirs = makeStanDirs(cwd, stanPath);
-
-  await mkdir(dirs.rootAbs, { recursive: true });
-  await mkdir(dirs.outputAbs, { recursive: true });
-  await mkdir(dirs.diffAbs, { recursive: true });
-  // Also ensure the patch workspace exists for diff/archives that include it
-  await mkdir(dirs.patchAbs, { recursive: true });
+  // Bootstrap workspace tree (root/output/diff/patch)
+  await ensureStanWorkspace(cwd, stanPath);
 
   if (!keep) {
     const archiveTar = resolve(dirs.outputAbs, 'archive.tar');

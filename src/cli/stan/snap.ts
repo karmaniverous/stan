@@ -13,19 +13,13 @@ import {
   handleUndo,
 } from '@/stan/snap/handlers';
 
-import { applyCliSafety } from './cli-utils';
+import { applyCliSafety, tagDefault } from './cli-utils';
 
-const tagDefault = (opt: Option, on: boolean): void => {
-  if (on && !opt.description.includes('(DEFAULT)')) {
-    opt.description = `${opt.description} (DEFAULT)`;
-  }
-};
 /**
  * Register the `snap` subcommand on the provided root CLI.
  * * @param cli - Commander root command.
  * @returns The same root command for chaining.
- */
-export const registerSnap = (cli: Commander): Command => {
+ */ export const registerSnap = (cli: Commander): Command => {
   applyCliSafety(cli);
   const sub = cli
     .command('snap')

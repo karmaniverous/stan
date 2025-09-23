@@ -269,9 +269,14 @@ export const runSelected = async (
         // next iteration
         continue;
       }
+      // Allow a brief settle so streams/child handles can release (Windows EBUSY mitigation).
+      try {
+        await new Promise((r) => setTimeout(r, 15));
+      } catch {
+        /* ignore */
+      }
       return created;
-    }
-    // If any script failed (exit code != 0), signal failure at the process level.
+    } // If any script failed (exit code != 0), signal failure at the process level.
     // Archives are still produced to preserve artifacts for chat/diagnosis.
     if (hadFailures) {
       process.exitCode = 1;

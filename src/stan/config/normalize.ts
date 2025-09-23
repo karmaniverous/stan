@@ -69,6 +69,8 @@ export const normalizeCliDefaults = (v: unknown): CliDefaults | undefined => {
   if (typeof rc === 'boolean') run.combine = rc;
   if (typeof rk === 'boolean') run.keep = rk;
   if (typeof rq === 'boolean') run.sequential = rq;
+  const rPlan = asBool(runIn.plan);
+  if (typeof rPlan === 'boolean') run.plan = rPlan;
   const rl = asBool(runIn.live);
   if (typeof rl === 'boolean') run.live = rl;
   const rWarn = asInt(runIn.hangWarn);

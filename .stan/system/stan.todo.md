@@ -3,7 +3,6 @@
 When updated: 2025-09-23 (UTC)
 
 Next up (priority order)
-
 1. Targeted unit coverage - Add/keep small unit tests where integration coverage is thin: - Packaged prompt path resolution (getPackagedSystemPromptPath).
    - System monolith assembly edge cases (already covered partially).
 
@@ -19,10 +18,15 @@ Backlog (nice to have)
 - Additional doc cross‑checks to keep CLI help and site pages in sync.
 
 Completed (recent)
+- CLI defaults: support run.plan; plan header default now respects cliDefaults.run.plan (default true). Action wiring keeps -p (plan-only) and -P (no plan) semantics unchanged.
+- Cancellation tests stability (Windows): add brief settle before returning on cancel to avoid EBUSY/ENOTEMPTY on rm of temp dirs.
+
+- Patch CLI test teardown stability (Windows)
+  - In src/cli/stan/patch.test.ts, pause stdin and allow a brief settle    before removing the temp dir in afterEach to prevent EBUSY/timeout
+    flakes (mirrors the pattern used in openFilesInEditor tests).
 
 - Lint fix (LoggerUI.onCancelled)
   - Remove “unused param” lint by referencing the optional mode parameter (void mode) to satisfy @typescript-eslint/no-unused-vars.
-
 - Live-mode cancel final-frame persistence
   - Pressing q now leaves the final live frame visible (persisted) instead of clearing it. Restart (r) still clears the frame so the next run reuses the same UI area without duplication.
 - Live restart immediate cancel

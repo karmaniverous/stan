@@ -11,6 +11,7 @@ export type CliDefaultsRun = {
   keep?: boolean;
   sequential?: boolean;
   live?: boolean;
+  plan?: boolean;
   hangWarn?: number;
   hangKill?: number;
   hangKillGrace?: number;

@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 
 import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,10 +53,18 @@ describe('patch subcommand (clipboard and file modes)', () => {
     } catch {
       // ignore
     }
+    // Mitigate transient Windows EBUSY/ENOTEMPTY during teardown:
+    // - Pause stdin (avoids lingering raw-mode handles in some environments)
+    // - Allow a brief settle before removing the temp directory
+    try {
+      (process.stdin as unknown as { pause?: () => void }).pause?.();
+    } catch {
+      // ignore
+    }
+    await delay(10);
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
-
   it('reads from clipboard by default and logs terminal status', async () => {
     const cli = new Command();
     registerPatch(cli);

@@ -69,12 +69,21 @@ export const registerRunAction = (
       behavior: derived.behavior,
     });
 
-    // Interpret plan flags:
-    // -p/--plan => options.plan === true
-    // -P/--no-plan => options.plan === false (Commander negated option)
-    const planOpt = (options as { plan?: unknown; noPlan?: unknown }).plan;
-    const noPlan =
-      planOpt === false || Boolean((options as { noPlan?: unknown }).noPlan);
+    // Resolve plan semantics:
+    // -p/--plan => print the plan and exit (plan-only)
+    // -P/--no-plan => execute without printing plan first
+    // Otherwise: default from cliDefaults.run.plan (fallback true)
+    const planOpt = (options as { plan?: unknown }).plan;
+    const noPlanFlag = Boolean((options as { noPlan?: unknown }).noPlan);
+
+    // Default print-plan behavior from config
+    const cfgRun = (
+      (config.cliDefaults ?? {}) as {
+        run?: { plan?: boolean };
+      }
+    ).run;
+    const defaultPrintPlan =
+      typeof cfgRun?.plan === 'boolean' ? cfgRun.plan : true;
 
     const noScripts = (options as { scripts?: unknown }).scripts === false;
     if (noScripts && derived.behavior.archive === false) {
@@ -91,8 +100,15 @@ export const registerRunAction = (
       return;
     }
 
-    // Carry the no-plan flag through to the service (behavior.plan)
-    (derived.behavior as { plan?: boolean }).plan = !noPlan;
+    // Determine whether to print the plan header before execution.
+    // CLI flags override config defaults:
+    // -P/--no-plan or --plan=false => suppress
+    // otherwise: use cliDefaults.run.plan (default true)
+    let printPlan = defaultPrintPlan;
+    if (noPlanFlag || planOpt === false) {
+      printPlan = false;
+    }
+    (derived.behavior as { plan?: boolean }).plan = printPlan;
 
     await runSelected(
       runCwd,

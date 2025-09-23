@@ -1,4 +1,6 @@
-stanPath: .stan
+cliDefaults:
+  run:
+    plan: false
 includes: []
 excludes:
   - '*.local'
@@ -14,3 +16,4 @@ scripts:
   docs: npm run stan:docs
   knip: npm run knip
 patchOpenCommand: code -g {file}
+stanPath: .stan

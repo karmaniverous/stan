@@ -141,10 +141,10 @@ cliDefaults:
     combine: false # -c / -C
     keep: false # -k / -K
     sequential: false # -q / -Q
+    plan: true # print the run plan header before execution when -p/-P not specified
     live: true # -l / -L
     hangWarn: 120
-    hangKill: 300
-    hangKillGrace: 10
+    hangKill: 300    hangKillGrace: 10
     # default script selection when neither -s nor -S is provided:
     #   true  => all scripts,
     #   false => none,

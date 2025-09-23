@@ -42,10 +42,9 @@ export type RunnerUI = {
     endedAt: number,
   ): void;
   onCancelled(): void;
-  installCancellation(triggerCancel: () => void): void;
+  installCancellation(triggerCancel: () => void, onRestart?: () => void): void;
   stop(): void;
 };
-
 // BORING/TTY-aware status label helper mirroring the live renderer.
 const isTTY = Boolean(
   (process.stdout as unknown as { isTTY?: boolean })?.isTTY,
@@ -268,9 +267,11 @@ export class LiveUI implements RunnerUI {
     }
     this.restoreCancel = null;
   }
-  installCancellation(triggerCancel: () => void): void {
+  installCancellation(triggerCancel: () => void, onRestart?: () => void): void {
     try {
-      const sub = installCancelKeys(triggerCancel);
+      const sub = installCancelKeys(triggerCancel, {
+        onRestart,
+      });
       this.restoreCancel = sub.restore;
     } catch {
       // best-effort

@@ -1,6 +1,8 @@
 /* src/stan/run/input/keys.ts
  * Key handling using the "keypress" library, with SIGINT parity.
- * - Installs raw key handler on TTY to cancel on 'q' or Ctrl+C.
+ * - Installs raw key handler on TTY:
+ *   - Cancel on 'q' or Ctrl+C
+ *   - Restart on 'r' (optional handler)
  * - Also wires process SIGINT to the same cancellation pipeline, with a data-event fallback.
  * - Returns a single restore() that removes all listeners and raw mode.
  */
@@ -11,8 +13,9 @@ export type CancelSubscription = {
 
 export const installCancelKeys = (
   onCancel: () => void,
-  opts?: { sigintOnly?: boolean },
+  opts?: { sigintOnly?: boolean; onRestart?: () => void },
 ): CancelSubscription => {
+  const onRestart = opts?.onRestart;
   const stdin = process.stdin as unknown as NodeJS.ReadStream & {
     setRawMode?: (v: boolean) => void;
     removeListener?: (
@@ -68,19 +71,33 @@ export const installCancelKeys = (
   const onKeypress = (chunk?: unknown, keyMaybe?: unknown): void => {
     const key = keyMaybe as { name?: string; ctrl?: boolean } | undefined;
     if (key) {
-      if ((key.ctrl && key.name === 'c') || key.name === 'q') onCancel();
+      const name = (key.name ?? '').toLowerCase();
+      if ((key.ctrl && name === 'c') || name === 'q') {
+        onCancel();
+      } else if (name === 'r') {
+        onRestart?.();
+      }
       return;
     }
     // Extra guard: derive from chunk when key object is missing
     try {
       if (typeof chunk === 'string') {
-        if (chunk === '\u0003' || chunk.toLowerCase() === 'q') onCancel();
+        const s = chunk.toLowerCase();
+        if (s === '\u0003' || s === 'q') onCancel();
+        else if (s === 'r') onRestart?.();
       } else if (Buffer.isBuffer(chunk)) {
         if (
           chunk.includes(0x03) ||
           chunk.toString('utf8').toLowerCase() === 'q'
         )
           onCancel();
+      }
+      // buffer case for 'r'
+      if (
+        Buffer.isBuffer(chunk) &&
+        chunk.toString('utf8').toLowerCase() === 'r'
+      ) {
+        onRestart?.();
       }
     } catch {
       // best-effort

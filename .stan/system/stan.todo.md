@@ -3,8 +3,7 @@
 When updated: 2025-09-23 (UTC)
 
 Next up (priority order)
-1. Targeted unit coverage
-   - Add/keep small unit tests where integration coverage is thin:
+1. Targeted unit coverage   - Add/keep small unit tests where integration coverage is thin:
      - Packaged prompt path resolution (getPackagedSystemPromptPath).
      - System monolith assembly edge cases (already covered partially).
 
@@ -21,10 +20,14 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Live UI restart key
+  - In --live mode, added r/R to restart the run. Pressing r cancels
+    current processes without exiting and re-runs immediately in the
+    same session. Hint updated to “Press q to cancel, r to restart”
+    with bold “r” in non-boring mode.
 - No-live LoggerUI status parity with live UI
   - LoggerUI now emits the same status labels and colors as the live table:
-    waiting/run/ok/fail (error)/cancelled/quiet/stalled/timeout/killed.
-  - Adds a “waiting” line when scripts are queued for execution.
+    waiting/run/ok/fail (error)/cancelled/quiet/stalled/timeout/killed.  - Adds a “waiting” line when scripts are queued for execution.
 
 - Colorize no-live LoggerUI console logs by status
   - start -> blue; done (success) -> green; done (failure) -> red.

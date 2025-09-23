@@ -311,9 +311,7 @@ export class ProgressRenderer {
           red(`✖ ${counts.fail.toString()}`),
           black(`◼ ${counts.cancelled.toString()}`),
         ].join(sep);
-    const hint = this.opts.boring
-      ? 'Press q to cancel'
-      : gray('Press q to cancel');
+    const hint = `${gray('Press')} ${bold('q')} ${gray('to cancel,')} ${bold('r')} ${gray('to restart')}`;
     const raw = `${strippedTable.trimEnd()}\n\n${summary}\n${hint}`;
     const padded = raw
       .split('\n')

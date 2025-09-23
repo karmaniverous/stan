@@ -264,6 +264,14 @@ export const runSelected = async (
       } catch {
         /* ignore */
       }
+      // In live mode, print a trailing newline so the shell prompt appears on a fresh line.
+      try {
+        if (liveEnabled) {
+          console.log('');
+        }
+      } catch {
+        /* ignore */
+      }
       // Live restart: loop and run again; non-live or explicit cancel: return.
       if (restartRequested) {
         // next iteration
@@ -271,13 +279,12 @@ export const runSelected = async (
       }
       // Allow a brief settle so streams/child handles can release (Windows EBUSY mitigation).
       try {
-        await new Promise((r) => setTimeout(r, 15));
+        await new Promise((r) => setTimeout(r, 40));
       } catch {
         /* ignore */
       }
       return created;
-    } // If any script failed (exit code != 0), signal failure at the process level.
-    // Archives are still produced to preserve artifacts for chat/diagnosis.
+    } // If any script failed (exit code != 0), signal failure at the process level.    // Archives are still produced to preserve artifacts for chat/diagnosis.
     if (hadFailures) {
       process.exitCode = 1;
     }
@@ -309,6 +316,15 @@ export const runSelected = async (
     // Stop UI (flush/teardown for live; no-op for logger UI).
     ui.stop();
 
+    // After live rendering completes, print a newline so interactive shells
+    // resume on a clean line (helps local UX and CI logs).
+    try {
+      if (liveEnabled) {
+        console.log('');
+      }
+    } catch {
+      /* ignore */
+    }
     // UI teardown moved into ui.stop()/onCancelled()
 
     // Exit non‑zero when cancelled (service-level best-effort)

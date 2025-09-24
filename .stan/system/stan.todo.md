@@ -4,8 +4,7 @@ When updated: 2025-09-24 (UTC)
 
 Next up (priority order)
 
-1. Patch extensions: File Ops (declarative pre‑ops)
-   - Requirements integration (done in project prompt).
+1. Patch extensions: File Ops (declarative pre‑ops)   - Requirements integration (done in project prompt).
    - Validator:
      - Parse optional “### File Ops” block; enforce allowed verbs (mv|rm|rmdir|mkdirp), path arity, and repo‑relative POSIX paths.
      - Reject absolute paths and any normalized traversal outside repo root.
@@ -50,12 +49,18 @@ Next up (priority order)
 
 4. CI stability monitoring (Windows)
    - Continue watching for teardown flakiness; keep stdin pause + cwd reset + brief settle; adjust as needed.
+   - Current observation: 3 cancel-path tests intermittently fail with
+     EBUSY on rmdir of temp dirs after cancellation. Mitigation plan:
+     - Ensure cancellation awaits the process supervisor’s immediate kill
+       attempt (TERM → KILL) before returning from runSelected.
+     - Add a short, bounded settle after script collection completes in
+       the cancel branch to let Windows release handles before teardown.
+     - Verify fixes on Windows locally and in CI; tune settle as needed.
 
 5. Gen‑system hygiene
    - Config discovery already reuses centralized helpers; periodically review to avoid drift if related code evolves.
 
 Backlog (nice to have)
-
 - Optional compression research (keep canonical artifacts as plain .tar).
 - Additional doc cross‑checks to keep CLI help and site pages in sync.
 - Patch extensions: Exec (gated; non‑shell)

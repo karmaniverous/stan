@@ -147,15 +147,15 @@ export const runSelected = async (
       // Return control to the shell immediately in real CLI runs.
       // Tests keep the process alive to allow assertions.
       try {
-        wakeCancelOrRestart?.();
-      } catch {
-        /* ignore */
-      }
-      try {
         process.exitCode = 1;
         if (process.env.NODE_ENV !== 'test') {
           process.exit(1);
         }
+      } catch {
+        /* ignore */
+      }
+      try {
+        wakeCancelOrRestart?.();
       } catch {
         /* ignore */
       }
@@ -265,7 +265,8 @@ export const runSelected = async (
       } catch {
         /* ignore */
       }
-      // In live mode, print a trailing newline so the shell prompt appears on a fresh line.
+      // In live mode, print a trailing newline so interactive shells
+      // resume on a clean line (helps local UX and CI logs).
       try {
         if (liveEnabled) {
           console.log('');
@@ -273,14 +274,21 @@ export const runSelected = async (
       } catch {
         /* ignore */
       }
-      // Give any in-flight runner a brief moment to release file handles (Windows EBUSY mitigation).
+      // Give any in‑flight runner a bounded time to release file handles (Windows EBUSY mitigation).
+      // We prefer to await the script collector fully, but cap the wait to keep tests and CLI snappy.
       try {
         if (collectPromise) {
           await Promise.race([
             collectPromise,
-            new Promise<void>((r) => setTimeout(r, 120)),
+            new Promise<void>((r) => setTimeout(r, 1000)),
           ]);
         }
+      } catch {
+        /* ignore */
+      }
+      // Proactively pause stdin to release any TTY handle on Windows test runners.
+      try {
+        (process.stdin as unknown as { pause?: () => void }).pause?.();
       } catch {
         /* ignore */
       }
@@ -289,14 +297,15 @@ export const runSelected = async (
         // next iteration
         continue;
       }
-      // Allow a brief settle so streams/child handles can release (Windows EBUSY mitigation).
+      // Allow a short settle so streams/child handles can release (Windows EBUSY mitigation).
       try {
-        await new Promise((r) => setTimeout(r, 60));
+        await new Promise((r) => setTimeout(r, 150));
       } catch {
         /* ignore */
       }
       return created;
-    } // If any script failed (exit code != 0), signal failure at the process level.    // Archives are still produced to preserve artifacts for chat/diagnosis.
+    }
+    // If any script failed (exit code != 0), signal failure at the process level.    // Archives are still produced to preserve artifacts for chat/diagnosis.
     if (hadFailures) {
       process.exitCode = 1;
     }

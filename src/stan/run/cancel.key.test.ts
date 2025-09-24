@@ -55,7 +55,7 @@ describe('TTY key handler (q) cancels run', () => {
     } catch {
       // ignore
     }
-    await new Promise((r) => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 100));
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });

@@ -3,12 +3,39 @@
 When updated: 2025-09-23 (UTC)
 
 Next up (priority order)
-1. Targeted unit coverage - Add/keep small unit tests where integration coverage is thin: - Packaged prompt path resolution (getPackagedSystemPromptPath).
-   - System monolith assembly edge cases (already covered partially).
-2. CI stability monitoring (Windows)
-   - Continue watching for teardown flakiness; keep stdin pause + cwd reset + brief settle pattern; adjust as needed.
 
-3. Gen‑system hygiene
+1. Staged imports (imports) — land minimal feature
+   - Types + loader:
+     - Add `imports?: Record<string, string | string[]>` to config types.
+     - Parse/normalize: coerce string→string[], trim, drop empties; ignore non‑object values.
+     - Unit tests for normalization.
+   - Paths:
+     - Add `<stanPath>/imports` to path helpers (no reserved exclusions).
+   - Staging helper:
+     - `prepareImports({ cwd, stanPath, map })`:
+       - Sanitize labels (allow A–Z a–z 0–9 @ / _ -; replace others with “_”; forbid “..”).
+       - Clean `<stanPath>/imports/<label>` recursively.
+       - Resolve globs (fast‑glob) with absolute paths allowed; `../` permitted.
+       - Compute each file tail relative to glob parent (glob‑parent); copy to `<stanPath>/imports/<label>/<tail>`.
+       - Log: `stan: import <label> -> N file(s)`.
+       - Best‑effort skip unreadable files; do not fail run unless workspace IO throws.
+   - Wire into archive phase:
+     - Before createArchive/createArchiveDiff, compute normalized imports map (or `{}` if missing).
+     - Call `prepareImports`.
+     - Leave classifier, reserved exclusions, and keep semantics unchanged (imports always rebuilt).
+   - Tests:
+     - Unit: parsing/sanitization/mapping examples.
+     - Integration: archives include `<stanPath>/imports/...` when archive=true; staging skipped in plan‑only and snap.
+   - Deps: add `fast-glob` and `glob-parent` (runtime), usage local to helper.
+
+2. Quick archive-size win (temporary)
+   - Exclude `docs-src/**` and `diagrams/**` in stan.config.yml (keep `.stan/system/**`, keep README.md).
+   - Future task: move docs to a dedicated package; remove these excludes when done.
+
+3. CI stability monitoring (Windows)
+   - Continue watching for teardown flakiness; keep stdin pause + cwd reset + brief settle; adjust as needed.
+
+4. Gen‑system hygiene
    - Config discovery already reuses centralized helpers; periodically review to avoid drift if related code evolves.
 
 Backlog (nice to have)
@@ -18,52 +45,7 @@ Backlog (nice to have)
 
 Completed (recent)
 
-- Cancel tests (Windows): await runner teardown on cancel
-  - In run service, when a cancel is triggered, briefly await the in‑flight
-    runner (with a bounded timeout) before returning so child processes and
-    output streams release handles. Reduces EBUSY/ENOTEMPTY on temp dir removal.
-- SIGINT cancel test teardown (Windows): harden afterEach
-  - Add cwd reset to os.tmpdir(), pause stdin, and a brief settle before
-    removing the temp directory in src/stan/run/cancel.sigint.test.ts to
-    align with the stable pattern used in other cancel tests.
-- Cancel tests (Windows): stabilize teardown in cancel.key/schedule tests
-  - Align with the parity test pattern to avoid EBUSY/ENOTEMPTY on temp dir removal:
-    - chdir to os.tmpdir() before rm,    - pause stdin,
-    - brief settle (~10ms) before deleting the temp directory.
-- Init: remove redundant reset-diff prompt
-  - Eliminate the interactive “Reset diff snapshot now?” question from `stan init`.
-  - Snapshot behavior is now:
-    - If no snapshot exists, create it without asking.
-    - If a snapshot exists, ask “Keep existing snapshot?” (default Yes). If the user answers “No”, replace it.
-- Typecheck/docs build fix: resolve TS2339 in run action
-  - Load config as ContextConfig in src/cli/stan/run/action.ts and keep the debug fallback; remove the narrow type guard that hid optional properties (cliDefaults). This unblocks build, docs, and typecheck.
-- Live run UX: print a trailing newline after `stan run --live` exits so the shell prompt resumes on a clean line.
-- Cancel parity (Windows) stability: increase settle delay after cancellation to give child processes time to terminate before test teardown removes temp directories (reduces EBUSY/ENOTEMPTY during rm of temp dirs).
-
-- Windows test stability: cancel parity teardown
-  - In src/stan/run/cancel.parity.test.ts, leave the temp directory before rm, pause stdin, and wait briefly to avoid EBUSY on rmdir. Mirrors the stability pattern used elsewhere and removes the last flake in this suite.
-- CLI defaults: support run.plan; plan header default now respects cliDefaults.run.plan (default true). Action wiring keeps -p (plan-only) and -P (no plan) semantics unchanged.
-- Cancellation tests stability (Windows): add brief settle before returning on cancel to avoid EBUSY/ENOTEMPTY on rm of temp dirs.
-
-- Patch CLI test teardown stability (Windows)
-  - In src/cli/stan/patch.test.ts, pause stdin and allow a brief settle before removing the temp dir in afterEach to prevent EBUSY/timeout flakes (mirrors the pattern used in openFilesInEditor tests).
-
-- Lint fix (LoggerUI.onCancelled)
-  - Remove “unused param” lint by referencing the optional mode parameter (void mode) to satisfy @typescript-eslint/no-unused-vars.
-- Live-mode cancel final-frame persistence
-  - Pressing q now leaves the final live frame visible (persisted) instead of clearing it. Restart (r) still clears the frame so the next run reuses the same UI area without duplication.
-- Live restart immediate cancel
-  - Pressing r in --live now cancels all running child processes immediately (TERM -> KILL without grace) and restarts the run without waiting for tasks to settle. Previously, tasks could continue executing in the background and restart was delayed. Implementation races script execution against a cancel/restart signal.
-- Live UI restart uses the same UI
-  - On restart, clear the previous live frame (via log-update clear) instead of persisting it. This prevents the live table from appearing twice (the old persisted frame plus the new one) and ensures the restart happens “in the same UI” as expected.- Live UI restart key
-  - In --live mode, added r/R to restart the run. Pressing r cancels current processes without exiting and re-runs immediately in the same session. Hint updated to “Press q to cancel, r to restart” with bold “r” in non-boring mode.
-- No-live LoggerUI status parity with live UI
-  - LoggerUI now emits the same status labels and colors as the live table: waiting/run/ok/fail (error)/cancelled/quiet/stalled/timeout/killed. - Adds a “waiting” line when scripts are queued for execution.
-
-- Colorize no-live LoggerUI console logs by status
-  - start -> blue; done (success) -> green; done (failure) -> red.
-  - Applies to script and archive start/done lines in non-TTY runs.
-- Mitigate Windows EBUSY/ENOTEMPTY in openFilesInEditor tests
-  - Log “open -> …” before attempting any spawn.
-  - In tests (NODE_ENV=test), skip the actual spawn to avoid transient locks on the temp directory.
-  - Behavior remains observable in logs without launching real processes or windows.
+- Handoff spec trimmed
+  - The cross‑thread handoff now contains only Project signature, Reasoning (short bullets), and Unpersisted tasks (short bullets). Startup/checklists are removed to rely on the fresh system prompt and archive in the new thread.
+- Temporary docs exclusion to reduce archive size
+  - Added `docs-src/**` and `diagrams/**` to config excludes; follow‑up task captures migration to a dedicated docs package prior to removing these excludes.

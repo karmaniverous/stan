@@ -156,10 +156,63 @@ Short negative flags:
 - Root: `-D` (no-debug), `-B` (no-boring)
 - Run: `-Q` (no-sequential), `-K` (no-keep), `-C` (no-combine); Snap: `-S` (no-stash)
 
+## Staged imports (imports)
+
+Bring small, high‑signal artifacts into the STAN workspace just before archiving, without teaching STAN any language/build specifics.
+
+- Config
+  - `imports?: Record<label, string | string[]>`
+  - Each label maps to one or more glob patterns (relative to the repo root; `../` allowed).
+
+- Behavior (archiving only)
+  - During `stan run` (only when archives are being written), stage matched files under `<stanPath>/imports/<label>/…`.
+  - Rebuild per label deterministically on each run (imports are not affected by “keep” semantics).
+  - Binary screening still applies when building the archives; prefer text artifacts (schemas, headers, d.ts, API JSONs, GraphQL/OpenAPI, etc.).
+
+- Mapping
+  - For each glob, preserve the relative “tail” under the static part of the glob (via `glob-parent`), so nested structures survive:
+    - Example: `../lib/dist/api/**/*.json` → `.stan/imports/contracts/api/<subdirs>/<file>.json`.
+  - Labels may include `@` and `/` (e.g., `@scope/pkg`) and become nested folders; forbid `..`.
+  - Label sanitation: allow `A–Z a–z 0–9 @ / _ -`; replace other characters with `_`; reject any label resolving to or containing `..`.
+
+- Scope
+  - `run` archive phase only. `snap` and `patch` do not stage imports.
+  - “keep” semantics apply only to `<stanPath>/output`; imports are always rebuilt for determinism.
+
+- Logging
+  - One concise line per label (always printed; before the archive table rows in live/no‑live modes):
+    - `stan: import <label> -> N file(s)`
+
+- Dependencies (module)
+  - Runtime: `fast-glob` and `glob-parent` used within the imports helper.
+  - Keep usage local to the staging helper; do not change classifier or reserved exclusions.
+
+- Tests (summary)
+  - Unit: config parsing/normalization; label sanitation (e.g., `@scope/pkg`, `core//api`, `../bad`); path mapping examples:
+    - `../lib/dist/*.d.ts` → basename only
+    - `../lib/dist/api/**/*.json` → `api/<subdirs>/<file>.json`
+    - `./generated/openapi/**/*.yaml` → `openapi/<subdirs>/<file>.yaml`
+  - Integration: in run combine/no‑combine modes, assert that `<stanPath>/imports/<label>/…` files are included in archives (classifier continues to exclude binaries).
+  - Ensure staging runs only when archives are being written (`archive=true`); plan‑only and `snap` do not stage.
+  - Windows/CI hardening: clean per‑label dir; avoid leaving handles open; follow existing test teardown patterns (cwd reset + stdin pause).
+
+- CLI/config example
+  ```yaml
+  imports:
+    @karmaniverous/stan-core:
+      - ../stan-core/dist/**/*.d.ts
+      - ../stan-core/dist/api/**/*.json
+    openapi:
+      - ./generated/openapi/**/*.yaml
+  ```
+
+Notes
+- Naming uses “imports” to avoid overloading “context” (which collides with LLM session context and internal types).
+- The staging folder is `<stanPath>/imports/<label>/…` to align with the config key and CLI log.
+
 ## Diff snapshot policy
 
-- Create snapshot only if missing during runs; `stan snap` replaces it.
-- Snapshot lives under `<stanPath>/diff/.archive.snapshot.json`.
+- Create snapshot only if missing during runs; `stan snap` replaces it.- Snapshot lives under `<stanPath>/diff/.archive.snapshot.json`.
 
 ## Patch processing (project‑level)
 

@@ -8,6 +8,8 @@ excludes:
   - assets
   - CHANGELOG.md
   - docs
+  - docs-src/**
+  - diagrams/**
   - package-lock.json
 scripts:
   typecheck: npm run typecheck

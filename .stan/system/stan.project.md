@@ -225,12 +225,78 @@ Notes
   - Analyze failures for processing improvements (parsing, cleaning, tolerant apply strategies).
   - Propose concrete code changes (and tests) to `src/stan/patch/*` and related utilities.
 
+## Patch Extensions — File Ops (declarative)
+
+Purpose
+- Provide a safe, cross‑platform way to express file system refactors (especially large move/rename sets) inside a patch, without relying on shell commands.
+- Keep it deterministic, auditable, and portable (Node fs semantics; no shell).
+
+Scope (initial)
+- Pre‑ops only: run file ops before applying unified diffs.
+- Allowed operations (repo‑relative, POSIX separators; no globs; reject absolute paths and any “..” traversal):
+  - `mv <src> <dest>`: move/rename a file. Create parent folders for `<dest>`. Fail if `<src>` does not exist or if `<dest>` already exists (no overwrite in v1).
+  - `rm <path>`: remove a file. Fail if not a file.
+  - `rmdir <path>`: remove an empty directory (no recursive delete). Fail if not empty or not a directory.
+  - `mkdirp <path>`: ensure directory exists (create all parents).
+  - (Optional later) `cp <src> <dest>`: copy file; same existence rules as `mv`.
+
+Patch representation
+- Optional block in assistant replies:
+  - Heading: `### File Ops`
+  - Fenced body with one operation per line, e.g.:
+    ```
+    mv src/old/name.ts src/new/name.ts
+    mkdirp packages/util/src/internal
+    rm src/legacy/tmp.txt
+    rmdir src/legacy/empty
+    ```
+  - Paths: POSIX separators; repo‑relative; normalized by the patch service.
+
+Execution semantics
+- Order: execute in the listed order; stop at first failure.
+- Pre‑ops only (v1): apply ops, then run the current patch pipeline (git apply → jsdiff fallback).
+- Dry‑run: `stan patch --check` parses and validates ops, prints the plan, and makes no changes.
+- Logging: write a deterministic summary and detailed results to `.stan/patch/.debug/ops.json` (each op → { verb, src?, dest?, status: ok|failed, errno?, message? }).
+- FEEDBACK integration: on failure, abort and include the failing op + reason in the FEEDBACK envelope diagnostics.
+
+Validation
+- Reject unknown verbs or malformed argument counts.
+- Reject absolute paths and any normalized path that escapes the repo root.
+- For `mv`/`cp`: require existing `<src>` and non‑existing `<dest>` (v1).
+- For `rm`: require file exists and is a file.
+- For `rmdir`: require directory exists and is empty.
+- For `mkdirp`: any repo‑relative path is allowed; ensure creation succeeds.
+
+Cross‑platform
+- Implemented in Node fs for Windows/macOS/Linux parity (no shell).
+- Normalize to POSIX internally; resolve on the host OS for actual fs calls.
+
+Validator & service updates (to be implemented)
+- Validator: allow an optional “### File Ops” block; ensure every line matches an allowed verb with valid paths; keep existing one‑patch‑per‑file rules for unified diffs unchanged.
+- Patch service: parse ops; in `--check` simulate; otherwise run pre‑ops, then proceed with the existing patch pipeline. Emit `.debug/ops.json` and FEEDBACK on failure.
+
+Out of scope (initial)
+- Directory moves with implicit recursive behavior (can be expressed via multiple `mv` entries).
+- Overwrite semantics (reserve for later; keep v1 simple and safe).
+
+## Patch Extensions — Exec (future, gated)
+
+Motivation
+- Rare cases may need tool‑driven transforms that are infeasible to encode as file ops or unified diffs alone.
+- If introduced, must be heavily gated and non‑shell to mitigate risk.
+
+Design (deferred)
+- Opt‑in CLI flag: `stan patch --allow-exec`.
+- No shell: spawn without a shell (execFile‑style) to avoid injection via quoting/redirection; workdir = repo root; bounded env; timeouts.
+- Log stdout/stderr, args, exit code to `.stan/patch/.debug/exec.json`.
+- Treat any non‑zero exit as failure; abort patching; include diagnostics in FEEDBACK.
+- Do not implement until a concrete, repeated use case emerges.
+
 ## Archiving & snapshot selection semantics (includes/excludes)
 
 - Base selection:
   - Apply `.gitignore` semantics, default denials (`node_modules`, `.git`), user `excludes`, and STAN workspace rules.
   - Always exclude `<stanPath>/diff`; exclude `<stanPath>/output` unless the caller explicitly requests output inclusion (e.g., combine mode).
-
 - Additive includes:
   - `includes` is an additive allow‑list: any file matching an `includes` glob is ADDED back to the base selection even if it would otherwise be excluded by `.gitignore`, user `excludes`, or default denials.
   - Reserved exclusions still apply (diff is always excluded; output excluded unless explicitly included by combine behavior).

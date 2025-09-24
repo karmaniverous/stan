@@ -4,14 +4,30 @@ When updated: 2025-09-24 (UTC)
 
 Next up (priority order)
 
-1. Staged imports (imports) — land minimal feature
+1. Patch extensions: File Ops (declarative pre‑ops)
+   - Requirements integration (done in project prompt).
+   - Validator:
+     - Parse optional “### File Ops” block; enforce allowed verbs (mv|rm|rmdir|mkdirp), path arity, and repo‑relative POSIX paths.
+     - Reject absolute paths and any normalized traversal outside repo root.
+   - Service:
+     - Parser and plan builder with normalization and validation errors.
+     - `--check`: simulate ops, print plan, no side effects.
+     - Apply mode: execute pre‑ops in order; stop on first failure; then run existing patch pipeline; write `.stan/patch/.debug/ops.json`.
+     - FEEDBACK: include failing op diagnostics when applicable.
+   - Tests:
+     - Unit: parser/normalization (paths with ./, trailing slashes; reject .. and absolute), verb arity, error messages.
+     - Unit: mv/rm/rmdir/mkdirp behaviors (success/failure cases; parent creation; non‑empty rmdir).
+     - Integration: end‑to‑end patch with File Ops + unified diffs (pre‑ops then patch); `--check` dry‑run; FEEDBACK on failure.
+     - Windows parity: ensure path normalization avoids EBUSY; follow existing teardown hygiene (cwd reset, stdin pause, brief settle).
+   - Docs: add concise “File Ops block (pre‑ops)” guidance to Response Format (only after implementation) with 2–3 examples.
+
+2. Staged imports (imports) — land minimal feature
    - Types + loader:
      - Add `imports?: Record<string, string | string[]>` to config types.
      - Parse/normalize: coerce string→string[], trim, drop empties; ignore non‑object values.
      - Unit tests for normalization.
    - Paths:
-     - Add `<stanPath>/imports` to path helpers (no reserved exclusions).
-   - Staging helper:
+     - Add `<stanPath>/imports` to path helpers (no reserved exclusions). - Staging helper:
      - `prepareImports({ cwd, stanPath, map })`:
        - Sanitize labels (allow A–Z a–z 0–9 @ / _ -; replace others with “_”; forbid “..”).
        - Clean `<stanPath>/imports/<label>` recursively.
@@ -28,20 +44,23 @@ Next up (priority order)
      - Integration: archives include `<stanPath>/imports/...` when archive=true; staging skipped in plan‑only and snap.
    - Deps: add `fast-glob` and `glob-parent` (runtime), usage local to helper.
 
-2. Quick archive-size win (temporary)
+3. Quick archive-size win (temporary)
    - Exclude `docs-src/**` and `diagrams/**` in stan.config.yml (keep `.stan/system/**`, keep README.md).
    - Future task: move docs to a dedicated package; remove these excludes when done.
 
-3. CI stability monitoring (Windows)
+4. CI stability monitoring (Windows)
    - Continue watching for teardown flakiness; keep stdin pause + cwd reset + brief settle; adjust as needed.
 
-4. Gen‑system hygiene
+5. Gen‑system hygiene
    - Config discovery already reuses centralized helpers; periodically review to avoid drift if related code evolves.
 
 Backlog (nice to have)
 
 - Optional compression research (keep canonical artifacts as plain .tar).
 - Additional doc cross‑checks to keep CLI help and site pages in sync.
+- Patch extensions: Exec (gated; non‑shell)
+  - Only if repeated need arises.
+  - `--allow-exec` opt‑in; spawn without shell; timeouts; strict logging; FEEDBACK on failure.
 
 Completed (recent)
 

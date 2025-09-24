@@ -143,16 +143,34 @@ export const validateResponseMessage = (text: string): ValidationResult => {
       seen.set(k, list);
       // Also check its internal diff headers count and path match
       const diffs = parseDiffHeaders(p.body);
-      if (diffs.length !== 1) {
+      if (diffs.length === 0) {
+        errors.push(
+          `Patch for ${k} has no "diff --git a/<path> b/<path>" header; emit a plain unified diff with git-style headers (wrappers like "*** Begin Patch" are not allowed)`,
+        );
+      } else if (diffs.length !== 1) {
         errors.push(
           `Patch for ${k} contains multiple "diff --git" headers (found ${diffs.length.toString()}; expected 1)`,
         );
-      } else {
-        const { a, b } = diffs[0];
-        const want = toPosix(k);
-        if (a !== want || b !== want) {
-          errors.push(`Patch header path mismatch for ${k}: got a/${a} b/${b}`);
+      }
+      // Forbidden wrappers detection (defensive clarity)
+      const wrapperRe =
+        /(^|\n)\*{3,}\s*(Begin|End)\s+Patch\b|(^|\n)Index:\s|(^|\n)\*{3,}\s*Add\s+File:/i;
+      try {
+        if (wrapperRe.test(p.body)) {
+          errors.push(
+            `Patch for ${k} contains a forbidden wrapper ("*** Begin Patch", "*** Add File:", or "Index:"). Use plain unified diff only.`,
+          );
+        } else {
+          const { a, b } = diffs[0];
+          const want = toPosix(k);
+          if (a !== want || b !== want) {
+            errors.push(
+              `Patch header path mismatch for ${k}: got a/${a} b/${b}`,
+            );
+          }
         }
+      } catch {
+        /* ignore */
       }
     }
     for (const [k, list] of seen.entries()) {

@@ -1,6 +1,6 @@
 # STAN Development Plan
 
-When updated: 2025-09-23 (UTC)
+When updated: 2025-09-24 (UTC)
 
 Next up (priority order)
 
@@ -45,6 +45,11 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Patch rules “above the fold” wrapper guardrails
+  - Added quick patch rules with canonical examples near the top of the system prompt; forbids legacy wrappers (“**_ Begin Patch”, “_** Add File:”, “Index:”).
+  - Ingestion unwraps "\*\*\* Begin/End Patch" envelopes when a valid diff is present.
+  - Validator reports explicit “no diff --git” and rejects forbidden wrappers.
+  - Response Format/Policy updated: exactly one diff header per Patch, /dev/null for create/delete.
 - Handoff spec trimmed
   - The cross‑thread handoff now contains only Project signature, Reasoning (short bullets), and Unpersisted tasks (short bullets). Startup/checklists are removed to rely on the fresh system prompt and archive in the new thread.
 - Temporary docs exclusion to reduce archive size

@@ -30,6 +30,11 @@ const unwrapChatWrappers = (text: string): string => {
   const isFence = (s: string) => /^```/.test(s);
   const isBegin = (s: string) => /^BEGIN[_ -]?PATCH/i.test(s);
   const isEnd = (s: string) => /^END[_ -]?PATCH/i.test(s);
+  // Common non‑unified wrappers (e.g., "*** Begin Patch" / "*** End Patch")
+  const isStarBegin = (s: string) =>
+    /^\*{3,}\s*BEGIN\s+PATCH/i.test(s) || /^\*{3,}\s*Begin\s+Patch/i.test(s);
+  const isStarEnd = (s: string) =>
+    /^\*{3,}\s*END\s+PATCH/i.test(s) || /^\*{3,}\s*End\s+Patch/i.test(s);
 
   const unwrapIf = (cond: boolean): string => {
     if (!cond) return text;
@@ -39,9 +44,9 @@ const unwrapChatWrappers = (text: string): string => {
 
   if (isFence(first) && isFence(last)) return unwrapIf(true);
   if (isBegin(first) && isEnd(last)) return unwrapIf(true);
+  if (isStarBegin(first) && isStarEnd(last)) return unwrapIf(true);
   return text;
 };
-
 const extractFencedUnifiedDiff = (text: string): string | null => {
   const lines = text.split('\n');
   for (let i = 0; i < lines.length; i += 1) {

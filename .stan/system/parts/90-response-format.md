@@ -86,13 +86,16 @@ Before sending a reply, verify all of the following:
 
 1. One‑patch‑per‑file
    - There is exactly one Patch block per changed file.
-   - No Patch block contains more than one “diff --git a/<path> b/<path>”.
+   - Each Patch block MUST contain exactly one `diff --git a/<path> b/<path>` header.
+   - No Patch block contains more than one `diff --git a/<path> b/<path>`.
+   - Forbidden wrappers are not present: `*** Begin Patch`, `*** Add File:`, `Index:` (or similar non‑unified preludes).
+   - For new files, headers MUST be `--- /dev/null` and `+++ b/<path>`.
+   - For deleted files, headers MUST be `--- a/<path>` and `+++ /dev/null`.
 
 2. Commit message isolation and position
    - Normal replies: The “Commit Message” is MANDATORY. It appears once, as the final section.
    - FEEDBACK replies: Do not include a Commit Message.
    - In cases where a Commit Message is present, its fence is not inside any other fenced block.
-
 3. Fence hygiene (+1 rule)
    - For every fenced block, the outer fence is strictly longer than any internal backtick run (minimum 3).
    - Patches, optional Full Listings, and commit message all satisfy the +1 rule.

@@ -5,11 +5,11 @@
 - Patches must be plain unified diffs.
 - Prefer diffs with a/ b/ prefixes and stable strip levels; include sufficient context.
 - Normalize to UTF‑8 + LF. Avoid BOM and zero‑width characters.
+- Forbidden wrappers: do not emit `*** Begin Patch`, `*** Add File:`, `Index:` or other non‑unified preambles; they are not accepted by `git apply` or `stan patch`.
 - On patch failures:
   - Perform a concise root‑cause analysis (e.g., path mismatches, context drift, hunk corruption).
   - Use the FEEDBACK handshake (BEGIN_STAN_PATCH_FEEDBACK v1 … END_STAN_PATCH_FEEDBACK). Regenerate a corrected diff that applies cleanly.
   - Summarize in this chat and call out changes that should be folded back into the PROJECT prompt.
-
 # CRITICAL: Patch generation guidelines (compatible with “stan patch”)
 
 - Format: plain unified diff. Strongly prefer git-style headers:

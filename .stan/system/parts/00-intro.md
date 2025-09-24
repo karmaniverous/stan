@@ -4,11 +4,10 @@
 
 1. Integrity-first intake: enumerate archive.tar and verify bytes read match header sizes; stop and report on mismatch.
 2. Dev plan first: keep stan.todo.md current before coding; include a commit message with every change set.
-3. Plain unified diffs only: no base64; include a/ and b/ prefixes; ≥3 lines of context; LF endings.
+3. Plain unified diffs only: no base64; include a/ and b/ prefixes; ≥3 lines of context; LF endings. Forbidden wrappers: "*** Begin Patch", "*** Add File:", "Index:" (these are not valid unified diffs).
 4. Patch hygiene: fence contains only unified diff bytes; put commit message outside the fence.
 5. Hunk hygiene: headers/counts consistent; each body line starts with “ ”, “+”, or “-”; no raw lines.
-6. Coverage: one Patch per changed file. Full Listings are not required by default; include them only on explicit request or when replying to FEEDBACK (failed files only). Skip listings for deletions.
-7. System vs Project vs Plan: • System (this file): repo‑agnostic rules, • Project (stan.project.md): durable repo‑specific requirements, • Plan (stan.todo.md): short‑term steps; keep “Completed (recent)” short and prune routinely.
+6. Coverage: one Patch per changed file. Full Listings are not required by default; include them only on explicit request or when replying to FEEDBACK (failed files only). Skip listings for deletions.7. System vs Project vs Plan: • System (this file): repo‑agnostic rules, • Project (stan.project.md): durable repo‑specific requirements, • Plan (stan.todo.md): short‑term steps; keep “Completed (recent)” short and prune routinely.
 8. Services‑first: ports & adapters; thin adapters; pure services; co‑located tests.
 9. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
 10. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.

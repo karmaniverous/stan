@@ -5,15 +5,16 @@ When updated: 2025-09-24 (UTC)
 Next up (priority order)
 
 1. Patch extensions: File Ops (declarative pre‑ops) - Requirements integration (done in project prompt).
-   - Validator:
+   - Parser & service (landed this turn):
+     - Parse fenced "### File Ops" block; safe executor with dry‑run/apply; ops.json logging; integrated before patching.
+   - Validator (next):
      - Parse optional “### File Ops” block; enforce allowed verbs (mv|rm|rmdir|mkdirp), path arity, and repo‑relative POSIX paths.
      - Reject absolute paths and any normalized traversal outside repo root.
-   - Service:
+   - Service (remaining):
      - Parser and plan builder with normalization and validation errors.
      - `--check`: simulate ops, print plan, no side effects.
      - Apply mode: execute pre‑ops in order; stop on first failure; then run existing patch pipeline; write `.stan/patch/.debug/ops.json`.
-     - FEEDBACK: include failing op diagnostics when applicable.
-   - Tests:
+     - FEEDBACK: include failing op diagnostics when applicable.   - Tests:
      - Unit: parser/normalization (paths with ./, trailing slashes; reject .. and absolute), verb arity, error messages.
      - Unit: mv/rm/rmdir/mkdirp behaviors (success/failure cases; parent creation; non‑empty rmdir).
      - Integration: end‑to‑end patch with File Ops + unified diffs (pre‑ops then patch); `--check` dry‑run; FEEDBACK on failure.
@@ -50,7 +51,6 @@ Next up (priority order)
 4. CI stability monitoring (Windows)
    - Continue watching for teardown flakiness; keep stdin pause + cwd reset + brief settle; adjust as needed.
    - Verify Windows cancellation hardening (runner drain up to 1s, stdin pause, 150ms settle) on local Windows and in CI; tune if needed.
-
 5. Gen‑system hygiene
    - Config discovery already reuses centralized helpers; periodically review to avoid drift if related code evolves.
 

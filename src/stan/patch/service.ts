@@ -12,6 +12,11 @@ import { preflightDocsAndVersion } from '../preflight';
 import { detectAndCleanPatch } from './clean';
 import { resolvePatchContext } from './context';
 import { isFeedbackEnvelope, seemsUnifiedDiff } from './detect';
+import {
+  executeFileOps,
+  parseFileOpsBlock,
+  writeOpsDebugLog,
+} from './file-ops';
 import { maybeWarnStaged } from './git-status';
 import { pathsFromPatch } from './headers';
 import { openFilesInEditor } from './open';
@@ -83,6 +88,11 @@ export const runPatch = async (
     return;
   }
 
+  // Optional File Ops block (pre-ops): parse early; apply before diffs.
+  const opsPlan = parseFileOpsBlock(raw);
+  if (opsPlan.errors.length)
+    console.error('stan: file ops parse warnings:', opsPlan.errors.join('; '));
+
   // Detect & clean (unified diff only), tolerant to surrounding prose
   const cleaned = detectAndCleanPatch(raw);
   // Collect touched-file candidates from headers (for diagnostics and staged check)
@@ -113,6 +123,33 @@ export const runPatch = async (
     return;
   }
 
+  // Execute File Ops (pre-ops) before applying the unified diff(s).
+  if (opsPlan.ops.length > 0) {
+    try {
+      const dry = Boolean(opts?.check);
+      const { ok, results } = await executeFileOps(cwd, opsPlan.ops, dry);
+      await writeOpsDebugLog(cwd, stanPath, results);
+      if (dry) {
+        console.log(
+          `stan: file ops (dry-run): ${opsPlan.ops.length.toString()} planned`,
+        );
+      } else {
+        const okCount = results.filter((r) => r.status === 'ok').length;
+        console.log(
+          `stan: file ops: ${okCount.toString()}/${opsPlan.ops.length.toString()} applied`,
+        );
+      }
+      if (!ok && !dry) {
+        console.error(
+          'stan: file ops failed; aborting before patch (see .stan/patch/.debug/ops.json)',
+        );
+        return;
+      }
+    } catch (e) {
+      console.error('stan: file ops execution failed', e);
+      return;
+    }
+  }
   // Parse for strip candidates (must not prevent diagnostics from being written)
   let parsed: ReturnType<typeof parseUnifiedDiff> | null = null;
   try {

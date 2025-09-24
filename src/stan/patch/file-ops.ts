@@ -55,39 +55,51 @@ const resolveWithin = (
   return { abs, ok };
 };
 
+/** Extract fenced block body that immediately follows the "### File Ops" heading. */
+const extractFencedOpsBody = (source: string): { body: string } | null => {
+  const headingRe = /^###\s+File Ops\s*$/m;
+  const hm = headingRe.exec(source);
+  if (!hm) return null;
+  const afterIdx = (hm.index ?? 0) + hm[0].length;
+  const tail = source.slice(afterIdx);
+  const lines = tail.split(/\r?\n/);
+
+  // Find opening fence line (``` or longer)
+  let openIdx = -1;
+  let ticks = 0;
+  for (let i = 0; i < lines.length; i += 1) {
+    const m = lines[i].match(/^\s*(`{3,})/);
+    if (m) {
+      openIdx = i;
+      ticks = m[1].length;
+      break;
+    }
+  }
+  if (openIdx < 0 || ticks < 3) return null;
+
+  // Find closing fence with exactly the same tick count
+  const fence = '`'.repeat(ticks);
+  let closeIdx = -1;
+  for (let i = openIdx + 1; i < lines.length; i += 1) {
+    const l = lines[i];
+    if (l.trimEnd() === fence) {
+      closeIdx = i;
+      break;
+    }
+  }
+  if (closeIdx < 0) return null;
+  const body = lines.slice(openIdx + 1, closeIdx).join('\n');
+  return { body };
+};
+
 /** Parse the optional "### File Ops" fenced block from a reply body. */
 export const parseFileOpsBlock = (source: string): FileOpsPlan => {
   const ops: FileOp[] = [];
   const errors: string[] = [];
 
-  const hRe = /^###\s+File Ops\s*$/m;
-  const hMatch = source.match(hRe);
-  if (!hMatch) return { ops, errors }; // no block present
-
-  const start = hMatch.index ?? -1;
-  if (start < 0) return { ops, errors };
-
-  // Find opening fence after heading
-  const afterHeading = source.slice(start + hMatch[0].length);
-  const fenceOpenRe = /^\s*`{3,}.*$/m;
-  const openMatch = afterHeading.match(fenceOpenRe);
-  if (!openMatch || typeof openMatch.index !== 'number') {
-    errors.push('File Ops: missing or invalid fence after heading');
-    return { ops, errors };
-  }
-  const openLine = openMatch[0];
-  const openIdx = (openMatch.index ?? 0) + (start + hMatch[0].length);
-  const ticks = (openLine.match(/`/g) ?? []).length;
-  const closeRe = new RegExp(`^\\\`${'{'}${ticks}{'}'}\\s*$`, 'm');
-  const afterOpen = source.slice(openIdx + openLine.length);
-  const closeMatch = afterOpen.match(closeRe);
-  if (!closeMatch || typeof closeMatch.index !== 'number') {
-    errors.push('File Ops: missing closing fence');
-    return { ops, errors };
-  }
-  const bodyStart = openIdx + openLine.length;
-  const bodyEnd = bodyStart + closeMatch.index;
-  const body = source.slice(bodyStart, bodyEnd);
+  const fenced = extractFencedOpsBody(source);
+  if (!fenced) return { ops, errors }; // no block present (or malformed); treat as absent
+  const body = fenced.body;
 
   const lines = body.split(/\r?\n/);
   let lineNo = 0;
@@ -96,7 +108,7 @@ export const parseFileOpsBlock = (source: string): FileOpsPlan => {
     const line = raw.trim();
     if (!line) continue;
     const parts = line.split(/\s+/);
-    const verb = parts[0] as FileOp['verb'];
+    const verbRaw = parts[0]; // keep raw string for unknown verb reporting
     const args = parts.slice(1);
     const bad = (msg: string) =>
       errors.push(`File Ops line ${lineNo.toString()}: ${msg}`);
@@ -116,7 +128,7 @@ export const parseFileOpsBlock = (source: string): FileOpsPlan => {
       return posix;
     };
 
-    switch (verb) {
+    switch (verbRaw) {
       case 'mv': {
         needsTwo(args.length === 2);
         if (args.length === 2) {
@@ -155,13 +167,12 @@ export const parseFileOpsBlock = (source: string): FileOpsPlan => {
         break;
       }
       default:
-        bad(`unknown verb "${verb}"`);
+        bad(`unknown verb "${verbRaw}"`);
         break;
     }
   }
   return { ops, errors };
 };
-
 /** Execute File Ops with safety checks. Returns per-op results and overall ok. */
 export const executeFileOps = async (
   cwd: string,

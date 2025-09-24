@@ -3,7 +3,6 @@
 When updated: 2025-09-24 (UTC)
 
 Next up (priority order)
-
 1. Patch extensions: File Ops (declarative pre‑ops) - Requirements integration (done in project prompt).
    - Parser & service (landed this turn):
      - Parse fenced "### File Ops" block; safe executor with dry‑run/apply; ops.json logging; integrated before patching.

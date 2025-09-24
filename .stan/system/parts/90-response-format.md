@@ -1,7 +1,6 @@
 # Response Format (MANDATORY)
 
 CRITICAL: Fence Hygiene (Nested Code Blocks) and Coverage
-
 - You MUST compute fence lengths dynamically to ensure that each outer fence has one more backtick than any fence it contains.
 - Algorithm:
   1. Collect all code blocks you will emit (every “Patch” per file; any optional “Full Listing” blocks, if requested).
@@ -130,3 +129,42 @@ Follow the canonical rules in “Patch Policy” (see earlier section). The Resp
 
 Optional Full Listings
 – On explicit request or when replying to FEEDBACK, include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.
+
+## File Ops (optional pre‑ops)
+
+Use “### File Ops” to declare safe, repo‑relative file operations that run before patches:
+
+- Verbs:
+  - mv <src> <dest>
+  - rm <path>
+  - rmdir <path>
+  - mkdirp <path>
+- Paths:
+  - POSIX separators, repo‑relative only.
+  - Absolute paths are forbidden.
+  - Any “..” traversal is forbidden after normalization.
+- Arity:
+  - mv requires 2 paths; others require 1.
+- Execution:
+  - Pre‑ops run before applying unified diffs.
+  - In --check (dry‑run), pre‑ops are validated and reported; no filesystem changes are made.
+
+Examples
+```
+### File Ops
+```
+mkdirp src/new/dir
+mv src/old.txt src/new/dir/new.txt
+rm src/tmp.bin
+rmdir src/legacy/empty
+```
+```
+
+```
+### File Ops
+```
+mv packages/app-a/src/util.ts packages/app-b/src/util.ts
+mkdirp packages/app-b/src/internal
+rm docs/drafts/obsolete.md
+```
+```

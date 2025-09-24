@@ -5,7 +5,6 @@ import {
   validateOrThrow,
   validateResponseMessage,
 } from './response';
-
 const makeOkMessage = (): string => {
   return [
     '## UPDATED: src/x.ts',
@@ -189,5 +188,59 @@ describe('response-format validator', () => {
     expect(() => validateOrThrow('## Commit Message\n```\nmsg\n```\n')).toThrow(
       /validation failed/i,
     );
+  });
+
+  it('File Ops validator accepts valid verbs/paths', () => {
+    const body = [
+      '## UPDATED: docs',
+      '',
+      '### File Ops',
+      '```',
+      'mkdirp src/a',
+      'mv src/a/file.ts src/b/file.ts',
+      'rm src/tmp.txt',
+      'rmdir src/empty',
+      '```',
+      '',
+      '### Patch: docs',
+      '```',
+      'diff --git a/README.md b/README.md',
+      '--- a/README.md',
+      '+++ b/README.md',
+      '@@ -1,1 +1,1 @@',
+      '-old',
+      '+new',
+      '```',
+      '',
+      '## Commit Message',
+      '```',
+      'msg',
+      '```',
+    ].join('\n');
+    const res = validateResponseMessage(body);
+    expect(res.ok).toBe(true);
+    expect(res.errors).toEqual([]);
+  });
+
+  it('File Ops validator flags bad verb/arity/paths', () => {
+    const bad = [
+      '### File Ops',
+      '```',
+      'cp a b',
+      'rm /etc/passwd',
+      'mv a',
+      '```',
+      '## Commit Message',
+      '```',
+      'm',
+      '```',
+    ].join('\n');
+    const res = validateResponseMessage(bad);
+    expect(res.ok).toBe(false);
+    expect(res.errors.some((e) => /unknown verb/i.test(e))).toBe(true);
+    expect(res.errors.some((e) => /invalid repo-relative path/i.test(e))).toBe(
+      true,
+    );
+    expect(res.errors.some((e) => /expected 2 paths/i.test(e))).toBe(true);
   });
 });

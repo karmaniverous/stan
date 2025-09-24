@@ -1,6 +1,8 @@
 /** src/stan/validate/response.ts
  * Response-format validator for assistant replies.
  *
+ * Also validates optional "### File Ops" pre-ops block (verbs/arity/path rules).
+ *
  * Checks (initial):
  * - One Patch per file.
  * - Each Patch block contains exactly one "diff --git a/<path> b/<path>" and it matches the heading path.
@@ -35,6 +37,13 @@ const H_PATCH = /^###\s+Patch:\s+(.+?)\s*$/m;
 const H_FULL = /^###\s+Full Listing:\s+(.+?)\s*$/m;
 const H_COMMIT = /^##\s+Commit Message\s*$/m;
 const H_ANY = /^##\s+.*$|^###\s+.*$/m;
+// File Ops heading and helpers
+const H_FILE_OPS = /^###\s+File Ops\s*$/m;
+const isAbsolutePosix = (p: string): boolean => /^[/\\]/.test(p);
+const normalizePosix = (p: string): string => {
+  const norm = (toPosix(p) || '').split('/').filter(Boolean).join('/');
+  return norm.replace(/\/+$/, '');
+};
 
 /** Find all headings and slice blocks up to the next heading or end. */
 const extractBlocks = (text: string): Block[] => {
@@ -117,10 +126,107 @@ const isCommitLast = (text: string): boolean => {
   return after.length === 0;
 };
 
+const countLines = (body: string): number => {
+  // Normalize to LF for counting; preserve semantics for callers
+  const norm = body.replace(/\r\n/g, '\n');
+  if (norm.length === 0) return 0;
+  return norm.split('\n').length;
+};
+
+/** Extract "### File Ops" fenced body immediately after the heading. */
+const extractFileOpsBody = (
+  text: string,
+): { body: string; start: number } | null => {
+  const hm = H_FILE_OPS.exec(text);
+  if (!hm) return null;
+  const afterIdx = (hm.index ?? 0) + hm[0].length;
+  const tail = text.slice(afterIdx);
+  const lines = tail.split(/\r?\n/);
+  // Opening fence (``` or longer)
+  let openIdx = -1;
+  let ticks = 0;
+  for (let i = 0; i < lines.length; i += 1) {
+    const m = lines[i].match(/^\s*(`{3,})/);
+    if (m) {
+      openIdx = i;
+      ticks = m[1].length;
+      break;
+    }
+    // New heading before fence => malformed
+    if (/^#{2,3}\s+/.test(lines[i])) break;
+  }
+  if (openIdx < 0 || ticks < 3) return null;
+  // Closing fence with same tick count
+  const fence = '`'.repeat(ticks);
+  let closeIdx = -1;
+  for (let i = openIdx + 1; i < lines.length; i += 1) {
+    const l = lines[i];
+    if (l.trimEnd() === fence) {
+      closeIdx = i;
+      break;
+    }
+    if (/^#{2,3}\s+/.test(l)) break;
+  }
+  if (closeIdx < 0) return null;
+  const before = lines.slice(0, openIdx + 1).join('\n');
+  const bodyStartOffset = afterIdx + before.length;
+  const body = lines.slice(openIdx + 1, closeIdx).join('\n');
+  return { body, start: bodyStartOffset };
+};
+
+/** Validate optional "### File Ops" fenced block. Pushes errors into `errors`. */
+const validateFileOpsBlock = (text: string, errors: string[]): void => {
+  const ex = extractFileOpsBody(text);
+  if (!ex) return; // no block present
+  const { body } = ex;
+  const lines = body.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i += 1) {
+    const raw = lines[i];
+    const s = raw.trim();
+    if (!s) continue;
+    const parts = s.split(/\s+/);
+    const verb = parts[0];
+    const args = parts.slice(1);
+    const where = `File Ops line ${(i + 1).toString()}`;
+    const bad = (msg: string) => errors.push(`${where}: ${msg}`);
+    const normSafe = (p?: string): string | null => {
+      if (!p || !p.trim()) return null;
+      const posix = normalizePosix(p);
+      if (!posix || isAbsolutePosix(posix)) return null;
+      if (posix.split('/').some((seg) => seg === '..')) return null;
+      return posix;
+    };
+    if (!/^(mv|rm|rmdir|mkdirp)$/.test(verb)) {
+      bad(`unknown verb "${verb}"`);
+      continue;
+    }
+    if (verb === 'mv') {
+      if (args.length !== 2) {
+        bad(`expected 2 paths, got ${args.length.toString()}`);
+        continue;
+      }
+      const src = normSafe(args[0]);
+      const dest = normSafe(args[1]);
+      if (!src || !dest) bad('mv: invalid repo-relative path');
+      continue;
+    }
+    // rm | rmdir | mkdirp
+    if (args.length !== 1) {
+      bad(`expected 1 path, got ${args.length.toString()}`);
+      continue;
+    }
+    const only = normSafe(args[0]);
+    if (!only) bad(`${verb}: invalid repo-relative path`);
+  }
+};
+
 /** Validate an assistant reply body against response-format rules. */
 export const validateResponseMessage = (text: string): ValidationResult => {
   const errors: string[] = [];
   const warnings: string[] = [];
+
+  // Optional File Ops block (pre-ops) — validate when present
+  validateFileOpsBlock(text, errors);
 
   const blocks = extractBlocks(text);
   const patches = blocks.filter((b) => b.kind === 'patch');

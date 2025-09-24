@@ -5,10 +5,10 @@
  *
  * Checks (initial):
  * - One Patch per file.
- * - Each Patch block contains exactly one "diff --git a/<path> b/<path>" and it matches the heading path.
+ * - Each Patch block contains exactly one "diff --git a/<path> b/<path>" header.
  * - When both are present for a given file, "Patch" precedes "Full Listing".
  * - "## Commit Message" exists and is the final section.
- * - If any Patch exists, there is also a Patch for ".stan/system/stan.todo.md".
+ * - If any non‑docs Patch exists, there is also a Patch for ".stan/system/stan.todo.md".
  */
 /**
  * Kind tag for validator blocks. Exported so it appears in generated
@@ -124,13 +124,6 @@ const isCommitLast = (text: string): boolean => {
   // Nothing but whitespace allowed after the closing fence
   const after = tail.slice(closeIdx + ticks).trim();
   return after.length === 0;
-};
-
-const countLines = (body: string): number => {
-  // Normalize to LF for counting; preserve semantics for callers
-  const norm = body.replace(/\r\n/g, '\n');
-  if (norm.length === 0) return 0;
-  return norm.split('\n').length;
 };
 
 /** Extract "### File Ops" fenced body immediately after the heading. */
@@ -266,14 +259,6 @@ export const validateResponseMessage = (text: string): ValidationResult => {
           errors.push(
             `Patch for ${k} contains a forbidden wrapper ("*** Begin Patch", "*** Add File:", or "Index:"). Use plain unified diff only.`,
           );
-        } else {
-          const { a, b } = diffs[0];
-          const want = toPosix(k);
-          if (a !== want || b !== want) {
-            errors.push(
-              `Patch header path mismatch for ${k}: got a/${a} b/${b}`,
-            );
-          }
         }
       } catch {
         /* ignore */
@@ -316,15 +301,49 @@ export const validateResponseMessage = (text: string): ValidationResult => {
     }
   }
 
-  // 4) TODO patch required when any Patch exists
+  // 4) TODO patch requirement with docs-only exception
   if (patches.length > 0) {
-    const hasTodo = patches.some(
-      (p) => toPosix(p.path ?? '') === '.stan/system/stan.todo.md',
-    );
-    if (!hasTodo) {
-      errors.push(
-        'Doc cadence violation: Patch present but no Patch for ".stan/system/stan.todo.md"',
+    const targets: string[] = [];
+    for (const p of patches) {
+      const diffs = parseDiffHeaders(p.body);
+      if (diffs.length > 0) {
+        const b = toPosix(diffs[0].b ?? '');
+        if (b) targets.push(b);
+      } else {
+        const k = toPosix(p.path ?? '');
+        if (k) targets.push(k);
+      }
+    }
+    const isTodo = (s: string) => toPosix(s) === '.stan/system/stan.todo.md';
+    const isDoc = (s: string) => {
+      const rel = toPosix(s);
+      if (!rel) return false;
+      const base = rel.split('/').pop() ?? rel;
+      const baseLC = base.toLowerCase();
+      if (
+        baseLC === 'readme.md' ||
+        baseLC === 'changelog.md' ||
+        baseLC === 'contributing.md' ||
+        baseLC === 'license' ||
+        baseLC === 'license.md'
+      ) {
+        return true;
+      }
+      return (
+        rel.startsWith('docs/') ||
+        rel.startsWith('docs-src/') ||
+        rel.startsWith('diagrams/')
       );
+    };
+    const nonTodo = targets.filter((t) => !isTodo(t));
+    const docsOnly = nonTodo.length > 0 && nonTodo.every((t) => isDoc(t));
+    if (!docsOnly) {
+      const hasTodo = targets.some((t) => isTodo(t));
+      if (!hasTodo) {
+        errors.push(
+          'Doc cadence violation: Patch present but no Patch for ".stan/system/stan.todo.md"',
+        );
+      }
     }
   }
 

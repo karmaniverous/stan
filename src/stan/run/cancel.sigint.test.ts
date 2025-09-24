@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ContextConfig } from '@/stan/config';
 import { runSelected } from '@/stan/run';
+// Windows teardown helper
+import { rmDirWithRetries } from '@/test/helpers';
 
 // Make tar lightweight
 vi.mock('tar', () => ({
@@ -51,7 +53,7 @@ describe('SIGINT cancellation skips archive and restores state', () => {
       // ignore
     }
     await new Promise((r) => setTimeout(r, 100));
-    await rm(dir, { recursive: true, force: true });
+    await rmDirWithRetries(dir);
     vi.restoreAllMocks();
   });
   it('emits SIGINT to cancel run and does not create archives', async () => {

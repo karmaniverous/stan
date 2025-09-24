@@ -280,9 +280,16 @@ export const runSelected = async (
         if (collectPromise) {
           await Promise.race([
             collectPromise,
-            new Promise<void>((r) => setTimeout(r, 1500)),
+            new Promise((r) => setTimeout(r, 1500)),
           ]);
         }
+      } catch {
+        /* ignore */
+      }
+      // Join on any tracked children after TERM/KILL to release handles (Windows safety).
+      // Bounded to keep CLI responsive; best‑effort.
+      try {
+        await supervisor.waitAll(2000);
       } catch {
         /* ignore */
       }

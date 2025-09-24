@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ContextConfig } from '@/stan/config';
 import { runSelected } from '@/stan/run';
+// Windows teardown helper
+import { rmDirWithRetries } from '@/test/helpers';
 // Lightweight tar
 vi.mock('tar', () => ({
   __esModule: true,
@@ -56,7 +58,7 @@ describe('TTY key handler (q) cancels run', () => {
       // ignore
     }
     await new Promise((r) => setTimeout(r, 100));
-    await rm(dir, { recursive: true, force: true });
+    await rmDirWithRetries(dir);
     vi.restoreAllMocks();
   });
   it('pressing q cancels and skips archive', async () => {

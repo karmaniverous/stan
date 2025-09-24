@@ -2,8 +2,28 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.7.0](https://github.com/karmaniverous/stan/compare/0.6.1...0.7.0)
+
+- feat(patch): add File Ops pre-ops (parser+executor) and integrate before diffs [`c209dde`](https://github.com/karmaniverous/stan/commit/c209dde4b46b74acec06ceedac8a371256ca3d38)
+- cleanup [`1ff17d0`](https://github.com/karmaniverous/stan/commit/1ff17d0f47b44b4c6170b39f59873c830d7e9398)
+- feat(validate): add File Ops block validator + docs snippet [`91854f6`](https://github.com/karmaniverous/stan/commit/91854f6b5b5fb7ed9ffadc09e7f0371ad04d9887)
+- chore: harden patch rules, ingestion, and validator [`eafdb6b`](https://github.com/karmaniverous/stan/commit/eafdb6be0359a9c11f56a095ce172f29dfe33469)
+- chore: trim handoff; add staged imports spec; exclude docs-src/diagrams [`37c4c45`](https://github.com/karmaniverous/stan/commit/37c4c4546fe60b07614286a5932189381dc56c86)
+- feat: add File Ops patch extension to requirements; prioritize in plan [`5d86806`](https://github.com/karmaniverous/stan/commit/5d868069a851264fca117c81fbe837906c6d7481)
+- fix: validator doc-only exception + header-relax; lint [`6a0699b`](https://github.com/karmaniverous/stan/commit/6a0699bc6d53b572c8ca490e7badfc05b752aa54)
+- wip [`96e249c`](https://github.com/karmaniverous/stan/commit/96e249cbd6b3c9c74aca85b2653c6fedd1bb358b)
+- fix(patch/file-ops): robust File Ops parser and ESLint fix [`9818410`](https://github.com/karmaniverous/stan/commit/9818410e502fd12810f557c99c34f3135a5b0640)
+- fix(run): harden Windows cancel teardown (drain + stdin pause + settle) [`131ff93`](https://github.com/karmaniverous/stan/commit/131ff9390364cc371164982a3b2de97ea742e7a0)
+- fix: validate File Ops absolute paths in response validator [`6748a23`](https://github.com/karmaniverous/stan/commit/6748a2303d8102ac1421ecaea8dc7258b7c32b75)
+- diff --git a/.stan/system/stan.todo.md b/.stan/system/stan.todo.md [`4248b06`](https://github.com/karmaniverous/stan/commit/4248b06c5b165443fcbbd7bbbf8e7e6aa3f329f1)
+- chore(todo): note Windows EBUSY mitigation plan; align next steps [`5292133`](https://github.com/karmaniverous/stan/commit/5292133d842c36faa51ee88c98bb3163aa8acf89)
+- test: stabilize Windows cancellation suites (EBUSY mitigation) [`fe82a63`](https://github.com/karmaniverous/stan/commit/fe82a63be8f2270d6ec45e814f37a7c5a59ab66c)
+
 #### [0.6.1](https://github.com/karmaniverous/stan/compare/0.6.0...0.6.1)
 
+> 23 September 2025
+
+- chore: release v0.6.1 [`699a115`](https://github.com/karmaniverous/stan/commit/699a1154056d86cc46a21738cf315a5fb98b5be6)
 - test: stabilize Windows cancel flows; await runner cleanup and harden SIGINT teardown [`7941fa5`](https://github.com/karmaniverous/stan/commit/7941fa5b8e9dfc9d28183eff646d096575e3c23c)
 - test: fix Windows EBUSY in cancel key/schedule tests [`11162de`](https://github.com/karmaniverous/stan/commit/11162def4827a16a4cf46e5cc065acaa56a32405)
 - fix(run/live): print trailing newline on exit; increase cancel settle to reduce Windows EBUSY [`b13de4e`](https://github.com/karmaniverous/stan/commit/b13de4ebfdac71258b74e0eedfd25d3028af9776)

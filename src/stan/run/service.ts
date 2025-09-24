@@ -280,7 +280,7 @@ export const runSelected = async (
         if (collectPromise) {
           await Promise.race([
             collectPromise,
-            new Promise<void>((r) => setTimeout(r, 1000)),
+            new Promise<void>((r) => setTimeout(r, 1500)),
           ]);
         }
       } catch {
@@ -297,9 +297,9 @@ export const runSelected = async (
         // next iteration
         continue;
       }
-      // Allow a short settle so streams/child handles can release (Windows EBUSY mitigation).
+      // Allow a longer settle so streams/child handles can release (Windows EBUSY mitigation).
       try {
-        await new Promise((r) => setTimeout(r, 150));
+        await new Promise((r) => setTimeout(r, 400));
       } catch {
         /* ignore */
       }

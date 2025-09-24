@@ -60,9 +60,13 @@ Completed (recent)
     to ensure inputs like "/etc/passwd" are correctly rejected as invalid
     repo‑relative paths.
 
+- Windows cancellation EBUSY mitigation (tuning)
+  - Increased bounded wait for script drain on cancel from 1.0s to 1.5s and
+    the final settle from 150ms to 400ms to further reduce transient EBUSY
+    during temp‑dir teardown in tests.
+
 - Response-format validator improvements
-  - Docs-only exception: require a stan.todo.md patch only when there are non‑docs changes. Docs-only changes (e.g., README.md) no longer fail the doc‑cadence gate.
-  - Relaxed heading/path coupling: do not require the “### Patch:” heading path to exactly match the diff header path (e.g., allow “### Patch: docs” for a README.md diff).  - Lint: removed unused `countLines` in validator to satisfy ESLint.
+  - Docs-only exception: require a stan.todo.md patch only when there are non‑docs changes. Docs-only changes (e.g., README.md) no longer fail the doc‑cadence gate.  - Relaxed heading/path coupling: do not require the “### Patch:” heading path to exactly match the diff header path (e.g., allow “### Patch: docs” for a README.md diff).  - Lint: removed unused `countLines` in validator to satisfy ESLint.
 
 - File Ops validator + Response Format docs
   - Validator: response-format now accepts an optional “### File Ops” block and enforces verbs/arity/repo‑relative POSIX path rules; rejects absolute and “..” traversals.

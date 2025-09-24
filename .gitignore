@@ -11,6 +11,5 @@ node_modules/
 /stan.patch
 
 .stan/diff/
-.stan/dist/
 .stan/output/
 .stan/patch/

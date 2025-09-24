@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { assembleSystemMonolith } from './src/stan/system/assemble';
-import { findConfigPathSync, loadConfig } from './src/stan/config';
+import { assembleSystemMonolith } from '../src/stan/system/assemble';
+import { findConfigPathSync, loadConfig } from '../src/stan/config';
 
 /**
  * Assemble <stanPath>/system/parts/*.md (sorted) into <stanPath>/system/stan.system.md.
@@ -32,7 +32,8 @@ export const assembleSystemPrompt = async (cwd: string): Promise<string> => {
 
   const res = await assembleSystemMonolith(root, stanPath);
   if (res.action === 'skipped-no-parts') {
-    const rel = path.relative(root, res.partsDir).replace(/\\/g, '/');    console.log(`stan: gen-system: skipped (no parts at ${rel})`);
+    const rel = path.relative(root, res.partsDir).replace(/\\/g, '/');
+    console.log(`stan: gen-system: skipped (no parts at ${rel})`);
     return res.target;
   }
   if (res.action === 'skipped-no-md') {

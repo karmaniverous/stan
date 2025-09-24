@@ -3,7 +3,6 @@
 When updated: 2025-09-24 (UTC)
 
 Next up (priority order)
-
 1. Patch extensions: File Ops (declarative pre‑ops) - Service (remaining; future):
    - Parser and plan builder with normalization and validation errors.
    - `--check`: simulate ops, print plan, no side effects.
@@ -56,10 +55,14 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Fix: File Ops validator absolute-path detection in response validator
+  - normSafe now checks the raw POSIX path for absoluteness before normalization
+    to ensure inputs like "/etc/passwd" are correctly rejected as invalid
+    repo‑relative paths.
+
 - Response-format validator improvements
   - Docs-only exception: require a stan.todo.md patch only when there are non‑docs changes. Docs-only changes (e.g., README.md) no longer fail the doc‑cadence gate.
-  - Relaxed heading/path coupling: do not require the “### Patch:” heading path to exactly match the diff header path (e.g., allow “### Patch: docs” for a README.md diff).
-  - Lint: removed unused `countLines` in validator to satisfy ESLint.
+  - Relaxed heading/path coupling: do not require the “### Patch:” heading path to exactly match the diff header path (e.g., allow “### Patch: docs” for a README.md diff).  - Lint: removed unused `countLines` in validator to satisfy ESLint.
 
 - File Ops validator + Response Format docs
   - Validator: response-format now accepts an optional “### File Ops” block and enforces verbs/arity/repo‑relative POSIX path rules; rejects absolute and “..” traversals.

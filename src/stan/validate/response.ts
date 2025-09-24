@@ -184,8 +184,12 @@ const validateFileOpsBlock = (text: string, errors: string[]): void => {
     const bad = (msg: string) => errors.push(`${where}: ${msg}`);
     const normSafe = (p?: string): string | null => {
       if (!p || !p.trim()) return null;
-      const posix = normalizePosix(p);
-      if (!posix || isAbsolutePosix(posix)) return null;
+      // Compute raw POSIX form first and reject absolute paths before normalization,
+      // since normalization previously stripped leading "/" and could misclassify.
+      const raw = toPosix(p.trim());
+      if (isAbsolutePosix(raw)) return null;
+      const posix = normalizePosix(raw);
+      if (!posix) return null;
       if (posix.split('/').some((seg) => seg === '..')) return null;
       return posix;
     };

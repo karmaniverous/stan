@@ -7,10 +7,10 @@
  * - rmdir: empty directories only (safety).
  * - Dry-run mode validates constraints without changing the filesystem.
  */
-import { mkdir, readdir, stat } from 'node:fs/promises';
+import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-import { ensureDir, move as moveAsync, remove } from 'fs-extra';
+import { ensureDir, move as moveAsync, pathExists, remove } from 'fs-extra';
 
 export type FileOp =
   | { verb: 'mv'; src: string; dest: string }
@@ -191,20 +191,10 @@ export const executeFileOps = async (
         const { abs: srcAbs, ok: sOK } = within(op.src);
         const { abs: dstAbs, ok: dOK } = within(op.dest);
         if (!sOK || !dOK) throw new Error('path escapes repo root');
-        // Existence checks
-        let srcStat: import('fs').Stats | null = null;
-        try {
-          srcStat = await stat(srcAbs);
-        } catch {
-          srcStat = null;
-        }
-        let dstExists = true;
-        try {
-          await stat(dstAbs);
-        } catch {
-          dstExists = false;
-        }
-        if (!srcStat) throw new Error('source does not exist');
+        // Existence checks via fs-extra
+        const srcExists = await pathExists(srcAbs);
+        const dstExists = await pathExists(dstAbs);
+        if (!srcExists) throw new Error('source does not exist');
         if (dstExists) throw new Error('destination exists (no overwrite)');
         if (!dryRun) {
           await ensureDir(path.dirname(dstAbs));
@@ -215,12 +205,7 @@ export const executeFileOps = async (
         // Recursive remove of file or directory
         const { abs, ok } = within(op.src);
         if (!ok) throw new Error('path escapes repo root');
-        let exists = true;
-        try {
-          await stat(abs);
-        } catch {
-          exists = false;
-        }
+        const exists = await pathExists(abs);
         if (!exists) throw new Error('path does not exist');
         if (!dryRun) await remove(abs);
       } else if (op.verb === 'rmdir') {
@@ -263,7 +248,7 @@ export const writeOpsDebugLog = async (
 ): Promise<void> => {
   try {
     const debugDir = path.join(cwd, stanPath, 'patch', '.debug');
-    await mkdir(debugDir, { recursive: true });
+    await ensureDir(debugDir);
     const file = path.join(debugDir, 'ops.json');
     const body = JSON.stringify({ results }, null, 2);
     await import('node:fs/promises').then(({ writeFile }) =>

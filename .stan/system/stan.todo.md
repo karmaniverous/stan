@@ -4,8 +4,7 @@ When updated: 2025-09-25 (UTC)
 
 Next up (priority order)
 
-1) Patch extensions: File Ops (declarative pre‑ops) - Service (remaining; future):
-   - Parser and plan builder with normalization and validation errors.
+1) Patch extensions: File Ops (declarative pre‑ops) - Service (remaining; future):   - Parser and plan builder with normalization and validation errors.
    - `--check`: simulate ops, print plan, no side effects.
    - Apply mode: execute pre‑ops in order; stop on first failure; then run existing patch pipeline; write `.stan/patch/.debug/ops.json`.
    - FEEDBACK: include failing op diagnostics when applicable. - Tests:
@@ -34,10 +33,16 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Decompose run/service.ts (orchestration → session)
+  - Created src/stan/run/session.ts to encapsulate one run attempt (UI, cancellation,
+    script execution, archive phase) and support live restart without duplicating logic.
+  - Slimmed src/stan/run/service.ts to plan/prepare and delegate to session; preserved
+    all logs and test-observed behavior (plan printing, live/no‑live parity, archive
+    suppression on cancel).
+
 - Quick archive-size win (temporary)
   - Excludes already in place in stan.config.yml:
-    - `docs-src/**` and `diagrams/**` (while keeping `.stan/system/**` and README.md).
-  - Follow-up: when docs are split to a dedicated package, remove these excludes.
+    - `docs-src/**` and `diagrams/**` (while keeping `.stan/system/**` and README.md).  - Follow-up: when docs are split to a dedicated package, remove these excludes.
 
 - Staged imports (imports) — minimal feature
   - Added imports?: Record<label, string | string[]> to config and normalization.

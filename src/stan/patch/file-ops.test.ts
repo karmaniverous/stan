@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import type { FileOp } from './file-ops';
 import { executeFileOps, parseFileOpsBlock } from './file-ops';
 
 const msg = [
@@ -76,12 +77,11 @@ describe('file-ops execution (recursive mv/rm)', () => {
     ] as const;
     const { ok, results } = await executeFileOps(
       root,
-      ops as unknown as any[],
+      ops as unknown as FileOp[],
       false,
     );
     expect(ok).toBe(true);
-    expect(results.map((r) => r.status)).toEqual(['ok', 'ok', 'ok']);
-    // Verify final state: neither a/ nor b/ exists
+    expect(results.map((r) => r.status)).toEqual(['ok', 'ok', 'ok']); // Verify final state: neither a/ nor b/ exists
     const s = async (p: string) => {
       try {
         await readFile(path.join(root, p));

@@ -7,7 +7,7 @@
  * - rmdir: empty directories only (safety).
  * - Dry-run mode validates constraints without changing the filesystem.
  */
-import { readdir, stat } from 'node:fs/promises';
+import { mkdir, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 import { ensureDir, move as moveAsync, remove } from 'fs-extra';

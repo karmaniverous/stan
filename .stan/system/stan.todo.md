@@ -50,20 +50,20 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Lint/typecheck: fix patch module hygiene
+  - Add missing mkdir import in src/stan/patch/file-ops.ts to resolve TS2304 and Typedoc error.
+  - Replace any[] cast with FileOp[] in src/stan/patch/file-ops.test.ts to satisfy ESLint no-unsafe-argument/no-explicit-any.
 - File Ops: recursive directory operations
   - Enable full‑tree moves and deletes across multiple targets in one patch:
     - mv now supports moving files or directories recursively (no overwrite).
     - rm now removes files or directories recursively.
     - rmdir retained for explicit empty‑dir deletes; mkdirp uses ensureDir.
-  - Runtime uses fs‑extra; project/system docs updated to clarify that File Ops
-    are structural (directory/file moves/creates/deletes) and are distinct from
-    unified‑diff content edits.
+  - Runtime uses fs‑extra; project/system docs updated to clarify that File Ops are structural (directory/file moves/creates/deletes) and are distinct from unified‑diff content edits.
 
 - Windows cancellation settle (SIGINT path)
   - Increase the final settle after cancellation from 800ms to 1200ms to further reduce transient EBUSY/ENOTEMPTY during temp-dir teardown in cancel.sigint tests.
 - System prompt: list-numbering policy
-  - Add system-level guidance to avoid numbering primary (top‑level) items in
-    requirements and TODO documents; use unordered lists to reduce renumbering churn.
+  - Add system-level guidance to avoid numbering primary (top‑level) items in requirements and TODO documents; use unordered lists to reduce renumbering churn.
 
 - Decompose run/service.ts (orchestration → session)
   - Created src/stan/run/session.ts to encapsulate one run attempt (UI, cancellation, script execution, archive phase) and support live restart without duplicating logic. - Slimmed src/stan/run/service.ts to plan/prepare and delegate to session; preserved all logs and test-observed behavior (plan printing, live/no‑live parity, archive suppression on cancel).

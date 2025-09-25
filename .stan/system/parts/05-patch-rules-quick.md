@@ -3,6 +3,16 @@
 Use plain unified diffs with git‑style headers. One Patch block per file.
 
 Key rules
+
+- Tool selection & combination
+  - Prefer File Ops for structural changes:
+    - mv/cp/rm/rmdir/mkdirp are the first choice for moving, copying, and deleting files or directories (single or bulk).
+    - The one‑patch‑per‑file rule applies to Diff Patch blocks only; it does NOT apply to File Ops.
+  - Prefer Diff Patches for file content:
+    - Create new files or modify existing files in place using plain unified diffs.
+  - Combine when appropriate:
+    - For example, move a file with File Ops, then follow with a Diff Patch in the new location to update imports or content.
+
 - Exactly one header per Patch block:
   - `diff --git a/<path> b/<path>`
   - `--- a/<path>` and `+++ b/<path>`
@@ -11,12 +21,13 @@ Key rules
 - Line endings: normalize to LF in the patch.
 - Create/delete:
   - New file: `--- /dev/null` and `+++ b/<path>`
-  - Delete:   `--- a/<path>` and `+++ /dev/null`
+  - Delete: `--- a/<path>` and `+++ /dev/null`
 - Forbidden wrappers (not valid diffs): `*** Begin Patch`, `*** Add File:`, `Index:` or mbox/email prelude lines. Do not use them.
 
 Canonical examples
 
 Modify existing file:
+
 ```diff
 diff --git a/src/example.ts b/src/example.ts
 --- a/src/example.ts
@@ -30,6 +41,7 @@ diff --git a/src/example.ts b/src/example.ts
 ```
 
 New file:
+
 ```diff
 diff --git a/src/newfile.ts b/src/newfile.ts
 --- /dev/null
@@ -42,6 +54,7 @@ diff --git a/src/newfile.ts b/src/newfile.ts
 ```
 
 Delete file:
+
 ```diff
 diff --git a/src/oldfile.ts b/src/oldfile.ts
 --- a/src/oldfile.ts
@@ -54,6 +67,7 @@ diff --git a/src/oldfile.ts b/src/oldfile.ts
 ```
 
 Pre‑send checks (quick)
+
 - Every Patch block contains exactly one `diff --git a/<path> b/<path>`.
 - No forbidden wrappers appear in any Patch block.
 - Create/delete patches use `/dev/null` headers as shown above.

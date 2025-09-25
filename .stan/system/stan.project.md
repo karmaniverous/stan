@@ -65,6 +65,7 @@ Note: The project prompt is created on demand when repo‑specific policies emer
 ## CLI defaults via configuration (cliDefaults)
 
 The CLI honors phase‑scoped defaults when flags are omitted. Precedence is:
+
 - Flags > cliDefaults > built‑ins.
 
 Schema (all keys optional):
@@ -266,6 +267,7 @@ Scope (initial)
 – Pre‑ops only: run file ops before applying unified‑diff content patches. – Allowed operations (repo‑relative, POSIX; no globs; reject absolute or “..”):
 
 - `mv <src> <dest>`: move/rename a file or directory (recursive). Create parent folders for `<dest>`. Fail if `<src>` does not exist or `<dest>` already exists (no overwrite).
+- `cp <src> <dest>`: copy a file or directory (recursive). Create parent folders for `<dest>`. Fail if `<src>` does not exist or `<dest>` already exists (no overwrite).
 - `rm <path>`: remove a file or directory (recursive).
 - `rmdir <path>`: remove an empty directory (explicit safety).
 - `mkdirp <path>`: ensure directory exists (create all parents).

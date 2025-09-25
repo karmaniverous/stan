@@ -3,6 +3,8 @@
  * The packet contains no imperative instructions; stan.system.md defines the assistant’s behavior.
  */
 
+import type { OpResult } from './file-ops';
+
 type FeedbackStatus = 'failed' | 'partial' | 'fuzzy' | 'check';
 
 export type FeedbackEnvelope = {
@@ -22,6 +24,8 @@ export type FeedbackEnvelope = {
   };
   /** Optional, short human-readable stderr excerpt from the last failing git-apply attempt. */
   lastErrorSnippet?: string;
+  /** Optional: File Ops pre-ops execution diagnostics when failure occurred before patching. */
+  fileOps?: { results: OpResult[] };
 };
 
 /** Build a BEGIN_STAN_PATCH_FEEDBACK v1 packet as plain text. */

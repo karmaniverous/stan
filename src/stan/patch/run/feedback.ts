@@ -8,6 +8,7 @@ import { cyan, green, red, yellow } from '@/stan/util/color';
 
 import type { ApplyResult } from '../apply';
 import { buildFeedbackEnvelope, copyToClipboard } from '../feedback';
+import type { OpResult } from '../file-ops';
 import type { JsDiffOutcome } from '../jsdiff';
 import type { ParsedDiffInfo } from '../parse';
 import { diagnosePatchWithFs } from '../parse';
@@ -22,6 +23,7 @@ export const persistFeedbackAndClipboard = async (args: {
   js: JsDiffOutcome | null;
   changedFromHeaders: string[];
   check: boolean;
+  fileOps?: { results: OpResult[] } | null;
 }): Promise<string | null> => {
   const {
     cwd,
@@ -33,8 +35,8 @@ export const persistFeedbackAndClipboard = async (args: {
     js,
     changedFromHeaders,
     check,
+    fileOps,
   } = args;
-
   // Repo name (best-effort) for envelope header
   let repoName: string | undefined;
   try {
@@ -95,6 +97,7 @@ export const persistFeedbackAndClipboard = async (args: {
     },
     lastErrorSnippet,
     diagnostics,
+    ...(fileOps ? { fileOps } : {}),
   });
 
   const debugDir = path.join(path.dirname(patchAbs), '.debug');

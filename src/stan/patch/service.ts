@@ -143,14 +143,30 @@ export const runPatch = async (
         console.error(
           'stan: file ops failed; aborting before patch (see .stan/patch/.debug/ops.json)',
         );
+        // Persist FEEDBACK so the assistant can correct pre-ops.
+        try {
+          await persistFeedbackAndClipboard({
+            cwd,
+            stanPath,
+            patchAbs,
+            cleaned,
+            parsed: null,
+            result: { ok: false, tried: [], lastCode: 1, captures: [] },
+            js: { okFiles: [], failed: [] },
+            changedFromHeaders,
+            check: false,
+            fileOps: { results },
+          });
+        } catch {
+          /* best-effort */
+        }
         return;
       }
     } catch (e) {
       console.error('stan: file ops execution failed', e);
       return;
     }
-  }
-  // Parse for strip candidates (must not prevent diagnostics from being written)
+  } // Parse for strip candidates (must not prevent diagnostics from being written)
   let parsed: ReturnType<typeof parseUnifiedDiff> | null = null;
   try {
     parsed = parseUnifiedDiff(cleaned);

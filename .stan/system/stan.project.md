@@ -207,8 +207,29 @@ Bring small, high‑signal artifacts into the STAN workspace just before archivi
   ```
 
 Notes
+
 - Naming uses “imports” to avoid overloading “context” (which collides with LLM session context and internal types).
 - The staging folder is `<stanPath>/imports/<label>/…` to align with the config key and CLI log.
+
+## Patch strategy — DMP → git → listing (post‑repo decomposition)
+
+- Prioritization: implement immediately after repo decomposition.
+- Rationale: reduce token footprint and repair churn by using a compact, fuzz‑tolerant patch first, then a standard git diff for the reviewable artifact, and finally listings for verification.
+- Ladder (one version per file per turn):
+  1. Stage 1 (compact): accept DMP patches. Assistant emits exactly one DMP Patch block per changed file (File Ops pre‑ops remain supported). `stan patch` applies via a DMP engine with conservative fuzz and EOL preservation. On failure/partial, write FEEDBACK with engine=dmp and a concise failure class per file.
+  2. Stage 2 (standard): assistant parses FEEDBACK and emits git‑style unified diffs only for the failed files (exactly one Patch block per failed file). `stan patch` applies via git apply → jsdiff fallback. On failure/partial, FEEDBACK records engine=git|jsdiff and failure class.
+  3. Stage 3 (verification): when no failed files remain (success) or when explicitly requested, the assistant emits Full Listings that reflect the post‑patch state for the requested files. No patches in this stage.
+- FEEDBACK v2 (lean):
+  - Minimal, machine‑readable per‑file entries: `{ path, engine: dmp|git|jsdiff, class: path_mismatch|strip_error|context_drift|target_missing|invalid_diff|eol_mismatch|write_failed, snippet? }`.
+  - Keep rich stderr/stdout as separate `.debug` files; do not inline large excerpts in FEEDBACK.
+- Rules and safeguards:
+  - One version per file per reply (never mix DMP git diff for the same file in a single turn; listings accompany patches only when FEEDBACK requires them for failed files).
+  - Preserve original file EOL flavor (normalize to LF internally; restore LF/CRLF on write).
+  - Retain existing File Ops (“### File Ops”) semantics; they precede either patch flavor.
+- Acceptance criteria:
+  - `stan patch` correctly detects and applies DMP blocks and continues to accept unified diffs unchanged.
+  - FEEDBACK enumerates only failed files with accurate engine and failure class.
+  - Assistant can deterministically advance from DMP → git diff → listings using only FEEDBACK + archives.
 
 ## Diff snapshot policy
 
@@ -228,10 +249,12 @@ Notes
 ## Patch Extensions — File Ops (declarative)
 
 Purpose
+
 - Provide a safe, cross‑platform way to express file system refactors (especially large move/rename sets) inside a patch, without relying on shell commands.
 - Keep it deterministic, auditable, and portable (Node fs semantics; no shell).
 
 Scope (initial)
+
 - Pre‑ops only: run file ops before applying unified diffs.
 - Allowed operations (repo‑relative, POSIX separators; no globs; reject absolute paths and any “..” traversal):
   - `mv <src> <dest>`: move/rename a file. Create parent folders for `<dest>`. Fail if `<src>` does not exist or if `<dest>` already exists (no overwrite in v1).
@@ -241,6 +264,7 @@ Scope (initial)
   - (Optional later) `cp <src> <dest>`: copy file; same existence rules as `mv`.
 
 Patch representation
+
 - Optional block in assistant replies:
   - Heading: `### File Ops`
   - Fenced body with one operation per line, e.g.:
@@ -253,6 +277,7 @@ Patch representation
   - Paths: POSIX separators; repo‑relative; normalized by the patch service.
 
 Execution semantics
+
 - Order: execute in the listed order; stop at first failure.
 - Pre‑ops only (v1): apply ops, then run the current patch pipeline (git apply → jsdiff fallback).
 - Dry‑run: `stan patch --check` parses and validates ops, prints the plan, and makes no changes.
@@ -260,6 +285,7 @@ Execution semantics
 - FEEDBACK integration: on failure, abort and include the failing op + reason in the FEEDBACK envelope diagnostics.
 
 Validation
+
 - Reject unknown verbs or malformed argument counts.
 - Reject absolute paths and any normalized path that escapes the repo root.
 - For `mv`/`cp`: require existing `<src>` and non‑existing `<dest>` (v1).
@@ -268,24 +294,29 @@ Validation
 - For `mkdirp`: any repo‑relative path is allowed; ensure creation succeeds.
 
 Cross‑platform
+
 - Implemented in Node fs for Windows/macOS/Linux parity (no shell).
 - Normalize to POSIX internally; resolve on the host OS for actual fs calls.
 
 Validator & service updates (to be implemented)
+
 - Validator: allow an optional “### File Ops” block; ensure every line matches an allowed verb with valid paths; keep existing one‑patch‑per‑file rules for unified diffs unchanged.
 - Patch service: parse ops; in `--check` simulate; otherwise run pre‑ops, then proceed with the existing patch pipeline. Emit `.debug/ops.json` and FEEDBACK on failure.
 
 Out of scope (initial)
+
 - Directory moves with implicit recursive behavior (can be expressed via multiple `mv` entries).
 - Overwrite semantics (reserve for later; keep v1 simple and safe).
 
 ## Patch Extensions — Exec (future, gated)
 
 Motivation
+
 - Rare cases may need tool‑driven transforms that are infeasible to encode as file ops or unified diffs alone.
 - If introduced, must be heavily gated and non‑shell to mitigate risk.
 
 Design (deferred)
+
 - Opt‑in CLI flag: `stan patch --allow-exec`.
 - No shell: spawn without a shell (execFile‑style) to avoid injection via quoting/redirection; workdir = repo root; bounded env; timeouts.
 - Log stdout/stderr, args, exit code to `.stan/patch/.debug/exec.json`.

@@ -1,10 +1,10 @@
 // src/stan/run/session.ts
 /**
  * One-shot run session (single attempt).
+ * - Windows EBUSY hardening: add a slightly longer final settle after cancellation.
  * - Wires live/no-live UI, cancellation keys (q / Ctrl+C), and restart (r in live).
  * - Schedules scripts (concurrent|sequential) and optionally runs the archive phase.
- * - Preserves all existing logging semantics:
- *   - Plan printing is driven by the caller via printPlan + planBody.
+ * - Preserves all existing logging semantics: *   - Plan printing is driven by the caller via printPlan + planBody.
  *   - Live mode renders the progress table; legacy "stan: start/done" archive
  *     lines remain suppressed.
  *   - No-live mode prints concise status lines.
@@ -247,13 +247,16 @@ export const runSessionOnce = async (args: {
       /* ignore */
     }
     try {
-      await new Promise((r) => setTimeout(r, 800));
+      // Final settle before teardown (Windows EBUSY mitigation)
+      // Empirically, increasing this from 800ms to 1200ms reduces transient
+      // rmdir ENOTEMPTY/EBUSY in test teardown after SIGINT-driven cancellation.
+      // This is a bounded, best-effort delay that does not impact non-Windows runs.
+      await new Promise((r) => setTimeout(r, 1200));
     } catch {
       /* ignore */
     }
     return { created, cancelled: true, restartRequested };
   }
-
   // ARCHIVE PHASE
   if (behavior.archive) {
     const includeOutputs = Boolean(behavior.combine);

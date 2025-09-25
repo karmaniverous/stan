@@ -50,9 +50,17 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- File Ops: recursive directory operations
+  - Enable full‑tree moves and deletes across multiple targets in one patch:
+    - mv now supports moving files or directories recursively (no overwrite).
+    - rm now removes files or directories recursively.
+    - rmdir retained for explicit empty‑dir deletes; mkdirp uses ensureDir.
+  - Runtime uses fs‑extra; project/system docs updated to clarify that File Ops
+    are structural (directory/file moves/creates/deletes) and are distinct from
+    unified‑diff content edits.
+
 - Windows cancellation settle (SIGINT path)
   - Increase the final settle after cancellation from 800ms to 1200ms to further reduce transient EBUSY/ENOTEMPTY during temp-dir teardown in cancel.sigint tests.
-
 - System prompt: list-numbering policy
   - Add system-level guidance to avoid numbering primary (top‑level) items in
     requirements and TODO documents; use unordered lists to reduce renumbering churn.

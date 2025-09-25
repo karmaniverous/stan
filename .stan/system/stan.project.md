@@ -194,7 +194,7 @@ Bring small, high‑signal artifacts into the STAN workspace just before archivi
     - `./generated/openapi/**/*.yaml` → `openapi/<subdirs>/<file>.yaml`
   - Integration: in run combine/no‑combine modes, assert that `<stanPath>/imports/<label>/…` files are included in archives (classifier continues to exclude binaries).
   - Ensure staging runs only when archives are being written (`archive=true`); plan‑only and `snap` do not stage.
-  - Windows/CI hardening: clean per‑label dir; avoid leaving handles open; follow existing test teardown patterns (cwd reset + stdin pause).
+  - Windows/CI hardening: clean per‑label dir; avoid leaving handles open; follow existing test teardown patterns (cwd reset + stdin pause + brief settle).
 
 - CLI/config example
   ```yaml
@@ -250,63 +250,28 @@ Notes
 
 Purpose
 
-- Provide a safe, cross‑platform way to express file system refactors (especially large move/rename sets) inside a patch, without relying on shell commands.
-- Keep it deterministic, auditable, and portable (Node fs semantics; no shell).
+– Provide a safe, cross‑platform way to express repository‑structural refactors (especially large move/rename sets) inside a patch, without relying on shell. – Keep it deterministic, auditable, and portable (Node/fs‑extra semantics).
 
 Scope (initial)
 
-- Pre‑ops only: run file ops before applying unified diffs.
-- Allowed operations (repo‑relative, POSIX separators; no globs; reject absolute paths and any “..” traversal):
-  - `mv <src> <dest>`: move/rename a file. Create parent folders for `<dest>`. Fail if `<src>` does not exist or if `<dest>` already exists (no overwrite in v1).
-  - `rm <path>`: remove a file. Fail if not a file.
-  - `rmdir <path>`: remove an empty directory (no recursive delete). Fail if not empty or not a directory.
-  - `mkdirp <path>`: ensure directory exists (create all parents).
-  - (Optional later) `cp <src> <dest>`: copy file; same existence rules as `mv`.
+– Pre‑ops only: run file ops before applying unified‑diff content patches. – Allowed operations (repo‑relative, POSIX; no globs; reject absolute or “..”):
 
-Patch representation
-
-- Optional block in assistant replies:
-  - Heading: `### File Ops`
-  - Fenced body with one operation per line, e.g.:
-    ```
-    mv src/old/name.ts src/new/name.ts
-    mkdirp packages/util/src/internal
-    rm src/legacy/tmp.txt
-    rmdir src/legacy/empty
-    ```
-  - Paths: POSIX separators; repo‑relative; normalized by the patch service.
+- `mv <src> <dest>`: move/rename a file or directory (recursive). Create parent folders for `<dest>`. Fail if `<src>` does not exist or `<dest>` already exists (no overwrite).
+- `rm <path>`: remove a file or directory (recursive).
+- `rmdir <path>`: remove an empty directory (explicit safety).
+- `mkdirp <path>`: ensure directory exists (create all parents).
 
 Execution semantics
 
-- Order: execute in the listed order; stop at first failure.
-- Pre‑ops only (v1): apply ops, then run the current patch pipeline (git apply → jsdiff fallback).
-- Dry‑run: `stan patch --check` parses and validates ops, prints the plan, and makes no changes.
-- Logging: write a deterministic summary and detailed results to `.stan/patch/.debug/ops.json` (each op → { verb, src?, dest?, status: ok|failed, errno?, message? }).
-- FEEDBACK integration: on failure, abort and include the failing op + reason in the FEEDBACK envelope diagnostics.
+– Order: execute in the listed order; stop at first failure. – Pre‑ops only: apply ops, then run the patch pipeline (git apply → jsdiff). – Dry‑run: `stan patch --check` parses and validates ops, prints the plan, and makes no changes. – Logging: write a deterministic summary and detailed results to `.stan/patch/.debug/ops.json` (each op → { verb, src?, dest?, status: ok|failed, errno?, message? }). – FEEDBACK integration: on failure, abort and include the failing op + reason in the FEEDBACK envelope diagnostics.
 
 Validation
 
-- Reject unknown verbs or malformed argument counts.
-- Reject absolute paths and any normalized path that escapes the repo root.
-- For `mv`/`cp`: require existing `<src>` and non‑existing `<dest>` (v1).
-- For `rm`: require file exists and is a file.
-- For `rmdir`: require directory exists and is empty.
-- For `mkdirp`: any repo‑relative path is allowed; ensure creation succeeds.
+– For `mv`: require existing `<src>` and non‑existing `<dest>`. – For `rm`: require path exists (file or directory). – For `rmdir`: require directory exists and is empty.
 
 Cross‑platform
 
-- Implemented in Node fs for Windows/macOS/Linux parity (no shell).
-- Normalize to POSIX internally; resolve on the host OS for actual fs calls.
-
-Validator & service updates (to be implemented)
-
-- Validator: allow an optional “### File Ops” block; ensure every line matches an allowed verb with valid paths; keep existing one‑patch‑per‑file rules for unified diffs unchanged.
-- Patch service: parse ops; in `--check` simulate; otherwise run pre‑ops, then proceed with the existing patch pipeline. Emit `.debug/ops.json` and FEEDBACK on failure.
-
-Out of scope (initial)
-
-- Directory moves with implicit recursive behavior (can be expressed via multiple `mv` entries).
-- Overwrite semantics (reserve for later; keep v1 simple and safe).
+– Implemented with fs‑extra on Windows/macOS/Linux (no shell).
 
 ## Patch Extensions — Exec (future, gated)
 

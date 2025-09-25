@@ -2,25 +2,21 @@
  * File Ops (pre-ops) parser and executor.
  * Verbs: mv <src> <dest> | rm <path> | rmdir <path> | mkdirp <path>
  * - Repo-relative POSIX paths only; deny absolute and any traversal outside repo root.
+ * - mv: files or directories (recursive), no overwrite.
+ * - rm: files or directories (recursive).
+ * - rmdir: empty directories only (safety).
  * - Dry-run mode validates constraints without changing the filesystem.
  */
-import {
-  copyFile,
-  mkdir,
-  readdir,
-  rename,
-  rm,
-  stat,
-  unlink,
-} from 'node:fs/promises';
+import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
+
+import { ensureDir, move as moveAsync, remove } from 'fs-extra';
 
 export type FileOp =
   | { verb: 'mv'; src: string; dest: string }
   | { verb: 'rm'; src: string }
   | { verb: 'rmdir'; src: string }
   | { verb: 'mkdirp'; src: string };
-
 export type FileOpsPlan = { ops: FileOp[]; errors: string[] };
 
 export type OpResult = {
@@ -100,7 +96,6 @@ export const parseFileOpsBlock = (source: string): FileOpsPlan => {
   const fenced = extractFencedOpsBody(source);
   if (!fenced) return { ops, errors }; // no block present (or malformed); treat as absent
   const body = fenced.body;
-
   const lines = body.split(/\r?\n/);
   let lineNo = 0;
   for (const raw of lines) {
@@ -196,8 +191,7 @@ export const executeFileOps = async (
         const { abs: srcAbs, ok: sOK } = within(op.src);
         const { abs: dstAbs, ok: dOK } = within(op.dest);
         if (!sOK || !dOK) throw new Error('path escapes repo root');
-        if (!dryRun) await mkdir(path.dirname(dstAbs), { recursive: true });
-        // Validate existence constraints
+        // Existence checks
         let srcStat: import('fs').Stats | null = null;
         try {
           srcStat = await stat(srcAbs);
@@ -211,36 +205,24 @@ export const executeFileOps = async (
           dstExists = false;
         }
         if (!srcStat) throw new Error('source does not exist');
-        if (dstExists)
-          throw new Error('destination exists (non-overwriting in v1)');
+        if (dstExists) throw new Error('destination exists (no overwrite)');
         if (!dryRun) {
-          try {
-            await rename(srcAbs, dstAbs);
-          } catch {
-            // Cross-device or other rename failure: fallback to copy+unlink
-            await copyFile(srcAbs, dstAbs);
-            await unlink(srcAbs).catch(async () => {
-              // best-effort cleanup on Windows
-              try {
-                await rm(srcAbs, { force: true });
-              } catch {
-                /* ignore */
-              }
-            });
-          }
+          await ensureDir(path.dirname(dstAbs));
+          // fs-extra handles files or directories; cross-device safe
+          await moveAsync(srcAbs, dstAbs, { overwrite: false });
         }
       } else if (op.verb === 'rm') {
+        // Recursive remove of file or directory
         const { abs, ok } = within(op.src);
         if (!ok) throw new Error('path escapes repo root');
-        let st: import('fs').Stats | null = null;
+        let exists = true;
         try {
-          st = await stat(abs);
+          await stat(abs);
         } catch {
-          st = null;
+          exists = false;
         }
-        if (!st) throw new Error('file does not exist');
-        if (!st.isFile()) throw new Error('not a file');
-        if (!dryRun) await rm(abs, { force: false });
+        if (!exists) throw new Error('path does not exist');
+        if (!dryRun) await remove(abs);
       } else if (op.verb === 'rmdir') {
         const { abs, ok } = within(op.src);
         if (!ok) throw new Error('path escapes repo root');
@@ -254,11 +236,11 @@ export const executeFileOps = async (
         if (!st.isDirectory()) throw new Error('not a directory');
         const entries = await readdir(abs);
         if (entries.length > 0) throw new Error('directory not empty');
-        if (!dryRun) await rm(abs, { recursive: false, force: false });
+        if (!dryRun) await remove(abs);
       } else if (op.verb === 'mkdirp') {
         const { abs, ok } = within(op.src);
         if (!ok) throw new Error('path escapes repo root');
-        if (!dryRun) await mkdir(abs, { recursive: true });
+        if (!dryRun) await ensureDir(abs);
       }
       res.status = 'ok';
     } catch (e) {
@@ -273,7 +255,6 @@ export const executeFileOps = async (
   const ok = results.every((r) => r.status === 'ok');
   return { ok, results };
 };
-
 /** Persist File Ops results to .stan/patch/.debug/ops.json (best-effort). */
 export const writeOpsDebugLog = async (
   cwd: string,

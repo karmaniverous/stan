@@ -132,19 +132,23 @@ Follow the canonical rules in “Patch Policy” (see earlier section). The Resp
 Optional Full Listings
 – On explicit request or when replying to FEEDBACK, include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.
 
-## File Ops (optional pre‑ops)
+## File Ops (optional pre‑ops; structural changes)
 
-Use “### File Ops” to declare safe, repo‑relative file operations that run before patches:
+Use “### File Ops” to declare safe, repo‑relative file and directory operations
+that run before content patches. File Ops are for structure (moves/renames,
+creates, deletes), while unified‑diff Patches are for editing file contents.
 
 - Verbs:
-  - mv <src> <dest>
-  - rm <path>
-  - rmdir <path>
-  - mkdirp <path>
+  - mv <src> <dest>        # move file or directory (recursive), no overwrite
+  - rm <path>              # remove file or directory (recursive)
+  - rmdir <path>           # remove empty directory (explicit safety)
+  - mkdirp <path>          # create directory (parents included)
+- Multiple targets:
+  - Include as many operations (one per line) as needed to handle an entire
+    related set of structural changes in a single patch turn.
 - Paths:
   - POSIX separators, repo‑relative only.
-  - Absolute paths are forbidden.
-  - Any “..” traversal is forbidden after normalization.
+  - Absolute paths are forbidden.  - Any “..” traversal is forbidden after normalization.
 - Arity:
   - mv requires 2 paths; others require 1.
 - Execution:

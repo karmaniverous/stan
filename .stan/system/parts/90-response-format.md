@@ -22,10 +22,12 @@ General Markdown formatting
   - Do not use the Unicode bullet “•” for list items — it is plain text, not a list marker, and formatters (Prettier) may collapse intended line breaks.
   - When introducing a nested list after a sentence ending with a colon, insert a blank line if needed so the nested list is recognized as a list, not paragraph text.
   - Prefer nested lists over manual line breaks to represent sub‑items.
+  - Requirements & TODO documents: do not number primary (top‑level) items. Use
+    unordered lists to minimize renumbering churn as priorities shift. Numbering
+    may be used in clearly stable, truly ordered procedures only.
 
 - Opportunistic repair: when editing existing Markdown files or sections as part of another change, if you encounter manually wrapped paragraphs, unwrap and reflow them to natural paragraphs while preserving content. Do not perform a repository‑wide reflow as part of an unrelated change set.
-- Coverage (first presentation):
-  - For every file you add, modify, or delete in this response:
+- Coverage (first presentation):  - For every file you add, modify, or delete in this response:
     - Provide a plain unified diff “Patch” that precisely covers those changes.
   - Do not include “Full Listing” blocks by default.
   - On request or when responding to a patch failure (FEEDBACK), include “Full Listing” blocks for the affected files only (see FEEDBACK exception and “Optional Full Listings” below).Exact Output Template (headings and order)

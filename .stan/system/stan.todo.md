@@ -53,9 +53,12 @@ Completed (recent)
 - Windows cancellation settle (SIGINT path)
   - Increase the final settle after cancellation from 800ms to 1200ms to further reduce transient EBUSY/ENOTEMPTY during temp-dir teardown in cancel.sigint tests.
 
+- System prompt: list-numbering policy
+  - Add system-level guidance to avoid numbering primary (top‑level) items in
+    requirements and TODO documents; use unordered lists to reduce renumbering churn.
+
 - Decompose run/service.ts (orchestration → session)
   - Created src/stan/run/session.ts to encapsulate one run attempt (UI, cancellation, script execution, archive phase) and support live restart without duplicating logic. - Slimmed src/stan/run/service.ts to plan/prepare and delegate to session; preserved all logs and test-observed behavior (plan printing, live/no‑live parity, archive suppression on cancel).
-
 - Quick archive-size win (temporary)
   - Excludes already in place in stan.config.yml:
     - `docs-src/**` and `diagrams/**` (while keeping `.stan/system/**` and README.md). - Follow-up: when docs are split to a dedicated package, remove these excludes.

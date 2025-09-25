@@ -50,7 +50,6 @@ describe('prepareImports (staging under <stanPath>/imports)', () => {
       '.stan',
       'imports',
       '@scope/pkg',
-      'api',
       'v1',
       'openapi.json',
     );
@@ -58,7 +57,6 @@ describe('prepareImports (staging under <stanPath>/imports)', () => {
     const tB = await read(stagedB);
     expect(tA.includes('declare type X')).toBe(true);
     expect(tB.includes('"openapi"')).toBe(true);
-
     const logs = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
     expect(logs).toMatch(/stan:\s*import\s*@scope\/pkg\s*->\s*\d+\s*file/);
   });

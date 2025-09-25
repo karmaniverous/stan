@@ -280,7 +280,7 @@ export const runSelected = async (
         if (collectPromise) {
           await Promise.race([
             collectPromise,
-            new Promise((r) => setTimeout(r, 1500)),
+            new Promise((r) => setTimeout(r, 2500)),
           ]);
         }
       } catch {
@@ -289,11 +289,10 @@ export const runSelected = async (
       // Join on any tracked children after TERM/KILL to release handles (Windows safety).
       // Bounded to keep CLI responsive; best‑effort.
       try {
-        await supervisor.waitAll(2000);
+        await supervisor.waitAll(3000);
       } catch {
         /* ignore */
-      }
-      // Proactively pause stdin to release any TTY handle on Windows test runners.
+      } // Proactively pause stdin to release any TTY handle on Windows test runners.
       try {
         (process.stdin as unknown as { pause?: () => void }).pause?.();
       } catch {
@@ -306,7 +305,7 @@ export const runSelected = async (
       }
       // Allow a longer settle so streams/child handles can release (Windows EBUSY mitigation).
       try {
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 800));
       } catch {
         /* ignore */
       }

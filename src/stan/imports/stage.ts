@@ -49,7 +49,7 @@ export type ImportsMap = Record<string, string[]>;
  * - Cleans each label directory prior to staging.
  * - Copies only files (skips directories); unreadable files are skipped best‑effort.
  *
- * @param args - { cwd, stanPath, map }
+ * @param args - Object containing cwd, stanPath, and map of label -\> patterns.
  */
 export const prepareImports = async (args: {
   cwd: string;

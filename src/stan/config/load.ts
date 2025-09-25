@@ -26,6 +26,7 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
+  const importsRaw = (cfg as { imports?: unknown }).imports;
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
   const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
   const devMode = (cfg as { devMode?: unknown }).devMode;
@@ -46,12 +47,33 @@ const parseFile = async (abs: string): Promise<ContextConfig> => {
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
+    imports: normalizeImports(importsRaw),
     maxUndos: normalizeMaxUndos(maxUndos),
     devMode: asBool(devMode),
     patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,
     cliDefaults:
       typeof cliAny === 'undefined' ? undefined : normalizeCliDefaults(cliAny),
   };
+};
+
+/** Normalize imports: string -\> [string]; arrays trimmed; invalid -\> undefined. */
+const normalizeImports = (v: unknown): Record<string, string[]> | undefined => {
+  if (!v || typeof v !== 'object') return undefined;
+  const o = v as Record<string, unknown>;
+  const out: Record<string, string[]> = {};
+  for (const k of Object.keys(o)) {
+    const raw = o[k];
+    if (typeof raw === 'string') {
+      const s = raw.trim();
+      if (s) out[k] = [s];
+    } else if (Array.isArray(raw)) {
+      const arr = raw
+        .map((x) => (typeof x === 'string' ? x.trim() : ''))
+        .filter((s) => s.length > 0);
+      if (arr.length) out[k] = arr;
+    }
+  }
+  return Object.keys(out).length ? out : undefined;
 };
 /**
  * Load and validate STAN configuration synchronously.
@@ -71,6 +93,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const scripts = (cfg as { scripts?: unknown }).scripts;
   const includes = (cfg as { includes?: unknown }).includes;
   const excludes = (cfg as { excludes?: unknown }).excludes;
+  const importsRaw = (cfg as { imports?: unknown }).imports;
   const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
   const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
   const devMode = (cfg as { devMode?: unknown }).devMode;
@@ -91,6 +114,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     scripts: scripts as ScriptMap,
     includes: Array.isArray(includes) ? (includes as string[]) : [],
     excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
+    imports: normalizeImports(importsRaw),
     maxUndos: normalizeMaxUndos(maxUndos),
     devMode: asBool(devMode),
     patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,

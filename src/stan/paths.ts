@@ -16,12 +16,14 @@ export type StanDirs = {
   diffRel: string;
   distRel: string;
   patchRel: string;
+  importsRel: string;
   rootAbs: string;
   systemAbs: string;
   outputAbs: string;
   diffAbs: string;
   distAbs: string;
   patchAbs: string;
+  importsAbs: string;
 };
 
 const normRel = (p: string): string =>
@@ -34,6 +36,7 @@ export const makeStanDirs = (cwd: string, stanPath: string): StanDirs => {
   const diffRel = `${rootRel}/diff`;
   const distRel = `${rootRel}/dist`;
   const patchRel = `${rootRel}/patch`;
+  const importsRel = `${rootRel}/imports`;
 
   const rootAbs = resolve(cwd, rootRel);
   const systemAbs = resolve(cwd, systemRel);
@@ -41,6 +44,7 @@ export const makeStanDirs = (cwd: string, stanPath: string): StanDirs => {
   const diffAbs = resolve(cwd, diffRel);
   const distAbs = resolve(cwd, distRel);
   const patchAbs = resolve(cwd, patchRel);
+  const importsAbs = resolve(cwd, importsRel);
 
   return {
     rootRel,
@@ -49,11 +53,13 @@ export const makeStanDirs = (cwd: string, stanPath: string): StanDirs => {
     diffRel,
     distRel,
     patchRel,
+    importsRel,
     rootAbs,
     systemAbs,
     outputAbs,
     diffAbs,
     distAbs,
     patchAbs,
+    importsAbs,
   };
 };

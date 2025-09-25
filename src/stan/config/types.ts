@@ -48,9 +48,12 @@ export type ContextConfig = {
   maxUndos?: number /** Optional developer-mode switch to treat the current repo as the STAN dev module. */;
   devMode?: boolean;
   /**
-   * Phase-scoped CLI defaults used by adapters when flags are omitted.
-   * Top-level (no 'opts' wrapper).
+   * Staged imports (archiving only): label -\> glob(s) to copy under <stanPath>/imports/<label>/...
    */
+  imports?: Record<string, string | string[]>;
+  /**
+   * Phase-scoped CLI defaults used by adapters when flags are omitted.
+   * Top-level (no 'opts' wrapper).   */
   cliDefaults?: CliDefaults;
   /** Command template to open modified files after a successful patch. */
   patchOpenCommand?: string;

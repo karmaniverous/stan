@@ -8,11 +8,11 @@ import { cyan, green } from '@/stan/util/color';
 import { createArchive } from '../archive';
 import type { ContextConfig } from '../config';
 import { createArchiveDiff } from '../diff';
+import { prepareImports } from '../imports/stage';
 import { getPackagedSystemPromptPath } from '../module';
 import { makeStanDirs } from '../paths';
 import { assembleSystemMonolith } from '../system/assemble';
 import { getVersionInfo } from '../version';
-
 // Progress callbacks for live renderer integration
 type ArchiveProgress = {
   /** Called when a phase starts (kind: 'full' | 'diff'). */
@@ -194,6 +194,18 @@ export const archivePhase = async (
   let archivePath = '';
   let diffPath = '';
   try {
+    // Stage imports (if any) so they are included in both archives.
+    try {
+      if (config.imports && typeof config.imports === 'object') {
+        await prepareImports({
+          cwd,
+          stanPath: config.stanPath,
+          map: config.imports as Record<string, string[]>,
+        });
+      }
+    } catch {
+      // best‑effort; continue without imports on failure
+    }
     opts?.progress?.start?.('full');
     const startedFull = Date.now();
     archivePath = await createArchive(cwd, config.stanPath, {

@@ -1,8 +1,9 @@
 # STAN Development Plan
 
-When updated: 2025-09-24 (UTC)
+When updated: 2025-09-25 (UTC)
 
 Next up (priority order)
+
 1. Patch extensions: File Ops (declarative pre‑ops) - Service (remaining; future):
    - Parser and plan builder with normalization and validation errors.
    - `--check`: simulate ops, print plan, no side effects.
@@ -13,36 +14,14 @@ Next up (priority order)
    - Integration: end‑to‑end patch with File Ops + unified diffs (pre‑ops then patch); `--check` dry‑run; FEEDBACK on failure.
    - Windows parity: ensure path normalization avoids EBUSY; follow existing teardown hygiene (cwd reset, stdin pause, brief settle).
 
-2. Staged imports (imports) — land minimal feature
-   - Types + loader: - Add `imports?: Record<string, string | string[]>` to config types.
-     - Parse/normalize: coerce string→string[], trim, drop empties; ignore non‑object values.
-     - Unit tests for normalization.
-   - Paths:
-     - Add `<stanPath>/imports` to path helpers (no reserved exclusions). - Staging helper:
-     - `prepareImports({ cwd, stanPath, map })`:
-       - Sanitize labels (allow A–Z a–z 0–9 @ / _ -; replace others with “_”; forbid “..”).
-       - Clean `<stanPath>/imports/<label>` recursively.
-       - Resolve globs (fast‑glob) with absolute paths allowed; `../` permitted.
-       - Compute each file tail relative to glob parent (glob‑parent); copy to `<stanPath>/imports/<label>/<tail>`.
-       - Log: `stan: import <label> -> N file(s)`.
-       - Best‑effort skip unreadable files; do not fail run unless workspace IO throws.
-   - Wire into archive phase:
-     - Before createArchive/createArchiveDiff, compute normalized imports map (or `{}` if missing).
-     - Call `prepareImports`.
-     - Leave classifier, reserved exclusions, and keep semantics unchanged (imports always rebuilt).
-   - Tests:
-     - Unit: parsing/sanitization/mapping examples.
-     - Integration: archives include `<stanPath>/imports/...` when archive=true; staging skipped in plan‑only and snap.
-   - Deps: add `fast-glob` and `glob-parent` (runtime), usage local to helper.
-
-3. Quick archive-size win (temporary)
+2. Quick archive-size win (temporary)
    - Exclude `docs-src/**` and `diagrams/**` in stan.config.yml (keep `.stan/system/**`, keep README.md).
    - Future task: move docs to a dedicated package; remove these excludes when done.
 
-4. CI stability monitoring (Windows)
+3. CI stability monitoring (Windows)
    - Continue watching for teardown flakiness; keep stdin pause + cwd reset + brief settle; adjust as needed.
    - Verify Windows cancellation hardening (runner drain up to 1s, stdin pause, 150ms settle) on local Windows and in CI; tune if needed.
-5. Gen‑system hygiene
+4. Gen-system hygiene
    - Config discovery already reuses centralized helpers; periodically review to avoid drift if related code evolves.
 
 Backlog (nice to have)
@@ -55,31 +34,15 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Staged imports (imports) — minimal feature
+  - Added imports?: Record<label, string | string[]> to config and normalization.
+  - Implemented prepareImports to stage matched files under <stanPath>/imports/<label>/..., mapping tails via glob-parent.
+  - Wired staging into archive phase (runs only when archives are written).
+  - Logging: "stan: import <label> -> N file(s)" per label.
+  - Tests: added unit test for staging behavior and logging; basic inclusion via existing archive flow.
+
 - Fix: File Ops validator absolute-path detection in response validator
-  - normSafe now checks the raw POSIX path for absoluteness before normalization
-    to ensure inputs like "/etc/passwd" are correctly rejected as invalid
-    repo‑relative paths.
+  - normSafe now checks the raw POSIX path for absoluteness before normalization to ensure inputs like "/etc/passwd" are correctly rejected as invalid repo‑relative paths.
 
 - Windows cancellation EBUSY mitigation (tuning)
-  - Increased bounded wait for script drain on cancel from 1.0s to 1.5s and
-    the final settle from 150ms to 400ms to further reduce transient EBUSY
-    during temp‑dir teardown in tests.
-
-- Response-format validator improvements
-  - Docs-only exception: require a stan.todo.md patch only when there are non‑docs changes. Docs-only changes (e.g., README.md) no longer fail the doc‑cadence gate.  - Relaxed heading/path coupling: do not require the “### Patch:” heading path to exactly match the diff header path (e.g., allow “### Patch: docs” for a README.md diff).  - Lint: removed unused `countLines` in validator to satisfy ESLint.
-
-- File Ops validator + Response Format docs
-  - Validator: response-format now accepts an optional “### File Ops” block and enforces verbs/arity/repo‑relative POSIX path rules; rejects absolute and “..” traversals.
-  - Tests: added validator coverage for valid/invalid cases.
-  - Docs: Response Format now includes a concise “File Ops” usage section with two examples.
-
-- Patch rules “above the fold” wrapper guardrails
-  - Added quick patch rules with canonical examples near the top of the system prompt; forbids legacy wrappers (“**_ Begin Patch”, “_** Add File:”, “Index:”).
-  - Ingestion unwraps "\*\*\* Begin/End Patch" envelopes when a valid diff is present. - Validator reports explicit “no diff --git” and rejects forbidden wrappers.
-  - Response Format/Policy updated: exactly one diff header per Patch, /dev/null for create/delete.
-- Handoff spec trimmed
-  - The cross‑thread handoff now contains only Project signature, Reasoning (short bullets), and Unpersisted tasks (short bullets). Startup/checklists are removed to rely on the fresh system prompt and archive in the new thread.
-- Temporary docs exclusion to reduce archive size
-  - Added `docs-src/**` and `diagrams/**` to config excludes; follow‑up task captures migration to a dedicated docs package prior to removing these excludes.
-- Windows cancellation EBUSY mitigation
-  - Implemented longer bounded wait for script drain (up to 1000 ms), proactive stdin.pause(), and a 150 ms settle in the cancellation path to reduce EBUSY during temp-dir teardown on Windows.
+  - Increased bounded wait for script drain on cancel from 1.0s to 1.5s and the final settle from 150ms to 400ms to further reduce transient EBUSY during temp‑dir teardown in tests.

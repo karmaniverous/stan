@@ -1,10 +1,11 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+
+import { ensureDir } from 'fs-extra';
 
 export const STATE_FILE = '.snap.state.json';
 export const SNAP_DIR = 'snapshots';
 export const ARCH_DIR = 'archives';
-
 export const within = (...parts: string[]): string => path.join(...parts);
 
 /**
@@ -14,9 +15,8 @@ export const within = (...parts: string[]): string => path.join(...parts);
  * @returns A promise that resolves when creation attempts finish.
  */
 export const ensureDirs = async (paths: string[]): Promise<void> => {
-  await Promise.all(paths.map((p) => mkdir(p, { recursive: true })));
+  await Promise.all(paths.map((p) => ensureDir(p)));
 };
-
 /**
  * Read and parse a JSON file, returning `null` on failure.
  *

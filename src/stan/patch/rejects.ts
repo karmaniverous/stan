@@ -1,10 +1,11 @@
-import { copyFile, mkdir, readdir, rename, rm } from 'node:fs/promises';
+import { copyFile, readdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
+
+import { ensureDir } from 'fs-extra';
 
 import { findConfigPathSync, loadConfig } from '../config';
 import { makeStanDirs } from '../paths';
 import { utcStamp } from '../util/time';
-
 /**
  * Recursively enumerate all `*.rej` files under a root, excluding `.git` and `node_modules`.
  *
@@ -63,13 +64,13 @@ export const moveRejFilesToPatchWorkspace = async (
   const dirs = makeStanDirs(baseCwd, stanPath);
   const batch = utcStamp();
   const destRoot = path.join(dirs.patchAbs, 'rejects', batch);
-  await mkdir(destRoot, { recursive: true });
+  await ensureDir(destRoot);
 
   for (const rel of rels) {
     const srcAbs = path.join(baseCwd, rel);
     const destAbs = path.join(destRoot, rel);
     try {
-      await mkdir(path.dirname(destAbs), { recursive: true });
+      await ensureDir(path.dirname(destAbs));
       await rename(srcAbs, destAbs).catch(async () => {
         await copyFile(srcAbs, destAbs);
         await rm(srcAbs, { force: true });

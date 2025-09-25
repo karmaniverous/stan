@@ -1,10 +1,11 @@
 // src/stan/init/docs.ts
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getModuleRoot } from '@/stan/module';
+import { ensureDir } from 'fs-extra';
 
+import { getModuleRoot } from '@/stan/module';
 /**
  * Ensure <stanPath>/system contains the shipped docs and record package version * to <stanPath>/system/.docs.meta.json.
  *
@@ -22,11 +23,10 @@ export const ensureDocs = async (
 
   // Ensure the <stanPath>/system directory exists for metadata
   const systemDir = path.join(cwd, stanPath, 'system');
-  await mkdir(systemDir, { recursive: true });
+  await ensureDir(systemDir);
 
   // No prompt templates are installed by init.
   // We only record the currently installed package version as docs metadata.
-
   // Write docs meta { version } best-effort
   try {
     const pkgPath = path.join(moduleRoot, 'package.json');

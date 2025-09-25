@@ -52,10 +52,19 @@ Note: The project prompt is created on demand when repo‑specific policies emer
 - d.ts bundling: apply the alias plugin alongside `rollup-plugin-dts` in the types build to resolve `"@/..."` path aliases reliably.
 - The `stan.dist/` build is used for internal CLI testing (`npm run stan:build`) and is cleaned after build.
 
+## Filesystem helpers (policy)
+
+- Prefer fs-extra for filesystem convenience where appropriate:
+  - Directory creation via ensureDir() instead of Node mkdir({ recursive: true }).
+  - Existence checks via pathExists() instead of existsSync/try–catch.
+- Retain Node primitives where directory type/emptiness is explicitly required:
+  - stat() to determine file vs directory.
+  - readdir() for directory emptiness checks and listings.
+- Tests should continue to use Node primitives as needed for determinism.
+
 ## CLI defaults via configuration (cliDefaults)
 
 The CLI honors phase‑scoped defaults when flags are omitted. Precedence is:
-
 - Flags > cliDefaults > built‑ins.
 
 Schema (all keys optional):

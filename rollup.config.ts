@@ -35,8 +35,9 @@ const nodeExternals = new Set([
 // Runtime deps that must not be bundled (rely on package assets / fallbacks)
 const externalPkgs = new Set<string>([
   'clipboardy', // requires platform fallback binaries at runtime; bundling breaks resolution
-]);
-const copyDocsPlugin = (dest: string): Plugin => {
+  // fs-extra is a runtime dependency; keep external to avoid bundling its internals.
+  'fs-extra',
+]);const copyDocsPlugin = (dest: string): Plugin => {
   return {    name: 'stan-copy-docs',
     async writeBundle() {
       const fromSystem = path.resolve(__dirname, '.stan', 'system');

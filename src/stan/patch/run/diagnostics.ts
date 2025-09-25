@@ -1,12 +1,13 @@
 /* src/stan/patch/run/diagnostics.ts
  * Persist cleaned.patch, attempts.json, and per-attempt stderr/stdout logs.
  */
-import { mkdir, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
+
+import { ensureDir } from 'fs-extra';
 
 import type { ApplyResult } from '../apply';
 import type { JsDiffOutcome } from '../jsdiff';
-
 export const writePatchDiagnostics = async (args: {
   cwd: string;
   patchAbs: string;
@@ -16,11 +17,10 @@ export const writePatchDiagnostics = async (args: {
 }): Promise<{ attemptsRel: string; debugRel: string }> => {
   const { cwd, patchAbs, cleaned, result, js } = args;
   const debugDir = path.join(path.dirname(patchAbs), '.debug');
-  await mkdir(debugDir, { recursive: true });
+  await ensureDir(debugDir);
 
   // cleaned.patch
   await writeFile(path.join(debugDir, 'cleaned.patch'), cleaned, 'utf8');
-
   // attempts.json (sizes only for git stderr/stdout)
   const gitAttempts = result.captures.map((c) => ({
     label: c.label,

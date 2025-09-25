@@ -3,12 +3,13 @@
  * Emits no console logs; callers decide what to print.
  */
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+
+import { ensureDir } from 'fs-extra';
 
 const headerFor = (stanPath: string): string =>
   `<!-- GENERATED: assembled from ${stanPath}/system/parts; edit parts and run \`npm run gen:system\` -->\n`;
-
 const toLF = (s: string) => s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
 export type AssembleResult =
@@ -30,7 +31,7 @@ export const assembleSystemMonolith = async (
   const partsDir = path.join(sysRoot, 'parts');
   const target = path.join(sysRoot, 'stan.system.md');
 
-  await mkdir(sysRoot, { recursive: true });
+  await ensureDir(sysRoot);
 
   if (!existsSync(partsDir)) {
     return { target, action: 'skipped-no-parts', partsDir };

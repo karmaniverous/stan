@@ -1,6 +1,7 @@
 /* src/stan/patch/util/fs.ts */
-import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
+
+import { ensureDir } from 'fs-extra';
 
 /**
  * Ensure the parent directory of the provided file path exists.
@@ -12,7 +13,7 @@ import path from 'node:path';
 export const ensureParentDir = async (p: string): Promise<void> => {
   const dir = path.dirname(p);
   try {
-    await mkdir(dir, { recursive: true });
+    await ensureDir(dir);
   } catch {
     // best-effort
   }

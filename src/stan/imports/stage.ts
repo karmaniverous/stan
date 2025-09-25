@@ -5,10 +5,11 @@
  * - Mapping: dest = <stanPath>/imports/<label>/<tail>; tail = path relative to glob-parent(pattern).
  * - Logging: one concise line per label: "stan: import <label> -> N file(s)".
  */
-import { copyFile, mkdir, rm, stat } from 'node:fs/promises';
+import { copyFile, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 import fg from 'fast-glob';
+import { ensureDir } from 'fs-extra';
 import globParent from 'glob-parent';
 
 import { makeStanDirs } from '@/stan/paths';
@@ -60,7 +61,7 @@ export const prepareImports = async (args: {
   if (!map || typeof map !== 'object') return;
   const dirs = makeStanDirs(cwd, stanPath);
   const root = path.join(dirs.rootAbs, 'imports');
-  await mkdir(root, { recursive: true });
+  await ensureDir(root);
 
   // Process labels deterministically (stable order)
   const labels = Object.keys(map).sort();
@@ -72,10 +73,9 @@ export const prepareImports = async (args: {
     const destRoot = path.join(root, label);
     // Clean per-label directory
     await rm(destRoot, { recursive: true, force: true }).catch(() => {});
-    await mkdir(destRoot, { recursive: true }).catch(() => {});
+    await ensureDir(destRoot).catch(() => {});
 
     const staged: string[] = [];
-
     for (const patternRaw of globs) {
       const pattern = String(patternRaw ?? '').trim();
       if (!pattern) continue;
@@ -101,7 +101,7 @@ export const prepareImports = async (args: {
             .replace(/\\/g, '/');
           if (!tail || tail.includes('..')) continue;
           const dest = path.join(destRoot, tail);
-          await mkdir(path.dirname(dest), { recursive: true }).catch(() => {});
+          await ensureDir(path.dirname(dest)).catch(() => {});
           try {
             await copyFile(abs, dest);
             staged.push(dest);

@@ -50,16 +50,29 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- File & directory ops: adopt fs-extra where appropriate
+  - Prefer ensureDir() for directory creation over Node mkdir({ recursive: true }).
+  - Retain Node stat/readdir where directory type/emptiness is required.
+  - Updated modules:
+    - src/stan/fs.ts (workspace dirs)
+    - src/stan/patch/util/fs.ts (ensureParentDir)
+    - src/stan/patch/run/{diagnostics,feedback}.ts (debug dirs)
+    - src/stan/init/docs.ts (system docs dir)
+    - src/stan/imports/stage.ts (imports roots/parents)
+    - src/stan/snap/shared.ts (ensureDirs), src/stan/system/assemble.ts, src/stan/patch/rejects.ts
 - Lint/typecheck: fix patch module hygiene
   - Add missing mkdir import in src/stan/patch/file-ops.ts to resolve TS2304 and Typedoc error.
   - Replace any[] cast with FileOp[] in src/stan/patch/file-ops.test.ts to satisfy ESLint no-unsafe-argument/no-explicit-any.
+
 ‑ File Ops: prefer fs‑extra where appropriate
-  - Use fs‑extra.pathExists for existence checks (mv/rm) instead of try/catch stat().
-  - Use fs‑extra.ensureDir for debug directory creation in writeOpsDebugLog().
-  - Retain Node readdir/stat where directory listing/type information is required.
+
+- Use fs‑extra.pathExists for existence checks (mv/rm) instead of try/catch stat().
+- Use fs‑extra.ensureDir for debug directory creation in writeOpsDebugLog().
+- Retain Node readdir/stat where directory listing/type information is required.
 - File Ops: recursive directory operations
   - Enable full‑tree moves and deletes across multiple targets in one patch:
-    - mv now supports moving files or directories recursively (no overwrite).    - rm now removes files or directories recursively.
+    - mv now supports moving files or directories recursively (no overwrite).
+    - rm now removes files or directories recursively.
     - rmdir retained for explicit empty‑dir deletes; mkdirp uses ensureDir.
   - Runtime uses fs‑extra; project/system docs updated to clarify that File Ops are structural (directory/file moves/creates/deletes) and are distinct from unified‑diff content edits.
 

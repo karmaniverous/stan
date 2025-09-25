@@ -3,9 +3,10 @@
  */
 
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
+import { ensureDir } from 'fs-extra';
 import ignoreFactory from 'ignore';
 import picomatch from 'picomatch';
 
@@ -194,11 +195,11 @@ export const ensureStanWorkspace = async (
   patchAbs: string;
 }> => {
   const dirs = makeStanDirs(cwd, stanPath);
-  await mkdir(dirs.rootAbs, { recursive: true });
-  await mkdir(dirs.outputAbs, { recursive: true });
-  await mkdir(dirs.diffAbs, { recursive: true });
+  await ensureDir(dirs.rootAbs);
+  await ensureDir(dirs.outputAbs);
+  await ensureDir(dirs.diffAbs);
   // Ensure patch workspace exists so archives can always include it safely
-  await mkdir(dirs.patchAbs, { recursive: true });
+  await ensureDir(dirs.patchAbs);
   return {
     rootAbs: dirs.rootAbs,
     outputAbs: dirs.outputAbs,

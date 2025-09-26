@@ -64,9 +64,9 @@ Next up (priority order)
 - Adopt explicit dev‑mode diagnostics triage in project prompt
   - Analyze → ask → apply or listings; gate patch emission on explicit approval.
 
-Unpersisted tasks
+- DMP rung (formatter extension)
+  - Include a DMP attempt line and reasons alongside git/jsdiff in the diagnostics envelope (prep for DMP apply).
 
-- Extend formatter to incorporate future DMP rung (produce a DMP attempt line + reasons alongside git/jsdiff).
 - Minor polish:
   - Audit other diagnostics call‑sites for reuse of the shared helpers.
   - Consider a brief docs note in README about full vs diff archive contents (patch workspace policy).

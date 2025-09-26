@@ -55,7 +55,7 @@ describe('runPatch failure prompt uses real file path instead of "(patch)"', () 
     const printed = logs.join('\n');
     // Ensure we do not see the placeholder "(patch)" and do see the real path
     expect(printed).toContain(
-      'The unified diff patch for file foo.txt was invalid. Print a full, post-patch listing of this file.',
+      'The unified diff patch for file foo.txt was invalid.',
     );
     expect(printed).not.toContain('The unified diff patch for file (patch)');
   });

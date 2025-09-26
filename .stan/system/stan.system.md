@@ -5,13 +5,13 @@
 
 1. Integrity-first intake: enumerate archive.tar and verify bytes read match header sizes; stop and report on mismatch.
 2. Dev plan first: keep stan.todo.md current before coding; include a commit message with every change set.
-3. Plain unified diffs only: no base64; include a/ and b/ prefixes; ≥3 lines of context; LF endings. Forbidden wrappers: "*** Begin Patch", "*** Add File:", "Index:" (these are not valid unified diffs).
+3. Plain unified diffs only: no base64; include a/ and b/ prefixes; ≥3 lines of context; LF endings. Forbidden wrappers: `*** Begin Patch`, `*** Add File:`, `Index:` (these are not valid unified diffs).
 4. Patch hygiene: fence contains only unified diff bytes; put commit message outside the fence.
 5. Hunk hygiene: headers/counts consistent; each body line starts with “ ”, “+”, or “-”; no raw lines.
 6. Coverage: one Patch per changed file. Full Listings are not required by default; include them only on explicit request or when replying to FEEDBACK (failed files only). Skip listings for deletions.7. System vs Project vs Plan: • System (this file): repo‑agnostic rules, • Project (stan.project.md): durable repo‑specific requirements, • Plan (stan.todo.md): short‑term steps; keep “Completed (recent)” short and prune routinely.
-8. Services‑first: ports & adapters; thin adapters; pure services; co‑located tests.
-9. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
-10. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.
+7. Services‑first: ports & adapters; thin adapters; pure services; co‑located tests.
+8. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
+9. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.
 
 **Table of Contents**
 
@@ -51,6 +51,16 @@ CRITICAL essentials (jump list)
 Use plain unified diffs with git‑style headers. One Patch block per file.
 
 Key rules
+
+- Tool selection & combination
+  - Prefer File Ops for structural changes:
+    - mv/cp/rm/rmdir/mkdirp are the first choice for moving, copying, and deleting files or directories (single or bulk).
+    - The one‑patch‑per‑file rule applies to Diff Patch blocks only; it does NOT apply to File Ops.
+  - Prefer Diff Patches for file content:
+    - Create new files or modify existing files in place using plain unified diffs.
+  - Combine when appropriate:
+    - For example, move a file with File Ops, then follow with a Diff Patch in the new location to update imports or content.
+
 - Exactly one header per Patch block:
   - `diff --git a/<path> b/<path>`
   - `--- a/<path>` and `+++ b/<path>`
@@ -59,12 +69,13 @@ Key rules
 - Line endings: normalize to LF in the patch.
 - Create/delete:
   - New file: `--- /dev/null` and `+++ b/<path>`
-  - Delete:   `--- a/<path>` and `+++ /dev/null`
+  - Delete: `--- a/<path>` and `+++ /dev/null`
 - Forbidden wrappers (not valid diffs): `*** Begin Patch`, `*** Add File:`, `Index:` or mbox/email prelude lines. Do not use them.
 
 Canonical examples
 
 Modify existing file:
+
 ```diff
 diff --git a/src/example.ts b/src/example.ts
 --- a/src/example.ts
@@ -78,6 +89,7 @@ diff --git a/src/example.ts b/src/example.ts
 ```
 
 New file:
+
 ```diff
 diff --git a/src/newfile.ts b/src/newfile.ts
 --- /dev/null
@@ -90,6 +102,7 @@ diff --git a/src/newfile.ts b/src/newfile.ts
 ```
 
 Delete file:
+
 ```diff
 diff --git a/src/oldfile.ts b/src/oldfile.ts
 --- a/src/oldfile.ts
@@ -102,6 +115,7 @@ diff --git a/src/oldfile.ts b/src/oldfile.ts
 ```
 
 Pre‑send checks (quick)
+
 - Every Patch block contains exactly one `diff --git a/<path> b/<path>`.
 - No forbidden wrappers appear in any Patch block.
 - Create/delete patches use `/dev/null` headers as shown above.
@@ -396,14 +410,8 @@ Assistant guidance
 - When emitting patches, respect house style; do not rewrap narrative Markdown outside the allowed contexts.
 - Opportunistic repair is allowed for local sections you are already modifying (e.g., unwrap manually wrapped paragraphs), but avoid repo‑wide reflows as part of unrelated changes.
 
-# CRITICAL: Patch Coverage
-
-- Every created, updated, or deleted file MUST be accompanied by a valid, plain unified diff patch in this chat. No exceptions.
-- Patches must target the exact files you show as full listings; patch coverage must match one‑for‑one with the set of changed files.
-- Never emit base64; always provide plain unified diffs.
-- Do not combine changes for multiple files in a single unified diff payload. Emit a separate Patch block per file (see Response Format).
-
 # CRITICAL: Layout
+
 - stanPath (default: `.stan`) is the root for STAN operational assets:
   - `/<stanPath>/system`: policies (this file). The project prompt (`stan.project.md`) is created on demand by STAN when repo‑specific requirements emerge (no template is installed or shipped).
   - `/<stanPath>/output`: script outputs and `archive.tar`/`archive.diff.tar`
@@ -412,6 +420,13 @@ Assistant guidance
   - `/<stanPath>/patch`: canonical patch workspace (see Patch Policy)
 - Config key is `stanPath`.
 - Bootloader note: A minimal bootloader may be present at `/<stanPath>/system/stan.bootloader.md` to help assistants locate `stan.system.md` in attached artifacts; once `stan.system.md` is loaded, the bootloader has no further role.
+
+# CRITICAL: Patch Coverage
+
+- Every created, updated, or deleted file MUST be accompanied by a valid, plain unified diff patch in this chat. No exceptions.
+- Patches must target the exact files you show as full listings; patch coverage must match one‑for‑one with the set of changed files.
+- Never emit base64; always provide plain unified diffs.
+- Do not combine changes for multiple files in a single unified diff payload. Emit a separate Patch block per file (see Response Format).
 
 ## One‑patch‑per‑file (hard rule + validator)
 
@@ -615,10 +630,15 @@ Correct these omissions and re‑emit before sending.
 - Prefer diffs with a/ b/ prefixes and stable strip levels; include sufficient context.
 - Normalize to UTF‑8 + LF. Avoid BOM and zero‑width characters.
 - Forbidden wrappers: do not emit `*** Begin Patch`, `*** Add File:`, `Index:` or other non‑unified preambles; they are not accepted by `git apply` or `stan patch`.
-- On patch failures:
-  - Perform a concise root‑cause analysis (e.g., path mismatches, context drift, hunk corruption).
-  - Use the FEEDBACK handshake (BEGIN_STAN_PATCH_FEEDBACK v1 … END_STAN_PATCH_FEEDBACK). Regenerate a corrected diff that applies cleanly.
-  - Summarize in this chat and call out changes that should be folded back into the PROJECT prompt.
+- Tool preference & scope
+  - File Ops are the preferred method for moving, copying, and deleting files or directories (single or bulk).
+  - Diff Patches are the preferred method for creating files or changing them in place.
+  - The one‑patch‑per‑file rule applies to Diff Patch blocks only; File Ops are exempt and may cover many paths in one block.
+- Combined workflow
+  - When a file is moved and its imports/content must change, do both in one turn:
+    1. File Ops: `mv old/path.ts new/path.ts`
+    2. Diff Patch: `new/path.ts` with the required edits (e.g., updated imports)
+
 # CRITICAL: Patch generation guidelines (compatible with “stan patch”)
 
 - Format: plain unified diff. Strongly prefer git-style headers:
@@ -633,19 +653,17 @@ Correct these omissions and re‑emit before sending.
 - Renames: prefer delete+add (two hunks) unless a simple `diff --git` rename applies cleanly.
 - Binary: do not include binary patches.
 - One-file-per-patch in replies: do not combine changes for multiple files into a single unified diff block. Emit separate Patch blocks per file as required by Response Format.
+  - This applies to Diff Patches. File Ops are exempt and may include multiple operations across files.
 
 # Hunk hygiene (jsdiff‑compatible; REQUIRED)
 
 - Every hunk body line MUST begin with one of:
   - a single space “ ” for unchanged context,
   - “+” for additions, or
-  - “-” for deletions.
-    Never place raw code/text lines (e.g., “ ),”) inside a hunk without a leading marker.
+  - “-” for deletions. Never place raw code/text lines (e.g., “ ),”) inside a hunk without a leading marker.
 - Hunk headers and counts:
   - Use a valid header `@@ -<oldStart>,<oldLines> <newStart>,<newLines> @@`.
-  - The body MUST contain exactly the number of lines implied by the header:
-    • oldLines = count of “ ” + “-” lines,
-    • newLines = count of “ ” + “+” lines.
+  - The body MUST contain exactly the number of lines implied by the header: • oldLines = count of “ ” + “-” lines, • newLines = count of “ ” + “+” lines.
   - Do not start a new `@@` header until the previous hunk body is complete.
 - File grouping:
   - For each changed file, include one or more hunks under a single “diff --git … / --- … / +++ …” group.
@@ -658,6 +676,67 @@ Correct these omissions and re‑emit before sending.
   - When presenting in chat, wrap the diff in a fence; the fence must not appear inside the diff body.
 - Line endings:
   - Normalize to LF (`\n`) in the patch. STAN handles CRLF translation when applying.
+
+## File Ops (optional pre‑ops; structural changes)
+
+Use “### File Ops” to declare safe, repo‑relative file and directory operations that run before content patches. File Ops are for structure (moves/renames, creates, deletes), while unified‑diff Patches are for editing file contents.
+
+- Verbs:
+  - mv <src> <dest> # move/rename a file or directory (recursive), no overwrite
+  - cp <src> <dest> # copy a file or directory (recursive), no overwrite; creates parents for <dest>
+  - rm <path> # remove file or directory (recursive)
+  - rmdir <path> # remove empty directory (explicit safety)
+  - mkdirp <path> # create directory (parents included)
+- Multiple targets:
+  - Include as many operations (one per line) as needed to handle an entire related set of structural changes in a single patch turn.
+- Paths:
+  - POSIX separators, repo‑relative only.
+  - Absolute paths are forbidden. Any “..” traversal is forbidden after normalization.
+- Arity:
+  - mv and cp require 2 paths; rm/rmdir/mkdirp require 1.
+- Execution:
+  - Pre‑ops run before applying unified diffs.
+  - In --check (dry‑run), pre‑ops are validated and reported; no filesystem changes are made.
+
+Examples
+
+```
+### File Ops
+mkdirp src/new/dir
+mv src/old.txt src/new/dir/new.txt
+cp src/new/dir/new.txt src/new/dir/copy.txt
+rm src/tmp.bin
+rmdir src/legacy/empty
+```
+
+```
+### File Ops
+mv packages/app-a/src/util.ts packages/app-b/src/util.ts
+mkdirp packages/app-b/src/internal
+rm docs/drafts/obsolete.md
+```
+
+Combined example (File Ops + Diff Patch)
+
+```
+### File Ops
+mv old/path/to/file/a.ts new/path/to/file/a.ts
+```
+
+Then follow with a Diff Patch in the new location:
+
+```diff
+diff --git a/new/path/to/file/a.ts b/new/path/to/file/a.ts
+--- a/new/path/to/file/a.ts
++++ b/new/path/to/file/a.ts
+@@ -1,3 +1,3 @@
+- import { oldThing } from '../../old/module';
++ import { newThing } from '../../new/module';
+  export function run() {
+-   return oldThing();
++   return newThing();
+  }
+```
 
 # Archives & preflight (binary/large files; baseline/version awareness)
 
@@ -795,6 +874,7 @@ Hard rule (applies everywhere)
 # Response Format (MANDATORY)
 
 CRITICAL: Fence Hygiene (Nested Code Blocks) and Coverage
+
 - You MUST compute fence lengths dynamically to ensure that each outer fence has one more backtick than any fence it contains.
 - Algorithm:
   1. Collect all code blocks you will emit (every “Patch” per file; any optional “Full Listing” blocks, if requested).
@@ -812,29 +892,38 @@ General Markdown formatting
   - Commit Message block: hard‑wrap at 72 columns.
   - Code blocks: wrap lines as needed for code readability.
 - Lists:
-  - Use proper Markdown list markers (“-”, “*”, or numbered “1.”) and indent for nested lists.
+  - Use proper Markdown list markers (“-”, “\*”, or numbered “1.”) and indent for nested lists.
   - Do not use the Unicode bullet “•” for list items — it is plain text, not a list marker, and formatters (Prettier) may collapse intended line breaks.
   - When introducing a nested list after a sentence ending with a colon, insert a blank line if needed so the nested list is recognized as a list, not paragraph text.
   - Prefer nested lists over manual line breaks to represent sub‑items.
-  - Requirements & TODO documents: do not number primary (top‑level) items. Use
-    unordered lists to minimize renumbering churn as priorities shift. Numbering
-    may be used in clearly stable, truly ordered procedures only.
+  - Requirements & TODO documents: do not number primary (top‑level) items. Use unordered lists to minimize renumbering churn as priorities shift. Numbering may be used in clearly stable, truly ordered procedures only.
 
 - Opportunistic repair: when editing existing Markdown files or sections as part of another change, if you encounter manually wrapped paragraphs, unwrap and reflow them to natural paragraphs while preserving content. Do not perform a repository‑wide reflow as part of an unrelated change set.
-- Coverage (first presentation):  - For every file you add, modify, or delete in this response:
-    - Provide a plain unified diff “Patch” that precisely covers those changes.
+- Coverage (first presentation): For every file you add, modify, or delete in this response:
+  - Provide a plain unified diff “Patch” that precisely covers those changes.
   - Do not include “Full Listing” blocks by default.
-  - On request or when responding to a patch failure (FEEDBACK), include “Full Listing” blocks for the affected files only (see FEEDBACK exception and “Optional Full Listings” below).Exact Output Template (headings and order)
+  - On request or when responding to a patch failure (FEEDBACK), include “Full Listing” blocks for the affected files only (see FEEDBACK exception and “Optional Full Listings” below).
+  - Tool preference & scope:
+    - Use File Ops for structural changes (mv/cp/rm/rmdir/mkdirp), including bulk operations; File Ops are exempt from the one‑patch‑per‑file rule.
+    - Use Diff Patches for creating new files or changing files in place.
+    - Combine when needed: perform File Ops first, then emit the Diff Patch(es) for any content edits in their new locations.
 
-Use these headings exactly; wrap each Patch (and optional Full Listing, when applicable)
-in a fence computed by the algorithm above.
+Use these headings exactly; wrap each Patch (and optional Full Listing, when applicable) in a fence computed by the algorithm above.
 
 ---
 
+## FILE OPERATION (optional)
+
+<change summary>
+
+```
+### File Ops
+<one operation per line>
+```
+
 ## Input Data Changes
 
-- Bullet points summarizing integrity, availability, and a short change
-  list.
+- Bullet points summarizing integrity, availability, and a short change list.
 
 ## CREATED: path/to/file/a.ts
 
@@ -862,15 +951,11 @@ in a fence computed by the algorithm above.
 
 ## Commit Message
 
-- Output the commit message at the end of the reply wrapped in a fenced
-  code block. Do not annotate with a language tag. Apply the +1 backtick
-  rule. The block contains only the commit message (subject + body), no
-  surrounding prose.
+- Output the commit message at the end of the reply wrapped in a fenced code block. Do not annotate with a language tag. Apply the +1 backtick rule. The block contains only the commit message (subject + body), no surrounding prose.
 
 ## Validation
 
-- Confirm that every created/updated/deleted file has a “Full Listing”
-  (skipped for deletions) and a matching “Patch”.
+- Confirm that every created/updated/deleted file has a “Full Listing” (skipped for deletions) and a matching “Patch”.
 - Confirm that fence lengths obey the +1 backtick rule for every block.
 
 ---
@@ -879,13 +964,14 @@ in a fence computed by the algorithm above.
 
 Before sending a reply, verify all of the following:
 
-1. One‑patch‑per‑file
+1. One‑patch‑per‑file (Diff Patches only)
    - There is exactly one Patch block per changed file.
    - Each Patch block MUST contain exactly one `diff --git a/<path> b/<path>` header.
    - No Patch block contains more than one `diff --git a/<path> b/<path>`.
    - Forbidden wrappers are not present: `*** Begin Patch`, `*** Add File:`, `Index:` (or similar non‑unified preludes).
    - For new files, headers MUST be `--- /dev/null` and `+++ b/<path>`.
    - For deleted files, headers MUST be `--- a/<path>` and `+++ /dev/null`.
+   - Note: This rule does not apply to File Ops; File Ops may include many paths in one block.
 
 2. Commit message isolation and position
    - Normal replies: The “Commit Message” is MANDATORY. It appears once, as the final section.
@@ -899,9 +985,7 @@ Before sending a reply, verify all of the following:
    - Headings match the template exactly (names and order).
 
 5. Documentation cadence (gating)
-   - Normal replies: If any Patch block is present, there MUST also be a Patch
-     for <stanPath>/system/stan.todo.md that reflects the change set
-     (unless the change set is deletions‑only or explicitly plan‑only).
+   - Normal replies: If any Patch block is present, there MUST also be a Patch for <stanPath>/system/stan.todo.md that reflects the change set (unless the change set is deletions‑only or explicitly plan‑only).
    - The “Commit Message” MUST be present and last.
    - FEEDBACK replies: Commit Message requirement is waived; documentation patches are not required solely to accompany FEEDBACK corrections.
 
@@ -909,62 +993,54 @@ Before sending a reply, verify all of the following:
    - When replying to a FEEDBACK packet:
      - Include a Full Listing for each file listed under `summary.failed`.
      - Include an improved Patch for each of those files (and only those files).
-   - If any failed file is missing its Full Listing or improved Patch, STOP and
-     re‑emit after fixing before sending.
+   - If any failed file is missing its Full Listing or improved Patch, STOP and re‑emit after fixing before sending.
 
 7. Nested-code templates (hard gate)
-   - Any template or example that contains nested fenced code blocks (e.g., the
-     Dependency Bug Report or FEEDBACK) MUST pass the fence‑hygiene scan:
-     compute N = maxInnerBackticks + 1 (min 3), apply that fence, then re‑scan
-     before sending. If any collision remains, STOP and re‑emit.
+   - Any template or example that contains nested fenced code blocks (e.g., the Dependency Bug Report or FEEDBACK) MUST pass the fence‑hygiene scan: compute N = maxInnerBackticks + 1 (min 3), apply that fence, then re‑scan before sending. If any collision remains, STOP and re‑emit.
 
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 
 ## Patch policy reference
+
 Follow the canonical rules in “Patch Policy” (see earlier section). The Response Format adds presentation requirements only (fencing, section ordering, per‑file one‑patch rule). Do not duplicate prose inside patch fences; emit plain unified diff payloads.
 
-Optional Full Listings
-– On explicit request or when replying to FEEDBACK, include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.
+Optional Full Listings – On explicit request or when replying to FEEDBACK, include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.
 
 ## File Ops (optional pre‑ops; structural changes)
 
-Use “### File Ops” to declare safe, repo‑relative file and directory operations
-that run before content patches. File Ops are for structure (moves/renames,
-creates, deletes), while unified‑diff Patches are for editing file contents.
+Use “### File Ops” to declare safe, repo‑relative file and directory operations that run before content patches. File Ops are for structure (moves/renames, creates, deletes), while unified‑diff Patches are for editing file contents.
 
 - Verbs:
-  - mv <src> <dest>        # move file or directory (recursive), no overwrite
-  - rm <path>              # remove file or directory (recursive)
-  - rmdir <path>           # remove empty directory (explicit safety)
-  - mkdirp <path>          # create directory (parents included)
+  - mv <src> <dest> # move/rename a file or directory (recursive), no overwrite
+  - cp <src> <dest> # copy a file or directory (recursive), no overwrite; creates parents for <dest>
+  - rm <path> # remove file or directory (recursive)
+  - rmdir <path> # remove empty directory (explicit safety)
+  - mkdirp <path> # create directory (parents included)
 - Multiple targets:
-  - Include as many operations (one per line) as needed to handle an entire
-    related set of structural changes in a single patch turn.
+  - Include as many operations (one per line) as needed to handle an entire related set of structural changes in a single patch turn.
 - Paths:
   - POSIX separators, repo‑relative only.
-  - Absolute paths are forbidden.  - Any “..” traversal is forbidden after normalization.
+  - Absolute paths are forbidden. Any “..” traversal is forbidden after normalization.
 - Arity:
-  - mv requires 2 paths; others require 1.
+  - mv and cp require 2 paths; rm/rmdir/mkdirp require 1.
 - Execution:
   - Pre‑ops run before applying unified diffs.
   - In --check (dry‑run), pre‑ops are validated and reported; no filesystem changes are made.
 
 Examples
+
 ```
 ### File Ops
-```
 mkdirp src/new/dir
 mv src/old.txt src/new/dir/new.txt
+cp src/new/dir/new.txt src/new/dir/copy.txt
 rm src/tmp.bin
 rmdir src/legacy/empty
-```
 ```
 
 ```
 ### File Ops
-```
 mv packages/app-a/src/util.ts packages/app-b/src/util.ts
 mkdirp packages/app-b/src/internal
 rm docs/drafts/obsolete.md
-```
 ```

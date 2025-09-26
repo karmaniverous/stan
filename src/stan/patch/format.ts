@@ -1,12 +1,15 @@
 // src/stan/patch/format.ts
 /**
  * Central formatter for patch failure outputs.
- * - Downstream: *   - diff: one line per failed file, blank-line separated when multiple.
+ * - Downstream:
+ *   - diff: one line per failed file, blank-line separated when multiple.
  *   - file-ops: quote the original ops block + request unified diffs.
  * - STAN repo:
- *   - diff: identification line + diagnostics envelope (START/END) with
- *           verbatim git stderr; if absent and jsdiff ran, include concise
- *           “jsdiff: <path>: <reason>” lines.
+ *   - diff: identification line + diagnostics envelope (START/END).
+ *           Attempts summary: one line per git attempt in cascade order:
+ *             "<label>: exit <code>[ — <first stderr line>]".
+ *           When all attempts are silent (no stderr) and jsdiff ran, append
+ *           concise “jsdiff: <path>: <reason>” lines.
  *   - file-ops: “The File Ops patch failed.” + diagnostics envelope containing
  *               parse/exec failures; no action request line.
  */
@@ -20,8 +23,16 @@ export type DiffFailureInput = {
   context: FailureContext;
   kind: 'diff';
   targets: string[]; // header-derived or jsdiff failed paths
-  gitStderr?: string; // verbatim from last git attempt
-  jsReasons?: JsReason[]; // used only when stderr is empty in STAN repo
+  // Legacy: last-attempt stderr (kept for back-compat when attempts[] not supplied)
+  gitStderr?: string;
+  // Optional full attempts capture (preferred)
+  attempts?: Array<{
+    label: string;
+    code: number;
+    stderr?: string;
+  }>;
+  // Js fallback reasons when git was silent
+  jsReasons?: JsReason[];
 };
 
 export type FileOpsFailureInput = {
@@ -45,19 +56,42 @@ const fmtDownstreamDiff = (targets: string[]): string => {
   return lines.join(`${NL}${NL}`) + NL;
 };
 
+const firstLine = (s: string | undefined): string | undefined => {
+  if (!s) return undefined;
+  const l = s.split(/\r?\n/).find((x) => x.trim().length > 0);
+  return l?.trim();
+};
+
 const fmtStanDiff = (
   targets: string[],
   gitStderr?: string,
   js?: JsReason[],
+  attempts?: DiffFailureInput['attempts'],
 ) => {
   const id =
     targets.length > 0
       ? `The unified diff patch for file ${targets[0]} was invalid.`
       : 'The unified diff patch was invalid.';
-  const diag =
-    gitStderr && gitStderr.length
-      ? gitStderr
-      : (js ?? []).map((j) => `jsdiff: ${j.path}: ${j.reason}`).join(NL);
+
+  let diag = '';
+  if (attempts && attempts.length) {
+    const attemptLines = attempts.map((a) => {
+      const fl = firstLine(a.stderr);
+      return `${a.label}: exit ${a.code.toString()}${fl ? ` — ${fl}` : ''}`;
+    });
+    diag = attemptLines.join(NL);
+    const anyStderr = attempts.some((a) => (a.stderr ?? '').trim().length > 0);
+    if (!anyStderr && js && js.length) {
+      const jsLines = js.map((j) => `jsdiff: ${j.path}: ${j.reason}`);
+      diag = [diag, ...jsLines].filter(Boolean).join(NL);
+    }
+  } else {
+    // Back-compat path: fall back to last stderr or js reasons
+    diag =
+      gitStderr && gitStderr.length
+        ? gitStderr
+        : (js ?? []).map((j) => `jsdiff: ${j.path}: ${j.reason}`).join(NL);
+  }
 
   return [
     id,
@@ -95,7 +129,7 @@ export const formatPatchFailure = (inp: FailureInput): string => {
   if (inp.kind === 'diff') {
     return inp.context === 'downstream'
       ? fmtDownstreamDiff(inp.targets)
-      : fmtStanDiff(inp.targets, inp.gitStderr, inp.jsReasons);
+      : fmtStanDiff(inp.targets, inp.gitStderr, inp.jsReasons, inp.attempts);
   }
   // file-ops
   return inp.context === 'downstream'

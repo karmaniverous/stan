@@ -18,7 +18,7 @@ const cwdSafe = (): string => {
 };
 const isStringArray = (v: unknown): v is readonly string[] =>
   Array.isArray(v) && v.every((t) => typeof t === 'string');
-/** Normalize argv from unit tests like ["node","stan", ...] -\> [...] */ export const normalizeArgv =
+/** Normalize argv from unit tests like ["node","stan", ...] -> [...] */ export const normalizeArgv =
   (argv?: readonly string[]): readonly string[] | undefined => {
     if (!isStringArray(argv)) return undefined;
     if (argv.length >= 2 && argv[0] === 'node' && argv[1] === 'stan') {
@@ -146,8 +146,9 @@ export const runDefaults = (
     hangKill?: number;
     hangKillGrace?: number;
   };
-  const pickBool = (k: keyof typeof RUN_BASE_DEFAULTS): boolean => {
-    const v = runIn[k] as unknown;
+  type BoolKeys = 'archive' | 'combine' | 'keep' | 'sequential' | 'live';
+  const pickBool = (k: BoolKeys): boolean => {
+    const v = (runIn as Record<BoolKeys, unknown>)[k];
     return typeof v === 'boolean' ? v : RUN_BASE_DEFAULTS[k];
   };
   const pickNum = (k: 'hangWarn' | 'hangKill' | 'hangKillGrace'): number => {

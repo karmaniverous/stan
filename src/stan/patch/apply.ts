@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 
+// Attempt/diagnostic types
 export type ApplyAttempt = {
   args: string[];
   strip: number;
@@ -36,7 +37,7 @@ export const buildApplyAttempts = (
       `-p${strip.toString()}`,
     ],
     strip,
-    label: `3way-nowarn-p${strip.toString()}`,
+    label: `3way+nowarn-p${strip.toString()}`,
   };
   const with3WayIgnore: ApplyAttempt = {
     args: [
@@ -48,10 +49,33 @@ export const buildApplyAttempts = (
       `-p${strip.toString()}`,
     ],
     strip,
-    label: `3way-ignore-p${strip.toString()}`,
+    label: `3way+ignore-p${strip.toString()}`,
+  };
+  // 2-way (no --3way) variants per strip level
+  const with2WayNowarn: ApplyAttempt = {
+    args: [
+      ...base,
+      '--whitespace=nowarn',
+      '--recount',
+      '--inaccurate-eof',
+      `-p${strip.toString()}`,
+    ],
+    strip,
+    label: `2way+nowarn-p${strip.toString()}`,
+  };
+  const with2WayIgnore: ApplyAttempt = {
+    args: [
+      ...base,
+      '--ignore-whitespace',
+      '--recount',
+      '--inaccurate-eof',
+      `-p${strip.toString()}`,
+    ],
+    strip,
+    label: `2way+ignore-p${strip.toString()}`,
   };
   // No “--reject” attempt — we do not emit or collect .rej files.
-  return [with3WayNowarn, with3WayIgnore];
+  return [with3WayNowarn, with3WayIgnore, with2WayNowarn, with2WayIgnore];
 };
 
 export const runGitApply = async (

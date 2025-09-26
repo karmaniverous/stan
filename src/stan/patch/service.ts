@@ -290,17 +290,26 @@ export const runPatch = async (
   // Compose context-appropriate failure prompt
   let prompt: string;
   if (isDevModuleRepo) {
-    const last = result.captures[result.captures.length - 1];
-    const stderr = last?.stderr ?? '';
+    // Build attempts summary for diagnostics (label, exit, first line)
+    const attempts =
+      (result.captures ?? []).map((c) => ({
+        label: c.label,
+        code: c.code,
+        stderr: c.stderr,
+      })) ?? [];
+    // Include js reasons only when git was silent across attempts
+    const anyGitStderr = attempts.some(
+      (a) => (a.stderr ?? '').trim().length > 0,
+    );
     const jsReasons =
-      (!stderr || stderr.trim().length === 0) && js?.failed?.length
+      !anyGitStderr && js?.failed?.length
         ? js.failed.map((f) => ({ path: f.path, reason: f.reason }))
         : [];
     prompt = formatPatchFailure({
       context: 'stan',
       kind: 'diff',
       targets: uniqueTargets,
-      gitStderr: stderr,
+      attempts,
       jsReasons,
     });
   } else {
@@ -310,7 +319,6 @@ export const runPatch = async (
       targets: uniqueTargets,
     });
   }
-
   {
     const copied = await tryCopyToClipboard(prompt);
     if (!copied) {

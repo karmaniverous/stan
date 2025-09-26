@@ -15,12 +15,14 @@ import { detectAndCleanPatch } from './clean';
 import { resolvePatchContext } from './context';
 import { seemsUnifiedDiff } from './detect';
 import { executeFileOps, parseFileOpsBlock } from './file-ops';
+import { formatPatchFailure } from './format';
 import { maybeWarnStaged } from './git-status';
 import { pathsFromPatch } from './headers';
 import { openFilesInEditor } from './open';
 import { applyPatchPipeline } from './run/pipeline';
 import { readPatchSource } from './run/source';
 import { ensureParentDir } from './util/fs';
+
 // Early path helper
 const fileExists = (cwd: string, rel: string): boolean =>
   existsSync(path.join(cwd, rel));
@@ -131,34 +133,33 @@ export const runPatch = async (
     return;
   }
 
+  // Determine context: downstream vs STAN repo
+  let isDevModuleRepo = false;
+  try {
+    isDevModuleRepo = Boolean((await getVersionInfo(cwd)).isDevModuleRepo);
+  } catch {
+    // best-effort; default downstream
+    isDevModuleRepo = false;
+  }
+
   // Optional File Ops block (pre-ops): parse early; apply before diffs.
   const opsPlan = parseFileOpsBlock(raw);
   if (opsPlan.errors.length) {
-    // Treat any parse error as a File Ops failure per new policy.
+    // Treat any parse error as a File Ops failure per policy.
     const body = extractFileOpsBody(raw) ?? '';
-    const prompt = [
-      'The following File Ops patch failed:',
-      '',
-      body,
-      '',
-      'Perform this operation with unified diff patches instead.',
-      '',
-    ].join('\n');
+    const prompt = isDevModuleRepo
+      ? formatPatchFailure({
+          context: 'stan',
+          kind: 'file-ops',
+          fileOpsErrors: opsPlan.errors.slice(),
+        })
+      : formatPatchFailure({
+          context: 'downstream',
+          kind: 'file-ops',
+          fileOpsBlock: body,
+        });
     const copied = await tryCopyToClipboard(prompt);
-    if (!copied) {
-      console.log(prompt);
-    }
-    // Dev-mode diagnostics (STAN repo only): per-error line to stderr
-    try {
-      const v = await getVersionInfo(cwd);
-      if (v.isDevModuleRepo) {
-        for (const msg of opsPlan.errors) {
-          console.error(`stan: file-ops parse error: ${msg}`);
-        }
-      }
-    } catch {
-      /* ignore */
-    }
+    if (!copied) console.log(prompt);
     return;
   }
 
@@ -189,36 +190,31 @@ export const runPatch = async (
       const dry = Boolean(opts?.check);
       const { ok, results } = await executeFileOps(cwd, opsPlan.ops, dry);
 
-      // New behavior: do not persist diagnostics; print concise stderr lines in dev mode
-      try {
-        const v = await getVersionInfo(cwd);
-        if (!dry && v.isDevModuleRepo) {
-          for (const r of results.filter((x) => x.status === 'failed')) {
-            const tail =
-              r.verb === 'mv' && r.src && r.dest
-                ? `${r.verb} ${r.src} ${r.dest}`
-                : r.src
-                  ? `${r.verb} ${r.src}`
-                  : r.verb;
-            console.error(
-              `stan: file-ops failed: ${tail}${r.message ? ` — ${r.message}` : ''}`,
-            );
-          }
-        }
-      } catch {
-        /* ignore */
-      }
-
       if (!ok) {
         const body = extractFileOpsBody(raw) ?? '';
-        const prompt = [
-          'The following File Ops patch failed:',
-          '',
-          body,
-          '',
-          'Perform this operation with unified diff patches instead.',
-          '',
-        ].join('\n');
+        const errors =
+          results
+            .filter((r) => r.status === 'failed')
+            .map((r) => {
+              const base =
+                r.verb === 'mv' && r.src && r.dest
+                  ? `${r.verb} ${r.src} ${r.dest}`
+                  : r.src
+                    ? `${r.verb} ${r.src}`
+                    : r.verb;
+              return `file-ops failed: ${base}${r.message ? ` — ${r.message}` : ''}`;
+            }) ?? [];
+        const prompt = isDevModuleRepo
+          ? formatPatchFailure({
+              context: 'stan',
+              kind: 'file-ops',
+              fileOpsErrors: errors,
+            })
+          : formatPatchFailure({
+              context: 'downstream',
+              kind: 'file-ops',
+              fileOpsBlock: body,
+            });
         const copied = await tryCopyToClipboard(prompt);
         if (!copied) {
           console.log(prompt);
@@ -266,7 +262,7 @@ export const runPatch = async (
     return;
   }
 
-  // New failure path: request post‑patch listings per failed file (clipboard or stdout)
+  // Failure: build target list with header-derived fallback when jsdiff is generic (“(patch)”)
   const failedPathsRaw = js?.failed?.map((f) => f.path) ?? [];
   const isPlaceholder = (p: string | undefined): boolean =>
     !p || p === '(patch)' || p === '(unknown)';
@@ -290,39 +286,36 @@ export const runPatch = async (
   }
 
   const uniqueTargets = Array.from(new Set(targets));
-  const lines = uniqueTargets.map(
-    (p) =>
-      `The unified diff patch for file ${p} was invalid. Print a full, post-patch listing of this file.`,
-  );
-  const prompt = lines.join('\n') + '\n';
+
+  // Compose context-appropriate failure prompt
+  let prompt: string;
+  if (isDevModuleRepo) {
+    const last = result.captures[result.captures.length - 1];
+    const stderr = last?.stderr ?? '';
+    const jsReasons =
+      (!stderr || stderr.trim().length === 0) && js?.failed?.length
+        ? js.failed.map((f) => ({ path: f.path, reason: f.reason }))
+        : [];
+    prompt = formatPatchFailure({
+      context: 'stan',
+      kind: 'diff',
+      targets: uniqueTargets,
+      gitStderr: stderr,
+      jsReasons,
+    });
+  } else {
+    prompt = formatPatchFailure({
+      context: 'downstream',
+      kind: 'diff',
+      targets: uniqueTargets,
+    });
+  }
+
   {
     const copied = await tryCopyToClipboard(prompt);
     if (!copied) {
       console.log(prompt);
     }
-  }
-
-  // Dev-mode concise stderr diagnostics (STAN repo only)
-  try {
-    const v = await getVersionInfo(cwd);
-    if (v.isDevModuleRepo) {
-      const last = result.captures[result.captures.length - 1];
-      const lastSnippet = last?.stderr
-        ? last.stderr.split(/\r?\n/).slice(0, 2).join(' ').slice(0, 200)
-        : '';
-      console.error(
-        `stan: git attempts: ${result.tried.join(', ')}; last exit ${result.lastCode}${
-          lastSnippet ? `; stderr: ${lastSnippet}` : ''
-        }`,
-      );
-      if (js?.failed?.length) {
-        for (const f of js.failed) {
-          console.error(`stan: jsdiff: ${f.path}: ${f.reason}`);
-        }
-      }
-    }
-  } catch {
-    /* ignore */
   }
 
   // Open target files even when the patch fails (unless --check)

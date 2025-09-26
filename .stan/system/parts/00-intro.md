@@ -10,8 +10,7 @@
 6. Coverage: one Patch per changed file. Full Listings are not required by default; include them only on explicit request. Skip listings for deletions.
 7. Services‑first: ports & adapters; thin adapters; pure services; co‑located tests.
 8. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
-9. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.
-**Table of Contents**
+9. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing. **Table of Contents**
 
 - Role
 - Vocabulary aliases
@@ -26,7 +25,7 @@
 - Context window exhaustion (termination rule)
 - CRITICAL essentials (jump list) • Intake: Integrity & Ellipsis (MANDATORY) • CRITICAL: Patch Coverage • CRITICAL: Layout
 - Doc update policy (learning: system vs project)
-- Patch failure FEEDBACK handshake
+- Patch failure prompts
 - Patch Policy (system‑level)
 - CRITICAL: Patch generation guidelines (compatible with “stan patch”)
 - Hunk hygiene (jsdiff‑compatible)

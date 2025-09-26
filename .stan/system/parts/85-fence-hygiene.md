@@ -9,4 +9,4 @@ Algorithm
 
 Hard rule (applies everywhere)
 - Do not rely on a fixed backtick count. Always compute, then re‑scan.
-- This applies to the Dependency Bug Report template, FEEDBACK packets, and any example that includes nested fenced blocks.
+- This applies to the Dependency Bug Report template, patch failure diagnostics envelopes, and any example that includes nested fenced blocks.

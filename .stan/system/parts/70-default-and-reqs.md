@@ -82,5 +82,5 @@ If info is insufficient to proceed without critical assumptions, abort and clari
 - When patches are impractical, provide Full Listings for changed files,
   followed by the commit message. Do not emit unified diffs in that mode.
 
-Exception — FEEDBACK replies:
-- When responding to a FEEDBACK packet (patch failure), do not emit a Commit Message. Provide only the improved Patch(es) and Full Listings for the failed files (as required by the FEEDBACK rules).
+Exception — patch failure diagnostics:
+- When responding to a patch failure diagnostics envelope, do not emit a Commit Message. Provide only the corrected Diff Patch(es) and any requested Full Listings for the affected files (see “Patch failure prompts”).

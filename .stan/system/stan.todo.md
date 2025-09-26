@@ -62,6 +62,10 @@ Next up (priority order)
 
 Completed (recent)
 
+- Patch failure wording alignment (system prompt)
+  - Replaced legacy “FEEDBACK” references with “patch failure diagnostics envelope” and updated links to “Patch failure prompts.”
+  - Adjusted the Table of Contents, Commit Message exception, Fence Hygiene note, and Response Format bullets to point at the canonical prompts and terminology.
+
 - Sequential cancellation gate (tests)
   - Added a one‑tick event‑loop yield after each sequential script completes and re‑checked the cancellation gate before scheduling the next script.
   - Closes a race where SIGINT arriving immediately after a runner finished could allow the next script to start (fixes cancel.gate and cancel.schedule).

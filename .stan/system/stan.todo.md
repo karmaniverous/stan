@@ -4,6 +4,11 @@ When updated: 2025-09-26 (UTC)
 
 Next up (priority order)
 
+- Class‑based design adoption audit
+  - Apply the new project policy: prefer class‑based design wherever possible.
+  - For touched modules, prefer introducing small single‑responsibility classes that fit existing ports/adapters seams.
+  - Do not refactor purely for style; convert opportunistically with functional changes, and record any follow‑ups as needed.
+
 - CLI UI unification (Live + Logger under one composable UI)
   - Provide a single RunnerUI that composes a shared ProgressModel and a pluggable sink (LiveTableSink | LoggerSink).
   - Share status labels and summary via one helper; preserve q/r keys, final‑frame flush, and parity with existing tests.
@@ -59,6 +64,10 @@ Unpersisted tasks
   - Consider a brief docs note in README about full vs diff archive contents (patch workspace policy).
 
 Completed (recent)
+
+- Project policy — class‑based design directive
+  - Added a project‑level directive to prefer a class‑based design wherever possible.
+  - Guidance: single‑responsibility classes, ports/adapters alignment, compositional preference, opportunistic migration, and paired tests.
 
 - Cancel pipeline — SIGINT parity fix
   - Parity test passing; archives skipped on cancel; bounded settle/join in place. Consider reducing the final settle once real‑world runs validate stability.

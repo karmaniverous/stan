@@ -4,6 +4,24 @@ This file contains STAN (this repo) specific requirements and conventions. Gener
 
 Note: The project prompt is created on demand when repo‑specific policies emerge. No template is installed or shipped by `stan init`.
 
+## Class‑based design directive (project policy)
+
+- Prefer a class‑based design across new modules wherever possible.
+- Keep classes single‑responsibility and small:
+  - One clear responsibility per class; minimal public API.
+  - Favor composition over deep inheritance; avoid “kitchen‑sink” classes.
+- Ports & Adapters:
+  - Classes are the default way to implement ports (service contracts) and adapters.
+  - Adapters remain thin by policy; classes used for adapters should encapsulate only mapping/presentation and side‑effect edges.
+- Testing:
+  - Pair each class with focused unit tests targeting its public surface.
+  - Mock only at well‑defined seams (ports).
+- Migration guidance:
+  - Do not refactor purely for style; convert opportunistically when touching a module for functional changes.
+  - If a function‑style module is clearly simpler and stable, it may remain as‑is; document the rationale in its header comment.
+- Documentation note:
+  - Continue to respect SRP and services‑first architecture; classes are a vehicle for those principles, not a license to centralize unrelated logic.
+
 ## Diagnostics consumption (STAN repo)
 
 When a diff patch fails in the STAN repository, the formatter emits a single diagnostics envelope:

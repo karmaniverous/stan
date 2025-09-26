@@ -97,6 +97,13 @@ Completed (recent)
   - Switched the Logger UI to use the shared status‑label helper and removed its local duplicate.
   - Maintains parity with Live; BORING tokens remain bracketed and stable; TTY colored symbols preserved where applicable.
 
+- Test updates — unified diagnostics envelope (downstream == STAN)
+  - Updated tests that asserted legacy downstream one‑liners to assert the unified diagnostics envelope:
+    - src/stan/patch/format.test.ts (diff + file‑ops cases)
+    - src/stan/patch/service.format.behavior.test.ts (integration)
+  - README docs sweep: replaced “FEEDBACK envelope” wording with “diagnostics envelope” and adjusted guide label text.
+  - Keeps the repo aligned with the completed formatter behavior change.
+
 - Windows cancel teardown — additional EBUSY hardening
   - Increased final post‑cancel settle on Windows to 1600 ms (non‑Windows 400 ms) to further reduce transient EBUSY during test directory removal.
 

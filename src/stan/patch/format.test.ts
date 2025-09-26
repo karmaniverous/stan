@@ -43,18 +43,18 @@ const makeOkMessage = (): string => {
 };
 
 describe('formatPatchFailure (unit coverage: downstream vs STAN; diff vs file-ops)', () => {
-  it('downstream diff: one-liners with blank-line separation for multiple targets', () => {
+  it('downstream diff: unified diagnostics envelope (matches STAN style)', () => {
     const out = formatPatchFailure({
       context: 'downstream',
       kind: 'diff',
       targets: ['src/a.ts', 'src/b.ts'],
     });
-    // Two lines separated by a blank line and trailing newline
-    const parts = out.trimEnd().split('\n\n');
-    expect(parts.length).toBe(2);
-    expect(parts[0]).toMatch(/file src\/a\.ts was invalid/);
-    expect(parts[1]).toMatch(/file src\/b\.ts was invalid/);
-    // Ensure final newline present
+    // Unified envelope with ID line for the first target and START/END markers.
+    expect(out).toMatch(
+      /The unified diff patch for file src\/a\.ts was invalid\./,
+    );
+    expect(out).toMatch(/START PATCH DIAGNOSTICS/);
+    expect(out).toMatch(/END PATCH DIAGNOSTICS/);
     expect(out.endsWith('\n')).toBe(true);
   });
 
@@ -92,19 +92,17 @@ describe('formatPatchFailure (unit coverage: downstream vs STAN; diff vs file-op
     expect(out).toMatch(/END PATCH DIAGNOSTICS/);
   });
 
-  it('downstream file-ops: quotes block and requests unified diffs', () => {
+  it('downstream file-ops: unified diagnostics envelope (matches STAN style)', () => {
     const block = ['### File Ops', 'mv a b', 'rm c'].join('\n');
     const out = formatPatchFailure({
       context: 'downstream',
       kind: 'file-ops',
       fileOpsBlock: block,
     });
-    expect(out).toMatch(/The following File Ops patch failed:/);
-    expect(out).toContain('mv a b');
-    expect(out).toContain('rm c');
-    expect(out).toMatch(
-      /Perform this operation with unified diff patches instead/,
-    );
+    expect(out).toMatch(/^The File Ops patch failed\./m);
+    expect(out).toMatch(/START PATCH DIAGNOSTICS/);
+    expect(out).toMatch(/END PATCH DIAGNOSTICS/);
+    expect(out.endsWith('\n')).toBe(true);
   });
 
   it('STAN file-ops: diagnostics envelope with parser/exec lines', () => {

@@ -142,7 +142,7 @@ See [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage_
   - [The STAN Loop](https://docs.karmanivero.us/stan/documents/The_STAN_Loop.html) — How Build & Snapshot → Share & Baseline → Discuss & Patch work together.
   - [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html) — Common flags and invocation patterns, including `-p`, `-P`, `-S`, `-A`, and `-c`.
   - [Stan Configuration](https://docs.karmanivero.us/stan/documents/Stan_Configuration.html) — All config keys, includes/excludes semantics, and phase‑scoped CLI defaults.
-  - [Patch Workflow & FEEDBACK](https://docs.karmanivero.us/stan/documents/Patch_Workflow___FEEDBACK.html) — Unified diff policy, FEEDBACK envelopes, and assistant expectations.
+  - [Patch Workflow & Diagnostics](https://docs.karmanivero.us/stan/documents/Patch_Workflow___FEEDBACK.html) — Unified diff policy, diagnostics envelopes, and assistant expectations.
   - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/Archives___Snapshots.html) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history. Additional references:
 
 - The following documents are maintained by STAN and live under `<stanPath>/system/` in your repo:
@@ -160,7 +160,7 @@ See [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage_
 ## Troubleshooting
 
 - “system prompt missing”: ensure <stanPath>/system/stan.system.md is included in the attached archive; otherwise attach it directly as stan.system.md.
-- Patch failures: use --check to validate first; if a patch fails, STAN writes a compact FEEDBACK envelope and (when possible) copies it to your clipboard so you can get a corrected patch.
+- Patch failures: use --check to validate first; if a patch fails, STAN writes a concise diagnostics envelope (attempt summaries + jsdiff reasons) and copies it to your clipboard (stdout fallback) so you can get a corrected patch.
 - Large files: STAN may flag very long source files (~300+ LOC) and ask for a split plan before proceeding.
 
 ---

@@ -28,6 +28,11 @@ type RunHooks = {
   onHangKilled?: (key: string, graceSeconds: number) => void;
 };
 
+// Yield one event-loop tick so pending signal/key handlers (e.g., SIGINT)
+// can run before scheduling the next script.
+const yieldToEventLoop = (): Promise<void> =>
+  new Promise<void>((resolve) => setImmediate(resolve));
+
 const waitForStreamClose = (stream: NodeJS.WritableStream): Promise<void> =>
   new Promise<void>((resolveP, rejectP) => {
     stream.on('close', () => resolveP());
@@ -233,10 +238,11 @@ export const runScripts = async (
     for (const k of toRun) {
       if (typeof shouldContinue === 'function' && !shouldContinue()) break;
       await runner(k);
-      // Per-script post-run gate: if cancellation was requested while the script
-      // was running, do not schedule the next one.
-      if (typeof shouldContinue === 'function' && !shouldContinue()) {
-        break;
+      // Allow pending SIGINT/keypress handlers to run before deciding on the next script,
+      // then re-check the cancellation gate.
+      if (typeof shouldContinue === 'function') {
+        await yieldToEventLoop();
+        if (!shouldContinue()) break;
       }
     }
   } else {

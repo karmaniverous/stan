@@ -14,14 +14,6 @@ Next up (priority order)
   - Share status labels and summary via one helper; preserve q/r keys, final‑frame flush, and parity with existing tests.
   - Acceptance: existing live/no‑live parity tests remain green; logs/frames carry the same status tokens.
 
-- Cancellation pipeline hardening (failing tests)
-  - cancel.schedule: sequential scheduling must not run the next script after SIGINT.
-    - Proposal: gate per‑script execution with a per‑script race (runner vs cancel), and check the cancellation flag again immediately after each runner resolves to prevent the next schedule step from starting.
-    - Add a dedicated unit/integration test for the per‑script race to keep this behavior pinned.
-  - cancel.key (Windows): sporadic EBUSY on teardown in CI.
-    - Proposal: increase the post‑cancel settle slightly or wire a brief bounded join on renderer timers; keep rmDirWithRetries as last resort.
-    - Validate locally and in CI to tune the final settle back toward 250–500 ms.
-
 - DRY status labels and summary
   - Extract a shared status‑label + summary helper and reuse in LoggerUI and ProgressRenderer to avoid wording/color drift.
 
@@ -69,6 +61,10 @@ Next up (priority order)
   - Consider a brief docs note in README about full vs diff archive contents (patch workspace policy).
 
 Completed (recent)
+
+- Sequential cancellation gate (tests)
+  - Added a one‑tick event‑loop yield after each sequential script completes and re‑checked the cancellation gate before scheduling the next script.
+  - Closes a race where SIGINT arriving immediately after a runner finished could allow the next script to start (fixes cancel.gate and cancel.schedule).
 
 - Live BORING labels — bracket tokens
   - Unify Live’s BORING tokens to bracketed form ([OK]/[FAIL]/…) using the shared label helper.

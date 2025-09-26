@@ -4,7 +4,7 @@
  * Unified for all repos:
  * - diff: identification line + diagnostics envelope (START/END).
  *         Attempts summary: one line per git attempt in cascade order:
- *           “<label>: exit <code>[ — <first stderr line>]”.
+ *           “<label>: exit <code>[ — \<first stderr line\>]”.
  *         Always append concise “jsdiff: <path>: <reason>” lines when jsdiff ran.
  * - file-ops: “The File Ops patch failed.” + diagnostics envelope containing
  *             parse/exec failures; no action‑request line.

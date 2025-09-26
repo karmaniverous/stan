@@ -9,6 +9,11 @@ Next up (priority order)
   - For touched modules, prefer introducing small single‑responsibility classes that fit existing ports/adapters seams.
   - Do not refactor purely for style; convert opportunistically with functional changes, and record any follow‑ups as needed.
 
+- CLI UI unification (Live + Logger under one composable UI)
+  - Provide a single RunnerUI that composes a shared ProgressModel and a pluggable sink (LiveTableSink | LoggerSink).
+  - Share status labels and summary via one helper; preserve q/r keys, final‑frame flush, and parity with existing tests.
+  - Acceptance: existing live/no‑live parity tests remain green; logs/frames carry the same status tokens.
+
 - Cancellation pipeline hardening (failing tests)
   - cancel.schedule: sequential scheduling must not run the next script after SIGINT.
     - Proposal: gate per‑script execution with a per‑script race (runner vs cancel), and check the cancellation flag again immediately after each runner resolves to prevent the next schedule step from starting.
@@ -16,11 +21,6 @@ Next up (priority order)
   - cancel.key (Windows): sporadic EBUSY on teardown in CI.
     - Proposal: increase the post‑cancel settle slightly or wire a brief bounded join on renderer timers; keep rmDirWithRetries as last resort.
     - Validate locally and in CI to tune the final settle back toward 250–500 ms.
-
-- CLI UI unification (Live + Logger under one composable UI)
-  - Provide a single RunnerUI that composes a shared ProgressModel and a pluggable sink (LiveTableSink | LoggerSink).
-  - Share status labels and summary via one helper; preserve q/r keys, final‑frame flush, and parity with existing tests.
-  - Acceptance: existing live/no‑live parity tests remain green; logs/frames carry the same status tokens.
 
 - DRY status labels and summary
   - Extract a shared status‑label + summary helper and reuse in LoggerUI and ProgressRenderer to avoid wording/color drift.
@@ -80,12 +80,10 @@ Completed (recent)
   - System prompt updated to reflect the unified behavior and to direct assistant follow‑up with analysis and options.
 
 - Assistant follow‑up options (all repos)
-  - Added explicit options language to the system prompt:
-    “1) New patch[es] (recommended)… 2) Full listings…”.
+  - Added explicit options language to the system prompt: “1) New patch[es] (recommended)… 2) Full listings…”.
 
 - STAN‑repo gating phrase (apply/defer)
-  - Project prompt updated to include explicit gating:
-    “Say ‘apply’ to make [prompt | code] changes now or ‘defer’ to save them to the dev plan.”
+  - Project prompt updated to include explicit gating: “Say ‘apply’ to make [prompt | code] changes now or ‘defer’ to save them to the dev plan.”
 
 - Reserved workspace exclusions (single source)
   - Extended the reserved helpers into filterFiles() so selection and tar filters share one definition (diff/patch always excluded, output excluded unless combine).

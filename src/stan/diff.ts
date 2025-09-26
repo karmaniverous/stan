@@ -13,7 +13,6 @@ import { join, resolve } from 'node:path';
 import { logArchiveWarnings, makeTarFilter } from './archive/util';
 import { classifyForArchive } from './classifier';
 import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
-import { getVersionInfo } from './version';
 type TarLike = {
   create: (
     opts: {
@@ -24,7 +23,6 @@ type TarLike = {
     files: string[],
   ) => Promise<void>;
 };
-
 export type SnapshotUpdateMode = 'never' | 'createIfMissing' | 'replace';
 
 const computeCurrentHashes = async (
@@ -124,18 +122,6 @@ export const createArchiveDiff = async ({
 }): Promise<{ diffPath: string }> => {
   const { outDir, diffDir } = await ensureOutAndDiff(cwd, stanPath);
 
-  // Include <stanPath>/patch in diff archives only when developing STAN itself.
-  // Downstream repos should not include the patch workspace by default.
-  let includePatchDirInDiff = false;
-  try {
-    const v = await getVersionInfo(cwd);
-    includePatchDirInDiff = Boolean(v.isDevModuleRepo);
-  } catch {
-    includePatchDirInDiff = false;
-  }
-
-  const patchRel = `${stanPath.replace(/\\/g, '/')}/patch`;
-
   const all = await listFiles(cwd);
   const filtered = await filterFiles(all, {
     cwd,
@@ -169,11 +155,7 @@ export const createArchiveDiff = async ({
   const tar = (await import('tar')) as unknown as TarLike;
   if (includeOutputDirInDiff) {
     const files = Array.from(
-      new Set([
-        ...changed,
-        `${stanPath.replace(/\\/g, '/')}/output`,
-        ...(includePatchDirInDiff ? [patchRel] : []),
-      ]),
+      new Set([...changed, `${stanPath.replace(/\\/g, '/')}/output`]),
     );
 
     await tar.create(
@@ -187,14 +169,10 @@ export const createArchiveDiff = async ({
   } else if (changed.length === 0) {
     const sentinel = sentinelPathFor(diffDir);
     await writeFile(sentinel, 'no changes', 'utf8');
-    // Tar from repo root to include sentinel path; include patch dir only when requested
-    const base = [`${stanPath.replace(/\\/g, '/')}/diff/.stan_no_changes`];
-    const files = includePatchDirInDiff ? [patchRel, ...base] : base;
+    const files = [`${stanPath.replace(/\\/g, '/')}/diff/.stan_no_changes`];
     await tar.create({ file: diffPath, cwd }, files);
   } else {
-    const files = Array.from(
-      new Set([...changed, ...(includePatchDirInDiff ? [patchRel] : [])]),
-    );
+    const files = Array.from(new Set([...changed]));
     await tar.create({ file: diffPath, cwd }, files);
   }
 

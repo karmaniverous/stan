@@ -25,7 +25,7 @@ export const firstStderrLine = (s?: string): string | undefined => {
 
 /**
  * Render one summary line per git attempt in cascade order:
- *   "<label>: exit <code>[ — <first stderr line>]"
+ *   "`<label>`: exit `<code>`[ — `first stderr line`]"
  *
  * @param captures - Attempt records in the original try order.
  * @returns Lines suitable for inclusion in a diagnostics envelope.

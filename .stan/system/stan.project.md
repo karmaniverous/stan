@@ -20,6 +20,7 @@ When a diff patch fails in the STAN repository, the formatter emits a single dia
   - Reasons typically include “unable to place hunk(s)” or “target file not found”.
 
 Use these together:
+
 - Attempts explain why git refused the patch at each rung.
 - jsdiff explains any remaining per‑file failures after the fallback.
 
@@ -291,7 +292,8 @@ Bring small, high‑signal artifacts into the STAN workspace just before archivi
 - Canonical patch workspace is `<stanPath>/patch/`:
   - Write cleaned input to `<stanPath>/patch/.patch`.
   - Do not persist per‑attempt diagnostics or .rej files.
-  - Include this directory in every `archive.tar` and `archive.diff.tar`.
+  - Include this directory in `archive.tar` (full archive).
+  - Do not include this directory in `archive.diff.tar` (diff archive).
 
 ## Patch Extensions — File Ops (declarative)
 

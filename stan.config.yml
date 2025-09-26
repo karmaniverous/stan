@@ -4,7 +4,7 @@ cliDefaults:
     sequential: true
 includes: []
 excludes:
-  - "*.local"
+  - '*.local'
   - assets
   - CHANGELOG.md
   - docs
@@ -15,7 +15,7 @@ scripts:
   typecheck: npm run typecheck
   lint: npm run lint:fix
   test: npm run test -- --no-color
-  build: npm run stan
+  build: npm run build
   docs: npm run docs -- --emit none
   knip: npm run knip
 patchOpenCommand: code -g {file}

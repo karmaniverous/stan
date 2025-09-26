@@ -75,6 +75,18 @@ Completed (recent)
   - Fixes the final‑frame expectation in live.order.flush.test without changing non‑TTY/TTY behavior.
   - Follow‑up: finish DRY by switching Logger to the same helper and removing its local duplicate.
 
+- Unified patch failure feedback (downstream == STAN)
+  - Formatter now emits the STAN diagnostics envelope (attempt summaries + jsdiff reasons) for both downstream and STAN repos for Diff and File Ops failures.
+  - System prompt updated to reflect the unified behavior and to direct assistant follow‑up with analysis and options.
+
+- Assistant follow‑up options (all repos)
+  - Added explicit options language to the system prompt:
+    “1) New patch[es] (recommended)… 2) Full listings…”.
+
+- STAN‑repo gating phrase (apply/defer)
+  - Project prompt updated to include explicit gating:
+    “Say ‘apply’ to make [prompt | code] changes now or ‘defer’ to save them to the dev plan.”
+
 - Reserved workspace exclusions (single source)
   - Extended the reserved helpers into filterFiles() so selection and tar filters share one definition (diff/patch always excluded, output excluded unless combine).
 

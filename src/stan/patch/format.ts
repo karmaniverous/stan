@@ -1,17 +1,13 @@
 // src/stan/patch/format.ts
 /**
  * Central formatter for patch failure outputs.
- * - Downstream:
- *   - diff: one line per failed file, blank-line separated when multiple.
- *   - file-ops: quote the original ops block + request unified diffs.
- * - STAN repo:
- *   - diff: identification line + diagnostics envelope (START/END).
- *           Attempts summary: one line per git attempt in cascade order:
- *             “&lt;label&gt;: exit &lt;code&gt;[ — &lt;first stderr line&gt;]”.
- *           Always append concise “jsdiff: &lt;path&gt;: &lt;reason&gt;” lines
- *           when jsdiff ran and reported failures.
- *   - file-ops: “The File Ops patch failed.” + diagnostics envelope containing
- *               parse/exec failures; no action‑request line.
+ * Unified for all repos:
+ * - diff: identification line + diagnostics envelope (START/END).
+ *         Attempts summary: one line per git attempt in cascade order:
+ *           “<label>: exit <code>[ — <first stderr line>]”.
+ *         Always append concise “jsdiff: <path>: <reason>” lines when jsdiff ran.
+ * - file-ops: “The File Ops patch failed.” + diagnostics envelope containing
+ *             parse/exec failures; no action‑request line.
  */
 
 export type FailureContext = 'downstream' | 'stan';
@@ -44,16 +40,6 @@ export type FileOpsFailureInput = {
 export type FailureInput = DiffFailureInput | FileOpsFailureInput;
 
 const NL = '\n';
-
-const fmtDownstreamDiff = (targets: string[]): string => {
-  // Emit a single, concise line per failed file and separate multiple
-  // files with a blank line. Tests assert that the line ends with
-  // "was invalid." and that there is a blank line before the next one.
-  const lines = targets.map(
-    (p) => `The unified diff patch for file ${p} was invalid.`,
-  );
-  return lines.join(`${NL}${NL}`) + NL;
-};
 
 import { renderAttemptSummary } from './diag/util';
 
@@ -95,17 +81,6 @@ const fmtStanDiff = (
   ].join(NL);
 };
 
-const fmtDownstreamFileOps = (block?: string): string => {
-  return [
-    'The following File Ops patch failed:',
-    '',
-    block ?? '',
-    '',
-    'Perform this operation with unified diff patches instead.',
-    '',
-  ].join(NL);
-};
-
 const fmtStanFileOps = (errors?: string[]): string => {
   return [
     'The File Ops patch failed.',
@@ -119,12 +94,10 @@ const fmtStanFileOps = (errors?: string[]): string => {
 
 export const formatPatchFailure = (inp: FailureInput): string => {
   if (inp.kind === 'diff') {
-    return inp.context === 'downstream'
-      ? fmtDownstreamDiff(inp.targets)
-      : fmtStanDiff(inp.targets, inp.gitStderr, inp.jsReasons, inp.attempts);
+    // Unified envelope for both downstream and STAN contexts
+    return fmtStanDiff(inp.targets, inp.gitStderr, inp.jsReasons, inp.attempts);
   }
   // file-ops
-  return inp.context === 'downstream'
-    ? fmtDownstreamFileOps(inp.fileOpsBlock)
-    : fmtStanFileOps(inp.fileOpsErrors);
+  // Unified envelope for both downstream and STAN contexts
+  return fmtStanFileOps(inp.fileOpsErrors);
 };

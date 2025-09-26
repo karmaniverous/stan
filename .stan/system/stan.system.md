@@ -510,23 +510,44 @@ When context is tight or replies risk truncation:
 
 This avoids half‑applied diffs and ensures integrity of the patch workflow.
 
-# Patch failure prompts (clipboard; no persisted diagnostics)
+# Patch failure prompts
 
-When a patch cannot be fully applied, STAN provides minimal, actionable prompts and does not persist diagnostics:
+When a patch cannot be fully applied, STAN provides a concise diagnostics envelope for the user to paste back into the chat. The user may provide multiple diagnostics envelopes at once.
 
 - Unified‑diff failures
-  - STAN copies one line per failed file to your clipboard: “The unified diff patch for file <path> was invalid. Print a full, post‑patch listing of this file.”
-  - If clipboard is unavailable, the same text is printed to stdout for easy copy/paste.
-  - Provide the requested Full Listing(s) and a corrected Patch for only those files.
+  - diagnostics envelope content (stdout fallback):
 
-- File Ops failures (parse or exec)
-  - STAN copies a prompt that quotes the original “### File Ops” block verbatim and asks to perform the operation with unified diffs instead.
-  - If clipboard is unavailable, the same prompt is printed to stdout.
+    ```
+    The unified diff patch for file <path/to/file.ext> was invalid.
 
-Notes
-- No FEEDBACK envelopes are produced.
-- No diagnostic artifacts are persisted (no .rej files, attempts.json, or per‑attempt logs).
-- Dev‑mode diagnostics (STAN repository only) print concise stderr messages for quick triage (git apply attempts, jsdiff per‑file reasons, file‑ops failures).
+    START PATCH DIAGNOSTICS
+    <attempt summaries, one per git attempt, in cascade order:
+    "<label>: exit <code> — <first stderr line>">
+    <jsdiff reasons, when applicable:
+    "jsdiff: <path>: <reason>">
+    END PATCH DIAGNOSTICS
+    ```
+
+  - Attempt summaries are concise, in the exact cascade order tried.
+  - jsdiff reasons appear whenever jsdiff was attempted and any file still failed.
+
+- File Ops failures (all repos)
+  - diagnostics envelope content (stdout fallback):
+
+    ```
+    The File Ops patch failed.
+
+    START PATCH DIAGNOSTICS
+    <parser/exec failures; one line per issue>
+    END PATCH DIAGNOSTICS
+    ```
+
+## Assistant follow‑up (after feedback; all repos)
+
+After reading the diagnostics envelope, analyze the likely causes and present the results briefly. Then offer these options explicitly:
+
+1. New patch[es] (recommended): I’ll emit [a corrected patch | corrected patches] for [path/to/file.ts | the affected files].
+2. Full listings: I’ll provide [a full, post‑patch listing | full, post‑patch listings] for [path/to/file.ts | the affected files]. U
 
 # Always‑on prompt checks (assistant loop)
 

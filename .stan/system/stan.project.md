@@ -42,6 +42,19 @@ Use these together:
 - Attempts explain why git refused the patch at each rung.
 - jsdiff explains any remaining per‑file failures after the fallback.
 
+## Feedback handling (augments system prompt)
+
+- This repository adopts the unified patch‑failure feedback defined in the system prompt (diagnostics envelope with attempt summaries and jsdiff reasons). See `<stanPath>/system/stan.system.md` → “Patch failure prompts”.
+- Assistant follow‑up in this repo:
+  - Analyze the diagnostics and present results briefly.
+  - Offer options explicitly:
+    1. New patch[es] (recommended): I’ll emit [a corrected patch | corrected patches] for [path/to/file.ts | the affected files].
+    2. Full listings: I’ll provide [a full, post‑patch listing | full, post‑patch listings] for [path/to/file.ts | the affected files].
+  - When suggested improvements target STAN itself (patch generation in the system prompt or patch‑handling code), gate with: Say “apply” to make [prompt | code] changes now or “defer” to save them to the development plan.
+
+- Notes:
+  - Clipboard‑first; stdout fallback when clipboard unavailable.
+
 ## System prompt source layout & assembly (authoring in this repo)
 
 - Runtime invariant: downstream tools and assistants consume a single file `.stan/system/stan.system.md`. Do not change this invariant.- Source split: author the system prompt as ordered parts under `.stan/system/parts/` (e.g., `00-intro.md`, `20-intake.md`, `30-response-format.md`, `40-patch-policy.md`, …). Filenames should start with a numeric prefix to define order.
@@ -318,9 +331,7 @@ Bring small, high‑signal artifacts into the STAN workspace just before archivi
   1. DMP patch blocks (one per file). STAN applies with conservative fuzz and preserves original EOL flavor per file.
   2. `git apply` (two 3‑way attempts).
   3. jsdiff fallback.
-  4. If any files still fail:
-     - Downstream: concise one‑line listing requests for those files.
-     - STAN repo: diagnostics envelope (START/END) for analysis.
+  4. If any files still fail: use the unified diagnostics envelope (START/END) described in the system prompt for analysis.
 
 - Rules and safeguards:
   - One patch per file per reply (never mix versions for the same file in a single turn). File Ops remain separate.

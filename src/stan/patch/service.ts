@@ -298,7 +298,8 @@ export const runPatch = async (
   {
     const copied = await tryCopyToClipboard(prompt);
     if (!copied) {
-      console.log(prompt);    }
+      console.log(prompt);
+    }
   }
 
   // Dev-mode concise stderr diagnostics (STAN repo only)

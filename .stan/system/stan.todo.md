@@ -10,7 +10,7 @@ Next up (priority order)
    - STAN repo (diff): identify the failed file, then emit diagnostics envelope:
      ```
      START PATCH DIAGNOSTICS
-     <verbatim git stderr; if absent and jsdiff ran: lines "jsdiff: <path>: <reason>">
+     <verbatim git stderr; if absent and jsdiff ran: lines “jsdiff: <path>: <reason>">
      END PATCH DIAGNOSTICS
      ```
      No “Print a full…” line here.
@@ -27,9 +27,8 @@ Next up (priority order)
 
 3. Tests
    - Downstream spacing: multiple failed diff files yield one-liners separated by blank lines.
-   - STAN repo (diff): diagnostics envelope includes verbatim git stderr when present; otherwise jsdiff lines.
-   - STAN repo (file ops): diagnostics envelope contains parse/exec lines; no downstream re‑request text.
-   - No persisted artifacts under normal runs (no .debug/.rej).
+   - STAN repo diagnostics envelope for diff (git stderr; jsdiff-only) and file ops.
+   - Ensure no .debug/.rej persistence.
    - Maintain existing path derivation behavior when jsdiff reports “(patch)” (prefer header-derived paths).
 
 4. Assistant guidance (project prompt only)

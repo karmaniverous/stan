@@ -57,6 +57,16 @@ Completed (recent)
 - Validated diffs for ops‑only acceptance (no full listings):
   - Reissued correct unified diffs for new test and doc updates.
 
+- Live cancellation consolidation:
+  - Introduced src/stan/run/control.ts (RunnerControl) using Node readline +
+    SIGINT; centralizes q/r/Ctrl+C and teardown.
+  - LoggerUI/LiveUI now attach/detach RunnerControl; raw‑mode and listeners
+    are restored in one place; archives remain skipped on cancel; exitCode set.
+  - Removed legacy key handler via File Ops:
+    - rm src/stan/run/input/keys.ts
+  - Rationale: shrink cancellation surface to a single small controller and
+    delete code quickly without changing UX or tests.
+
 - Lint clean-up:
   - Removed dead constant-condition block in src/stan/patch/service.ts (no-constant-condition).
 

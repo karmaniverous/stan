@@ -15,7 +15,7 @@ import {
   red,
 } from '@/stan/util/color';
 
-import { installCancelKeys } from './input/keys';
+import { RunnerControl } from './control';
 import { ProgressRenderer } from './live/renderer';
 export type ArchiveKind = 'full' | 'diff';
 
@@ -93,7 +93,7 @@ const statusLabel = (kind: StatusKind): string => {
 };
 
 export class LoggerUI implements RunnerUI {
-  private restoreCancel: (() => void) | null = null;
+  private control: RunnerControl | null = null;
   start(): void {
     // no-op
   }
@@ -136,34 +136,37 @@ export class LoggerUI implements RunnerUI {
   onCancelled(mode?: 'cancel' | 'restart'): void {
     void mode;
     try {
-      this.restoreCancel?.();
+      this.control?.detach();
     } catch {
       /* ignore */
     }
-    this.restoreCancel = null;
+    this.control = null;
   }
   installCancellation(triggerCancel: () => void): void {
     // Reuse unified cancel keys wiring, but restrict to SIGINT only (no TTY raw key handlers).
     try {
-      const sub = installCancelKeys(triggerCancel, { sigintOnly: true });
-      this.restoreCancel = sub.restore;
+      this.control = new RunnerControl({
+        onCancel: triggerCancel,
+        sigintOnly: true,
+      });
+      this.control.attach();
     } catch {
-      this.restoreCancel = null;
+      this.control = null;
     }
   }
   stop(): void {
     try {
-      this.restoreCancel?.();
+      this.control?.detach();
     } catch {
       /* ignore */
     }
-    this.restoreCancel = null;
+    this.control = null;
   }
 }
 
 export class LiveUI implements RunnerUI {
   private renderer: ProgressRenderer | null = null;
-  private restoreCancel: (() => void) | null = null;
+  private control: RunnerControl | null = null;
 
   constructor(private readonly opts?: { boring?: boolean }) {}
 
@@ -274,24 +277,22 @@ export class LiveUI implements RunnerUI {
       /* ignore */
     }
     try {
-      this.restoreCancel?.();
+      this.control?.detach();
     } catch {
       /* ignore */
     }
-    this.restoreCancel = null;
+    this.control = null;
     // Drop the renderer so the next run starts from a clean slate.
     // (A fresh ProgressRenderer instance will be constructed by start().)
     this.renderer = null;
   }
   installCancellation(triggerCancel: () => void, onRestart?: () => void): void {
     try {
-      const sub = installCancelKeys(triggerCancel, {
-        onRestart,
-      });
-      this.restoreCancel = sub.restore;
+      this.control = new RunnerControl({ onCancel: triggerCancel, onRestart });
+      this.control.attach();
     } catch {
       // best-effort
-      this.restoreCancel = null;
+      this.control = null;
     }
   }
   stop(): void {
@@ -302,10 +303,10 @@ export class LiveUI implements RunnerUI {
       /* ignore */
     }
     try {
-      this.restoreCancel?.();
+      this.control?.detach();
     } catch {
       /* ignore */
     }
-    this.restoreCancel = null;
+    this.control = null;
   }
 }

@@ -13,3 +13,4 @@ node_modules/
 .stan/diff/
 .stan/output/
 .stan/patch/
+.stan/dist/

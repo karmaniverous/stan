@@ -9,6 +9,23 @@ Next up (priority order)
   - For touched modules, prefer introducing small single‑responsibility classes that fit existing ports/adapters seams.
   - Do not refactor purely for style; convert opportunistically with functional changes, and record any follow‑ups as needed.
 
+- Cancellation pipeline hardening (failing tests)
+  - cancel.schedule: sequential scheduling must not run the next script after SIGINT.
+    - Proposal: gate per‑script execution with a per‑script race (runner vs cancel),
+      and check the cancellation flag again immediately after each runner resolves
+      to prevent the next schedule step from starting.
+    - Add a dedicated unit/integration test for the per‑script race to keep this behavior pinned.
+  - cancel.key (Windows): sporadic EBUSY on teardown in CI.
+    - Proposal: increase the post‑cancel settle slightly or wire a brief bounded
+      join on renderer timers; keep rmDirWithRetries as last resort.
+    - Validate locally and in CI to tune the final settle back toward 250–500 ms.
+
+- Live/Logger status labels DRY & parity
+  - Now that Live uses bracketed BORING tokens via the shared helper, switch Logger to the same helper
+    and delete the local duplicate in ui.ts.
+  - Keep colored symbol labels for TTY while retaining bracketed tokens for BORING/non‑TTY.
+  - Acceptance: existing alignment/parity tests pass with stable tokens.
+
 - CLI UI unification (Live + Logger under one composable UI)
   - Provide a single RunnerUI that composes a shared ProgressModel and a pluggable sink (LiveTableSink | LoggerSink).
   - Share status labels and summary via one helper; preserve q/r keys, final‑frame flush, and parity with existing tests.
@@ -64,6 +81,11 @@ Unpersisted tasks
   - Consider a brief docs note in README about full vs diff archive contents (patch workspace policy).
 
 Completed (recent)
+
+- Live BORING labels — bracket tokens
+  - Unify Live’s BORING tokens to bracketed form ([OK]/[FAIL]/…) using the shared label helper.
+  - Fixes the final‑frame expectation in live.order.flush.test without changing non‑TTY/TTY behavior.
+  - Follow‑up: finish DRY by switching Logger to the same helper and removing its local duplicate.
 
 - Windows cancel teardown — EBUSY hardening
   - Extended default backoff in rmDirWithRetries to [50, 100, 200, 400, 800, 1600] ms

@@ -3,6 +3,7 @@
 When updated: 2025-09-26 (UTC)
 
 Next up (priority order)
+
 1. DMP patch support (improve loop fidelity)
    - Accept DMP Patch blocks in `### Patch:` (one patch per file remains mandatory).
    - Implement DMP apply with conservative fuzz and EOL preservation per file.
@@ -25,14 +26,15 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Patch failure prompt path fix:
+  - Clipboard/stdout prompt now uses the actual file path instead of "(patch)" when jsdiff reports a generic parse error. The service falls back to header-derived paths when jsdiff does not provide concrete file names.
 - File Ops payload alignment:
-  - Updated parser/validator/service to accept an unfenced “### File Ops” block
-    (lines after heading up to the next heading); removed fence handling.
+  - Updated parser/validator/service to accept an unfenced “### File Ops” block (lines after heading up to the next heading); removed fence handling.
   - Adjusted tests accordingly; clarified docs to remove “fenced” wording.
 
 - FEEDBACK removal cleanup:
   - Removed FEEDBACK envelope handling and all related persistence (.rej handling, attempts.json, per‑attempt logs).
-  - Deleted dead modules/tests: patch/run/feedback.*, patch/run/diagnostics.*, patch/rejects.*, patch/parse.fs.test.ts.  - Simplified patch detection (no FEEDBACK guard); retained unified‑diff validator.
+  - Deleted dead modules/tests: patch/run/feedback._, patch/run/diagnostics._, patch/rejects.\*, patch/parse.fs.test.ts. - Simplified patch detection (no FEEDBACK guard); retained unified‑diff validator.
   - Updated system prompt parts to document clipboard prompts on failures and removed FEEDBACK sections/exceptions.
   - Kept dev‑mode stderr diagnostics (STAN repo only) concise for git/jsdiff/file‑ops.
   - No user‑facing docs updated yet (README etc.) per deferral.

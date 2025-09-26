@@ -4,43 +4,22 @@ When updated: 2025-09-26 (UTC)
 
 Next up (priority order)
 
-1. Patch-failure envelopes (downstream vs STAN repo)
-   - Downstream (diff): one-liner per failed file with a blank line between items; request full, post‑patch listing.
-   - Downstream (file ops): quote the ops block and request unified‑diff patches; ensure blank-line separation when multiple outputs occur.
-   - STAN repo (diff): identify the failed file, then emit diagnostics envelope:
-     ```
-     START PATCH DIAGNOSTICS
-     <verbatim git stderr; if absent and jsdiff ran: lines “jsdiff: <path>: <reason>">
-     END PATCH DIAGNOSTICS
-     ```
-     No “Print a full…” line here.
-   - STAN repo (file ops): “The File Ops patch failed.” + diagnostics envelope; no unified‑diff re‑request line.
-   - No persistence of diagnostics (clipboard/stdout only).
+1. Cancel pipeline — fix SIGINT parity test
+   - Reproduce and fix the failing case in src/stan/run/cancel.sigint.test.ts.
+   - Ensure archives are always skipped on cancellation (no archive.tar | archive.diff.tar) even when SIGINT arrives during the short race after scripts start.
+   - Keep bounded settle/join behavior; prefer short, deterministic waits.
 
-- Formatter + wiring (reusable; future DMP)
-  - Implement a central formatter that takes:
-    - context: downstream vs STAN repo,
-    - kind: diff | file-ops | (future) dmp,
-    - diagnostics: { stderr?: string; jsReasons?: Array<{ path, reason }> }.
-  - Replace current failure output assembly in patch service with the new formatter.
-  - Ensure single diagnostics block per failure; preserve header-derived paths for labeling failed diffs; keep existing path fallback logic.
+2. Windows stabilization
+   - Verify rmDirWithRetries usage across cancel tests; keep a short final settle.
+   - Keep ProcessSupervisor.waitAll with a short deadline in tests.
 
-- Tests
-  - Downstream spacing: multiple failed diff files yield one-liners separated by blank lines.
-  - STAN repo diagnostics envelope for diff (git stderr; jsdiff-only) and file ops.
-  - Ensure no .debug/.rej persistence.
-  - Maintain existing path derivation behavior when jsdiff reports “(patch)” (prefer header-derived paths).
-
-- Assistant guidance (project prompt only)
-  - Add/maintain a concise section describing diagnostics consumption, classification (generator vs handler vs drift), and offering choices:
-    - Fix now (small + safe),
-    - Log a task (defer),
-    - Request listings (diff) or unified diffs (file ops), as appropriate.
-  - No user-facing docs updates yet; defer until behavior stabilizes.
+3. Minor follow-ups
+   - Optional: add signal-exit for robust teardown paths.
+   - Optional: small subcommand harness to DRY Commander glue after cancellation fixes.
 
 - DMP readiness (follow-on)
   - When DMP apply lands, feed its stderr/summary through the same formatter and share the envelopes with diff/file ops behavior.
-
+  -
 - Codebase reduction: identify and eliminate dead or duplicated code where safe; prefer reuse of shared helpers.
 
 - Adopt explicit dev‑mode diagnostics triage in project prompt: analyze → ask → apply or listings; gate patch emission on explicit approval.
@@ -54,18 +33,19 @@ Unpersisted tasks
 
 Completed (recent)
 
+- CLI refactor complete:
+  - New run options/action/derive/defaults modules; help footer and defaults wiring; conflict handling; safety adapters applied consistently.
+  - Behavior parity verified by tests (live/no‑live, defaults, conflicts, help).
+
 - Validated diffs for ops‑only acceptance (no full listings):
   - Reissued correct unified diffs for new test and doc updates.
 
 - Live cancellation consolidation:
-  - Introduced src/stan/run/control.ts (RunnerControl) using Node readline +
-    SIGINT; centralizes q/r/Ctrl+C and teardown.
-  - LoggerUI/LiveUI now attach/detach RunnerControl; raw‑mode and listeners
-    are restored in one place; archives remain skipped on cancel; exitCode set.
+  - Introduced src/stan/run/control.ts (RunnerControl) using Node readline + SIGINT; centralizes q/r/Ctrl+C and teardown.
+  - LoggerUI/LiveUI now attach/detach RunnerControl; raw‑mode and listeners are restored in one place; archives remain skipped on cancel; exitCode set.
   - Removed legacy key handler via File Ops:
     - rm src/stan/run/input/keys.ts
-  - Rationale: shrink cancellation surface to a single small controller and
-    delete code quickly without changing UX or tests.
+  - Rationale: shrink cancellation surface to a single small controller and delete code quickly without changing UX or tests.
 
 - Lint clean-up:
   - Removed dead constant-condition block in src/stan/patch/service.ts (no-constant-condition).

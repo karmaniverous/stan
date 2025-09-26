@@ -269,4 +269,66 @@ describe('service formatter integration (downstream vs STAN; diff vs file-ops)',
       /Perform this operation with unified diff patches/,
     );
   });
+
+  it('STAN diff: diagnostics envelope lists jsdiff reasons even when git attempts have stderr', async () => {
+    // STAN repo
+    vi.spyOn(await import('../version'), 'getVersionInfo').mockResolvedValue({
+      packageVersion: '0.0.0-test',
+      nodeVersion: process.version,
+      repoRoot: dir,
+      stanPath: 'out',
+      isDevModuleRepo: true,
+      systemPrompt: {
+        localExists: false,
+        baselineExists: false,
+        inSync: false,
+      },
+      docsMeta: null,
+    });
+    // Apply failure with stderr and js failures together
+    vi.spyOn(
+      await import('./run/pipeline'),
+      'applyPatchPipeline',
+    ).mockResolvedValue({
+      ok: false,
+      result: {
+        ok: false,
+        tried: ['p1', 'p0'],
+        lastCode: 1,
+        captures: [
+          {
+            label: '3way+nowarn-p1',
+            code: 1,
+            stdout: '',
+            stderr: 'error: patch failed\n',
+          },
+        ],
+      },
+      js: {
+        okFiles: [],
+        failed: [{ path: 'src/a.ts', reason: 'unable to place hunk(s)' }],
+        sandboxRoot: undefined,
+      },
+    });
+    const diff = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -1,1 +1,1 @@',
+      '-export const a=1;',
+      '+export const a=10;',
+      '',
+    ].join('\n');
+    const logs: string[] = [];
+    const spy = vi.spyOn(console, 'log').mockImplementation((m: unknown) => {
+      logs.push(String(m));
+    });
+    await runPatch(dir, diff);
+    spy.mockRestore();
+    const body = logs.join('\n');
+    expect(body).toMatch(/START PATCH DIAGNOSTICS/);
+    expect(body).toMatch(/error: patch failed/);
+    expect(body).toMatch(/jsdiff:\s*src\/a\.ts: unable to place hunk/);
+    expect(body).toMatch(/END PATCH DIAGNOSTICS/);
+  });
 });

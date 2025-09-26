@@ -2,6 +2,45 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatPatchFailure, type JsReason } from './format';
+const makeOkMessage = (): string => {
+  return [
+    '## UPDATED: src/x.ts',
+    '',
+    '### Patch: src/x.ts',
+    '```',
+    'diff --git a/src/x.ts b/src/x.ts',
+    '--- a/src/x.ts',
+    '+++ b/src/x.ts',
+    '@@ -1,1 +1,1 @@',
+    '-old',
+    '+new',
+    '```',
+    '',
+    '## UPDATED: .stan/system/stan.todo.md',
+    '',
+    '### Patch: .stan/system/stan.todo.md',
+    '```',
+    'diff --git a/.stan/system/stan.todo.md b/.stan/system/stan.todo.md',
+    '--- a/.stan/system/stan.todo.md',
+    '+++ b/.stan/system/stan.todo.md',
+    '@@ -1,1 +1,1 @@',
+    '-before',
+    '+after',
+    '```',
+    '',
+    '## Commit Message',
+    '```',
+    'feat: sample',
+    '',
+    'When: 2025-08-28',
+    'Why: test',
+    'What changed:',
+    '- src/x.ts',
+    '- .stan/system/stan.todo.md',
+    '```',
+    '',
+  ].join('\n');
+};
 
 describe('formatPatchFailure (unit coverage: downstream vs STAN; diff vs file-ops)', () => {
   it('downstream diff: one-liners with blank-line separation for multiple targets', () => {

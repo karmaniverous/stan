@@ -7,11 +7,11 @@
  * - STAN repo:
  *   - diff: identification line + diagnostics envelope (START/END).
  *           Attempts summary: one line per git attempt in cascade order:
- *             "<label>: exit <code>[ — <first stderr line>]".
- *           When all attempts are silent (no stderr) and jsdiff ran, append
- *           concise “jsdiff: <path>: <reason>” lines.
+ *             “&lt;label&gt;: exit &lt;code&gt;[ — &lt;first stderr line&gt;]”.
+ *           Always append concise “jsdiff: &lt;path&gt;: &lt;reason&gt;” lines
+ *           when jsdiff ran and reported failures.
  *   - file-ops: “The File Ops patch failed.” + diagnostics envelope containing
- *               parse/exec failures; no action request line.
+ *               parse/exec failures; no action‑request line.
  */
 
 export type FailureContext = 'downstream' | 'stan';
@@ -31,7 +31,7 @@ export type DiffFailureInput = {
     code: number;
     stderr?: string;
   }>;
-  // Js fallback reasons when git was silent
+  // Js fallback reasons when jsdiff ran
   jsReasons?: JsReason[];
 };
 
@@ -79,18 +79,18 @@ const fmtStanDiff = (
       const fl = firstLine(a.stderr);
       return `${a.label}: exit ${a.code.toString()}${fl ? ` — ${fl}` : ''}`;
     });
-    diag = attemptLines.join(NL);
-    const anyStderr = attempts.some((a) => (a.stderr ?? '').trim().length > 0);
-    if (!anyStderr && js && js.length) {
-      const jsLines = js.map((j) => `jsdiff: ${j.path}: ${j.reason}`);
-      diag = [diag, ...jsLines].filter(Boolean).join(NL);
-    }
+    const jsLines =
+      js && js.length ? js.map((j) => `jsdiff: ${j.path}: ${j.reason}`) : [];
+    diag = [...attemptLines, ...jsLines].join(NL);
   } else {
-    // Back-compat path: fall back to last stderr or js reasons
-    diag =
-      gitStderr && gitStderr.length
-        ? gitStderr
-        : (js ?? []).map((j) => `jsdiff: ${j.path}: ${j.reason}`).join(NL);
+    // Back‑compat path (no attempts[] provided): include gitStderr (when present)
+    // and always include js reasons when available.
+    const parts: string[] = [];
+    if (gitStderr && gitStderr.length) parts.push(gitStderr);
+    if (js && js.length) {
+      parts.push(...js.map((j) => `jsdiff: ${j.path}: ${j.reason}`));
+    }
+    diag = parts.join(NL);
   }
 
   return [

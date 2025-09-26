@@ -297,14 +297,10 @@ export const runPatch = async (
         code: c.code,
         stderr: c.stderr,
       })) ?? [];
-    // Include js reasons only when git was silent across attempts
-    const anyGitStderr = attempts.some(
-      (a) => (a.stderr ?? '').trim().length > 0,
-    );
-    const jsReasons =
-      !anyGitStderr && js?.failed?.length
-        ? js.failed.map((f) => ({ path: f.path, reason: f.reason }))
-        : [];
+    // Always include js reasons when available
+    const jsReasons = js?.failed?.length
+      ? js.failed.map((f) => ({ path: f.path, reason: f.reason }))
+      : [];
     prompt = formatPatchFailure({
       context: 'stan',
       kind: 'diff',

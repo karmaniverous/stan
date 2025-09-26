@@ -17,11 +17,6 @@ Next up (priority order)
     - Proposal: increase the post‑cancel settle slightly or wire a brief bounded join on renderer timers; keep rmDirWithRetries as last resort.
     - Validate locally and in CI to tune the final settle back toward 250–500 ms.
 
-- Live/Logger status labels DRY & parity
-  - Now that Live uses bracketed BORING tokens via the shared helper, switch Logger to the same helper and delete the local duplicate in ui.ts.
-  - Keep colored symbol labels for TTY while retaining bracketed tokens for BORING/non‑TTY.
-  - Acceptance: existing alignment/parity tests pass with stable tokens.
-
 - CLI UI unification (Live + Logger under one composable UI)
   - Provide a single RunnerUI that composes a shared ProgressModel and a pluggable sink (LiveTableSink | LoggerSink).
   - Share status labels and summary via one helper; preserve q/r keys, final‑frame flush, and parity with existing tests.
@@ -82,6 +77,11 @@ Completed (recent)
   - Unify Live’s BORING tokens to bracketed form ([OK]/[FAIL]/…) using the shared label helper.
   - Fixes the final‑frame expectation in live.order.flush.test without changing non‑TTY/TTY behavior.
   - Follow‑up: finish DRY by switching Logger to the same helper and removing its local duplicate.
+
+- Logger status labels — DRY via shared helper
+  - Switched the Logger UI to use the shared status‑label helper and removed its local duplicate.
+  - Maintains parity with Live; BORING tokens remain bracketed and stable; TTY colored symbols preserved where applicable.
+
 
 - Windows cancel teardown — additional EBUSY hardening
   - Increased final post‑cancel settle on Windows to 1600 ms (non‑Windows 400 ms)

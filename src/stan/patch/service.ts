@@ -139,11 +139,9 @@ export const runPatch = async (
     const prompt = [
       'The following File Ops patch failed:',
       '',
-      '```',
       body,
-      '```',
       '',
-      '## Perform this operation with unified diff patches instead.',
+      'Perform this operation with unified diff patches instead.',
       '',
     ].join('\n');
     const copied = await tryCopyToClipboard(prompt);
@@ -216,11 +214,9 @@ export const runPatch = async (
         const prompt = [
           'The following File Ops patch failed:',
           '',
-          '```',
           body,
-          '```',
           '',
-          '## Perform this operation with unified diff patches instead.',
+          'Perform this operation with unified diff patches instead.',
           '',
         ].join('\n');
         const copied = await tryCopyToClipboard(prompt);
@@ -271,9 +267,28 @@ export const runPatch = async (
   }
 
   // New failure path: request post‑patch listings per failed file (clipboard or stdout)
-  const failedPaths = (js?.failed ?? []).map((f) => f.path) ?? ([] as string[]);
-  const targets =
-    failedPaths.length > 0 ? failedPaths : [...changedFromHeaders];
+  const failedPathsRaw = js?.failed?.map((f) => f.path) ?? [];
+  const isPlaceholder = (p: string | undefined): boolean =>
+    !p || p === '(patch)' || p === '(unknown)';
+
+  let targets: string[] = [];
+  if (
+    failedPathsRaw.length === 0 ||
+    failedPathsRaw.every((p) => isPlaceholder(p))
+  ) {
+    // Global/unnamed parse failure: prefer header-derived paths when available
+    targets = changedFromHeaders.length
+      ? [...changedFromHeaders]
+      : failedPathsRaw.filter((p): p is string => !!p);
+  } else {
+    // Keep only concrete paths and ignore placeholders
+    targets = failedPathsRaw.filter((p): p is string => !isPlaceholder(p));
+    // If nothing remains, fall back to headers when present
+    if (targets.length === 0 && changedFromHeaders.length) {
+      targets = [...changedFromHeaders];
+    }
+  }
+
   const uniqueTargets = Array.from(new Set(targets));
   const lines = uniqueTargets.map(
     (p) =>
@@ -283,8 +298,7 @@ export const runPatch = async (
   {
     const copied = await tryCopyToClipboard(prompt);
     if (!copied) {
-      console.log(prompt);
-    }
+      console.log(prompt);    }
   }
 
   // Dev-mode concise stderr diagnostics (STAN repo only)

@@ -25,10 +25,14 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- File Ops payload alignment:
+  - Updated parser/validator/service to accept an unfenced “### File Ops” block
+    (lines after heading up to the next heading); removed fence handling.
+  - Adjusted tests accordingly; clarified docs to remove “fenced” wording.
+
 - FEEDBACK removal cleanup:
   - Removed FEEDBACK envelope handling and all related persistence (.rej handling, attempts.json, per‑attempt logs).
-  - Deleted dead modules/tests: patch/run/feedback.*, patch/run/diagnostics.*, patch/rejects.*, patch/parse.fs.test.ts.
-  - Simplified patch detection (no FEEDBACK guard); retained unified‑diff validator.
+  - Deleted dead modules/tests: patch/run/feedback.*, patch/run/diagnostics.*, patch/rejects.*, patch/parse.fs.test.ts.  - Simplified patch detection (no FEEDBACK guard); retained unified‑diff validator.
   - Updated system prompt parts to document clipboard prompts on failures and removed FEEDBACK sections/exceptions.
   - Kept dev‑mode stderr diagnostics (STAN repo only) concise for git/jsdiff/file‑ops.
   - No user‑facing docs updated yet (README etc.) per deferral.

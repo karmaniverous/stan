@@ -126,52 +126,30 @@ const isCommitLast = (text: string): boolean => {
   return after.length === 0;
 };
 
-/** Extract "### File Ops" fenced body immediately after the heading. */
-const extractFileOpsBody = (
-  text: string,
-): { body: string; start: number } | null => {
+/** Extract unfenced File Ops body: lines after "### File Ops" up to next heading or EOF. */
+const extractFileOpsBody = (text: string): string | null => {
   const hm = H_FILE_OPS.exec(text);
   if (!hm) return null;
   const afterIdx = (hm.index ?? 0) + hm[0].length;
   const tail = text.slice(afterIdx);
   const lines = tail.split(/\r?\n/);
-  // Opening fence (``` or longer)
-  let openIdx = -1;
-  let ticks = 0;
-  for (let i = 0; i < lines.length; i += 1) {
-    const m = lines[i].match(/^\s*(`{3,})/);
-    if (m) {
-      openIdx = i;
-      ticks = m[1].length;
-      break;
-    }
-    // New heading before fence => malformed
-    if (/^#{2,3}\s+/.test(lines[i])) break;
-  }
-  if (openIdx < 0 || ticks < 3) return null;
-  // Closing fence with same tick count
-  const fence = '`'.repeat(ticks);
-  let closeIdx = -1;
-  for (let i = openIdx + 1; i < lines.length; i += 1) {
+  // Skip leading blank lines after heading
+  let i = 0;
+  while (i < lines.length && lines[i].trim() === '') i += 1;
+  const out: string[] = [];
+  for (; i < lines.length; i += 1) {
     const l = lines[i];
-    if (l.trimEnd() === fence) {
-      closeIdx = i;
-      break;
-    }
     if (/^#{2,3}\s+/.test(l)) break;
+    out.push(l);
   }
-  if (closeIdx < 0) return null;
-  const before = lines.slice(0, openIdx + 1).join('\n');
-  const bodyStartOffset = afterIdx + before.length;
-  const body = lines.slice(openIdx + 1, closeIdx).join('\n');
-  return { body, start: bodyStartOffset };
+  const body = out.join('\n').trimEnd();
+  return body.length ? body : null;
 };
 
 /** Validate optional "### File Ops" fenced block. Pushes errors into `errors`. */
 const validateFileOpsBlock = (text: string, errors: string[]): void => {
-  const ex = extractFileOpsBody(text);
-  if (!ex) return; // no block present
-  const { body } = ex;
+  const body = extractFileOpsBody(text);
+  if (!body) return; // no block present
   const lines = body.split(/\r?\n/);
   for (let i = 0; i < lines.length; i += 1) {
     const raw = lines[i];

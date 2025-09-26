@@ -10,12 +10,10 @@ const msg = [
   '## UPDATED: docs',
   '',
   '### File Ops',
-  '```',
   'mkdirp src/new/dir',
   'mv src/old.txt src/new/dir/new.txt',
   'rm src/tmp.bin',
   'rmdir src/legacy/empty',
-  '```',
   '',
   '### Patch: docs',
   '```',
@@ -45,13 +43,7 @@ describe('file-ops parser', () => {
   });
 
   it('rejects absolute and traversal paths', () => {
-    const bad = [
-      '### File Ops',
-      '```',
-      'rm /etc/passwd',
-      'mv src/a ../b',
-      '```',
-    ].join('\n');
+    const bad = ['### File Ops', 'rm /etc/passwd', 'mv src/a ../b'].join('\n');
     const plan = parseFileOpsBlock(bad);
     expect(plan.ops.length).toBe(0);
     expect(plan.errors.some((e) => /invalid repo-relative path/.test(e))).toBe(

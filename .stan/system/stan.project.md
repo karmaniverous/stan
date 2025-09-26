@@ -111,11 +111,11 @@ Built‑ins (when neither flags nor config specify): debug=false, boring=false; 
 
   The following File Ops patch failed:
 
-  ```
   <exact quote of file ops patch>
-  ```
 
-  ## Perform this operation with unified diff patches instead.
+  Perform this operation with unified diff patches instead.
+
+  ***
 
 - Dev‑mode diagnostics (STAN repo only):
   - When running inside the STAN repository (detected via module root), failing tests and failing `stan patch` runs print concise rejection diagnostics to stderr:

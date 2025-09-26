@@ -18,7 +18,6 @@ export type FileOp =
   | { verb: 'rmdir'; src: string }
   | { verb: 'mkdirp'; src: string };
 export type FileOpsPlan = { ops: FileOp[]; errors: string[] };
-
 export type OpResult = {
   verb: FileOp['verb'];
   src?: string;
@@ -51,41 +50,27 @@ const resolveWithin = (
   return { abs, ok };
 };
 
-/** Extract fenced block body that immediately follows the "### File Ops" heading. */
-const extractFencedOpsBody = (source: string): { body: string } | null => {
+/**
+ * Extract the unfenced body that follows "### File Ops" up to the next heading
+ * (## or ###) or end of text. Leading blank lines after the heading are skipped.
+ */
+const extractOpsBody = (source: string): { body: string } | null => {
   const headingRe = /^###\s+File Ops\s*$/m;
   const hm = headingRe.exec(source);
   if (!hm) return null;
   const afterIdx = (hm.index ?? 0) + hm[0].length;
   const tail = source.slice(afterIdx);
   const lines = tail.split(/\r?\n/);
-
-  // Find opening fence line (``` or longer)
-  let openIdx = -1;
-  let ticks = 0;
-  for (let i = 0; i < lines.length; i += 1) {
-    const m = lines[i].match(/^\s*(`{3,})/);
-    if (m) {
-      openIdx = i;
-      ticks = m[1].length;
-      break;
-    }
-  }
-  if (openIdx < 0 || ticks < 3) return null;
-
-  // Find closing fence with exactly the same tick count
-  const fence = '`'.repeat(ticks);
-  let closeIdx = -1;
-  for (let i = openIdx + 1; i < lines.length; i += 1) {
+  // Skip leading blank lines
+  let i = 0;
+  while (i < lines.length && lines[i].trim() === '') i += 1;
+  const bodyLines: string[] = [];
+  for (; i < lines.length; i += 1) {
     const l = lines[i];
-    if (l.trimEnd() === fence) {
-      closeIdx = i;
-      break;
-    }
+    if (/^#{2,3}\s+/.test(l)) break;
+    bodyLines.push(l);
   }
-  if (closeIdx < 0) return null;
-  const body = lines.slice(openIdx + 1, closeIdx).join('\n');
-  return { body };
+  return { body: bodyLines.join('\n').trimEnd() };
 };
 
 /** Parse the optional "### File Ops" fenced block from a reply body. */
@@ -93,9 +78,9 @@ export const parseFileOpsBlock = (source: string): FileOpsPlan => {
   const ops: FileOp[] = [];
   const errors: string[] = [];
 
-  const fenced = extractFencedOpsBody(source);
-  if (!fenced) return { ops, errors }; // no block present (or malformed); treat as absent
-  const body = fenced.body;
+  const extracted = extractOpsBody(source);
+  if (!extracted) return { ops, errors }; // no block present; treat as absent
+  const body = extracted.body;
   const lines = body.split(/\r?\n/);
   let lineNo = 0;
   for (const raw of lines) {

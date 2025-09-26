@@ -66,6 +66,14 @@ Completed (recent)
   - Replaced legacy “FEEDBACK” references with “patch failure diagnostics envelope” and updated links to “Patch failure prompts.”
   - Adjusted the Table of Contents, Commit Message exception, Fence Hygiene note, and Response Format bullets to point at the canonical prompts and terminology.
 
+- System prompt — introduce stan.requirements.md separation
+  - Added `stan.requirements.md` to CRITICAL Layout and Documentation
+    conventions as the STAN‑maintained end‑state requirements document.
+  - Clarified that developers may edit it directly but shouldn’t have to; STAN
+    will create/update it on demand (no change to `stan init` behavior).
+  - Added an always‑on separation guard to move content when requirements drift
+    into the project prompt (or vice versa).
+
 - Sequential cancellation gate (tests)
   - Added a one‑tick event‑loop yield after each sequential script completes and re‑checked the cancellation gate before scheduling the next script.
   - Closes a race where SIGINT arriving immediately after a runner finished could allow the next script to start (fixes cancel.gate and cancel.schedule).

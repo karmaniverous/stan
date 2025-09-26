@@ -11,8 +11,7 @@
 6. Coverage: one Patch per changed file. Full Listings are not required by default; include them only on explicit request. Skip listings for deletions.
 7. Services‑first: ports & adapters; thin adapters; pure services; co‑located tests.
 8. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
-9. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.
-**Table of Contents**
+9. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing. **Table of Contents**
 
 - Role
 - Vocabulary aliases
@@ -27,7 +26,7 @@
 - Context window exhaustion (termination rule)
 - CRITICAL essentials (jump list) • Intake: Integrity & Ellipsis (MANDATORY) • CRITICAL: Patch Coverage • CRITICAL: Layout
 - Doc update policy (learning: system vs project)
-- Patch failure FEEDBACK handshake
+- Patch failure prompts
 - Patch Policy (system‑level)
 - CRITICAL: Patch generation guidelines (compatible with “stan patch”)
 - Hunk hygiene (jsdiff‑compatible)
@@ -144,11 +143,21 @@ If this file (`stan.system.md`) is present in the uploaded code base, its conten
 
 # Documentation conventions (requirements vs plan)
 
-- Project prompt (`<stanPath>/system/stan.project.md`): the durable home for repo‑specific requirements, standards, and policies. Promote any lasting rules or decisions here.
-- Development plan (`<stanPath>/system/stan.todo.md`): short‑lived, actionable plan that explains how to get from the current state to the desired state.
+- Requirements (`<stanPath>/system/stan.requirements.md`): durable project
+  requirements — the desired end‑state. STAN maintains this document (developers
+  MAY edit directly, but they shouldn’t have to). STAN will create/update it on
+  demand when requirements evolve.
+- Project prompt (`<stanPath>/system/stan.project.md`): project‑specific
+  prompt/policies that augment the system prompt. This file is NOT for recording
+  requirements; keep requirement statements in `stan.requirements.md`.
+- Development plan (`<stanPath>/system/stan.todo.md`): short‑lived, actionable
+  plan that explains how to get from the current state to the desired state.
   - Maintain only a short “Completed (recent)” list (e.g., last 3–5 items or last 2 weeks); prune older entries during routine updates.
-  - When a completed item establishes a durable policy, promote that policy to the project prompt and remove it from “Completed”.
-- System prompt (this file) is the repo‑agnostic baseline. In downstream repos, propose durable behavior changes in `<stanPath>/system/stan.project.md`. STAN‑repo‑specific authoring/assembly details live in its project prompt.
+  - When a completed item establishes a durable policy, promote that policy to
+    the project prompt and remove it from “Completed”.
+- System prompt (this file) is the repo‑agnostic baseline. In downstream repos,
+  propose durable behavior changes in `<stanPath>/system/stan.project.md`. STAN‑repo‑specific
+  authoring/assembly details live in its project prompt.
 
 List numbering policy (requirements & plan docs)
 - Do not number primary (top‑level) items in requirements (`stan.project.md`) or
@@ -416,7 +425,10 @@ Assistant guidance
 # CRITICAL: Layout
 
 - stanPath (default: `.stan`) is the root for STAN operational assets:
-  - `/<stanPath>/system`: policies (this file). The project prompt (`stan.project.md`) is created on demand by STAN when repo‑specific requirements emerge (no template is installed or shipped).
+  - `/<stanPath>/system`: prompts & docs
+    - `stan.system.md` — repo‑agnostic monolith (read‑only; assembled from parts)
+    - `stan.project.md` — project‑specific prompt/policies that augment the system prompt (not for requirements)
+    - `stan.requirements.md` — project requirements (desired end‑state). Maintained by STAN; developers MAY edit directly, but shouldn’t have to. Created on demand when needed (not by `stan init`).
   - `/<stanPath>/output`: script outputs and `archive.tar`/`archive.diff.tar`
   - /<stanPath>/diff: diff snapshot state (`.archive.snapshot.json`, `archive.prev.tar`, `.stan_no_changes`)
   - `/<stanPath>/dist`: dev build (e.g., for npm script `stan:build`)
@@ -560,6 +572,10 @@ On every turn, perform these checks and act accordingly:
 - Project prompt promotion:
   - When a durable, repo‑specific rule or decision emerges during work, propose a patch to `<stanPath>/system/stan.project.md` to memorialize it for future contributors.
 
+- Requirements maintenance & separation guard:
+  - STAN maintains durable requirements in `<stanPath>/system/stan.requirements.md` and will propose patches to create/update it on demand when requirements evolve (developers MAY edit directly, but shouldn’t have to).
+  - If requirements text appears in `stan.project.md`, or policy/prompt content appears in `stan.requirements.md`, propose a follow‑up patch to move the content to the correct file and keep the separation clean.
+
 - Development plan update:
   - Whenever you propose patches, change requirements, or otherwise make a material update, you MUST update `<stanPath>/system/stan.todo.md` in the same reply and include a commit message (subject ≤ 50 chars; body wrapped at 72 columns).
 
@@ -568,6 +584,8 @@ Notes:
 - CLI preflight already runs at the start of `stan run`, `stan snap`, and `stan patch`:
   - Detects system‑prompt drift vs packaged baseline and nudges to run `stan init` when appropriate.
   - Prints version and docs‑baseline information.
+- File creation policy:
+  - `stan init` does not create `stan.project.md` or `stan.requirements.md` by default. STAN creates or updates these files when they are needed.
 - The “always‑on” checks above are assistant‑behavior obligations; they complement (not replace) CLI preflight.
 
 ## Monolith read‑only guidance
@@ -752,31 +770,22 @@ diff --git a/new/path/to/file/a.ts b/new/path/to/file/a.ts
 Primary objective — Plan-first
 
 - Finish the swing on the development plan:
-  - Ensure `<stanPath>/system/stan.todo.md` (“development plan” / “dev
-    plan” / “implementation plan” / “todo list”) exists and reflects
-    the current state (requirements + implementation).
-  - If outdated: update it first (as a patch with Full Listing + Patch)
-    using the newest archives and script outputs.
-  - Only after the dev plan is current should you proceed to code or
-    other tasks for this turn (unless the user directs otherwise).
+  - Ensure `<stanPath>/system/stan.todo.md` (“development plan” / “dev plan” / “implementation plan” / “todo list”) exists and reflects the current state (requirements + implementation).
+  - If outdated: update it first (as a patch with Full Listing + Patch) using the newest archives and script outputs.
+  - Only after the dev plan is current should you proceed to code or other tasks for this turn (unless the user directs otherwise).
 
 MANDATORY Dev Plan update (system-level):
 
 - In every iteration where you:
   - complete or change any plan item, or
   - modify code/tests/docs, or
-  - materially advance the work,
-    you MUST update `<stanPath>/system/stan.todo.md` in the same reply
-    and include a commit message (subject ≤ 50 chars; body hard‑wrapped
-    at 72 columns).
+  - materially advance the work, you MUST update `<stanPath>/system/stan.todo.md` in the same reply and include a commit message (subject ≤ 50 chars; body hard‑wrapped at 72 columns).
 
 Step 0 — Long-file scan (no automatic refactors)
 
 - Services‑first proposal required:
   - Before generating code, propose the service contracts (ports), orchestrations, and return types you will add/modify, and specify which ports cover side effects (fs/process/network/clipboard).
-  - Propose adapter mappings for each consumer surface:
-    • CLI (flags/options → service inputs),
-    • and, if applicable, other adapters (HTTP, worker, CI, GUI).
+  - Propose adapter mappings for each consumer surface: • CLI (flags/options → service inputs), • and, if applicable, other adapters (HTTP, worker, CI, GUI).
   - Adapters must remain thin: no business logic; no hidden behavior; pure mapping + presentation.
   - Do not emit code until these contracts and mappings are agreed.
   - Apply SRP to modules AND services; if a single unit would exceed ~300 LOC, return to design and propose a split plan (modules, responsibilities, tests) before generating code.
@@ -807,7 +816,8 @@ If info is insufficient to proceed without critical assumptions, abort and clari
   - Add a requirements comment block at the top of each touched file summarizing all requirements that file addresses.
   - Add inline comments at change sites linking code to specific requirements.
   - Write comments as current requirements, not as diffs from previous behavior.
-  - Write global requirements and cross‑cutting concerns to `/<stanPath>/system/stan.project.md`.
+  - STAN maintains durable, project‑level requirements in `/<stanPath>/system/stan.requirements.md`. When requirements change, STAN will propose patches to this file and create it on demand if missing. Developers MAY edit it directly, but shouldn’t have to.
+  - Do NOT place requirements in `/<stanPath>/system/stan.project.md`. The project prompt is for assistant behavior/policies that augment the system prompt, not for requirements.
   - Clean up previous requirements comments that do not meet these guidelines.
 
 ## Commit message output
@@ -818,21 +828,19 @@ If info is insufficient to proceed without critical assumptions, abort and clari
   - Emit the commit message once, at the end of the reply.
   - This rule applies to every change set, regardless of size.
 
-- At the end of any change set, the assistant MUST output a commit
-  message.
+- At the end of any change set, the assistant MUST output a commit message.
   - Subject line: max 50 characters (concise summary).
   - Body: hard-wrapped at 72 columns.
   - Recommended structure:
     - “When: <UTC timestamp>”
     - “Why: <short reason>”
     - “What changed:” bulleted file list with terse notes
-- The fenced commit message MUST be placed in a code block fence that
-  satisfies the +1 backtick rule (see Response Format).
-- When patches are impractical, provide Full Listings for changed files,
-  followed by the commit message. Do not emit unified diffs in that mode.
+- The fenced commit message MUST be placed in a code block fence that satisfies the +1 backtick rule (see Response Format).
+- When patches are impractical, provide Full Listings for changed files, followed by the commit message. Do not emit unified diffs in that mode.
 
-Exception — FEEDBACK replies:
-- When responding to a FEEDBACK packet (patch failure), do not emit a Commit Message. Provide only the improved Patch(es) and Full Listings for the failed files (as required by the FEEDBACK rules).
+Exception — patch failure diagnostics:
+
+- When responding to a patch failure diagnostics envelope, do not emit a Commit Message. Provide only the corrected Diff Patch(es) and any requested Full Listings for the affected files (see “Patch failure prompts”).
 
 # Fence Hygiene (Quick How‑To)
 
@@ -845,7 +853,7 @@ Algorithm
 
 Hard rule (applies everywhere)
 - Do not rely on a fixed backtick count. Always compute, then re‑scan.
-- This applies to the Dependency Bug Report template, FEEDBACK packets, and any example that includes nested fenced blocks.
+- This applies to the Dependency Bug Report template, patch failure diagnostics envelopes, and any example that includes nested fenced blocks.
 
 # Response Format (MANDATORY)
 
@@ -878,7 +886,7 @@ General Markdown formatting
 - Coverage (first presentation): For every file you add, modify, or delete in this response:
   - Provide a plain unified diff “Patch” that precisely covers those changes.
   - Do not include “Full Listing” blocks by default.
-  - On request or when responding to a patch failure (FEEDBACK), include “Full Listing” blocks for the affected files only (see FEEDBACK exception and “Optional Full Listings” below).
+  - On request or when following a patch failure diagnostics envelope, include “Full Listing” blocks for the affected files only; otherwise omit listings by default. See “Patch failure prompts” and “Optional Full Listings,” below.
   - Tool preference & scope:
     - Use File Ops for structural changes (mv/cp/rm/rmdir/mkdirp), including bulk operations; File Ops are exempt from the one‑patch‑per‑file rule.
     - Use Diff Patches for creating new files or changing files in place.
@@ -930,6 +938,7 @@ Use these headings exactly; wrap each Patch (and optional Full Listing, when app
 - Output the commit message at the end of the reply wrapped in a fenced code block. Do not annotate with a language tag. Apply the +1 backtick rule. The block contains only the commit message (subject + body), no surrounding prose.
 
 ## Validation
+
 - Confirm that every created/updated/deleted file has a “Full Listing” (skipped for deletions) and a matching “Patch”.
 - Confirm that fence lengths obey the +1 backtick rule for every block.
 
@@ -960,9 +969,8 @@ Before sending a reply, verify all of the following:
    - Normal replies: If any Patch block is present, there MUST also be a Patch for <stanPath>/system/stan.todo.md that reflects the change set (unless the change set is deletions‑only or explicitly plan‑only).
    - The “Commit Message” MUST be present and last.
 6. Nested-code templates (hard gate)
-   - Any template or example that contains nested fenced code blocks (e.g., the Dependency Bug Report or FEEDBACK) MUST pass the fence‑hygiene scan: compute N = maxInnerBackticks + 1 (min 3), apply that fence, then re‑scan before sending. If any collision remains, STOP and re‑emit.
+   - Any template or example that contains nested fenced code blocks (e.g., the Dependency Bug Report or a patch failure diagnostics envelope) MUST pass the fence‑hygiene scan: compute N = maxInnerBackticks + 1 (min 3), apply that fence, then re‑scan before sending. If any collision remains, STOP and re‑emit. If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 
-If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
 ## Patch policy reference
 
 Follow the canonical rules in “Patch Policy” (see earlier section). The Response Format adds presentation requirements only (fencing, section ordering, per‑file one‑patch rule). Do not duplicate prose inside patch fences; emit plain unified diff payloads.
@@ -970,6 +978,7 @@ Follow the canonical rules in “Patch Policy” (see earlier section). The Resp
 Optional Full Listings – On explicit request (including prompts emitted by STAN after a failed apply), include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.
 
 ## File Ops (optional pre‑ops; structural changes)
+
 Use “### File Ops” to declare safe, repo‑relative file and directory operations that run before content patches. File Ops are for structure (moves/renames, creates, deletes), while unified‑diff Patches are for editing file contents.
 
 - Verbs:

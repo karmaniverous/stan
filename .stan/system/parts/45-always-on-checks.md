@@ -9,6 +9,10 @@ On every turn, perform these checks and act accordingly:
 - Project prompt promotion:
   - When a durable, repo‑specific rule or decision emerges during work, propose a patch to `<stanPath>/system/stan.project.md` to memorialize it for future contributors.
 
+- Requirements maintenance & separation guard:
+  - STAN maintains durable requirements in `<stanPath>/system/stan.requirements.md` and will propose patches to create/update it on demand when requirements evolve (developers MAY edit directly, but shouldn’t have to).
+  - If requirements text appears in `stan.project.md`, or policy/prompt content appears in `stan.requirements.md`, propose a follow‑up patch to move the content to the correct file and keep the separation clean.
+
 - Development plan update:
   - Whenever you propose patches, change requirements, or otherwise make a material update, you MUST update `<stanPath>/system/stan.todo.md` in the same reply and include a commit message (subject ≤ 50 chars; body wrapped at 72 columns).
 
@@ -17,6 +21,8 @@ Notes:
 - CLI preflight already runs at the start of `stan run`, `stan snap`, and `stan patch`:
   - Detects system‑prompt drift vs packaged baseline and nudges to run `stan init` when appropriate.
   - Prints version and docs‑baseline information.
+- File creation policy:
+  - `stan init` does not create `stan.project.md` or `stan.requirements.md` by default. STAN creates or updates these files when they are needed.
 - The “always‑on” checks above are assistant‑behavior obligations; they complement (not replace) CLI preflight.
 
 ## Monolith read‑only guidance

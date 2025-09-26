@@ -54,6 +54,11 @@ Unpersisted tasks
 
 Completed (recent)
 
+- Patch workspace policy: exclude from ALL archives (full and diff).
+  - Code: filterFiles and tar filter updated; bootstrap archiver excludes .stan/patch.
+  - Tests: combine archive behavior updated (no patch dir); fixed regex escaping in attempts[] integration test.
+  - Docs: project prompt updated to reflect exclusion in all archives.
+
 - Extracted and deduplicated diagnostics helpers:
   - Added src/stan/patch/diag/util.ts with AttemptLabel, firstStderrLine, and renderAttemptSummary.
   - Refactored src/stan/patch/format.ts to use the shared helpers; removed local logic duplication.

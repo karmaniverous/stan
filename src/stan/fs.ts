@@ -148,6 +148,8 @@ export const filterFiles = async (
     ...subpkgDirs.map((d) => (f: string) => matchesPrefix(f, d)),
     // always exclude <stanPath>/diff
     (f: string) => matchesPrefix(f, `${stanRel}/diff`),
+    // always exclude <stanPath>/patch (policy: never include patch workspace in any archive)
+    (f: string) => matchesPrefix(f, `${stanRel}/patch`),
   ];
 
   if (!includeOutputDir) {
@@ -162,6 +164,8 @@ export const filterFiles = async (
     const allowMatchers: Matcher[] = includes.map(toMatcher);
     const reserved: Matcher[] = [
       (f) => matchesPrefix(f, `${stanRel}/diff`),
+      // reserve exclusion for patch workspace even when explicitly included
+      (f) => matchesPrefix(f, `${stanRel}/patch`),
       ...(includeOutputDir
         ? []
         : [(f: string) => matchesPrefix(f, `${stanRel}/output`)]),
@@ -198,7 +202,7 @@ export const ensureStanWorkspace = async (
   await ensureDir(dirs.rootAbs);
   await ensureDir(dirs.outputAbs);
   await ensureDir(dirs.diffAbs);
-  // Ensure patch workspace exists so archives can always include it safely
+  // Ensure patch workspace exists (archives exclude it by policy)
   await ensureDir(dirs.patchAbs);
   return {
     rootAbs: dirs.rootAbs,

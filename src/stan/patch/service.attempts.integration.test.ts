@@ -129,8 +129,7 @@ describe('integration: attempts[] summary appears when git fails across p1→p0'
     // Envelope present
     expect(body).toMatch(/START PATCH DIAGNOSTICS/);
     // Ordered summaries present
-    const escapeRe = (s: string) =>
-      s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
+    const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const expectLine = (s: string) =>
       expect(body).toMatch(new RegExp(`^${escapeRe(s)}\\b`, 'm'));
     expectLine('3way+nowarn-p1: exit 1 — error: conflict p1 nowarn');

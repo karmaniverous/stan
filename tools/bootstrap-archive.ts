@@ -58,7 +58,11 @@ const main = async (): Promise<void> => {
 
   const allRel = list.stdout.split('\u0000').filter((f) => f.length > 0);
   const filesRel = allRel.filter(
-    (p) => !p.startsWith('.stan/output/') && existsSync(path.join(repoRoot, p)),
+    (p) =>
+      !p.startsWith('.stan/output/') &&
+      // policy: never include patch workspace in any archive
+      !p.startsWith('.stan/patch/') &&
+      existsSync(path.join(repoRoot, p)),
   );
 
   const archiveRel = '.stan/output/archive.tar';

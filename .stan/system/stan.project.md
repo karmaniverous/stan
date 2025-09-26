@@ -319,8 +319,7 @@ Bring small, high‑signal artifacts into the STAN workspace just before archivi
 - Canonical patch workspace is `<stanPath>/patch/`:
   - Write RAW input to `<stanPath>/patch/.patch`.
   - Do not persist per‑attempt diagnostics or .rej files.
-  - Include this directory in `archive.tar` (full archive).
-  - Do not include this directory in `archive.diff.tar` (diff archive).
+  - Exclude this directory from all archives (`archive.tar` and `archive.diff.tar`).
 
 ## Patch Extensions — File Ops (declarative)
 

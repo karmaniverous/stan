@@ -12,12 +12,14 @@ const isUnder = (prefix: string, p: string): boolean =>
  * - <stanPath>/output/archive.tar
  * - <stanPath>/output/archive.diff.tar
  * - <stanPath>/output/archive.warnings.txt
+ * - <stanPath>/patch/**
  */
 export const makeTarFilter = (stanPath: string) => {
   const base = stanPath.replace(/\\/g, '/');
   return (p: string): boolean =>
     !(
       isUnder(`${base}/diff`, p) ||
+      isUnder(`${base}/patch`, p) ||
       p === `${base}/output/archive.tar` ||
       p === `${base}/output/archive.diff.tar` ||
       p === `${base}/output/archive.warnings.txt`

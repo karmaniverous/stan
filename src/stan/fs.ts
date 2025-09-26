@@ -10,6 +10,7 @@ import { ensureDir } from 'fs-extra';
 import ignoreFactory from 'ignore';
 import picomatch from 'picomatch';
 
+import { isReservedWorkspacePath, isUnder } from './fs/reserved';
 import { makeStanDirs } from './paths';
 
 /**
@@ -146,14 +147,12 @@ export const filterFiles = async (
     ...excludes.map(toMatcher),
     // default: exclude nested sub‑packages by prefix
     ...subpkgDirs.map((d) => (f: string) => matchesPrefix(f, d)),
-    // always exclude <stanPath>/diff
-    (f: string) => matchesPrefix(f, `${stanRel}/diff`),
-    // always exclude <stanPath>/patch (policy: never include patch workspace in any archive)
-    (f: string) => matchesPrefix(f, `${stanRel}/patch`),
+    // Reserved workspace paths (diff/patch) are always excluded by policy.
+    (f: string) => isReservedWorkspacePath(stanRel, f),
   ];
 
   if (!includeOutputDir) {
-    denyMatchers.push((f) => matchesPrefix(f, `${stanRel}/output`));
+    denyMatchers.push((f) => isUnder(`${stanRel}/output`, f));
   }
 
   // Base selection (deny list applied)
@@ -163,12 +162,11 @@ export const filterFiles = async (
   if (includes.length > 0) {
     const allowMatchers: Matcher[] = includes.map(toMatcher);
     const reserved: Matcher[] = [
-      (f) => matchesPrefix(f, `${stanRel}/diff`),
-      // reserve exclusion for patch workspace even when explicitly included
-      (f) => matchesPrefix(f, `${stanRel}/patch`),
+      // Still reserve-exclude patch/diff even if explicitly included.
+      (f) => isReservedWorkspacePath(stanRel, f),
       ...(includeOutputDir
         ? []
-        : [(f: string) => matchesPrefix(f, `${stanRel}/output`)]),
+        : [(f: string) => isUnder(`${stanRel}/output`, f)]),
     ];
     // Build union: start from base, add includes (even if gitignored/default-denied)
     const inUnion = new Set<string>(base);

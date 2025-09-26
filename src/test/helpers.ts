@@ -12,8 +12,9 @@ const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
  */
 export const rmDirWithRetries = async (
   dir: string,
-  // Extend default backoff to better absorb transient rmdir EBUSY on CI
-  backoffMs: number[] = [50, 100, 200, 400, 800, 1600],
+  // Extended default backoff to further absorb intermittent rmdir EBUSY on CI/Windows.
+  // Total wait ~6.4s; callers can pass a shorter series when appropriate.
+  backoffMs: number[] = [50, 100, 200, 400, 800, 1600, 3200],
 ): Promise<void> => {
   let lastErr: unknown;
   for (let i = 0; i <= backoffMs.length; i += 1) {

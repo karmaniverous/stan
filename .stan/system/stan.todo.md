@@ -31,9 +31,6 @@ Next up (priority order)
 - Shared repo‑relative path validator
   - Consolidate the “normalize + forbid absolute + forbid ..” checks used by File Ops (patch/file‑ops.ts) and the response validator (validate/response.ts) into one utility.
 
-- Reserved workspace exclusions (single source)
-  - Centralize exclusion rules for <stanPath>/diff and <stanPath>/patch (and output when not combined) in a tiny helper used by filterFiles() and makeTarFilter().
-
 - openFilesInEditor test gating
   - Decide on STAN_FORCE_OPEN policy: either honor it in openFilesInEditor or remove it from tests; align both to one rule.
 
@@ -77,6 +74,12 @@ Completed (recent)
   - Unify Live’s BORING tokens to bracketed form ([OK]/[FAIL]/…) using the shared label helper.
   - Fixes the final‑frame expectation in live.order.flush.test without changing non‑TTY/TTY behavior.
   - Follow‑up: finish DRY by switching Logger to the same helper and removing its local duplicate.
+
+- Reserved workspace exclusions (single source)
+  - Extended the reserved helpers into filterFiles() so selection and tar filters share one definition (diff/patch always excluded, output excluded unless combine).
+
+- Test teardown helpers — retry window extended
+  - Increased rmDirWithRetries default backoff with a 3200 ms step to further mitigate transient Windows EBUSY on CI.
 
 - Logger status labels — DRY via shared helper
   - Switched the Logger UI to use the shared status‑label helper and removed its local duplicate.

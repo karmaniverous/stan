@@ -5,6 +5,7 @@ import { existsSync, rmSync } from 'node:fs';
 import { copyFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { ARCHIVE_PREV_TAR, ARCHIVE_TAR } from '@/stan/archive/constants';
 import { ensureStanWorkspace } from '@/stan/fs';
 import { makeStanDirs } from '@/stan/paths';
 
@@ -32,10 +33,10 @@ export const ensureOutputDir = async (
   await ensureStanWorkspace(cwd, stanPath);
 
   if (!keep) {
-    const archiveTar = resolve(dirs.outputAbs, 'archive.tar');
+    const archiveTar = resolve(dirs.outputAbs, ARCHIVE_TAR);
     if (existsSync(archiveTar)) {
       try {
-        await copyFile(archiveTar, resolve(dirs.diffAbs, 'archive.prev.tar'));
+        await copyFile(archiveTar, resolve(dirs.diffAbs, ARCHIVE_PREV_TAR));
       } catch {
         // ignore copy errors
       }

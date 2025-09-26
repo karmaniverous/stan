@@ -16,6 +16,8 @@ import {
   red,
 } from '@/stan/util/color';
 
+import { label } from '../labels';
+
 export type ScriptState =
   | { kind: 'waiting' }
   | { kind: 'running'; startedAt: number; lastOutputAt?: number }
@@ -176,40 +178,6 @@ export class ProgressRenderer {
     return undefined;
   }
 
-  private statusLabel(st: InternalState): string {
-    const boring = this.opts.boring;
-    switch (st.kind) {
-      case 'waiting':
-        return boring ? '[WAIT]' : gray('⏸ waiting');
-      case 'running': {
-        return boring ? '[RUN]' : blue('▶ run');
-      }
-      case 'quiet': {
-        return boring ? '[QUIET]' : cyan('⏱ quiet');
-      }
-      case 'stalled': {
-        return boring ? '[STALLED]' : magenta('⏱ stalled');
-      }
-      case 'done': {
-        return boring ? '[OK]' : green('✔ ok');
-      }
-      case 'error': {
-        return boring ? '[FAIL]' : red('✖ fail');
-      }
-      case 'timedout': {
-        return boring ? '[TIMEOUT]' : red('⏱ timeout');
-      }
-      case 'cancelled': {
-        return boring ? '[CANCELLED]' : black('◼ cancelled');
-      }
-      case 'killed': {
-        return boring ? '[KILLED]' : red('◼ killed');
-      }
-      default:
-        return '';
-    }
-  }
-
   private render(): void {
     const header = ['Type', 'Item', 'Status', 'Time', 'Output'].map((h) =>
       bold(h),
@@ -259,7 +227,26 @@ export class ProgressRenderer {
             ? (st.outputPath ?? '')
             : '';
 
-        rows.push([row.type, row.item, this.statusLabel(st), time, out ?? '']);
+        // Map internal state to shared StatusKind
+        const kind =
+          st.kind === 'waiting'
+            ? 'waiting'
+            : st.kind === 'running'
+              ? 'run'
+              : st.kind === 'quiet'
+                ? 'quiet'
+                : st.kind === 'stalled'
+                  ? 'stalled'
+                  : st.kind === 'done'
+                    ? 'ok'
+                    : st.kind === 'error'
+                      ? 'error'
+                      : st.kind === 'timedout'
+                        ? 'timeout'
+                        : st.kind === 'cancelled'
+                          ? 'cancelled'
+                          : 'killed';
+        rows.push([row.type, row.item, label(kind), time, out ?? '']);
       }
     }
 

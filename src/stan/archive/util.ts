@@ -3,6 +3,8 @@
  */
 import { yellow } from '@/stan/util/color';
 
+import { ARCHIVE_DIFF_TAR, ARCHIVE_TAR, ARCHIVE_WARNINGS } from './constants';
+
 const isUnder = (prefix: string, p: string): boolean =>
   p === prefix || p.startsWith(`${prefix}/`);
 
@@ -20,9 +22,9 @@ export const makeTarFilter = (stanPath: string) => {
     !(
       isUnder(`${base}/diff`, p) ||
       isUnder(`${base}/patch`, p) ||
-      p === `${base}/output/archive.tar` ||
-      p === `${base}/output/archive.diff.tar` ||
-      p === `${base}/output/archive.warnings.txt`
+      p === `${base}/output/${ARCHIVE_TAR}` ||
+      p === `${base}/output/${ARCHIVE_DIFF_TAR}` ||
+      p === `${base}/output/${ARCHIVE_WARNINGS}`
     );
 };
 

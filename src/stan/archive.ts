@@ -14,6 +14,7 @@ import { existsSync } from 'node:fs';
 import { copyFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { ARCHIVE_PREV_TAR } from './archive/constants';
 import { logArchiveWarnings, makeTarFilter } from './archive/util';
 import { classifyForArchive } from './classifier';
 import { ensureOutAndDiff, filterFiles, listFiles } from './fs';
@@ -75,7 +76,7 @@ export const createArchive = async (
   });
 
   const archivePath = resolve(outDir, fileName);
-  const prevPath = resolve(diffDir, 'archive.prev.tar');
+  const prevPath = resolve(diffDir, ARCHIVE_PREV_TAR);
 
   // If an old archive exists in output, copy it to diff before overwriting.
   if (existsSync(archivePath)) {

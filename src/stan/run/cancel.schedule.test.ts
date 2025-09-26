@@ -54,7 +54,7 @@ describe('cancellation pipeline (scheduler)', () => {
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
-  it.skip('stops scheduling new scripts after cancellation in sequential mode', async () => {
+  it('stops scheduling new scripts after cancellation in sequential mode', async () => {
     const cfg: ContextConfig = {
       stanPath: 'stan',
       scripts: {

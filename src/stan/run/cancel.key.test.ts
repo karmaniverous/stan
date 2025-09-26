@@ -61,7 +61,7 @@ describe('TTY key handler (q) cancels run', () => {
     await rmDirWithRetries(dir);
     vi.restoreAllMocks();
   });
-  it.skip('pressing q cancels and skips archive', async () => {
+  it('pressing q cancels and skips archive', async () => {
     const cfg: ContextConfig = {
       stanPath: 'stan',
       scripts: {

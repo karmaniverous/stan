@@ -175,15 +175,14 @@ export const runPatch = async (
     console.log(statusFail('patch failed'));
     return;
   }
-  // Write cleaned content to canonical path <stanPath>/patch/.patch
+  // Write RAW patch content to canonical path <stanPath>/patch/.patch (manual reprocessing)
   try {
     await ensureParentDir(patchAbs);
-    await writeFile(patchAbs, cleaned, 'utf8');
+    await writeFile(patchAbs, raw, 'utf8');
   } catch (e) {
     console.error('stan: failed to write cleaned patch', e);
     return;
   }
-
   // Execute File Ops (pre-ops) before applying the unified diff(s).
   if (opsPlan.ops.length > 0) {
     try {

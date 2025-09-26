@@ -63,7 +63,6 @@ Use these together:
   - `dist/types` (d.ts bundle).
 - Use the `@` alias at build time via Rollup alias config.
 - d.ts bundling: apply the alias plugin alongside `rollup-plugin-dts` in the types build to resolve `"@/..."` path aliases reliably.
-- The `stan.dist/` build is used for internal CLI testing (`npm run stan:build`) and is cleaned after build.
 
 ## Filesystem helpers (policy)
 
@@ -185,7 +184,41 @@ Block semantics
 
 - One diagnostics block per failure (matches “one patch” under the one‑diff‑per‑file rule). For File Ops (which may cover many paths), diagnostics still appear once per ops patch.
 
-### Patch diagnostics review (STAN repo only — assistant behavior)
+## Dev‑mode diagnostics triage (assistant loop; REQUIRED in this repo)
+
+Applies only when running in the STAN repository (i.e., `getVersionInfo(...).isDevModuleRepo === true`). This triage makes the assistant behavior explicit and gates patch emission behind an explicit user choice.
+
+1. Analyze diagnostics
+   - Read the diagnostics envelope (attempt lines + jsdiff reasons).
+   - Produce concise, actionable insights per file (e.g., “regex escape helper fails to escape ‘+’ and ‘\’”, “invalid unified diff: wrapper present”, “strip confusion (p1 vs p0)”, “target file not found”).
+   - Keep insights small, testable, and low‑risk where possible.
+
+2. Ask for a decision (explicit choice; do not emit patches yet)
+   - Present two primary options (plus defer):
+     - “Apply these insights now” (recommended when changes are small/safe).
+     - “Ignore diagnostics and request full post‑patch listings for the failed file(s)” (continue investigation).
+     - Optional: “Defer — log tasks in the dev plan and stop.”
+   - Wait for the user’s choice. Do not emit code patches at this step.
+
+3. Gate on user choice
+   - If the user chooses “Apply these insights now”:
+     - Emit the minimal patches to implement the insights.
+     - For each file that failed in this turn, include a Full Listing immediately after its Patch to confirm the corrected state.
+     - End with a Commit Message (per Response Format).
+   - If the user chooses “Ignore and provide listings” (or does not approve changes):
+     - Do not emit patches. Request “Full Listing: <path>” for the failed file(s) and stop.
+   - If the user chooses “Defer”:
+     - Log the tasks in `.stan/system/stan.todo.md` and stop (no patches).
+
+4. Multi‑file failures
+   - Analyze all failures, propose a combined plan, and then apply the same gating logic for the user’s choice.
+
+Notes
+
+- This triage flow replaces the default “patch immediately” behavior in dev mode for the STAN repo. It ensures we review failures, propose the smallest safe changes, and only patch when approved.
+- The Response Format still applies when emitting patches (Patch before Full Listing for the same file; Commit Message last; one patch per file).
+
+## Patch diagnostics review (STAN repo only — assistant behavior)
 
 When `stan patch` fails and emits a diagnostics block:
 
@@ -205,21 +238,15 @@ When `stan patch` fails and emits a diagnostics block:
 - Context drift/ambiguous:
   - Request the full post‑patch listing(s) for the relevant file(s) and continue the loop.
 
-3. Offer choices
+3. Offer choices (gated; see “Dev‑mode diagnostics triage”)
 
-- (a) Fix now (if safe/small),
-- (b) Log a task (defer),
+- (a) Apply these insights now (small/safe),
+- (b) Defer (log tasks),
 - (c) Ignore diagnostics and request listings (diff patches) or unified diffs (file ops), as appropriate.
 
 4. Group failures
 
 - If multiple failures were pasted (rare under one‑diff‑per‑file), evaluate all and propose a combined course of action.
-
-### stan patch — DMP support (ladder; future)
-
-- Ladder: DMP → git apply (two 3‑way attempts) → jsdiff fallback → diagnostics/requests as above.
-- Reuse the same diagnostics envelope:
-  - Prefer DMP stderr; otherwise include concise reason lines when no stderr exists.
 
 ## Selection & Execution (current semantics)
 
@@ -290,7 +317,7 @@ Bring small, high‑signal artifacts into the STAN workspace just before archivi
 ## Patch processing (project‑level)
 
 - Canonical patch workspace is `<stanPath>/patch/`:
-  - Write cleaned input to `<stanPath>/patch/.patch`.
+  - Write RAW input to `<stanPath>/patch/.patch`.
   - Do not persist per‑attempt diagnostics or .rej files.
   - Include this directory in `archive.tar` (full archive).
   - Do not include this directory in `archive.diff.tar` (diff archive).

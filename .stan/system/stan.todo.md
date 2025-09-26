@@ -3,7 +3,6 @@
 When updated: 2025-09-26 (UTC)
 
 Next up (priority order)
-
 1. Patch-failure envelopes (downstream vs STAN repo)
    - Downstream (diff): one-liner per failed file with a blank line between items; request full, post‑patch listing.
    - Downstream (file ops): quote the ops block and request unified‑diff patches; ensure blank-line separation when multiple outputs occur.
@@ -49,10 +48,16 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Patch failure output alignment (tests):
+  - Downstream (diff): one-liners now end with "was invalid." (no trailing
+    listing request text in-line). Multiple failures remain blank-line
+    separated. Tests assert for "invalid.\\n\\nThe unified diff..." spacing.
+  - STAN (file ops): parse-diagnostics lines normalized to "file-ops …" to match
+    diagnostics-envelope expectations in tests.
+
 - Patch failure prompt path fix:
   - Clipboard/stdout prompt now uses the actual file path instead of "(patch)" when jsdiff reports a generic parse error. The service falls back to header-derived paths when jsdiff does not provide concrete file names.
-- File Ops payload alignment:
-  - Updated parser/validator/service to accept an unfenced “### File Ops” block (lines after heading up to the next heading); removed fence handling.
+- File Ops payload alignment:  - Updated parser/validator/service to accept an unfenced “### File Ops” block (lines after heading up to the next heading); removed fence handling.
   - Adjusted tests accordingly; clarified docs to remove “fenced” wording.
 
 - FEEDBACK removal cleanup:

@@ -1,8 +1,7 @@
 // src/stan/patch/format.ts
 /**
  * Central formatter for patch failure outputs.
- * - Downstream:
- *   - diff: one line per failed file, blank-line separated when multiple.
+ * - Downstream: *   - diff: one line per failed file, blank-line separated when multiple.
  *   - file-ops: quote the original ops block + request unified diffs.
  * - STAN repo:
  *   - diff: identification line + diagnostics envelope (START/END) with
@@ -37,11 +36,12 @@ export type FailureInput = DiffFailureInput | FileOpsFailureInput;
 const NL = '\n';
 
 const fmtDownstreamDiff = (targets: string[]): string => {
+  // Emit a single, concise line per failed file and separate multiple
+  // files with a blank line. Tests assert that the line ends with
+  // "was invalid." and that there is a blank line before the next one.
   const lines = targets.map(
-    (p) =>
-      `The unified diff patch for file ${p} was invalid. Print a full, post-patch listing of this file.`,
+    (p) => `The unified diff patch for file ${p} was invalid.`,
   );
-  // Blank-line separation when multiple outputs happen.
   return lines.join(`${NL}${NL}`) + NL;
 };
 

@@ -77,7 +77,6 @@ const extractOpsBody = (source: string): { body: string } | null => {
 export const parseFileOpsBlock = (source: string): FileOpsPlan => {
   const ops: FileOp[] = [];
   const errors: string[] = [];
-
   const extracted = extractOpsBody(source);
   if (!extracted) return { ops, errors }; // no block present; treat as absent
   const body = extracted.body;
@@ -90,8 +89,9 @@ export const parseFileOpsBlock = (source: string): FileOpsPlan => {
     const parts = line.split(/\s+/);
     const verbRaw = parts[0]; // keep raw string for unknown verb reporting
     const args = parts.slice(1);
-    const bad = (msg: string) =>
-      errors.push(`File Ops line ${lineNo.toString()}: ${msg}`);
+    const bad = (msg: string) => {
+      errors.push(`file-ops line ${lineNo.toString()}: ${msg}`);
+    };
 
     const needsOne = (ok: boolean) => {
       if (!ok) bad(`expected 1 path, got ${args.length.toString()}`);

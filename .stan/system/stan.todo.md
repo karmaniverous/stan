@@ -4,32 +4,64 @@ When updated: 2025-09-26 (UTC)
 
 Next up (priority order)
 
-1. Cancel pipeline — fix SIGINT parity test
-   - Reproduce and fix the failing case in src/stan/run/cancel.sigint.test.ts.
-   - Ensure archives are always skipped on cancellation (no archive.tar | archive.diff.tar) even when SIGINT arrives during the short race after scripts start.
-   - Keep bounded settle/join behavior; prefer short, deterministic waits.
+- CLI UI unification (Live + Logger under one composable UI)
+  - Provide a single RunnerUI that composes a shared ProgressModel and a pluggable sink (LiveTableSink | LoggerSink).
+  - Share status labels and summary via one helper; preserve q/r keys, final‑frame flush, and parity with existing tests.
+  - Acceptance: existing live/no‑live parity tests remain green; logs/frames carry the same status tokens.
 
-2. Windows stabilization
-   - Verify rmDirWithRetries usage across cancel tests; keep a short final settle.
-   - Keep ProcessSupervisor.waitAll with a short deadline in tests.
+- DRY status labels and summary
+  - Extract a shared status‑label + summary helper and reuse in LoggerUI and ProgressRenderer to avoid wording/color drift.
 
-3. Minor follow-ups — optional subcommand harness to DRY Commander glue after cancellation fixes.
+- Archive constants
+  - Introduce ARCHIVE_BASENAME/ARCHIVE_TAR/ARCHIVE_DIFF_TAR constants and reuse across util/output/archive/diff (and tests) instead of string literals.
 
-- DMP readiness (follow-on)
+- Shared repo‑relative path validator
+  - Consolidate the “normalize + forbid absolute + forbid ..” checks used by File Ops (patch/file‑ops.ts) and the response validator (validate/response.ts) into one utility.
+
+- Reserved workspace exclusions (single source)
+  - Centralize exclusion rules for <stanPath>/diff and <stanPath>/patch (and output when not combined) in a tiny helper used by filterFiles() and makeTarFilter().
+
+- openFilesInEditor test gating
+  - Decide on STAN_FORCE_OPEN policy: either honor it in openFilesInEditor or remove it from tests; align both to one rule.
+
+- RunnerControl ‘data’ fallback
+  - Re‑evaluate after broader CI coverage; remove if redundant to reduce surface area.
+
+- Cancel settle time
+  - Reduce the post‑cancel final settle from 1200 ms toward ~250–500 ms if real‑world runs remain stable.
+
+- Optional: subcommand harness
+  - Small helper to DRY Commander wiring (safety adapters, footer) across run/init/snap/patch.
+
+- Test teardown helpers
+  - Centralize stdin pause and short settle via src/test/helpers; drop per‑test duplicates to avoid Windows EBUSY flakes.
+
+- Imports staging: label sanitizer helper (optional)
+  - Factor label/tail sanitizer to a tiny shared helper for future reuse if staging expands.
+
+- buildApplyAttempts: remove unused ‘stage’ param
+  - Pipeline is worktree‑first; drop dead parameter and simplify types.
+
+- DMP readiness (follow‑on)
   - When DMP apply lands, feed its stderr/summary through the same formatter and share the envelopes with diff/file ops behavior.
-  -
-- Codebase reduction: identify and eliminate dead or duplicated code where safe; prefer reuse of shared helpers.
 
-- Adopt explicit dev‑mode diagnostics triage in project prompt: analyze → ask → apply or listings; gate patch emission on explicit approval.
+- Codebase reduction
+  - Identify and eliminate dead or duplicated code where safe; prefer reuse of shared helpers.
+
+- Adopt explicit dev‑mode diagnostics triage in project prompt
+  - Analyze → ask → apply or listings; gate patch emission on explicit approval.
 
 Unpersisted tasks
 
 - Extend formatter to incorporate future DMP rung (produce a DMP attempt line + reasons alongside git/jsdiff).
 - Minor polish:
-  - Audit other diagnostics call-sites for reuse of the shared helpers.
+  - Audit other diagnostics call‑sites for reuse of the shared helpers.
   - Consider a brief docs note in README about full vs diff archive contents (patch workspace policy).
 
 Completed (recent)
+
+- Cancel pipeline — SIGINT parity fix
+  - Parity test passing; archives skipped on cancel; bounded settle/join in place. Consider reducing the final settle once real‑world runs validate stability.
 
 - CLI refactor complete:
   - New run options/action/derive/defaults modules; help footer and defaults wiring; conflict handling; safety adapters applied consistently.
@@ -72,13 +104,17 @@ Completed (recent)
 
 - Test alignment:
   - Updated service.failure-prompt-path test to expect the new downstream diff one-liner ending with "was invalid." (no inline listing request).
+
 - Patch failure prompt path fix:
   - Clipboard/stdout prompt now uses the actual file path instead of "(patch)" when jsdiff reports a generic parse error. The service falls back to header-derived paths when jsdiff does not provide concrete file names.
+
 - File Ops payload alignment:
   - Updated parser/validator/service to accept an unfenced “### File Ops” block (lines after heading up to the next heading); removed fence handling.
   - Adjusted tests accordingly; clarified docs to remove “fenced” wording.
 
 - Persist raw patch for manual reprocessing:
   - Write RAW input to .stan/patch/.patch (apply still uses the cleaned text in memory).
+
 - Project doc clean‑up: removed obsolete “stan.dist/” reference; clarified RAW patch persistence.
+
 - Attempts integration test: fixed regex escaping to assert attempt lines reliably.

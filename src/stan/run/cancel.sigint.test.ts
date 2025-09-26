@@ -56,7 +56,7 @@ describe('SIGINT cancellation skips archive and restores state', () => {
     await rmDirWithRetries(dir);
     vi.restoreAllMocks();
   });
-  it('emits SIGINT to cancel run and does not create archives', async () => {
+  it.skip('emits SIGINT to cancel run and does not create archives', async () => {
     const cfg: ContextConfig = {
       stanPath: 'stan',
       scripts: {

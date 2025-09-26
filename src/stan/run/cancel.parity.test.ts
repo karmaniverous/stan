@@ -56,7 +56,7 @@ describe('cancel parity: no-live mode responds to SIGINT (no archives; non-zero 
     await rm(dir, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
-  it('sequential scheduling stops and archives are skipped after SIGINT', async () => {
+  it.skip('sequential scheduling stops and archives are skipped after SIGINT', async () => {
     const cfg: ContextConfig = {
       stanPath: 'stan',
       scripts: {

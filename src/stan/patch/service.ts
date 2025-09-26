@@ -233,49 +233,6 @@ export const runPatch = async (
     console.log(statusFail('patch failed'));
     return;
   }
-  // Unified-diff path only (no File Ops header present):
-  // Execute File Ops path was handled above; do not reach here when ops-kind.
-  if (false) {
-    try {
-      const dry = Boolean(opts?.check);
-      const { ok, results } = await executeFileOps(cwd, opsPlan.ops, dry);
-
-      if (!ok) {
-        const body = extractFileOpsBody(raw) ?? '';
-        const errors =
-          results
-            .filter((r) => r.status === 'failed')
-            .map((r) => {
-              const base =
-                r.verb === 'mv' && r.src && r.dest
-                  ? `${r.verb} ${r.src} ${r.dest}`
-                  : r.src
-                    ? `${r.verb} ${r.src}`
-                    : r.verb;
-              return `file-ops failed: ${base}${r.message ? ` — ${r.message}` : ''}`;
-            }) ?? [];
-        const prompt = isDevModuleRepo
-          ? formatPatchFailure({
-              context: 'stan',
-              kind: 'file-ops',
-              fileOpsErrors: errors,
-            })
-          : formatPatchFailure({
-              context: 'downstream',
-              kind: 'file-ops',
-              fileOpsBlock: body,
-            });
-        const copied = await tryCopyToClipboard(prompt);
-        if (!copied) {
-          console.log(prompt);
-        }
-        return;
-      }
-    } catch (e) {
-      console.error('stan: file ops execution failed', e);
-      return;
-    }
-  }
 
   console.log(`stan: applying patch "${patchRel}"`);
 

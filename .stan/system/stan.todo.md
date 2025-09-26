@@ -57,6 +57,9 @@ Completed (recent)
 - Validated diffs for ops‑only acceptance (no full listings):
   - Reissued correct unified diffs for new test and doc updates.
 
+- Lint clean-up:
+  - Removed dead constant-condition block in src/stan/patch/service.ts (no-constant-condition).
+
 - Patch workspace policy: exclude from ALL archives (full and diff).
   - Code: filterFiles and tar filter updated; bootstrap archiver excludes .stan/patch.
   - Tests: combine archive behavior updated (no patch dir); fixed regex escaping in attempts[] integration test.

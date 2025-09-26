@@ -96,45 +96,111 @@ Built‑ins (when neither flags nor config specify): debug=false, boring=false; 
   - `stan snap` — create/replace the diff snapshot (without writing an archive).
   - `stan patch [input]` — apply a patch (see below).
 
-### stan patch — failure handling (clipboard prompts; no persisted diagnostics)
+### stan patch — failure handling (downstream vs STAN repo)
 
-- If `stan patch` fails to apply a unified diff after the git attempts and jsdiff fallback, STAN:
-  - Copies to the clipboard one line per failed file: The unified diff patch for file <path/to/file.ext> was invalid. Print a full, post-patch listing of this file.
-  - If clipboard access is unavailable, the same lines are printed to stdout for manual copy.
-  - No diagnostic artifacts are persisted (no attempts.json, no per‑attempt logs, no feedback files).
-  - The “reject” attempt (`--reject`) is not used; `.rej` files are not produced or collected.
+Goals:
 
-- File Ops failure (pre‑ops):
-  - On any File Ops (### File Ops) failure — parsing or execution — STAN copies the following request to the clipboard (and prints to stdout on failure), quoting the original fenced block verbatim:
+- Downstream repos: keep the loop moving (request what’s needed next).
+- STAN repo: improve STAN first (diagnose, decide whether to fix generator vs handler), keep the loop context alive.
 
-  ***
+Common behavior
 
-  The following File Ops patch failed:
+- No FEEDBACK envelopes.
+- No persisted diagnostics (.rej, attempts.json, per‑attempt logs).
+- Clipboard‑first; stdout fallback when clipboard unavailable.
 
-  <exact quote of file ops patch>
+Downstream repos
 
-  Perform this operation with unified diff patches instead.
+- Diff Patch (one‑file rule in effect):
+  - For each failed file, copy to clipboard:
+    ```
+    The unified diff patch for file <path/to/file.ext> was invalid. Print a full, post-patch listing of this file.
+    ```
+  - Insert a blank line between multiple failures for readability.
+- File Ops:
+  - Copy to clipboard:
 
-  ***
+    ```
+    The following File Ops patch failed:
 
-- Dev‑mode diagnostics (STAN repo only):
-  - When running inside the STAN repository (detected via module root), failing tests and failing `stan patch` runs print concise rejection diagnostics to stderr:
-    - File Ops: one line per failed operation with verb, paths, and reason.
-    - Git/jsdiff: attempts tried, last exit code, trimmed excerpt of last git stderr, and jsdiff per‑file reasons.
-  - No diagnostics are persisted to disk; these messages are meant to surface in test output and stan’s captured script outputs.
+    <verbatim File Ops block>
 
-- Fallback ordering:
-  - Keep jsdiff fallback. The engine order remains: git apply (two 3‑way attempts) → jsdiff → clipboard prompt for any remaining failed files. Partial successes request listings only for the remaining files.
+    Perform this operation with unified diff patches instead.
+    ```
 
-### stan patch — DMP support (ladder)
+  - Insert a blank line between multiple outputs if they occur.
 
-- STAN accepts DMP Patch blocks (Diff Match Patch) as a first‑stage option. The ladder is:
-  1. DMP patch apply with conservative fuzz and EOL preservation.
-  2. git apply (3‑way attempts).
-  3. jsdiff fallback.
-  4. On any remaining failure, copy clipboard prompts requesting post‑patch listings for those files.
+STAN repo only
 
-- Validator accepts DMP in `### Patch:` blocks (one patch per file remains mandatory).
+- Diff Patch:
+  - Copy to clipboard:
+
+    ```
+    The unified diff patch for file <path/to/file.ext> was invalid.
+
+    START PATCH DIAGNOSTICS
+    <stderr from patch ingestion>
+    END PATCH DIAGNOSTICS
+    ```
+
+  - Verbatim stderr: do not trim. If git produced no stderr and jsdiff was attempted, include concise jsdiff reason lines instead:
+    ```
+    jsdiff: <path>: <reason>
+    ```
+  - No listing request here (avoid confusing the assistant).
+
+- File Ops:
+  - Copy to clipboard:
+
+    ```
+    The File Ops patch failed.
+
+    START PATCH DIAGNOSTICS
+    <parser and/or exec failures; one per line>
+    END PATCH DIAGNOSTICS
+    ```
+
+  - No “perform with unified diffs” line in the STAN repo variant.
+
+Block semantics
+
+- One diagnostics block per failure (matches “one patch” under the one‑diff‑per‑file rule). For File Ops (which may cover many paths), diagnostics still appear once per ops patch.
+
+### Patch diagnostics review (STAN repo only — assistant behavior)
+
+When `stan patch` fails and emits a diagnostics block:
+
+1. Read and correlate
+
+- Read diagnostics between START/END PATCH DIAGNOSTICS.
+- Compare messages (git apply, jsdiff reasons, file‑ops lines) to the patch content still in chat context.
+
+2. Classify
+
+- Likely generation issue (fixable in the project/system prompts):
+  - Symptoms: malformed unified diff (stray “@@” outside hunks, bad headers, missing `diff --git`, mismatched counts, etc.).
+  - Action: propose small, targeted prompt/validator/test updates. If low risk, offer to fix now; otherwise log a task in the dev plan.
+- Likely handling/path/system issue (fixable in STAN code):
+  - Symptoms: file not found, strip confusion (p1 vs p0), a/b prefixes handling, edge cases in fallback ordering, parser tolerances.
+  - Action: propose small code fixes + tests; fix now if low risk; otherwise log a task.
+- Context drift/ambiguous:
+  - Request the full post‑patch listing(s) for the relevant file(s) and continue the loop.
+
+3. Offer choices
+
+- (a) Fix now (if safe/small),
+- (b) Log a task (defer),
+- (c) Ignore diagnostics and request listings (diff patches) or unified diffs (file ops), as appropriate.
+
+4. Group failures
+
+- If multiple failures were pasted (rare under one‑diff‑per‑file), evaluate all and propose a combined course of action.
+
+### stan patch — DMP support (ladder; future)
+
+- Ladder: DMP → git apply (two 3‑way attempts) → jsdiff fallback → diagnostics/requests as above.
+- Reuse the same diagnostics envelope:
+  - Prefer DMP stderr; otherwise include concise reason lines when no stderr exists.
 
 ## Selection & Execution (current semantics)
 
@@ -181,18 +247,21 @@ Bring small, high‑signal artifacts into the STAN workspace just before archivi
   - One concise line per label (always printed; before the archive table rows in live/no‑live modes):
     - `stan: import <label> -> N file(s)`
 
-## Patch strategy — DMP → git → jsdiff → listings (no decomposition)
+## Patch strategy — DMP → git → jsdiff → diagnostics/listings
 
-- Motivation: reduce token footprint and repair churn by using a compact, fuzz‑tolerant patch first, then standard git diff, then jsdiff fallback, and finally human‑readable listings for the remaining failures.
+- Motivation: reduce token footprint and repair churn by using a compact, fuzz‑tolerant patch first, then standard git diff, then jsdiff fallback, and finally diagnostics/requests to keep the loop moving (downstream) or improve STAN (STAN repo).
 - Ladder (one version per file per turn):
   1. DMP patch blocks (one per file). STAN applies with conservative fuzz and preserves original EOL flavor per file.
-  2. git apply (two 3‑way attempts).
+  2. `git apply` (two 3‑way attempts).
   3. jsdiff fallback.
-  4. If any files still fail: STAN copies concise, one‑line listing requests to the clipboard for those files (and prints to stdout on clipboard failure).
+  4. If any files still fail:
+     - Downstream: concise one‑line listing requests for those files.
+     - STAN repo: diagnostics envelope (START/END) for analysis.
+
 - Rules and safeguards:
   - One patch per file per reply (never mix versions for the same file in a single turn). File Ops remain separate.
   - Preserve original file EOL flavor; normalize LF internally; restore on write.
-  - File Ops pre‑ops remain supported; on failure, quote the block and request unified‑diff replacements (see above).
+  - File Ops pre‑ops remain supported; on failure, the STAN‑repo payload is diagnostics, downstream payload is the unified‑diff re‑request.
 
 ## Diff snapshot policy
 
@@ -205,51 +274,22 @@ Bring small, high‑signal artifacts into the STAN workspace just before archivi
   - Write cleaned input to `<stanPath>/patch/.patch`.
   - Do not persist per‑attempt diagnostics or .rej files.
   - Include this directory in every `archive.tar` and `archive.diff.tar`.
-- On patch failures:
-  - Provide clipboard listing prompts (and stdout fallback) instead of persisting diagnostics.
 
 ## Patch Extensions — File Ops (declarative)
 
-Purpose
+Purpose: Provide a safe, cross‑platform way to express repository‑structural refactors (especially large move/rename sets) inside a patch, without relying on shell.
 
-– Provide a safe, cross‑platform way to express repository‑structural refactors (especially large move/rename sets) inside a patch, without relying on shell. – Keep it deterministic, auditable, and portable (Node/fs‑extra semantics).
-
-Scope
-
-– Pre‑ops only: run file ops before applying content patches. – Allowed operations (repo‑relative, POSIX; no globs; reject absolute or “..”):
-
-- `mv <src> <dest>`: move/rename a file or directory (recursive). Create parent folders for `<dest>`. Fail if `<src>` does not exist or `<dest>` already exists (no overwrite).
-- `cp <src> <dest>`: copy a file or directory (recursive). Create parent folders for `<dest>`. Fail if `<src>` does not exist or `<dest>` already exists (no overwrite).
-- `rm <path>`: remove a file or directory (recursive).
-- `rmdir <path>`: remove an empty directory (explicit safety).
-- `mkdirp <path>`: ensure directory exists (create all parents).
-
-Execution semantics
-
-– Order: execute in the listed order; stop at first failure. – Pre‑ops only: apply ops, then run the patch pipeline; on any failure, do not persist diagnostics — produce clipboard prompts as above. – Dry‑run: `stan patch --check` parses and validates ops, prints failures the same way, and makes no changes. – Dev‑mode stderr: in the STAN repo, failing tests emit concise errors to stderr for each failed op.
-
-Validation
-
-– For `mv`: require existing `<src>` and non‑existing `<dest>`. – For `rm`: require path exists (file or directory). – For `rmdir`: require directory exists and is empty.
-
-Cross‑platform
-
-– Implemented with fs‑extra on Windows/macOS/Linux (no shell).
+- Verbs: `mv <src> <dest>` | `cp <src> <dest>` | `rm <path>` | `rmdir <path>` | `mkdirp <path>`
+- Paths: POSIX, repo‑relative only; forbid absolute or traversal outside repo root after normalization.
+- mv/cp: no overwrite; create parents for `<dest>`.
+- rm: recursive file/dir removal; rmdir: empty directories only.
+- Dry‑run (`--check`) validates without changing the filesystem.
+- STAN repo failure payload: diagnostics envelope (no instruction line).
+- Downstream failure payload: re‑request to express as unified diffs (with the original ops block quoted), plus spacing between multiple outputs.
 
 ## Patch Extensions — Exec (future, gated)
 
-Motivation
-
-- Rare cases may need tool‑driven transforms that are infeasible to encode as file ops or unified diffs alone.
-- If introduced, must be heavily gated and non‑shell to mitigate risk.
-
-Design (deferred)
-
-- Opt‑in CLI flag: `stan patch --allow-exec`.
-- No shell: spawn without a shell (execFile‑style) to avoid injection via quoting/redirection; workdir = repo root; bounded env; timeouts.
-- Log stdout/stderr, args, exit code to `.stan/patch/.debug/exec.json`.
-- Treat any non‑zero exit as failure; abort patching; include diagnostics in stderr (dev‑mode) and request listings as needed.
-- Do not implement until a concrete, repeated use case emerges.
+- If introduced, must be heavily gated and non‑shell. (See prior policy in the system prompt.)
 
 ## Archiving & snapshot selection semantics (includes/excludes)
 
@@ -270,17 +310,13 @@ Design (deferred)
 ## Compression policy (archives & outputs)
 
 - Canonical artifacts remain plain `.tar` (`archive.tar` and `archive.diff.tar`) to maximize compatibility with assistants and the bootloader’s integrity‑first tar reader.
-- Research optional compression that does not compromise assistant reading or patch round‑trips:
-  - Do not change the canonical `.tar` artifacts by default.
-  - Explore an optional, companion compressed artifact for transport (e.g., `archive.tar.gz`) while continuing to produce the plain `.tar`.
-  - Script outputs do not need to be round‑tripped into patches, but they are used for review context. Any compression of outputs must preserve practical readability in chat.
+- Research optional compression for transport without changing the canonical `.tar` outputs.
 
 ## Logging
 
 - At the start of `stan run`, print a concise plan.
-- For each script/archive action in no‑live mode, log `stan: start "<key>"` and `stan: done "<key>" -> <path>"`.
-  - In live (TTY) mode, these legacy start/done lines are suppressed; progress is rendered in the live table with status colors and durations.
-- Archive warnings: do not write a warnings file. Print a console summary of excluded binaries and large text files when creating archives.
+- In live (TTY) mode, legacy “start/done” archive lines are suppressed; progress is rendered in the live table with status colors and durations.
+- Archive warnings are printed to the console (no file output).
 
 ## Assistant reply ordering (local policy)
 

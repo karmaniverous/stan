@@ -18,6 +18,7 @@ import { makeStanDirs } from '@/stan/paths';
 
 import { archivePhase } from './archive';
 import { runScripts } from './exec';
+import { installExitHook } from './exit';
 import { ProcessSupervisor } from './live/supervisor';
 import type { ExecutionMode, RunBehavior } from './types';
 import { LiveUI, LoggerUI, type RunnerUI } from './ui';
@@ -150,11 +151,55 @@ export const runSessionOnce = async (args: {
     }
   };
 
+  // Session-wide SIGINT → cancel (parity for live/no-live)
+  const onSigint = (): void => triggerCancel();
+  try {
+    process.on('SIGINT', onSigint);
+  } catch {
+    /* ignore */
+  }
+
   // Keys: live wires restart; logger wires SIGINT parity only
   ui.installCancellation(
     triggerCancel,
     liveEnabled ? triggerRestart : undefined,
   );
+
+  // Central exit hook: best-effort teardown on real exits
+  const uninstallExit = installExitHook(async () => {
+    try {
+      ui.stop();
+    } catch {
+      /* ignore */
+    }
+    try {
+      supervisor.cancelAll({ immediate: true });
+    } catch {
+      /* ignore */
+    }
+    try {
+      await supervisor.waitAll(3000);
+    } catch {
+      /* ignore */
+    }
+    try {
+      (process.stdin as unknown as { pause?: () => void }).pause?.();
+    } catch {
+      /* ignore */
+    }
+  });
+  const detachSignals = (): void => {
+    try {
+      process.off('SIGINT', onSigint);
+    } catch {
+      /* ignore */
+    }
+    try {
+      uninstallExit();
+    } catch {
+      /* ignore */
+    }
+  };
 
   const created: string[] = [];
   let collectPromise: Promise<void> | null = null;
@@ -256,6 +301,7 @@ export const runSessionOnce = async (args: {
       /* ignore */
     }
     return { created, cancelled: true, restartRequested };
+    // detachSignals executed by caller paths below before return
   }
   // ARCHIVE PHASE
   if (behavior.archive) {
@@ -278,5 +324,7 @@ export const runSessionOnce = async (args: {
   if (liveEnabled) {
     console.log('');
   }
+  // Detach signals & exit hook before returning to caller (or restart loop)
+  detachSignals();
   return { created, cancelled: false, restartRequested };
 };

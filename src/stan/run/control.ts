@@ -1,8 +1,8 @@
 /* src/stan/run/control.ts
  * RunnerControl — centralizes live cancellation wiring.
- * - Builtins only: readline.emitKeypressEvents + setRawMode for TTY; SIGINT everywhere.
+ * - Builtins only: readline.emitKeypressEvents + setRawMode for TTY.
  * - Keys: 'q' → cancel, 'r' → restart (when onRestart provided).
- * - Includes a minimal 'data' fallback to satisfy tests that emit('data','q').
+ * - Includes a minimal 'data' fallback (also handles ^C 0x03) for tests.
  * - Idempotent attach/detach; always restores raw mode and pauses stdin.
  */
 import { emitKeypressEvents } from 'node:readline';
@@ -10,14 +10,11 @@ import { emitKeypressEvents } from 'node:readline';
 export type RunnerControlOptions = {
   onCancel: () => void;
   onRestart?: () => void;
-  /** When true, wire SIGINT only (no raw mode or key handlers). */
-  sigintOnly?: boolean;
 };
 
 export class RunnerControl {
   private readonly onCancel: () => void;
   private readonly onRestart?: () => void;
-  private readonly sigintOnly: boolean;
 
   private attached = false;
   private keyHandler?: (
@@ -25,23 +22,15 @@ export class RunnerControl {
     key?: { name?: string; ctrl?: boolean },
   ) => void;
   private dataHandler?: (d: unknown) => void;
-  private sigintHandler?: () => void;
 
   constructor(opts: RunnerControlOptions) {
     this.onCancel = opts.onCancel;
     this.onRestart = opts.onRestart;
-    this.sigintOnly = Boolean(opts.sigintOnly);
   }
 
   attach(): void {
     if (this.attached) return;
     this.attached = true;
-
-    // Always wire SIGINT parity.
-    this.sigintHandler = () => this.onCancel();
-    process.on('SIGINT', this.sigintHandler);
-
-    if (this.sigintOnly) return;
 
     const stdin = process.stdin as unknown as NodeJS.ReadStream & {
       isTTY?: boolean;
@@ -74,7 +63,8 @@ export class RunnerControl {
     this.keyHandler = (_chunk, keyMaybe) => {
       const key = keyMaybe ?? ({} as { name?: string; ctrl?: boolean });
       const name = (key.name ?? '').toLowerCase();
-      if ((key.ctrl && name === 'c') || name === 'q') {
+      // Only handle 'q' (cancel) and 'r' (restart) here. SIGINT is handled by session.
+      if (name === 'q') {
         this.onCancel();
         return;
       }
@@ -86,6 +76,7 @@ export class RunnerControl {
       try {
         if (typeof d === 'string') {
           const s = d.toLowerCase();
+          // ^C (0x03) still cancels in raw mode via 'data' fallback
           if (s === '\u0003' || s === 'q') this.onCancel();
           else if (s === 'r') this.onRestart?.();
           return;
@@ -112,12 +103,6 @@ export class RunnerControl {
   detach(): void {
     if (!this.attached) return;
     this.attached = false;
-
-    try {
-      if (this.sigintHandler) process.off('SIGINT', this.sigintHandler);
-    } catch {
-      /* ignore */
-    }
 
     const stdin = process.stdin as unknown as NodeJS.ReadStream & {
       setRawMode?: (v: boolean) => void;

@@ -93,7 +93,6 @@ const statusLabel = (kind: StatusKind): string => {
 };
 
 export class LoggerUI implements RunnerUI {
-  private control: RunnerControl | null = null;
   start(): void {
     // no-op
   }
@@ -135,32 +134,14 @@ export class LoggerUI implements RunnerUI {
   }
   onCancelled(mode?: 'cancel' | 'restart'): void {
     void mode;
-    try {
-      this.control?.detach();
-    } catch {
-      /* ignore */
-    }
-    this.control = null;
+    // no-op (session handles SIGINT; no TTY keys in logger mode)
   }
   installCancellation(triggerCancel: () => void): void {
-    // Reuse unified cancel keys wiring, but restrict to SIGINT only (no TTY raw key handlers).
-    try {
-      this.control = new RunnerControl({
-        onCancel: triggerCancel,
-        sigintOnly: true,
-      });
-      this.control.attach();
-    } catch {
-      this.control = null;
-    }
+    // no-op: non-live mode relies on session-level SIGINT handling.
+    void triggerCancel;
   }
   stop(): void {
-    try {
-      this.control?.detach();
-    } catch {
-      /* ignore */
-    }
-    this.control = null;
+    // no-op
   }
 }
 

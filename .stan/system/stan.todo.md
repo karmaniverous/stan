@@ -13,9 +13,7 @@ Next up (priority order)
    - Verify rmDirWithRetries usage across cancel tests; keep a short final settle.
    - Keep ProcessSupervisor.waitAll with a short deadline in tests.
 
-3. Minor follow-ups
-   - Optional: add signal-exit for robust teardown paths.
-   - Optional: small subcommand harness to DRY Commander glue after cancellation fixes.
+3. Minor follow-ups — optional subcommand harness to DRY Commander glue after cancellation fixes.
 
 - DMP readiness (follow-on)
   - When DMP apply lands, feed its stderr/summary through the same formatter and share the envelopes with diff/file ops behavior.
@@ -36,6 +34,12 @@ Completed (recent)
 - CLI refactor complete:
   - New run options/action/derive/defaults modules; help footer and defaults wiring; conflict handling; safety adapters applied consistently.
   - Behavior parity verified by tests (live/no‑live, defaults, conflicts, help).
+
+- Added signal-exit central exit hook and simplified cancellation wiring:
+  - session: single SIGINT listener (parity); single exit hook for teardown.
+  - LoggerUI: removed SIGINT wiring (relies on session).
+  - RunnerControl: keys-only (q/r); no SIGINT path.
+  - Tests remain green; behavior unchanged for users (q/r/Ctrl+C; archives skipped on cancel).
 
 - Validated diffs for ops‑only acceptance (no full listings):
   - Reissued correct unified diffs for new test and doc updates.

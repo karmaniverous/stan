@@ -321,6 +321,12 @@ Bring small, high‑signal artifacts into the STAN workspace just before archivi
   - Do not persist per‑attempt diagnostics or .rej files.
   - Exclude this directory from all archives (`archive.tar` and `archive.diff.tar`).
 
+- Kind handling (CLI behavior):
+  - The CLI treats kind as header‑driven:
+    - Presence of “### File Ops” indicates an ops‑kind patch. The CLI parses and executes File Ops (or dry‑runs with `--check`) and short‑circuits success. It does not run the unified‑diff pipeline for ops‑kind payloads.
+    - Otherwise, the CLI expects a plain unified diff and runs the git→jsdiff pipeline.
+  - The CLI does not enforce a single‑kind policy. It processes the declared kind and does not attempt to detect or reject additional content outside the declared block. The “single‑kind per reply” rule applies to assistant composition, not to the CLI.
+
 ## Patch Extensions — File Ops (declarative)
 
 Purpose: Provide a safe, cross‑platform way to express repository‑structural refactors (especially large move/rename sets) inside a patch, without relying on shell.

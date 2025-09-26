@@ -133,6 +133,18 @@ export const runPatch = async (
     return;
   }
 
+  // Always persist RAW patch input for manual reprocessing regardless of kind.
+  // This follows canonical workspace policy (no diagnostics persistence).
+  try {
+    await ensureParentDir(patchAbs);
+    await writeFile(patchAbs, raw, 'utf8');
+  } catch (e) {
+    console.error('stan: failed to write raw patch', e);
+    return;
+  }
+
+  // Kind resolution (header-driven): presence of "### File Ops" indicates ops-kind.
+
   // Determine context: downstream vs STAN repo
   let isDevModuleRepo = false;
   try {
@@ -142,9 +154,13 @@ export const runPatch = async (
     isDevModuleRepo = false;
   }
 
-  // Optional File Ops block (pre-ops): parse early; apply before diffs.
+  // Optional File Ops block (pre-ops): parse early; if present, treat this
+  // payload as a File Ops patch and short-circuit on success. The CLI does not
+  // enforce single-kind; it processes the declared kind only and does not
+  // attempt to detect or reject additional content outside the ops block.
   const opsPlan = parseFileOpsBlock(raw);
-  if (opsPlan.errors.length) {
+  const hasOpsHeader = Boolean(opsPlan.ops.length || opsPlan.errors.length);
+  if (hasOpsHeader && opsPlan.errors.length) {
     // Treat any parse error as a File Ops failure per policy.
     const body = extractFileOpsBody(raw) ?? '';
     const prompt = isDevModuleRepo
@@ -162,8 +178,50 @@ export const runPatch = async (
     if (!copied) console.log(prompt);
     return;
   }
+  if (hasOpsHeader && opsPlan.ops.length > 0) {
+    // Execute File Ops (kind=ops). In --check mode, validate only (no side-effects).
+    try {
+      const dry = Boolean(opts?.check);
+      const { ok, results } = await executeFileOps(cwd, opsPlan.ops, dry);
+      if (!ok) {
+        const body = extractFileOpsBody(raw) ?? '';
+        const errors =
+          results
+            .filter((r) => r.status === 'failed')
+            .map((r) => {
+              const base =
+                r.verb === 'mv' && r.src && r.dest
+                  ? `${r.verb} ${r.src} ${r.dest}`
+                  : r.src
+                    ? `${r.verb} ${r.src}`
+                    : r.verb;
+              return `file-ops failed: ${base}${r.message ? ` — ${r.message}` : ''}`;
+            }) ?? [];
+        const prompt = isDevModuleRepo
+          ? formatPatchFailure({
+              context: 'stan',
+              kind: 'file-ops',
+              fileOpsErrors: errors,
+            })
+          : formatPatchFailure({
+              context: 'downstream',
+              kind: 'file-ops',
+              fileOpsBlock: body,
+            });
+        const copied = await tryCopyToClipboard(prompt);
+        if (!copied) console.log(prompt);
+        return;
+      }
+      // Success: ops-kind patch short-circuits; do not proceed to unified-diff pipeline.
+      console.log(statusOk(dry ? 'patch check passed' : 'patch applied'));
+      return;
+    } catch (e) {
+      console.error('stan: file ops execution failed', e);
+      return;
+    }
+  }
 
-  // Detect & clean (unified diff only), tolerant to surrounding prose
+  // Detect & clean (unified diff path), tolerant to surrounding prose
   const cleaned = detectAndCleanPatch(raw);
   // Collect touched-file candidates from headers (for diagnostics and staged check)
   const changedFromHeaders = pathsFromPatch(cleaned);
@@ -175,16 +233,9 @@ export const runPatch = async (
     console.log(statusFail('patch failed'));
     return;
   }
-  // Write RAW patch content to canonical path <stanPath>/patch/.patch (manual reprocessing)
-  try {
-    await ensureParentDir(patchAbs);
-    await writeFile(patchAbs, raw, 'utf8');
-  } catch (e) {
-    console.error('stan: failed to write cleaned patch', e);
-    return;
-  }
-  // Execute File Ops (pre-ops) before applying the unified diff(s).
-  if (opsPlan.ops.length > 0) {
+  // Unified-diff path only (no File Ops header present):
+  // Execute File Ops path was handled above; do not reach here when ops-kind.
+  if (false) {
     try {
       const dry = Boolean(opts?.check);
       const { ok, results } = await executeFileOps(cwd, opsPlan.ops, dry);

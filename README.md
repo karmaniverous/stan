@@ -142,7 +142,7 @@ See [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage_
   - [The STAN Loop](https://docs.karmanivero.us/stan/documents/The_STAN_Loop.html) — How Build & Snapshot → Share & Baseline → Discuss & Patch work together.
   - [CLI Usage & Examples](https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html) — Common flags and invocation patterns, including `-p`, `-P`, `-S`, `-A`, and `-c`.
   - [Stan Configuration](https://docs.karmanivero.us/stan/documents/Stan_Configuration.html) — All config keys, includes/excludes semantics, and phase‑scoped CLI defaults.
-  - [Patch Workflow & Diagnostics](https://docs.karmanivero.us/stan/documents/Patch_Workflow___FEEDBACK.html) — Unified diff policy, diagnostics envelopes, and assistant expectations.
+  - [Patch Workflow & Diagnostics](https://docs.karmanivero.us/stan/documents/Patch_Workflow___Diagnostics.html) — Unified diff policy, diagnostics envelopes, and assistant expectations.
   - [Archives & Snapshots](https://docs.karmanivero.us/stan/documents/Archives___Snapshots.html) — What goes into `archive.tar`/`archive.diff.tar`, combine mode, and snapshot history. Additional references:
 
 - The following documents are maintained by STAN and live under `<stanPath>/system/` in your repo:

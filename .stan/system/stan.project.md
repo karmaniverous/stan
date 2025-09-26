@@ -152,12 +152,6 @@ Goals:
 - Downstream repos: keep the loop moving (request what’s needed next).
 - STAN repo: improve STAN first (diagnose, decide whether to fix generator vs handler), keep the loop context alive.
 
-Common behavior
-
-- No FEEDBACK envelopes.
-- No persisted diagnostics (.rej, attempts.json, per‑attempt logs).
-- Clipboard‑first; stdout fallback when clipboard unavailable.
-
 Downstream repos
 
 - Diff Patch (one‑file rule in effect):

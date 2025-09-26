@@ -81,7 +81,6 @@ Use these headings exactly; wrap each Patch (and optional Full Listing, when app
 - Output the commit message at the end of the reply wrapped in a fenced code block. Do not annotate with a language tag. Apply the +1 backtick rule. The block contains only the commit message (subject + body), no surrounding prose.
 
 ## Validation
-
 - Confirm that every created/updated/deleted file has a “Full Listing” (skipped for deletions) and a matching “Patch”.
 - Confirm that fence lengths obey the +1 backtick rule for every block.
 
@@ -101,40 +100,27 @@ Before sending a reply, verify all of the following:
    - Note: This rule does not apply to File Ops; File Ops may include many paths in one block.
 
 2. Commit message isolation and position
-   - Normal replies: The “Commit Message” is MANDATORY. It appears once, as the final section.
-   - FEEDBACK replies: Do not include a Commit Message.
-   - In cases where a Commit Message is present, its fence is not inside any other fenced block.
+   - The “Commit Message” is MANDATORY. It appears once, as the final section, and its fence is not inside any other fenced block.
 3. Fence hygiene (+1 rule)
    - For every fenced block, the outer fence is strictly longer than any internal backtick run (minimum 3).
    - Patches, optional Full Listings, and commit message all satisfy the +1 rule.
-
 4. Section headings
    - Headings match the template exactly (names and order).
 
 5. Documentation cadence (gating)
    - Normal replies: If any Patch block is present, there MUST also be a Patch for <stanPath>/system/stan.todo.md that reflects the change set (unless the change set is deletions‑only or explicitly plan‑only).
    - The “Commit Message” MUST be present and last.
-   - FEEDBACK replies: Commit Message requirement is waived; documentation patches are not required solely to accompany FEEDBACK corrections.
-
-6. FEEDBACK response completeness
-   - When replying to a FEEDBACK packet:
-     - Include a Full Listing for each file listed under `summary.failed`.
-     - Include an improved Patch for each of those files (and only those files).
-   - If any failed file is missing its Full Listing or improved Patch, STOP and re‑emit after fixing before sending.
-
-7. Nested-code templates (hard gate)
+6. Nested-code templates (hard gate)
    - Any template or example that contains nested fenced code blocks (e.g., the Dependency Bug Report or FEEDBACK) MUST pass the fence‑hygiene scan: compute N = maxInnerBackticks + 1 (min 3), apply that fence, then re‑scan before sending. If any collision remains, STOP and re‑emit.
 
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
-
 ## Patch policy reference
 
 Follow the canonical rules in “Patch Policy” (see earlier section). The Response Format adds presentation requirements only (fencing, section ordering, per‑file one‑patch rule). Do not duplicate prose inside patch fences; emit plain unified diff payloads.
 
-Optional Full Listings – On explicit request or when replying to FEEDBACK, include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.
+Optional Full Listings – On explicit request (including prompts emitted by STAN after a failed apply), include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.
 
 ## File Ops (optional pre‑ops; structural changes)
-
 Use “### File Ops” to declare safe, repo‑relative file and directory operations that run before content patches. File Ops are for structure (moves/renames, creates, deletes), while unified‑diff Patches are for editing file contents.
 
 - Verbs:

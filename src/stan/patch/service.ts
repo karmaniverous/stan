@@ -13,16 +13,14 @@ import { preflightDocsAndVersion } from '../preflight';
 import { getVersionInfo } from '../version';
 import { detectAndCleanPatch } from './clean';
 import { resolvePatchContext } from './context';
-import { isFeedbackEnvelope, seemsUnifiedDiff } from './detect';
+import { seemsUnifiedDiff } from './detect';
 import { executeFileOps, parseFileOpsBlock } from './file-ops';
 import { maybeWarnStaged } from './git-status';
 import { pathsFromPatch } from './headers';
 import { openFilesInEditor } from './open';
-import { parseUnifiedDiff } from './parse';
 import { applyPatchPipeline } from './run/pipeline';
 import { readPatchSource } from './run/source';
 import { ensureParentDir } from './util/fs';
-
 // Early path helper
 const fileExists = (cwd: string, rel: string): boolean =>
   existsSync(path.join(cwd, rel));
@@ -89,7 +87,7 @@ export const runPatch = async (
     noFile?: boolean;
   },
 ): Promise<void> => {
-  const { cwd, stanPath, patchAbs, patchRel } = await resolvePatchContext(cwd0);
+  const { cwd, patchAbs, patchRel } = await resolvePatchContext(cwd0);
 
   // Preflight docs/version (non-blocking; best-effort)
   try {
@@ -171,14 +169,6 @@ export const runPatch = async (
   // Collect touched-file candidates from headers (for diagnostics and staged check)
   const changedFromHeaders = pathsFromPatch(cleaned);
 
-  // Early input sanity checks
-  if (isFeedbackEnvelope(cleaned)) {
-    console.error(
-      'stan: FEEDBACK detected; paste this into your AI to receive a corrected patch.',
-    );
-    console.log(statusFail('patch failed'));
-    return;
-  }
   if (!seemsUnifiedDiff(cleaned)) {
     console.error(
       'stan: input is not a unified diff; expected headers like "diff --git a/<path> b/<path>" with subsequent "---"/"+++" and "@@" hunks.',
@@ -186,7 +176,6 @@ export const runPatch = async (
     console.log(statusFail('patch failed'));
     return;
   }
-
   // Write cleaned content to canonical path <stanPath>/patch/.patch
   try {
     await ensureParentDir(patchAbs);
@@ -244,14 +233,6 @@ export const runPatch = async (
       console.error('stan: file ops execution failed', e);
       return;
     }
-  }
-
-  // Parse for strip candidates (must not prevent diagnostics from being written)
-  let parsed: ReturnType<typeof parseUnifiedDiff> | null = null;
-  try {
-    parsed = parseUnifiedDiff(cleaned);
-  } catch {
-    parsed = null; // proceed with a safe fallback
   }
 
   console.log(`stan: applying patch "${patchRel}"`);

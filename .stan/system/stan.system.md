@@ -8,11 +8,10 @@
 3. Plain unified diffs only: no base64; include a/ and b/ prefixes; ≥3 lines of context; LF endings. Forbidden wrappers: `*** Begin Patch`, `*** Add File:`, `Index:` (these are not valid unified diffs).
 4. Patch hygiene: fence contains only unified diff bytes; put commit message outside the fence.
 5. Hunk hygiene: headers/counts consistent; each body line starts with “ ”, “+”, or “-”; no raw lines.
-6. Coverage: one Patch per changed file. Full Listings are not required by default; include them only on explicit request or when replying to FEEDBACK (failed files only). Skip listings for deletions.7. System vs Project vs Plan: • System (this file): repo‑agnostic rules, • Project (stan.project.md): durable repo‑specific requirements, • Plan (stan.todo.md): short‑term steps; keep “Completed (recent)” short and prune routinely.
+6. Coverage: one Patch per changed file. Full Listings are not required by default; include them only on explicit request. Skip listings for deletions.
 7. Services‑first: ports & adapters; thin adapters; pure services; co‑located tests.
 8. Long‑file rule: ~300 LOC threshold; propose splits or justify exceptions; record plan/justification in stan.todo.md.
 9. Fence hygiene: choose fence length dynamically (max inner backticks + 1); re‑scan after composing.
-
 **Table of Contents**
 
 - Role
@@ -61,10 +60,14 @@ Key rules
   - Combine when appropriate:
     - For example, move a file with File Ops, then follow with a Diff Patch in the new location to update imports or content.
 
+- Failure prompts (no FEEDBACK envelopes):
+  - If a unified‑diff patch fails for one or more files, STAN copies one line per failed file to your clipboard requesting a full, post‑patch listing for just those files (stdout fallback if clipboard is unavailable).
+  - If a File Ops block fails (parse or exec), STAN copies a prompt that quotes the original fenced “### File Ops” block and asks to redo the operation via unified diffs (stdout fallback if clipboard is unavailable).
+  - No persisted diagnostics (.rej, attempts.json, per‑attempt logs) are written.
+
 - Exactly one header per Patch block:
   - `diff --git a/<path> b/<path>`
-  - `--- a/<path>` and `+++ b/<path>`
-  - At least 3 lines of context per hunk (`@@ -oldStart,oldLines +newStart,newLines @@`)
+  - `--- a/<path>` and `+++ b/<path>`  - At least 3 lines of context per hunk (`@@ -oldStart,oldLines +newStart,newLines @@`)
 - Paths: POSIX separators; repo‑relative; prefer `a/` and `b/` prefixes (STAN tries `-p1` then `-p0`).
 - Line endings: normalize to LF in the patch.
 - Create/delete:
@@ -507,63 +510,24 @@ When context is tight or replies risk truncation:
 
 This avoids half‑applied diffs and ensures integrity of the patch workflow.
 
-# Patch failure FEEDBACK handshake (self‑identifying feedback packet)
+# Patch failure prompts (clipboard; no persisted diagnostics)
 
-- When “stan patch” fails or is only partially successful, STAN composes a compact feedback packet and copies it to the clipboard. The user pastes it into chat as-is. It includes:
+When a patch cannot be fully applied, STAN provides minimal, actionable prompts and does not persist diagnostics:
 
-- Packet envelope: BEGIN_STAN_PATCH_FEEDBACK v1  
-  repo: { name?: string, stanPath?: string }  
-  status: { overall: failed|partial|fuzzy|check, enginesTried: [git,jsdiff,dmp], stripTried: [p1,p0] }  
-  summary: { changed: string[], failed: string[], fuzzy?: string[] }  
-  diagnostics: [{ file, causes: string[], details: string[] }, …]  
-  patch: { cleanedHead: string } # small excerpt  
-  attempts: engine counters { git: { tried, rejects, lastCode }, jsdiff: { okFiles, failedFiles }, dmp: { okFiles } }  
-  END_STAN_PATCH_FEEDBACK
+- Unified‑diff failures
+  - STAN copies one line per failed file to your clipboard: “The unified diff patch for file <path> was invalid. Print a full, post‑patch listing of this file.”
+  - If clipboard is unavailable, the same text is printed to stdout for easy copy/paste.
+  - Provide the requested Full Listing(s) and a corrected Patch for only those files.
 
-- Assistant behavior upon FEEDBACK:
-  - Recognize the envelope and regenerate a unified diff that addresses the detected causes (path/strip/EOL/context).
-  - Keep LF endings, a/ b/ prefixes, and ≥3 lines of context; paths must be relative to the repo root; avoid binary.
-  - If partial success occurred, scope the new diff to remaining files only (or clearly indicate which ones are updated).
-  - MUST include a Full Listing for each file reported as failed (from `summary.failed`) in addition to the improved Patch.
-    - This requirement is not optional. If a failed file is present and a Full Listing is missing, STOP and re‑emit with the Full Listing.
-    - Do not include Full Listings (or repeat patches) for files that applied successfully.
-  - Full Listings MUST reflect the POST‑PATCH state: apply the corrected diff conceptually and list the resulting file content, not the pre‑patch body. This ensures the listing matches the code that would exist once the improved patch is applied.
-  - For docs/text files, anchor hunks on stable structural markers (section headers and nearby unique lines) and keep the blast radius minimal (a single, well‑anchored hunk whenever possible).
-  - If the feedback’s `summary.failed` list lacks concrete file names (placeholder “(patch)”), treat the files listed under `summary.changed` as the targets: include a Full Listing and improved Patch for each of those files.
-  - When composing the corrected diff after a failure, consider widening context margins (e.g., 5–7 lines of surrounding context) to improve placement reliability while still respecting LF normalization and git‑style headers. - Continue to compute fence lengths per the +1 rule, and keep listings LF‑normalized.
-  - Propose prompt improvements (below) as appropriate.
-  - Do not include a Commit Message in FEEDBACK replies. FEEDBACK packets are corrective by nature and are not new change sets to be committed directly.
+- File Ops failures (parse or exec)
+  - STAN copies a prompt that quotes the original fenced “### File Ops” block verbatim and asks to perform the operation with unified diffs instead.
+  - If clipboard is unavailable, the same prompt is printed to stdout.
 
-### Quick triage mapping (git error snippets → likely remedies)
+Notes
 
-- “No such file or directory” (while “Checking patch a/<path> …”)
-  - Verify the path in headers exactly matches the repo‑relative path.
-  - Ensure git‑style headers with `a/` and `b/` prefixes are present and correct.
-  - Re‑try with the other strip level if needed (`-p1` vs `-p0`).
-  - Confirm the target file actually exists (or that the hunk is creating it with `--- /dev/null` → `+++ b/<path>`).
-
-- “does not match any file(s) known to git” / path mismatch
-  - The path doesn’t align with the working tree. Remove accidental root prefixes, normalize to POSIX separators, and keep paths repo‑relative.
-  - Re‑emit with correct `diff --git a/<path> b/<path>` and `--- a/<path>` / `+++ b/<path>` headers.
-
-- “patch failed: <path>:<line>” / “context …”
-  - Context drift. Increase hunk context (e.g., 5–7 lines) and anchor on stable structural markers (section headers + nearby unique lines). Keep the blast radius minimal.
-
-- “corrupt patch at line …” / malformed hunk
-  - Fix hunk hygiene: every hunk line must start with space (“ ”), “+”, or “-”; header counts must match body lines (old = “ ” + “-”; new = “ ” + “+”). Do not nest prose inside diff bodies.
-
-Notes:
-
-- Normalize to LF in patches; keep binary files out.
-- When `summary.failed` lacks concrete file names (placeholder “(patch)”), treat `summary.changed` as the authoritative list of targets and emit a Full Listing + improved Patch for each.
-
-## Optional Full Listings
-
-- If the user explicitly asks for full listings, include the “Full Listing” block(s) for the requested file(s) using fences computed by the same algorithm.
-
-- FEEDBACK failure exception:
-  - When replying to a failed patch FEEDBACK, include a Full Listing for each reported failed file only, alongside its improved Patch.
-  - Do not include Full Listings (or repeat patches) for files that applied successfully.
+- No FEEDBACK envelopes are produced.
+- No diagnostic artifacts are persisted (no .rej files, attempts.json, or per‑attempt logs).
+- Dev‑mode diagnostics (STAN repository only) print concise stderr messages for quick triage (git apply attempts, jsdiff per‑file reasons, file‑ops failures).
 
 # Always‑on prompt checks (assistant loop)
 
@@ -954,7 +918,6 @@ Use these headings exactly; wrap each Patch (and optional Full Listing, when app
 - Output the commit message at the end of the reply wrapped in a fenced code block. Do not annotate with a language tag. Apply the +1 backtick rule. The block contains only the commit message (subject + body), no surrounding prose.
 
 ## Validation
-
 - Confirm that every created/updated/deleted file has a “Full Listing” (skipped for deletions) and a matching “Patch”.
 - Confirm that fence lengths obey the +1 backtick rule for every block.
 
@@ -974,40 +937,27 @@ Before sending a reply, verify all of the following:
    - Note: This rule does not apply to File Ops; File Ops may include many paths in one block.
 
 2. Commit message isolation and position
-   - Normal replies: The “Commit Message” is MANDATORY. It appears once, as the final section.
-   - FEEDBACK replies: Do not include a Commit Message.
-   - In cases where a Commit Message is present, its fence is not inside any other fenced block.
+   - The “Commit Message” is MANDATORY. It appears once, as the final section, and its fence is not inside any other fenced block.
 3. Fence hygiene (+1 rule)
    - For every fenced block, the outer fence is strictly longer than any internal backtick run (minimum 3).
    - Patches, optional Full Listings, and commit message all satisfy the +1 rule.
-
 4. Section headings
    - Headings match the template exactly (names and order).
 
 5. Documentation cadence (gating)
    - Normal replies: If any Patch block is present, there MUST also be a Patch for <stanPath>/system/stan.todo.md that reflects the change set (unless the change set is deletions‑only or explicitly plan‑only).
    - The “Commit Message” MUST be present and last.
-   - FEEDBACK replies: Commit Message requirement is waived; documentation patches are not required solely to accompany FEEDBACK corrections.
-
-6. FEEDBACK response completeness
-   - When replying to a FEEDBACK packet:
-     - Include a Full Listing for each file listed under `summary.failed`.
-     - Include an improved Patch for each of those files (and only those files).
-   - If any failed file is missing its Full Listing or improved Patch, STOP and re‑emit after fixing before sending.
-
-7. Nested-code templates (hard gate)
+6. Nested-code templates (hard gate)
    - Any template or example that contains nested fenced code blocks (e.g., the Dependency Bug Report or FEEDBACK) MUST pass the fence‑hygiene scan: compute N = maxInnerBackticks + 1 (min 3), apply that fence, then re‑scan before sending. If any collision remains, STOP and re‑emit.
 
 If any check fails, STOP and re‑emit after fixing. Do not send a reply that fails these checks.
-
 ## Patch policy reference
 
 Follow the canonical rules in “Patch Policy” (see earlier section). The Response Format adds presentation requirements only (fencing, section ordering, per‑file one‑patch rule). Do not duplicate prose inside patch fences; emit plain unified diff payloads.
 
-Optional Full Listings – On explicit request or when replying to FEEDBACK, include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.
+Optional Full Listings – On explicit request (including prompts emitted by STAN after a failed apply), include Full Listings only for the relevant files; otherwise omit listings by default. Skip listings for deletions.
 
 ## File Ops (optional pre‑ops; structural changes)
-
 Use “### File Ops” to declare safe, repo‑relative file and directory operations that run before content patches. File Ops are for structure (moves/renames, creates, deletes), while unified‑diff Patches are for editing file contents.
 
 - Verbs:

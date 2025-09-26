@@ -3,7 +3,6 @@
 When updated: 2025-09-26 (UTC)
 
 Next up (priority order)
-
 1. DMP patch support (improve loop fidelity)
    - Accept DMP Patch blocks in `### Patch:` (one patch per file remains mandatory).
    - Implement DMP apply with conservative fuzz and EOL preservation per file.
@@ -26,9 +25,16 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- FEEDBACK removal cleanup:
+  - Removed FEEDBACK envelope handling and all related persistence (.rej handling, attempts.json, per‑attempt logs).
+  - Deleted dead modules/tests: patch/run/feedback.*, patch/run/diagnostics.*, patch/rejects.*, patch/parse.fs.test.ts.
+  - Simplified patch detection (no FEEDBACK guard); retained unified‑diff validator.
+  - Updated system prompt parts to document clipboard prompts on failures and removed FEEDBACK sections/exceptions.
+  - Kept dev‑mode stderr diagnostics (STAN repo only) concise for git/jsdiff/file‑ops.
+  - No user‑facing docs updated yet (README etc.) per deferral.
+
 - Requirements & dev plan refactor:
-  - Removed FEEDBACK as a supported workflow and specified clipboard prompts for patch and File Ops failures; eliminated diagnostic persistence and .rej handling; retained jsdiff fallback; defined dev‑mode stderr diagnostics for the STAN repo; kept DMP as a first‑class requirement and moved it up the ladder; clarified documentation work to match.
-- Implemented patch failure simplification:
+  - Removed FEEDBACK as a supported workflow and specified clipboard prompts for patch and File Ops failures; eliminated diagnostic persistence and .rej handling; retained jsdiff fallback; defined dev‑mode stderr diagnostics for the STAN repo; kept DMP as a first‑class requirement and moved it up the ladder; clarified documentation work to match.- Implemented patch failure simplification:
   - Dropped git “--reject” attempt; no .rej handling.
   - Removed persisted diagnostics (attempts.json, per‑attempt logs).
   - On File Ops parse/exec failure: copy quoted File Ops block request to clipboard (stdout fallback), then abort.

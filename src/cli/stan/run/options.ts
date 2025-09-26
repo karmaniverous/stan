@@ -1,17 +1,14 @@
 import { Command, Option } from 'commander';
 
-import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 
-import { applyCliSafety, tagDefault } from '../cli-utils';
-import { RUN_BASE_DEFAULTS } from './defaults';
+import { applyCliSafety, runDefaults, tagDefault } from '../cli-utils';
 
 export type FlagPresence = {
   sawNoScriptsFlag: boolean;
   sawScriptsFlag: boolean;
   sawExceptFlag: boolean;
-};
-/**
+}; /**
  * Register the `run` subcommand options and default tagging.
  * Returns the configured subcommand and a getter for raw flag presence.
  */
@@ -160,61 +157,8 @@ export const registerRunOptions = (
 
   applyCliSafety(cmd);
 
-  // Compute effective defaults from config (cliDefaults.run) over baseline
-  const resolveRunDefaults = () => {
-    try {
-      const p = findConfigPathSync(process.cwd());
-      const cfg = p ? loadConfigSync(process.cwd()) : null;
-      const runDefs = (cfg?.cliDefaults?.run ?? {}) as {
-        archive?: boolean;
-        combine?: boolean;
-        keep?: boolean;
-        sequential?: boolean;
-        scripts?: boolean | string[];
-        live?: boolean;
-        hangWarn?: number;
-        hangKill?: number;
-        hangKillGrace?: number;
-      };
-      return {
-        archive:
-          typeof runDefs.archive === 'boolean'
-            ? runDefs.archive
-            : RUN_BASE_DEFAULTS.archive,
-        live:
-          typeof runDefs.live === 'boolean'
-            ? runDefs.live
-            : RUN_BASE_DEFAULTS.live,
-        combine:
-          typeof runDefs.combine === 'boolean'
-            ? runDefs.combine
-            : RUN_BASE_DEFAULTS.combine,
-        keep:
-          typeof runDefs.keep === 'boolean'
-            ? runDefs.keep
-            : RUN_BASE_DEFAULTS.keep,
-        sequential:
-          typeof runDefs.sequential === 'boolean'
-            ? runDefs.sequential
-            : RUN_BASE_DEFAULTS.sequential,
-        hangWarn:
-          typeof runDefs.hangWarn === 'number' && runDefs.hangWarn > 0
-            ? runDefs.hangWarn
-            : RUN_BASE_DEFAULTS.hangWarn,
-        hangKill:
-          typeof runDefs.hangKill === 'number' && runDefs.hangKill > 0
-            ? runDefs.hangKill
-            : RUN_BASE_DEFAULTS.hangKill,
-        hangKillGrace:
-          typeof runDefs.hangKillGrace === 'number' && runDefs.hangKillGrace > 0
-            ? runDefs.hangKillGrace
-            : RUN_BASE_DEFAULTS.hangKillGrace,
-      };
-    } catch {
-      return { ...RUN_BASE_DEFAULTS };
-    }
-  };
-  const eff = resolveRunDefaults();
+  // Effective defaults from config (cliDefaults.run) over baseline
+  const eff = runDefaults(process.cwd());
 
   // Tag defaulted boolean choices with (default)
   tagDefault(eff.archive ? optArchive : optNoArchive, true);

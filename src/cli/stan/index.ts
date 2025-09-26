@@ -8,16 +8,14 @@
 
 import { Command, Option } from 'commander';
 
-import { findConfigPathSync, loadConfigSync } from '@/stan/config';
 import { renderAvailableScriptsHelp } from '@/stan/help';
 import { printVersionInfo } from '@/stan/version';
 
-import { applyCliSafety, tagDefault } from './cli-utils';
+import { applyCliSafety, rootDefaults, tagDefault } from './cli-utils';
 import { performInit, registerInit } from './init';
 import { registerPatch } from './patch';
 import { registerRun } from './runner';
 import { registerSnap } from './snap';
-
 /**
  * Build the root CLI (`stan`) without side effects (safe for tests). *
  * Registers the `run`, `init`, `snap`, and `patch` subcommands, installs
@@ -27,25 +25,9 @@ import { registerSnap } from './snap';
  * @returns New Commander `Command` instance.
  */
 export const makeCli = (): Command => {
-  const cli = new Command(); // Resolve effective defaults from config (when present); fall back to built‑ins.
-  let cfgDefaults: { debug?: boolean; boring?: boolean } = {};
-  try {
-    const cwd = process.cwd();
-    const p = findConfigPathSync(cwd);
-    if (p) {
-      const cfg = loadConfigSync(cwd);
-      const cliDefs = cfg.cliDefaults;
-      cfgDefaults = {
-        debug: typeof cliDefs?.debug === 'boolean' ? cliDefs.debug : undefined,
-        boring:
-          typeof cliDefs?.boring === 'boolean' ? cliDefs.boring : undefined,
-      };
-    }
-  } catch {
-    // best-effort
-  }
-  const debugDefault = Boolean(cfgDefaults.debug ?? false);
-  const boringDefault = Boolean(cfgDefaults.boring ?? false);
+  const cli = new Command();
+  // Resolve effective defaults from config (when present); fall back to built‑ins.
+  const { debugDefault, boringDefault } = rootDefaults(process.cwd());
 
   cli.name('stan').description(
     // A clearer story than the prior one‑liner.
@@ -87,24 +69,8 @@ export const makeCli = (): Command => {
       };
       const opts = holder.opts?.() ?? {};
 
-      // Resolve config defaults
-      let cfgDefaults: { debug?: boolean; boring?: boolean } = {};
-      try {
-        const cwd = process.cwd();
-        const p = findConfigPathSync(cwd);
-        if (p) {
-          const cfg = loadConfigSync(cwd);
-          const cliDefs = cfg.cliDefaults;
-          cfgDefaults = {
-            debug:
-              typeof cliDefs?.debug === 'boolean' ? cliDefs.debug : undefined,
-            boring:
-              typeof cliDefs?.boring === 'boolean' ? cliDefs.boring : undefined,
-          };
-        }
-      } catch {
-        // best-effort
-      }
+      // Resolve config defaults (best-effort)
+      const { debugDefault, boringDefault } = rootDefaults(process.cwd());
 
       const src = holder.getOptionValueSource?.bind(root);
       const debugFromCli =
@@ -113,13 +79,9 @@ export const makeCli = (): Command => {
         src && src('boring') === 'cli' ? Boolean(opts.boring) : undefined;
 
       const debugFinal =
-        typeof debugFromCli === 'boolean'
-          ? debugFromCli
-          : Boolean(cfgDefaults.debug ?? false);
+        typeof debugFromCli === 'boolean' ? debugFromCli : debugDefault;
       const boringFinal =
-        typeof boringFromCli === 'boolean'
-          ? boringFromCli
-          : Boolean(cfgDefaults.boring ?? false);
+        typeof boringFromCli === 'boolean' ? boringFromCli : boringDefault;
       if (debugFinal) process.env.STAN_DEBUG = '1';
       else {
         // Ensure negated flag clears any prior setting from defaults

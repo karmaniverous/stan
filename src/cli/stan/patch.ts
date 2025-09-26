@@ -1,4 +1,4 @@
-/* src/cli/stan/patch.ts
+/** src/cli/stan/patch.ts
  * CLI adapter for "stan patch" — Commander wiring only.
  */
 import { Command, Option } from 'commander';

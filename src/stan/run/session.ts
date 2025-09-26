@@ -293,10 +293,11 @@ export const runSessionOnce = async (args: {
     }
     try {
       // Final settle before teardown (Windows EBUSY mitigation)
-      // Empirically, increasing this from 800ms to 1200ms reduces transient
-      // rmdir ENOTEMPTY/EBUSY in test teardown after SIGINT-driven cancellation.
-      // This is a bounded, best-effort delay that does not impact non-Windows runs.
-      await new Promise((r) => setTimeout(r, 1200));
+      // Empirically, a slightly longer settle on Windows further reduces
+      // transient EBUSY/ENOTEMPTY during teardown after SIGINT-driven cancellation.
+      // Keep a smaller pause on non-Windows to avoid unnecessary delay.
+      const settleMs = process.platform === 'win32' ? 1600 : 400;
+      await new Promise((r) => setTimeout(r, settleMs));
     } catch {
       /* ignore */
     }

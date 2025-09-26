@@ -83,6 +83,10 @@ Completed (recent)
   - Fixes the final‑frame expectation in live.order.flush.test without changing non‑TTY/TTY behavior.
   - Follow‑up: finish DRY by switching Logger to the same helper and removing its local duplicate.
 
+- Windows cancel teardown — additional EBUSY hardening
+  - Increased final post‑cancel settle on Windows to 1600 ms (non‑Windows 400 ms)
+    to further reduce transient EBUSY during test directory removal.
+
 - Windows cancel teardown — EBUSY hardening
   - Extended default backoff in rmDirWithRetries to [50, 100, 200, 400, 800, 1600] ms to better tolerate transient rmdir EBUSY on Windows CI.
   - Updated cancel.schedule.test.ts to use rmDirWithRetries in afterEach (was direct rm).

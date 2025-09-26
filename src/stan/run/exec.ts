@@ -233,6 +233,11 @@ export const runScripts = async (
     for (const k of toRun) {
       if (typeof shouldContinue === 'function' && !shouldContinue()) break;
       await runner(k);
+      // Per-script post-run gate: if cancellation was requested while the script
+      // was running, do not schedule the next one.
+      if (typeof shouldContinue === 'function' && !shouldContinue()) {
+        break;
+      }
     }
   } else {
     const keys =

@@ -1,12 +1,11 @@
 /* src/stan/archive/util.ts
  * Shared helpers for archive/diff creation.
  */
+import {
+  isOutputArchivePath,
+  isReservedWorkspacePath,
+} from '@/stan/fs/reserved';
 import { yellow } from '@/stan/util/color';
-
-import { ARCHIVE_DIFF_TAR, ARCHIVE_TAR, ARCHIVE_WARNINGS } from './constants';
-
-const isUnder = (prefix: string, p: string): boolean =>
-  p === prefix || p.startsWith(`${prefix}/`);
 
 /**
  * Make a tar filter that excludes:
@@ -19,13 +18,7 @@ const isUnder = (prefix: string, p: string): boolean =>
 export const makeTarFilter = (stanPath: string) => {
   const base = stanPath.replace(/\\/g, '/');
   return (p: string): boolean =>
-    !(
-      isUnder(`${base}/diff`, p) ||
-      isUnder(`${base}/patch`, p) ||
-      p === `${base}/output/${ARCHIVE_TAR}` ||
-      p === `${base}/output/${ARCHIVE_DIFF_TAR}` ||
-      p === `${base}/output/${ARCHIVE_WARNINGS}`
-    );
+    !(isReservedWorkspacePath(base, p) || isOutputArchivePath(base, p));
 };
 
 /** Log archive classifier warnings consistently (no file output). */

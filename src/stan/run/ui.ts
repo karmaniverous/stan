@@ -6,8 +6,10 @@
 import { relative } from 'node:path';
 
 import { RunnerControl } from './control';
-import { label } from './labels';
 import { ProgressRenderer } from './live/renderer';
+import { ProgressModel } from './progress/model';
+import { LiveSink } from './progress/sinks/live';
+import { LoggerSink } from './progress/sinks/logger';
 export type ArchiveKind = 'full' | 'diff';
 
 export type RunnerUI = {
@@ -38,18 +40,30 @@ export type RunnerUI = {
 };
 
 export class LoggerUI implements RunnerUI {
+  private readonly model = new ProgressModel();
+  private readonly sink: LoggerSink;
+  constructor() {
+    this.sink = new LoggerSink(this.model, process.cwd());
+  }
   start(): void {
-    // no-op
+    this.sink.start();
   }
   onPlan(planBody: string): void {
     console.log(planBody);
   }
   onScriptQueued(key: string): void {
-    // Surface a "waiting" status to mirror live table state.
-    console.log(`stan: ${label('waiting')} "${key}"`);
+    this.model.update(
+      `script:${key}`,
+      { kind: 'waiting' },
+      { type: 'script', item: key },
+    );
   }
   onScriptStart(key: string): void {
-    console.log(`stan: ${label('run')} "${key}"`);
+    this.model.update(
+      `script:${key}`,
+      { kind: 'running', startedAt: Date.now() },
+      { type: 'script', item: key },
+    );
   }
   onScriptEnd(
     key: string,
@@ -61,21 +75,35 @@ export class LoggerUI implements RunnerUI {
   ): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
     const ok = typeof exitCode !== 'number' || exitCode === 0;
-    const lbl = ok ? label('ok') : label('error');
-    const tail = ok ? '' : ` (exit ${exitCode})`;
-    console.log(`stan: ${lbl} "${key}" -> ${rel}${tail}`);
+    this.model.update(
+      `script:${key}`,
+      ok
+        ? { kind: 'done', durationMs: 0, outputPath: rel }
+        : { kind: 'error', durationMs: 0, outputPath: rel },
+      { type: 'script', item: key },
+    );
   }
   onArchiveQueued(): void {
-    // no-op (logger UI does not render waiting rows)
+    // Emit a waiting row for visual parity with live.
+    // Label resolution occurs in the sink.
+    return;
   }
   onArchiveStart(kind: ArchiveKind): void {
-    const lbl = kind === 'full' ? 'archive' : 'archive (diff)';
-    console.log(`stan: ${label('run')} "${lbl}"`);
+    const item = kind === 'full' ? 'full' : 'diff';
+    this.model.update(
+      `archive:${item}`,
+      { kind: 'running', startedAt: Date.now() },
+      { type: 'archive', item },
+    );
   }
   onArchiveEnd(kind: ArchiveKind, outAbs: string, cwd: string): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
-    const lbl = kind === 'full' ? 'archive' : 'archive (diff)';
-    console.log(`stan: ${label('ok')} "${lbl}" -> ${rel}`);
+    const item = kind === 'full' ? 'full' : 'diff';
+    this.model.update(
+      `archive:${item}`,
+      { kind: 'done', durationMs: 0, outputPath: rel },
+      { type: 'archive', item },
+    );
   }
   onCancelled(mode?: 'cancel' | 'restart'): void {
     void mode;
@@ -86,37 +114,41 @@ export class LoggerUI implements RunnerUI {
     void triggerCancel;
   }
   stop(): void {
-    // no-op
+    this.sink.stop();
   }
 }
 
 export class LiveUI implements RunnerUI {
   private renderer: ProgressRenderer | null = null;
   private control: RunnerControl | null = null;
+  private readonly model = new ProgressModel();
+  private readonly sink: LiveSink;
 
-  constructor(private readonly opts?: { boring?: boolean }) {}
+  constructor(private readonly opts?: { boring?: boolean }) {
+    this.sink = new LiveSink(this.model, { boring: Boolean(opts?.boring) });
+  }
 
   start(): void {
     if (!this.renderer) {
-      this.renderer = new ProgressRenderer({
-        boring: Boolean(this.opts?.boring),
-      });
-      this.renderer.start();
+      this.sink.start();
+      // Keep a renderer reference only for cancel/clear calls routed via sink.
+      this.renderer =
+        (this.sink as unknown as { renderer?: ProgressRenderer }).renderer ??
+        null;
     }
   }
   onPlan(planBody: string): void {
     console.log(planBody);
   }
   onScriptQueued(key: string): void {
-    // Pre-register a script row in "waiting" state so it appears at run start.
-    this.renderer?.update(
+    this.model.update(
       `script:${key}`,
       { kind: 'waiting' },
       { type: 'script', item: key },
     );
   }
   onScriptStart(key: string): void {
-    this.renderer?.update(
+    this.model.update(
       `script:${key}`,
       { kind: 'running', startedAt: Date.now() },
       { type: 'script', item: key },
@@ -131,25 +163,23 @@ export class LiveUI implements RunnerUI {
     exitCode?: number,
   ): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
-    this.renderer?.update(
-      `script:${key}`,
+    const st =
       exitCode && exitCode !== 0
         ? {
-            kind: 'error',
+            kind: 'error' as const,
             durationMs: Math.max(0, endedAt - startedAt),
             outputPath: rel,
           }
         : {
-            kind: 'done',
+            kind: 'done' as const,
             durationMs: Math.max(0, endedAt - startedAt),
             outputPath: rel,
-          },
-      { type: 'script', item: key },
-    );
+          };
+    this.model.update(`script:${key}`, st, { type: 'script', item: key });
   }
   onArchiveQueued(kind: ArchiveKind): void {
     const item = kind === 'full' ? 'full' : 'diff';
-    this.renderer?.update(
+    this.model.update(
       `archive:${item}`,
       { kind: 'waiting' },
       { type: 'archive', item },
@@ -157,7 +187,7 @@ export class LiveUI implements RunnerUI {
   }
   onArchiveStart(kind: ArchiveKind): void {
     const item = kind === 'full' ? 'full' : 'diff';
-    this.renderer?.update(
+    this.model.update(
       `archive:${item}`,
       { kind: 'running', startedAt: Date.now() },
       { type: 'archive', item },
@@ -172,11 +202,15 @@ export class LiveUI implements RunnerUI {
   ): void {
     const item = kind === 'full' ? 'full' : 'diff';
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
-    this.renderer?.update(`archive:${item}`, {
-      kind: 'done',
-      durationMs: Math.max(0, endedAt - startedAt),
-      outputPath: rel,
-    });
+    this.model.update(
+      `archive:${item}`,
+      {
+        kind: 'done',
+        durationMs: Math.max(0, endedAt - startedAt),
+        outputPath: rel,
+      },
+      { type: 'archive', item },
+    );
   }
   /**
    * Tear down live rendering on cancellation.
@@ -185,7 +219,9 @@ export class LiveUI implements RunnerUI {
    */
   onCancelled(mode: 'cancel' | 'restart' = 'cancel'): void {
     try {
-      (this.renderer as { cancelPending?: () => void })?.cancelPending?.();
+      (
+        this.sink as unknown as { cancelPending?: () => void }
+      )?.cancelPending?.();
     } catch {
       /* ignore */
     }
@@ -193,11 +229,10 @@ export class LiveUI implements RunnerUI {
       // For restart, do NOT flush a final frame (which can reprint the table).
       // Clear immediately to ensure the next run reuses the same UI area without duplication.
       if (mode === 'restart') {
-        (this.renderer as unknown as { clear?: () => void })?.clear?.();
-        this.renderer?.stop();
+        (this.sink as unknown as { clear?: () => void })?.clear?.();
       } else {
         // cancel: persist final frame (log-update done via stop without clear)
-        this.renderer?.stop();
+        this.sink.stop();
       }
     } catch {
       /* ignore */
@@ -208,8 +243,6 @@ export class LiveUI implements RunnerUI {
       /* ignore */
     }
     this.control = null;
-    // Drop the renderer so the next run starts from a clean slate.
-    // (A fresh ProgressRenderer instance will be constructed by start().)
     this.renderer = null;
   }
   installCancellation(triggerCancel: () => void, onRestart?: () => void): void {
@@ -223,8 +256,7 @@ export class LiveUI implements RunnerUI {
   }
   stop(): void {
     try {
-      this.renderer?.flush();
-      this.renderer?.stop();
+      this.sink.stop();
     } catch {
       /* ignore */
     }

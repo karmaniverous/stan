@@ -5,16 +5,8 @@
 import logUpdate from 'log-update';
 import { table } from 'table';
 
-import {
-  black,
-  blue,
-  bold,
-  cyan,
-  gray,
-  green,
-  magenta,
-  red,
-} from '@/stan/util/color';
+import { renderSummary } from '@/stan/run/summary';
+import { bold, gray } from '@/stan/util/color';
 
 import { label } from '../labels';
 
@@ -282,30 +274,7 @@ export class ProgressRenderer {
 
     const elapsed = fmtMs(now() - this.startedAt);
     const counts = this.counts();
-    const sep = ' • ';
-    const summary = this.opts.boring
-      ? [
-          `${elapsed}`,
-          `waiting ${counts.waiting.toString()}`,
-          `running ${counts.running.toString()}`,
-          `quiet ${counts.quiet.toString()}`,
-          `stalled ${counts.stalled.toString()}`,
-          `TIMEOUT ${counts.timeout.toString()}`,
-          `OK ${counts.ok.toString()}`,
-          `FAIL ${counts.fail.toString()}`,
-          `CANCELLED ${counts.cancelled.toString()}`,
-        ].join(sep)
-      : [
-          `${elapsed}`,
-          gray(`⏸ ${counts.waiting.toString()}`),
-          blue(`▶ ${counts.running.toString()}`),
-          cyan(`⏱ ${counts.quiet.toString()}`),
-          magenta(`⏱ ${counts.stalled.toString()}`),
-          red(`⏱ ${counts.timeout.toString()}`),
-          green(`✔ ${counts.ok.toString()}`),
-          red(`✖ ${counts.fail.toString()}`),
-          black(`◼ ${counts.cancelled.toString()}`),
-        ].join(sep);
+    const summary = renderSummary(elapsed, counts, this.opts.boring);
     const hint = `${gray('Press')} ${bold('q')} ${gray('to cancel,')} ${bold('r')} ${gray('to restart')}`;
     const raw = `${strippedTable.trimEnd()}\n\n${summary}\n${hint}`;
     const padded = raw

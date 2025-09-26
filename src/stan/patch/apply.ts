@@ -50,19 +50,8 @@ export const buildApplyAttempts = (
     strip,
     label: `3way-ignore-p${strip.toString()}`,
   };
-  const withReject: ApplyAttempt = {
-    args: [
-      ...base,
-      '--reject',
-      '--whitespace=nowarn',
-      '--recount',
-      '--inaccurate-eof',
-      `-p${strip.toString()}`,
-    ],
-    strip,
-    label: `reject-nowarn-p${strip.toString()}`,
-  };
-  return [with3WayNowarn, with3WayIgnore, withReject];
+  // No “--reject” attempt — we do not emit or collect .rej files.
+  return [with3WayNowarn, with3WayIgnore];
 };
 
 export const runGitApply = async (

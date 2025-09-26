@@ -65,6 +65,12 @@ Unpersisted tasks
 
 Completed (recent)
 
+- Windows cancel teardown — EBUSY hardening
+  - Extended default backoff in rmDirWithRetries to [50, 100, 200, 400, 800, 1600] ms
+    to better tolerate transient rmdir EBUSY on Windows CI.
+  - Updated cancel.schedule.test.ts to use rmDirWithRetries in afterEach (was direct rm).
+  - Goal: reduce remaining cancellation‑path flakes without increasing session settle time.
+
 - Project policy — class‑based design directive
   - Added a project‑level directive to prefer a class‑based design wherever possible.
   - Guidance: single‑responsibility classes, ports/adapters alignment, compositional preference, opportunistic migration, and paired tests.

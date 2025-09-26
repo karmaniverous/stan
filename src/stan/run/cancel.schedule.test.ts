@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ContextConfig } from '@/stan/config';
 import { runSelected } from '@/stan/run';
+import { rmDirWithRetries } from '@/test/helpers';
 
 // Lightweight tar mock
 vi.mock('tar', () => ({
@@ -51,7 +52,7 @@ describe('cancellation pipeline (scheduler)', () => {
       // ignore
     }
     await new Promise((r) => setTimeout(r, 100));
-    await rm(dir, { recursive: true, force: true });
+    await rmDirWithRetries(dir);
     vi.restoreAllMocks();
   });
   it('stops scheduling new scripts after cancellation in sequential mode', async () => {

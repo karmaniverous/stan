@@ -34,7 +34,6 @@ export type DiffFailureInput = {
   // Js fallback reasons when jsdiff ran
   jsReasons?: JsReason[];
 };
-
 export type FileOpsFailureInput = {
   context: FailureContext;
   kind: 'file-ops';
@@ -56,11 +55,7 @@ const fmtDownstreamDiff = (targets: string[]): string => {
   return lines.join(`${NL}${NL}`) + NL;
 };
 
-const firstLine = (s: string | undefined): string | undefined => {
-  if (!s) return undefined;
-  const l = s.split(/\r?\n/).find((x) => x.trim().length > 0);
-  return l?.trim();
-};
+import { renderAttemptSummary } from './diag/util';
 
 const fmtStanDiff = (
   targets: string[],
@@ -75,10 +70,7 @@ const fmtStanDiff = (
 
   let diag = '';
   if (attempts && attempts.length) {
-    const attemptLines = attempts.map((a) => {
-      const fl = firstLine(a.stderr);
-      return `${a.label}: exit ${a.code.toString()}${fl ? ` — ${fl}` : ''}`;
-    });
+    const attemptLines = renderAttemptSummary(attempts);
     const jsLines =
       js && js.length ? js.map((j) => `jsdiff: ${j.path}: ${j.reason}`) : [];
     diag = [...attemptLines, ...jsLines].join(NL);

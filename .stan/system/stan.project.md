@@ -4,10 +4,28 @@ This file contains STAN (this repo) specific requirements and conventions. Gener
 
 Note: The project prompt is created on demand when repo‑specific policies emerge. No template is installed or shipped by `stan init`.
 
+## Diagnostics consumption (STAN repo)
+
+When a diff patch fails in the STAN repository, the formatter emits a single diagnostics envelope:
+
+- Attempts summary
+  - One line per git apply attempt, in the exact cascade order:
+    - “<label>: exit <code> — <first stderr line>”
+  - Labels reflect strategy and strip (e.g., `3way+nowarn-p1`, `2way+ignore-p0`).
+  - The first stderr line is taken verbatim (trimmed), preserving the most salient cause.
+
+- jsdiff reasons (when jsdiff ran)
+  - For each file that jsdiff could not apply, a concise line:
+    - “jsdiff: <path>: <reason>”
+  - Reasons typically include “unable to place hunk(s)” or “target file not found”.
+
+Use these together:
+- Attempts explain why git refused the patch at each rung.
+- jsdiff explains any remaining per‑file failures after the fallback.
+
 ## System prompt source layout & assembly (authoring in this repo)
 
-- Runtime invariant: downstream tools and assistants consume a single file `.stan/system/stan.system.md`. Do not change this invariant.
-- Source split: author the system prompt as ordered parts under `.stan/system/parts/` (e.g., `00-intro.md`, `20-intake.md`, `30-response-format.md`, `40-patch-policy.md`, …). Filenames should start with a numeric prefix to define order.
+- Runtime invariant: downstream tools and assistants consume a single file `.stan/system/stan.system.md`. Do not change this invariant.- Source split: author the system prompt as ordered parts under `.stan/system/parts/` (e.g., `00-intro.md`, `20-intake.md`, `30-response-format.md`, `40-patch-policy.md`, …). Filenames should start with a numeric prefix to define order.
 - Generator: `npm run gen:system` assembles parts in numeric/lex order into `.stan/system/stan.system.md`, adding a short generated header comment. It is a no‑op when no parts exist.
 - Distribution & archive injection:
   - The published package includes `dist/stan.system.md`.

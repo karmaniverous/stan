@@ -49,6 +49,13 @@ Backlog (nice to have)
 
 Completed (recent)
 
+- Extracted and deduplicated diagnostics helpers:
+  - Added src/stan/patch/diag/util.ts with AttemptLabel, firstStderrLine, and renderAttemptSummary.
+  - Refactored src/stan/patch/format.ts to use the shared helpers; removed local logic duplication.
+
+- Added integration test to assert attempts[] summary order appears for git apply failures across p1→p0:
+  - src/stan/patch/service.attempts.integration.test.ts
+
 - Patch failure output alignment (tests):
   - Downstream (diff): one-liners now end with "was invalid." (no trailing listing request text in-line). Multiple failures remain blank-line separated. Tests assert for "invalid.\n\nThe unified diff..." spacing.
   - STAN (file ops): parse-diagnostics lines normalized to "file-ops …" to match diagnostics-envelope expectations in tests.

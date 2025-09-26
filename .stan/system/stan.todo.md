@@ -11,18 +11,14 @@ Next up (priority order)
 
 - Cancellation pipeline hardening (failing tests)
   - cancel.schedule: sequential scheduling must not run the next script after SIGINT.
-    - Proposal: gate per‑script execution with a per‑script race (runner vs cancel),
-      and check the cancellation flag again immediately after each runner resolves
-      to prevent the next schedule step from starting.
+    - Proposal: gate per‑script execution with a per‑script race (runner vs cancel), and check the cancellation flag again immediately after each runner resolves to prevent the next schedule step from starting.
     - Add a dedicated unit/integration test for the per‑script race to keep this behavior pinned.
   - cancel.key (Windows): sporadic EBUSY on teardown in CI.
-    - Proposal: increase the post‑cancel settle slightly or wire a brief bounded
-      join on renderer timers; keep rmDirWithRetries as last resort.
+    - Proposal: increase the post‑cancel settle slightly or wire a brief bounded join on renderer timers; keep rmDirWithRetries as last resort.
     - Validate locally and in CI to tune the final settle back toward 250–500 ms.
 
 - Live/Logger status labels DRY & parity
-  - Now that Live uses bracketed BORING tokens via the shared helper, switch Logger to the same helper
-    and delete the local duplicate in ui.ts.
+  - Now that Live uses bracketed BORING tokens via the shared helper, switch Logger to the same helper and delete the local duplicate in ui.ts.
   - Keep colored symbol labels for TTY while retaining bracketed tokens for BORING/non‑TTY.
   - Acceptance: existing alignment/parity tests pass with stable tokens.
 
@@ -88,8 +84,7 @@ Completed (recent)
   - Follow‑up: finish DRY by switching Logger to the same helper and removing its local duplicate.
 
 - Windows cancel teardown — EBUSY hardening
-  - Extended default backoff in rmDirWithRetries to [50, 100, 200, 400, 800, 1600] ms
-    to better tolerate transient rmdir EBUSY on Windows CI.
+  - Extended default backoff in rmDirWithRetries to [50, 100, 200, 400, 800, 1600] ms to better tolerate transient rmdir EBUSY on Windows CI.
   - Updated cancel.schedule.test.ts to use rmDirWithRetries in afterEach (was direct rm).
   - Goal: reduce remaining cancellation‑path flakes without increasing session settle time.
 

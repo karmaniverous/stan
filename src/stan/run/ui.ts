@@ -5,17 +5,8 @@
  */
 import { relative } from 'node:path';
 
-import {
-  black,
-  blue,
-  cyan,
-  gray,
-  green,
-  magenta,
-  red,
-} from '@/stan/util/color';
-
 import { RunnerControl } from './control';
+import { label } from './labels';
 import { ProgressRenderer } from './live/renderer';
 export type ArchiveKind = 'full' | 'diff';
 
@@ -45,52 +36,6 @@ export type RunnerUI = {
   installCancellation(triggerCancel: () => void, onRestart?: () => void): void;
   stop(): void;
 };
-// BORING/TTY-aware status label helper mirroring the live renderer.
-const isTTY = Boolean(
-  (process.stdout as unknown as { isTTY?: boolean })?.isTTY,
-);
-const isBoring = (): boolean =>
-  process.env.STAN_BORING === '1' ||
-  process.env.NO_COLOR === '1' ||
-  process.env.FORCE_COLOR === '0' ||
-  !isTTY;
-
-type StatusKind =
-  | 'waiting'
-  | 'run'
-  | 'ok'
-  | 'error'
-  | 'cancelled'
-  | 'timeout'
-  | 'quiet'
-  | 'stalled'
-  | 'killed';
-
-const statusLabel = (kind: StatusKind): string => {
-  const boring = isBoring();
-  switch (kind) {
-    case 'waiting':
-      return boring ? '[WAIT]' : gray('⏸ waiting');
-    case 'run':
-      return boring ? '[RUN]' : blue('▶ run');
-    case 'ok':
-      return boring ? '[OK]' : green('✔ ok');
-    case 'error':
-      return boring ? '[FAIL]' : red('✖ fail');
-    case 'cancelled':
-      return boring ? '[CANCELLED]' : black('◼ cancelled');
-    case 'timeout':
-      return boring ? '[TIMEOUT]' : red('⏱ timeout');
-    case 'quiet':
-      return boring ? '[QUIET]' : cyan('⏱ quiet');
-    case 'stalled':
-      return boring ? '[STALLED]' : magenta('⏱ stalled');
-    case 'killed':
-      return boring ? '[KILLED]' : red('◼ killed');
-    default:
-      return '';
-  }
-};
 
 export class LoggerUI implements RunnerUI {
   start(): void {
@@ -101,10 +46,10 @@ export class LoggerUI implements RunnerUI {
   }
   onScriptQueued(key: string): void {
     // Surface a "waiting" status to mirror live table state.
-    console.log(`stan: ${statusLabel('waiting')} "${key}"`);
+    console.log(`stan: ${label('waiting')} "${key}"`);
   }
   onScriptStart(key: string): void {
-    console.log(`stan: ${statusLabel('run')} "${key}"`);
+    console.log(`stan: ${label('run')} "${key}"`);
   }
   onScriptEnd(
     key: string,
@@ -116,21 +61,21 @@ export class LoggerUI implements RunnerUI {
   ): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
     const ok = typeof exitCode !== 'number' || exitCode === 0;
-    const label = ok ? statusLabel('ok') : statusLabel('error');
+    const lbl = ok ? label('ok') : label('error');
     const tail = ok ? '' : ` (exit ${exitCode})`;
-    console.log(`stan: ${label} "${key}" -> ${rel}${tail}`);
+    console.log(`stan: ${lbl} "${key}" -> ${rel}${tail}`);
   }
   onArchiveQueued(): void {
     // no-op (logger UI does not render waiting rows)
   }
   onArchiveStart(kind: ArchiveKind): void {
-    const label = kind === 'full' ? 'archive' : 'archive (diff)';
-    console.log(`stan: ${statusLabel('run')} "${label}"`);
+    const lbl = kind === 'full' ? 'archive' : 'archive (diff)';
+    console.log(`stan: ${label('run')} "${lbl}"`);
   }
   onArchiveEnd(kind: ArchiveKind, outAbs: string, cwd: string): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
-    const label = kind === 'full' ? 'archive' : 'archive (diff)';
-    console.log(`stan: ${statusLabel('ok')} "${label}" -> ${rel}`);
+    const lbl = kind === 'full' ? 'archive' : 'archive (diff)';
+    console.log(`stan: ${label('ok')} "${lbl}" -> ${rel}`);
   }
   onCancelled(mode?: 'cancel' | 'restart'): void {
     void mode;

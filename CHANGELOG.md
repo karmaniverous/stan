@@ -2,7 +2,34 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.7.1-1](https://github.com/karmaniverous/stan/compare/0.7.1-0...0.7.1-1)
+
+- feat(run/ui): add ProgressModel + (Live|Logger) sinks; gate sequential scheduling after SIGINT [`fe29ad3`](https://github.com/karmaniverous/stan/commit/fe29ad3a39a68892738ec54b7f808bc60516897f)
+- test: align patch failure tests with unified diagnostics [`1878b79`](https://github.com/karmaniverous/stan/commit/1878b796152e8d781417df436dd9611ca06f0584)
+- feat(run): unify live cancel with RunnerControl; delete legacy keys handler [`01d5eef`](https://github.com/karmaniverous/stan/commit/01d5eefb5130df1b194fbf47f6ba83fc7538ce6f)
+- feat: unify patch failure feedback and assistant options; add STAN gating [`ca94c11`](https://github.com/karmaniverous/stan/commit/ca94c11e25afaa861c4209b028d2eea33ddaec82)
+- docs(system): add stan.requirements.md separation [`e0d5763`](https://github.com/karmaniverous/stan/commit/e0d57633d4cd266738085868342463fd2cc6a76d)
+- refactor(run): DRY Logger status labels to shared helper [`bec4d4e`](https://github.com/karmaniverous/stan/commit/bec4d4e33b82dd0f9b7c8f7f580913facc62d3c9)
+- refactor(run): centralize teardown with signal-exit; simplify SIGINT wiring [`2bfd7ac`](https://github.com/karmaniverous/stan/commit/2bfd7accbb85d146fff1289bc412874d3bf08e9d)
+- refactor(cli): DRY status labels and archive names; prep UI unification [`b72c09d`](https://github.com/karmaniverous/stan/commit/b72c09dd37073e6e8b214c065364ecc1d19e4d0c)
+- docs(todo): focus next on fixing SIGINT cancel test [`93c8bda`](https://github.com/karmaniverous/stan/commit/93c8bdac4d23b670df38188abdb39b56ab5eff6b)
+- chore(todo): plan CLI UI unification and DRY tasks [`aeec3e5`](https://github.com/karmaniverous/stan/commit/aeec3e5c7f57bc55505c3aa1a6b1eab85d2fc228)
+- fix(run): bracketed BORING labels for live status [`939abec`](https://github.com/karmaniverous/stan/commit/939abec931116a82fc3cc8cd79da10d073bf3538)
+- docs: fix TSDoc warnings in patch formatter [`88eb9a9`](https://github.com/karmaniverous/stan/commit/88eb9a945db725fbadd1ea98d577ad363cd1cee5)
+- docs(system): add handoff/dev‑plan maintenance rules; prune stale completed items [`bf999c4`](https://github.com/karmaniverous/stan/commit/bf999c4d66e0a146ba152bb2f306d73032505bb3)
+- fix: unify reserved exclusions in filterFiles; extend test rmdir backoff [`c5689c1`](https://github.com/karmaniverous/stan/commit/c5689c1bae1c365b27f4a54a745f3e750bb14c4d)
+- docs(project): prefer class-based design across modules [`201150e`](https://github.com/karmaniverous/stan/commit/201150ee75835ce3a28d4dfa636028bca026706a)
+- fix(run): gate sequential scheduling after SIGINT [`f76ab67`](https://github.com/karmaniverous/stan/commit/f76ab672baaab8d91d0364b36d209b4f157c0bbc)
+- docs(system): align FEEDBACK references with patch failure diagnostics [`a84edcf`](https://github.com/karmaniverous/stan/commit/a84edcf91cf88ff72358f60351fc97f6cd416286)
+- test(windows): harden cancel teardown retries; use helper [`6fa56e9`](https://github.com/karmaniverous/stan/commit/6fa56e907bd9079f189af3f917e3fb113c2c9d51)
+- chore: add handoff/dev-plan rules; fix docs link [`2094dcb`](https://github.com/karmaniverous/stan/commit/2094dcb3c07485556dd8f1d53d63266274844f51)
+- fix(run): mitigate Windows EBUSY on cancel by extending final settle [`962e6ec`](https://github.com/karmaniverous/stan/commit/962e6ecbaa74911a4aa787cee7ede71ca517f713)
+- chore(todo): mark Logger label DRY task complete; tidy next‑up list [`14ba0e1`](https://github.com/karmaniverous/stan/commit/14ba0e1a3166471ebfddfb6bb8d3308cae8c1ddf)
+- docs(todo): remove “Unpersisted tasks”; move items to Next up [`d8a1ed6`](https://github.com/karmaniverous/stan/commit/d8a1ed6156ec3c1714e1f033b641c8c1ce6fbcff)
+
 #### [0.7.1-0](https://github.com/karmaniverous/stan/compare/0.7.0...0.7.1-0)
+
+> 26 September 2025
 
 - refactor: remove FEEDBACK pipeline; simplify failure handling; clean dead code/tests; update system prompt [`f9f3c43`](https://github.com/karmaniverous/stan/commit/f9f3c43a000a8aba75b1e3c0dbc15dee7c3c16f1)
 - refactor(run): decompose service into session module; keep behavior stable [`c40ae0b`](https://github.com/karmaniverous/stan/commit/c40ae0bff2b0f897c26368739a511f557663fa11)
@@ -10,6 +37,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - refactor(cli): dedupe config-defaults logic across CLI modules [`c47a7d6`](https://github.com/karmaniverous/stan/commit/c47a7d6f6a29f974b85b01b68e9c4cd6ffb9ec72)
 - feat: stage imports for archives (config support + helper) [`ebc8e9c`](https://github.com/karmaniverous/stan/commit/ebc8e9c980651b1ba2e3edfa1395100820373e34)
 - feat(patch): remove FEEDBACK workflow; add clipboard prompts; plan DMP and docs [`b4ff727`](https://github.com/karmaniverous/stan/commit/b4ff7278d09e5e52059e16c67e6226b7aea5ce1e)
+- chore: release v0.7.1-0 [`92c4f33`](https://github.com/karmaniverous/stan/commit/92c4f334576c274c3f56acbe37ae488aa3ecc20c)
 - feat: simplify patch failure handling; drop persistence and --reject [`a0fb933`](https://github.com/karmaniverous/stan/commit/a0fb9339adb491d2823380ca9bb0e4455a4f0f7f)
 - feat(patch): add central failure formatter and wire into service [`4aa27eb`](https://github.com/karmaniverous/stan/commit/4aa27eb8472c7ff04a3383567d113adadca718f3)
 - docs: define diagnostics envelopes and assistant flow [`764cc0f`](https://github.com/karmaniverous/stan/commit/764cc0f7017845fb6dac74f3728307ec75f582ee)

@@ -90,7 +90,7 @@
 <li><a href="https://docs.karmanivero.us/stan/documents/The_STAN_Loop.html">The STAN Loop</a> — How Build &amp; Snapshot → Share &amp; Baseline → Discuss &amp; Patch work together.</li>
 <li><a href="https://docs.karmanivero.us/stan/documents/CLI_Usage___Examples.html">CLI Usage &amp; Examples</a> — Common flags and invocation patterns, including <code>-p</code>, <code>-P</code>, <code>-S</code>, <code>-A</code>, and <code>-c</code>.</li>
 <li><a href="https://docs.karmanivero.us/stan/documents/Stan_Configuration.html">Stan Configuration</a> — All config keys, includes/excludes semantics, and phase‑scoped CLI defaults.</li>
-<li><a href="https://docs.karmanivero.us/stan/documents/Patch_Workflow___FEEDBACK.html">Patch Workflow &amp; FEEDBACK</a> — Unified diff policy, FEEDBACK envelopes, and assistant expectations.</li>
+<li><a href="https://docs.karmanivero.us/stan/documents/Patch_Workflow___Diagnostics.html">Patch Workflow &amp; Diagnostics</a> — Unified diff policy, diagnostics envelopes, and assistant expectations.</li>
 <li><a href="https://docs.karmanivero.us/stan/documents/Archives___Snapshots.html">Archives &amp; Snapshots</a> — What goes into <code>archive.tar</code>/<code>archive.diff.tar</code>, combine mode, and snapshot history. Additional references:</li>
 </ul>
 </li>
@@ -123,7 +123,7 @@
 <hr>
 <h2 id="troubleshooting" class="tsd-anchor-link">Troubleshooting<a href="#troubleshooting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
 <li>“system prompt missing”: ensure <stanPath>/system/stan.system.md is included in the attached archive; otherwise attach it directly as <a href="http://stan.system.md" target="_blank" class="external">stan.system.md</a>.</li>
-<li>Patch failures: use --check to validate first; if a patch fails, STAN writes a compact FEEDBACK envelope and (when possible) copies it to your clipboard so you can get a corrected patch.</li>
+<li>Patch failures: use --check to validate first; if a patch fails, STAN writes a concise diagnostics envelope (attempt summaries + jsdiff reasons) and copies it to your clipboard (stdout fallback) so you can get a corrected patch.</li>
 <li>Large files: STAN may flag very long source files (~300+ LOC) and ask for a split plan before proceeding.</li>
 </ul>
 <hr>

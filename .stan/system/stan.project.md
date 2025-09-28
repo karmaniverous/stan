@@ -136,6 +136,59 @@ cliDefaults:
 
 Built‑ins (when neither flags nor config specify): debug=false, boring=false; run: archive=true, combine=false, keep=false, sequential=false, scripts=true, live=true, hangWarn=120, hangKill=300, hangKillGrace=10; snap: stash=false; patch file unset.
 
+## Scripts configuration (alternate form with warnings)
+
+- Goal: allow per-script warning detection without treating the run as a failure.
+- Schema:
+  - A script entry MAY be either:
+    - string — shell command (current behavior), or
+    - object — with the following shape:
+      ```
+      [scriptName]: {
+        script: string;      // command to execute (exactly as the current string form)
+        warnPattern?: string; // regex pattern (ECMAScript syntax) matched against the captured output (stdout+stderr)
+      }
+      ```
+  - Behavior:
+    - Exit code ≠ 0 → status = error (unchanged).
+    - Exit code == 0 and warnPattern present and matches the combined output → status = warn.
+    - Exit code == 0 and (no warnPattern or no match) → status = ok.
+  - Notes:
+    - warnPattern is a string that will be compiled as a RegExp with default flags (no implicit “i”/“m” unless specified inside the pattern).
+    - An invalid pattern MUST surface a friendly config error during validation (see “Config validation” below).
+
+## UI status palette and warn status
+
+- Introduce a new runtime status: warn.
+  - Live (TTY) label: orange “⚠ warn”.
+  - Logger (no-live) label: “[WARN]”.
+- Color policy:
+  - Replace all current uses of “magenta” with “orange”.
+  - Rationale: “warn” is commonly associated with orange; consistency across “stalled” and any other magenta usages improves affordances.
+  - Implementation detail (chalk):
+    - Chalk has no named “orange”, but supports custom colors:
+      - `chalk.hex('#FFA500')(s)` or `chalk.rgb(255,165,0)(s)`.
+    - Update util/color.ts to export `orange(s: string): string` using `chalk.hex('#FFA500')`.
+    - BORING/non‑TTY keeps unstyled strings (policy unchanged).
+  - Call sites to update:
+    - Status labels (run/labels.ts), summary line (run/summary.ts), and any other usages previously relying on magenta (e.g., “stalled”) should use orange instead.
+
+## Config validation (schema‑first via zod)
+
+- Adopt zod for `stan.config.*` validation.
+  - Single source of truth: define a zod schema for the entire configuration (YAML/JSON share the same schema).
+  - Infer all exported config types from the schema (e.g., `ContextConfig = z.infer<typeof ConfigSchema>`).
+  - Scripts map:
+    - Accept string or `{ script: string; warnPattern?: string }`.
+  - CLI defaults and imports retain current semantics but move under the schema (including coercions for numbers/booleans where helpful).
+- Friendly errors:
+  - On invalid keys:
+    - Produce a readable message that lists unknown keys and suggests the closest known keys (Levenshtein or similar).
+  - On invalid values (e.g., bad regex in warnPattern):
+    - Show the exact key path and a short reason (e.g., “warnPattern: invalid regular expression”).
+- Unknown keys policy:
+  - Disallow unknown keys at the top level and within known objects; error with suggestions.
+
 ## CLI (repo tool behavior)
 
 - Root command: `stan` (supports `-d/--debug` globally).

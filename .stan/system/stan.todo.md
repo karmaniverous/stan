@@ -1,8 +1,31 @@
 # STAN Development Plan
 
-When updated: 2025-09-26 (UTC)
+When updated: 2025-09-28 (UTC)
 
 Next up (priority order)
+
+- Scripts config: alternate object form + warn status
+  - Extend scripts map to accept either a string or `{ script, warnPattern }`.
+  - On exit code 0: test combined output against `warnPattern`; emit status=warn on match.
+  - Update run/exec pipeline to surface “warn” alongside ok/error.
+  - Tests:
+    - ok → warn transition when pattern matches output.
+    - ok remains ok when no pattern or no match.
+    - error remains error (exit code ≠ 0) regardless of pattern.
+
+- UI palette and labels: magenta → orange; add WARN
+  - util/color.ts: add `orange()` via `chalk.hex('#FFA500')`.
+  - Replace magenta usages with orange (e.g., “stalled”).
+  - Add status “warn”:
+    - Live: orange “⚠ warn”; Logger: “[WARN]”.
+  - Update summary line counts to include “warn” if surfaced separately (or fold into OK if we keep totals compact).
+  - Tests: verify boring tokens and live table rows reflect WARN with orange replaced everywhere magenta was used.
+
+- Config validation: zod schema (schema‑first) + friendly errors
+  - Define top‑level zod schema; infer `ContextConfig` types.
+  - Validate scripts union (string | object with warnPattern).
+  - Disallow unknown keys with friendly messages and suggestions.
+  - Tests: unknown key error wording; invalid warnPattern; happy‑path coercions as needed.
 
 - Class‑based design adoption audit
   - Apply the new project policy: prefer class‑based design wherever possible.

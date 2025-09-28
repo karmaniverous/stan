@@ -1,15 +1,7 @@
 /* src/stan/run/labels.ts
  * Shared BORING/TTY-aware status label helper for Logger and Live UIs.
  */
-import {
-  black,
-  blue,
-  cyan,
-  gray,
-  green,
-  magenta,
-  red,
-} from '@/stan/util/color';
+import { alert, cancel, error, go, ok, stop, warn } from '@/stan/util/color';
 
 export type StatusKind =
   | 'waiting'
@@ -64,23 +56,23 @@ export const label = (kind: StatusKind): string => {
   }
   switch (kind) {
     case 'waiting':
-      return gray('⏸ waiting');
+      return cancel('⏸ waiting');
     case 'run':
-      return blue('▶ run');
+      return go('▶ run');
     case 'ok':
-      return green('✔ ok');
+      return ok('✔ ok');
     case 'error':
-      return red('✖ fail');
+      return error('✖ fail');
     case 'cancelled':
-      return black('◼ cancelled');
+      return stop('◼ cancelled');
     case 'timeout':
-      return red('⏱ timeout');
+      return error('⏱ timeout');
     case 'quiet':
-      return cyan('⏱ quiet');
+      return alert('⏱ quiet');
     case 'stalled':
-      return magenta('⏱ stalled');
+      return warn('⏱ stalled');
     case 'killed':
-      return red('◼ killed');
+      return error('◼ killed');
     default:
       return '';
   }

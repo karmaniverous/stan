@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { cyan, red, yellow } from '@/stan/util/color';
+import { alert, error } from '@/stan/util/color';
 
 const isDeleted = (cwd: string, rel: string): boolean =>
   !existsSync(path.resolve(cwd, rel));
@@ -35,7 +35,7 @@ export const openFilesInEditor = (args: {
 
   if (!openCommand || !openCommand.includes('{file}')) {
     console.log(
-      yellow(
+      alert(
         'stan: no open command configured; run `stan init` and set patchOpenCommand (e.g., "code -g {file}")',
       ),
     );
@@ -45,7 +45,7 @@ export const openFilesInEditor = (args: {
   for (const rel of safeFiles) {
     const cmdLine = openCommand.replaceAll('{file}', rel);
     // Log first so tests can assert behavior without requiring a real spawn.
-    console.log(`stan: open -> ${cyan(rel)}`);
+    console.log(`stan: open -> ${alert(rel)}`);
 
     // In tests, do not spawn at all. Detached child processes can keep the
     // working directory locked briefly on Windows and cause EBUSY/ENOTEMPTY
@@ -65,7 +65,7 @@ export const openFilesInEditor = (args: {
       child.unref();
     } catch {
       console.log(
-        red(
+        error(
           `stan: open failed for ${rel}; run \`stan init\` to configure patchOpenCommand`,
         ),
       );

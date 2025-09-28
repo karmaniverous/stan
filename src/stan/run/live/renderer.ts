@@ -6,7 +6,7 @@ import logUpdate from 'log-update';
 import { table } from 'table';
 
 import { renderSummary } from '@/stan/run/summary';
-import { bold, gray } from '@/stan/util/color';
+import { bold, dim } from '@/stan/util/color';
 
 import { label } from '../labels';
 
@@ -180,11 +180,11 @@ export class ProgressRenderer {
     if (this.rows.size === 0) {
       const elapsed = fmtMs(now() - this.startedAt);
       rows.push([
-        gray('—'),
-        gray('—'),
-        gray(this.opts.boring ? '[IDLE]' : 'idle'),
-        gray(elapsed),
-        gray(''),
+        dim('—'),
+        dim('—'),
+        dim(this.opts.boring ? '[IDLE]' : 'idle'),
+        dim(elapsed),
+        dim(''),
       ]);
     } else {
       const all = Array.from(this.rows.values());
@@ -275,7 +275,9 @@ export class ProgressRenderer {
     const elapsed = fmtMs(now() - this.startedAt);
     const counts = this.counts();
     const summary = renderSummary(elapsed, counts, this.opts.boring);
-    const hint = `${gray('Press')} ${bold('q')} ${gray('to cancel,')} ${bold('r')} ${gray('to restart')}`;
+    const hint = `${dim('Press')} ${bold('q')} ${dim('to cancel,')} ${bold(
+      'r',
+    )} ${dim('to restart')}`;
     const raw = `${strippedTable.trimEnd()}\n\n${summary}\n${hint}`;
     const padded = raw
       .split('\n')

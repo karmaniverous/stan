@@ -85,6 +85,12 @@ Next up (priority order)
 
 Completed (recent)
 
+- Color alias propagation (fix CI/type errors; unify UI):
+  - Replaced legacy color imports/usages with semantic helpers:
+    - open.ts: yellow/cyan/red -> alert/error
+    - run/labels.ts: gray/blue/green/red/cyan/magenta/black -> cancel/go/ok/error/alert/warn/stop
+    - run/live/renderer.ts: gray -> dim for neutral hint/idle text
+  - Resolved missing exports at build/docs/typecheck and eliminated runtime “gray/cyan/... is not a function” errors in tests.
 - Patch failure wording alignment (system prompt)
   - Replaced legacy “FEEDBACK” references with “patch failure diagnostics envelope” and updated links to “Patch failure prompts.”
   - Adjusted the Table of Contents, Commit Message exception, Fence Hygiene note, and Response Format bullets to point at the canonical prompts and terminology.

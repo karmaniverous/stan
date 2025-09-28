@@ -2,9 +2,6 @@
   "[markdown]": {
     "editor.wordWrap": "bounded"
   },
-  "accessibility.signals.terminalBell": {
-    "sound": "on"
-  },
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
@@ -69,6 +66,5 @@
   "todo-tree.tree.groupedByTag": true,
   "todo-tree.tree.hideIconsWhenGroupedByTag": true,
   "todo-tree.tree.labelFormat": "${tag} ${after}",
-  "todo-tree.tree.showCountsInTree": true,
-  "terminal.integrated.enableVisualBell": true
+  "todo-tree.tree.showCountsInTree": true
 }

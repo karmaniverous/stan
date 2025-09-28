@@ -18,6 +18,10 @@ When a patch cannot be fully applied, STAN provides a concise diagnostics envelo
 
   - Attempt summaries are concise, in the exact cascade order tried.
   - jsdiff reasons appear whenever jsdiff was attempted and any file still failed.
+  - Do not echo the failed patch body or any excerpt (for example, “cleanedHead”).
+    Rely on the patch that already exists in the chat context; correlate the attempt
+    summaries and jsdiff reasons to that patch. When additional context is needed,
+    request Full Listings for only the affected files instead of reprinting the patch.
 
 - File Ops failures (all repos)
   - diagnostics envelope content (stdout fallback):

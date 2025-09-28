@@ -2,11 +2,20 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.7.1-2](https://github.com/karmaniverous/stan/compare/0.7.1-1...0.7.1-2)
+
+- fix(patch): create new files via jsdiff; fill downstream diags [`46112c8`](https://github.com/karmaniverous/stan/commit/46112c8caf0df2ff7fb5139a6c318aeedd4911f5)
+- docs: diagnostics must not echo failed patch body [`335d752`](https://github.com/karmaniverous/stan/commit/335d75217d36e85c6d0333a01eb6ceb13cd47d7e)
+- updated stan [`68488f9`](https://github.com/karmaniverous/stan/commit/68488f960d16e835ba2862471cd59b812349bf9d)
+
 #### [0.7.1-1](https://github.com/karmaniverous/stan/compare/0.7.1-0...0.7.1-1)
+
+> 27 September 2025
 
 - feat(run/ui): add ProgressModel + (Live|Logger) sinks; gate sequential scheduling after SIGINT [`fe29ad3`](https://github.com/karmaniverous/stan/commit/fe29ad3a39a68892738ec54b7f808bc60516897f)
 - test: align patch failure tests with unified diagnostics [`1878b79`](https://github.com/karmaniverous/stan/commit/1878b796152e8d781417df436dd9611ca06f0584)
 - feat(run): unify live cancel with RunnerControl; delete legacy keys handler [`01d5eef`](https://github.com/karmaniverous/stan/commit/01d5eefb5130df1b194fbf47f6ba83fc7538ce6f)
+- chore: release v0.7.1-1 [`e14a096`](https://github.com/karmaniverous/stan/commit/e14a0965f36fa87e694a673141b9b659fd70c105)
 - feat: unify patch failure feedback and assistant options; add STAN gating [`ca94c11`](https://github.com/karmaniverous/stan/commit/ca94c11e25afaa861c4209b028d2eea33ddaec82)
 - docs(system): add stan.requirements.md separation [`e0d5763`](https://github.com/karmaniverous/stan/commit/e0d57633d4cd266738085868342463fd2cc6a76d)
 - refactor(run): DRY Logger status labels to shared helper [`bec4d4e`](https://github.com/karmaniverous/stan/commit/bec4d4e33b82dd0f9b7c8f7f580913facc62d3c9)

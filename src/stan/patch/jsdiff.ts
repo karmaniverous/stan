@@ -5,6 +5,7 @@
  * - Whitespace/EOL-tolerant comparison (ignores CR and trailing whitespace).
  * - Preserves original EOL flavor (CRLF vs LF) per file.
  * - When check=true, writes patched content to a sandbox under <stanPath>/patch/.sandbox/<ts>/ without touching repo files.
+ * - When writing to the repo (check=false), ensure parent directories exist for new or nested paths.
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -139,6 +140,14 @@ export const applyWithJsDiff = async (args: {
         await mkdir(path.dirname(dest), { recursive: true });
         await writeFile(dest, finalBody, 'utf8');
       } else {
+        // Ensure the parent directory exists for new files or nested paths.
+        // This makes jsdiff fallback robust when creating files under e.g. "src/rrstack/describe/...".
+        // (git apply can fail on /dev/null patches; jsdiff must not.)
+        try {
+          await mkdir(path.dirname(abs), { recursive: true });
+        } catch {
+          /* best-effort */
+        }
         await writeFile(abs, finalBody, 'utf8');
       }
       okFiles.push(rel);

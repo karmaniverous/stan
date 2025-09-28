@@ -71,6 +71,11 @@ Completed (recent)
   - Clarified that developers may edit it directly but shouldn’t have to; STAN will create/update it on demand (no change to `stan init` behavior).
   - Added an always‑on separation guard to move content when requirements drift into the project prompt (or vice versa).
 
+- jsdiff fallback — create parent directories for new files
+  - Ensure parent directory exists on non‑check writes when applying a “/dev/null” new‑file patch to a nested path (e.g., src/rrstack/describe/lexicon.ts).
+  - Makes `stan patch` robust when git apply warns about trailing whitespace and falls back to jsdiff: new files in nested folders are now created reliably.
+  - Added nested new‑file test to cover this scenario.
+
 - Patch fallback + diagnostics (downstream)
   - jsdiff fallback now supports creating new files when the patch uses “--- /dev/null” → “+++ b/<path>”. This unblocks new‑file patches when `git apply` cannot be used.
   - Downstream diagnostics now include attempt summaries and jsdiff reasons, eliminating blank envelopes (“START/END” with no content).

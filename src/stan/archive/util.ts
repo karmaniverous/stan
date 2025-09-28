@@ -5,7 +5,7 @@ import {
   isOutputArchivePath,
   isReservedWorkspacePath,
 } from '@/stan/fs/reserved';
-import { yellow } from '@/stan/util/color';
+import { alert } from '@/stan/util/color';
 
 /**
  * Make a tar filter that excludes:
@@ -26,6 +26,6 @@ export const logArchiveWarnings = (warningsBody: string): void => {
   const trimmed = (warningsBody ?? '').trim();
   if (trimmed && trimmed !== 'No archive warnings.') {
     // Single, concise section; TTY-aware color via yellow()
-    console.log(`${yellow('stan: archive warnings')}\n${trimmed}`);
+    console.log(`${alert('stan: archive warnings')}\n${trimmed}`);
   }
 };

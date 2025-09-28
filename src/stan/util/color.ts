@@ -1,7 +1,6 @@
 /* src/stan/util/color.ts
- * Lightweight color helpers that respect STAN_BORING/NO_COLOR/FORCE_COLOR.
- * When boring mode is on (or not a TTY), return unstyled, uncolored strings.
- * All helpers return unstyled output when BORING/non‑TTY is detected.
+ * Meaning-based color helpers that respect STAN_BORING/NO_COLOR/FORCE_COLOR.
+ * BORING or non‑TTY => return unstyled strings.
  */
 import chalk from 'chalk';
 
@@ -17,57 +16,18 @@ const isBoring = (): boolean => {
   );
 };
 
-/** Colorize text as a warning (yellow) unless boring mode is enabled.
- * @param s - Text to colorize.
- * @returns Potentially colored string (unstyled in boring/non‑TTY). */
-export const yellow = (s: string): string => (isBoring() ? s : chalk.yellow(s));
+/** Semantic aliases (unstyled in BORING/non‑TTY) */
+export const ok = (s: string): string => (isBoring() ? s : chalk.green(s));
+export const alert = (s: string): string => (isBoring() ? s : chalk.cyan(s));
+export const go = (s: string): string => (isBoring() ? s : chalk.blue(s));
+export const error = (s: string): string => (isBoring() ? s : chalk.red(s));
+export const stop = (s: string): string => (isBoring() ? s : chalk.black(s));
+export const cancel = (s: string): string => (isBoring() ? s : chalk.gray(s));
+export const warn = (s: string): string =>
+  isBoring() ? s : chalk.hex('#FFA500')(s); // orange
 
-/** Colorize text as informational (cyan).
- * @param s - Text to colorize.
- * @returns Potentially colored string (unstyled in boring/non‑TTY). */
-export const cyan = (s: string): string => (isBoring() ? s : chalk.cyan(s));
-
-/** Colorize text as informational/emphasis (blue). */
-export const blue = (s: string): string => (isBoring() ? s : chalk.blue(s));
-
-/** Colorize text as an error (red).
- * @param s - Text to colorize.
- * @returns Potentially colored string (unstyled in boring/non‑TTY). */
-export const red = (s: string): string => (isBoring() ? s : chalk.red(s));
-
-/** Colorize text as success (green).
- * @param s - Text to colorize.
- * @returns Potentially colored string (unstyled in boring/non‑TTY). */
-export const green = (s: string): string => (isBoring() ? s : chalk.green(s));
-
-/** Colorize text as de‑emphasized (gray).
- * @param s - Text to colorize.
- * @returns Potentially colored string (unstyled in boring/non‑TTY). */
-export const gray = (s: string): string => (isBoring() ? s : chalk.gray(s));
-
-/** Render bold text when not in boring mode.
- * @param s - Text to style.
- * @returns Styled or unstyled text depending on mode. */
+/** Text styles (unstyled in BORING/non‑TTY) */
 export const bold = (s: string): string => (isBoring() ? s : chalk.bold(s));
-
-/** Render dim text when not in boring mode.
- * @param s - Text to style.
- * @returns Styled or unstyled text depending on mode. */
 export const dim = (s: string): string => (isBoring() ? s : chalk.dim(s));
-
-/** Render underlined text when not in boring mode.
- * @param s - Text to style.
- * @returns Styled or unstyled text depending on mode. */
 export const underline = (s: string): string =>
   isBoring() ? s : chalk.underline(s);
-
-/** Render magenta text (used for "stalled") when not in boring mode.
- * @param s - Text to colorize.
- * @returns Potentially colored string (unstyled in boring/non‑TTY). */
-export const magenta = (s: string): string =>
-  isBoring() ? s : chalk.magenta(s);
-
-/** Render black text (used for "cancelled") when not in boring mode.
- * @param s - Text to colorize.
- * @returns Potentially colored string (unstyled in boring/non‑TTY). */
-export const black = (s: string): string => (isBoring() ? s : chalk.black(s));

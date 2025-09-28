@@ -3,7 +3,7 @@ import { readdir, rm } from 'node:fs/promises';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path, { resolve } from 'node:path';
 
-import { cyan, green } from '@/stan/util/color';
+import { alert, ok } from '@/stan/util/color';
 
 import { createArchive } from '../archive';
 import type { ContextConfig } from '../config';
@@ -176,7 +176,7 @@ export const archivePhase = async (
   const dirs = makeStanDirs(cwd, config.stanPath);
 
   if (!silent) {
-    console.log(`stan: start "${cyan('archive')}"`);
+    console.log(`stan: start "${alert('archive')}"`);
   }
   // In this repo, assemble the system monolith from parts before archiving.
   const vinfo = await getVersionInfo(cwd);
@@ -216,7 +216,7 @@ export const archivePhase = async (
     opts?.progress?.done?.('full', archivePath, startedFull, Date.now());
     if (!silent) {
       console.log(
-        `stan: ${green('done')} "${cyan('archive')}" -> ${cyan(
+        `stan: ${ok('done')} "${alert('archive')}" -> ${alert(
           archivePath.replace(/\\/g, '/'),
         )}`,
       );
@@ -229,7 +229,7 @@ export const archivePhase = async (
     restore = async () => {};
 
     if (!silent) {
-      console.log(`stan: start "${cyan('archive (diff)')}"`);
+      console.log(`stan: start "${alert('archive (diff)')}"`);
     }
     opts?.progress?.start?.('diff');
     const startedDiff = Date.now();
@@ -246,7 +246,7 @@ export const archivePhase = async (
     opts?.progress?.done?.('diff', diffPath, startedDiff, Date.now());
     if (!silent) {
       console.log(
-        `stan: ${green('done')} "${cyan('archive (diff)')}" -> ${cyan(
+        `stan: ${ok('done')} "${alert('archive (diff)')}" -> ${alert(
           diffPath.replace(/\\/g, '/'),
         )}`,
       );

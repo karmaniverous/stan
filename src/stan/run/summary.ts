@@ -1,15 +1,7 @@
 /* src/stan/run/summary.ts
  * Shared BORING/TTY-aware summary line helper for progress tables/logs.
  */
-import {
-  black,
-  blue,
-  cyan,
-  gray,
-  green,
-  magenta,
-  red,
-} from '@/stan/util/color';
+import { alert, cancel, error, go, ok, stop, warn } from '@/stan/util/color';
 
 export type SummaryCounts = {
   waiting: number;
@@ -43,13 +35,13 @@ export const renderSummary = (
   }
   return [
     `${elapsed}`,
-    gray(`⏸ ${counts.waiting.toString()}`),
-    blue(`▶ ${counts.running.toString()}`),
-    cyan(`⏱ ${counts.quiet.toString()}`),
-    magenta(`⏱ ${counts.stalled.toString()}`),
-    red(`⏱ ${counts.timeout.toString()}`),
-    green(`✔ ${counts.ok.toString()}`),
-    red(`✖ ${counts.fail.toString()}`),
-    black(`◼ ${counts.cancelled.toString()}`),
+    cancel(`⏸ ${counts.waiting.toString()}`),
+    go(`▶ ${counts.running.toString()}`),
+    alert(`⏱ ${counts.quiet.toString()}`),
+    warn(`⏱ ${counts.stalled.toString()}`),
+    error(`⏱ ${counts.timeout.toString()}`),
+    ok(`✔ ${counts.ok.toString()}`),
+    error(`✖ ${counts.fail.toString()}`),
+    stop(`◼ ${counts.cancelled.toString()}`),
   ].join(sep);
 };

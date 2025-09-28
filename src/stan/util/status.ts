@@ -1,4 +1,4 @@
-import { green, red, yellow } from '@/stan/util/color';
+import { alert, error, ok } from '@/stan/util/color';
 
 /**
  * Status line helpers with BORING/TTY-aware styling.
@@ -23,7 +23,7 @@ const isBoring = (): boolean =>
  * @returns Styled string (TTY: colored "✔"; BORING/non‑TTY: "[OK] ...").
  */
 export const statusOk = (s: string): string =>
-  isBoring() ? `[OK] ${s}` : green(`✔ ${s}`);
+  isBoring() ? `[OK] ${s}` : ok(`✔ ${s}`);
 
 /**
  * Decorate a message as a failure status line.
@@ -32,7 +32,7 @@ export const statusOk = (s: string): string =>
  * @returns Styled string (TTY: colored "✖"; BORING/non‑TTY: "[FAIL] ...").
  */
 export const statusFail = (s: string): string =>
-  isBoring() ? `[FAIL] ${s}` : red(`✖ ${s}`);
+  isBoring() ? `[FAIL] ${s}` : error(`✖ ${s}`);
 
 /**
  * Decorate a message as a partial/indeterminate status line.
@@ -41,4 +41,4 @@ export const statusFail = (s: string): string =>
  * @returns Styled string (TTY: colored "⏱"; BORING/non‑TTY: "[PARTIAL] ...").
  */
 export const statusPartial = (s: string): string =>
-  isBoring() ? `[PARTIAL] ${s}` : yellow(`⏱ ${s}`);
+  isBoring() ? `[PARTIAL] ${s}` : alert(`⏱ ${s}`);

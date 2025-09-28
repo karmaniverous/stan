@@ -4,7 +4,7 @@
  * - Nudge to run `stan init` after upgrades when packaged docs changed.
  */
 
-import { dim, yellow } from '@/stan/util/color';
+import { alert, dim } from '@/stan/util/color';
 
 import { getVersionInfo } from './version';
 
@@ -32,7 +32,7 @@ export const preflightDocsAndVersion = async (cwd: string): Promise<void> => {
   if (!suppressDrift) {
     if (isInteractive) {
       console.warn(
-        yellow(
+        alert(
           'stan: warning: local system prompt differs from packaged baseline.',
         ),
       );

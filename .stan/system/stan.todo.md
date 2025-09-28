@@ -89,6 +89,13 @@ Completed (recent)
   - Replaced legacy “FEEDBACK” references with “patch failure diagnostics envelope” and updated links to “Patch failure prompts.”
   - Adjusted the Table of Contents, Commit Message exception, Fence Hygiene note, and Response Format bullets to point at the canonical prompts and terminology.
 
+- Color helpers — semantic aliases + orange warn
+  - util/color.ts: renamed helpers to meaning-based names:
+    - ok (green), alert (cyan), warn (orange), error (red), go (blue), stop (black), cancel (grey).
+  - Replaced magenta usages with warn (orange) for “stalled”.
+  - Updated call sites (labels, summary, preflight, archive logs, status).
+  - BORING/non‑TTY behavior unchanged (unstyled).
+
 - System prompt — introduce stan.requirements.md separation
   - Added `stan.requirements.md` to CRITICAL Layout and Documentation conventions as the STAN‑maintained end‑state requirements document.
   - Clarified that developers may edit it directly but shouldn’t have to; STAN will create/update it on demand (no change to `stan init` behavior).

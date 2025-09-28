@@ -67,12 +67,13 @@ Completed (recent)
   - Adjusted the Table of Contents, Commit Message exception, Fence Hygiene note, and Response Format bullets to point at the canonical prompts and terminology.
 
 - System prompt — introduce stan.requirements.md separation
-  - Added `stan.requirements.md` to CRITICAL Layout and Documentation
-    conventions as the STAN‑maintained end‑state requirements document.
-  - Clarified that developers may edit it directly but shouldn’t have to; STAN
-    will create/update it on demand (no change to `stan init` behavior).
-  - Added an always‑on separation guard to move content when requirements drift
-    into the project prompt (or vice versa).
+  - Added `stan.requirements.md` to CRITICAL Layout and Documentation conventions as the STAN‑maintained end‑state requirements document.
+  - Clarified that developers may edit it directly but shouldn’t have to; STAN will create/update it on demand (no change to `stan init` behavior).
+  - Added an always‑on separation guard to move content when requirements drift into the project prompt (or vice versa).
+
+- Patch fallback + diagnostics (downstream)
+  - jsdiff fallback now supports creating new files when the patch uses “--- /dev/null” → “+++ b/<path>”. This unblocks new‑file patches when `git apply` cannot be used.
+  - Downstream diagnostics now include attempt summaries and jsdiff reasons, eliminating blank envelopes (“START/END” with no content).
 
 - Sequential cancellation gate (tests)
   - Added a one‑tick event‑loop yield after each sequential script completes and re‑checked the cancellation gate before scheduling the next script.

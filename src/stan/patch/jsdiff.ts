@@ -19,6 +19,9 @@ const stripAB = (p?: string | null): string | null => {
   return s.length ? s : null;
 };
 
+const isDevNull = (p?: string | null): boolean =>
+  typeof p === 'string' && p.trim() === '/dev/null';
+
 const normForCompare = (s: string): string =>
   s.replace(/\r/g, '').replace(/[ \t]+$/g, '');
 
@@ -82,13 +85,23 @@ export const applyWithJsDiff = async (args: {
     const isMd = /\.md$/i.test(rel);
     let original = '';
     let eolCRLF = false;
+    let existed = true;
     try {
       const raw = await readFile(abs, 'utf8');
       original = raw;
       eolCRLF = /\r\n/.test(raw);
     } catch {
+      existed = false;
+    }
+    // Support new-file creation: when old side is /dev/null, treat original as empty.
+    const creatingNewFile = isDevNull(p.oldFileName);
+    if (!existed && !creatingNewFile) {
       failed.push({ path: rel, reason: 'target file not found' });
       continue;
+    }
+    if (!existed && creatingNewFile) {
+      original = '';
+      eolCRLF = false; // default LF for brand-new content; CRLF restored only when original was CRLF
     }
 
     // Whitespace/EOL tolerance for diff v8 API (compareLine signature changed)

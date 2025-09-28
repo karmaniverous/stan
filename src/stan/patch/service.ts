@@ -316,10 +316,23 @@ export const runPatch = async (
       jsReasons,
     });
   } else {
+    // Downstream: include the same attempt summary and jsdiff reasons so the
+    // diagnostics envelope is populated (unified behavior).
+    const attempts =
+      (result.captures ?? []).map((c) => ({
+        label: c.label,
+        code: c.code,
+        stderr: c.stderr,
+      })) ?? [];
+    const jsReasons = js?.failed?.length
+      ? js.failed.map((f) => ({ path: f.path, reason: f.reason }))
+      : [];
     prompt = formatPatchFailure({
       context: 'downstream',
       kind: 'diff',
       targets: uniqueTargets,
+      attempts,
+      jsReasons,
     });
   }
   {

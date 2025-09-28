@@ -2,8 +2,16 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.7.1](https://github.com/karmaniverous/stan/compare/0.7.1-2...0.7.1)
+
+- fix(patch): ensure parent dirs for jsdiff new-file writes; add nested new-file test [`da86706`](https://github.com/karmaniverous/stan/commit/da867067ee86235e1c4c06c654227d6a8d4b5442)
+- updated stan [`20cbf16`](https://github.com/karmaniverous/stan/commit/20cbf1627e5d6d07275b02b338389b0152ea5683)
+
 #### [0.7.1-2](https://github.com/karmaniverous/stan/compare/0.7.1-1...0.7.1-2)
 
+> 28 September 2025
+
+- chore: release v0.7.1-2 [`1932957`](https://github.com/karmaniverous/stan/commit/1932957c08df507a13a59134a0857638a546ba9a)
 - fix(patch): create new files via jsdiff; fill downstream diags [`46112c8`](https://github.com/karmaniverous/stan/commit/46112c8caf0df2ff7fb5139a6c318aeedd4911f5)
 - docs: diagnostics must not echo failed patch body [`335d752`](https://github.com/karmaniverous/stan/commit/335d75217d36e85c6d0333a01eb6ceb13cd47d7e)
 - updated stan [`68488f9`](https://github.com/karmaniverous/stan/commit/68488f960d16e835ba2862471cd59b812349bf9d)

@@ -16,5 +16,6 @@ export type {
   CliDefaultsRun,
   CliDefaultsSnap,
   ContextConfig,
+  ScriptEntry,
   ScriptMap,
 } from './types';

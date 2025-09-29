@@ -27,7 +27,7 @@ const formatZodError = (e: unknown): string => {
     .join('\n');
 };
 
-/** Normalize imports: string -> [string]; arrays trimmed; invalid -> undefined. */
+/** Normalize imports: string -\> [string]; arrays trimmed; invalid -\> undefined. */
 const normalizeImports = (v: unknown): Record<string, string[]> | undefined => {
   if (!v || typeof v !== 'object') return undefined;
   const o = v as Record<string, unknown>;

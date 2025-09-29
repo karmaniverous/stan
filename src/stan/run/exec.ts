@@ -186,7 +186,9 @@ export const runOne = async (
   if (typeof exitCode === 'number' && exitCode !== 0) {
     status = 'error';
   } else if (opts?.warnPattern) {
-    // Robust WARN detection: test both in‑memory and on‑disk bodies.
+    // Robust WARN detection:
+    // - Test the in‑memory combined body (stdout+stderr).
+    // - Also test the on‑disk output body unconditionally to avoid any edge timing.
     // Reset lastIndex in case a global regex is supplied.
     const rx = opts.warnPattern;
     const testBody = (s: string): boolean => {
@@ -198,16 +200,16 @@ export const runOne = async (
       }
     };
     let matched = false;
-    if (combined.length > 0) {
-      matched = testBody(combined);
+    // Always consider the in-memory capture first.
+    if (combined.length > 0 && testBody(combined)) {
+      matched = true;
     }
-    if (!matched) {
-      try {
-        const body = await readFile(outFile, 'utf8');
-        matched = testBody(body);
-      } catch {
-        /* ignore */
-      }
+    // Unconditionally also consider the persisted body (covers any flush/ordering edge).
+    try {
+      const diskBody = await readFile(outFile, 'utf8');
+      if (testBody(diskBody)) matched = true;
+    } catch {
+      /* ignore disk read errors */
     }
     if (matched) status = 'warn';
   }
@@ -247,6 +249,17 @@ export const runScripts = async (
 ): Promise<string[]> => {
   const created: string[] = [];
   const runner = async (k: string): Promise<void> => {
+    // Pre-spawn cancellation gate (race closer):
+    // It’s possible for a SIGINT to land after the outer gate but just before
+    // this runner is invoked. Re-check here to ensure we never spawn the next
+    // script once cancellation has been requested.
+    try {
+      if (typeof shouldContinue === 'function' && !shouldContinue()) {
+        return;
+      }
+    } catch {
+      /* best-effort */
+    }
     // Normalize script entry (string | { script, warnPattern? })
     const entry = config.scripts[k] as unknown;
     const cmd =
@@ -267,6 +280,7 @@ export const runScripts = async (
       if (typeof raw === 'string' && raw.trim().length) {
         try {
           warnPattern = new RegExp(raw);
+          // If this ever needs to tolerate over-escaped patterns from config, a normalized fallback can be added here.
         } catch {
           // Already validated by schema; best-effort here.
           warnPattern = undefined;

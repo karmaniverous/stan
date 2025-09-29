@@ -9,6 +9,10 @@ Next up (priority order)
   - Update README/typedocs for schema‑first config + WARN semantics with brief examples.
 
 - Config validation: zod schema (schema‑first) + friendly errors
+  - Follow-up: keep tightening friendly error wording and suggestions.
+  - Ensure nested-path wording is consistent and discoverable.
+  - Confirm warnPattern examples demonstrate correct escaping in YAML/JSON.
+
   - Define top‑level zod schema; infer `ContextConfig` types. (initial landing done)
   - Phase 2 (follow‑up in this slice):
     - Unknown keys: include closest‑match suggestions in error output.
@@ -176,6 +180,21 @@ Completed (recent)
 - Project policy — class‑based design directive
   - Added a project‑level directive to prefer a class‑based design wherever possible.
   - Guidance: single‑responsibility classes, ports/adapters alignment, compositional preference, opportunistic migration, and paired tests.
+
+Completed (this change set)
+
+- Cancellation pipeline (sequential race)
+  - Added a pre‑spawn gate inside the per‑script runner to re‑check the cancellation
+    flag just before spawning the next script. This closes a small race where a SIGINT
+    could land after the prior gate but immediately before spawn, preventing the “after”
+    script from starting in sequential mode.
+- WARN detection (Logger parity; test fix)
+  - Make warnPattern handling in run/exec robust by testing both in‑memory combined output and the on‑disk output body unconditionally.
+  - Ensures `stan: [WARN] "…" ` is logged by the Logger UI when exit=0 + warnPattern match.
+- Lint (tsdoc “>” escapes)
+  - Escaped “>” in an inline doc to remove the remaining tsdoc/syntax warnings in config/load.ts.
+- Docs (typedoc warning)
+  - Re‑exported ScriptEntry from config/index.ts so Typedoc includes it, resolving the “referenced but not included” warning.
 
 Completed (this change set)
 

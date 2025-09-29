@@ -17,38 +17,17 @@ const formatZodError = (e: unknown): string => {
   return e.issues
     .map((i) => {
       const path = i.path.join('.') || '(root)';
-      return `${path}: ${i.message}`;
+      // Friendly specialization for tests/UX: canonical wording for stanPath type mismatch.
+      let msg = i.message;
+      if (path === 'stanPath' && /Expected string/i.test(msg)) {
+        msg = 'stanPath must be a non-empty string';
+      }
+      return `${path}: ${msg}`;
     })
     .join('\n');
 };
 
-const parseFile = async (abs: string): Promise<ContextConfig> => {
-  const raw = await readFile(abs, 'utf8');
-  const cfgUnknown: unknown = abs.endsWith('.json')
-    ? (JSON.parse(raw) as unknown)
-    : (YAML.parse(raw) as unknown);
-  let parsed: ParsedConfig;
-  try {
-    parsed = ConfigSchema.parse(cfgUnknown);
-  } catch (e) {
-    throw new Error(formatZodError(e));
-  }
-
-  const importsNormalized = normalizeImports(parsed.imports);
-  return {
-    stanPath: parsed.stanPath,
-    scripts: parsed.scripts,
-    includes: parsed.includes ?? [],
-    excludes: parsed.excludes ?? [],
-    imports: importsNormalized,
-    maxUndos: parsed.maxUndos,
-    devMode: parsed.devMode,
-    patchOpenCommand: parsed.patchOpenCommand ?? DEFAULT_OPEN_COMMAND,
-    cliDefaults: parsed.cliDefaults,
-  };
-};
-
-/** Normalize imports: string -\> [string]; arrays trimmed; invalid -\> undefined. */
+/** Normalize imports: string -> [string]; arrays trimmed; invalid -> undefined. */
 const normalizeImports = (v: unknown): Record<string, string[]> | undefined => {
   if (!v || typeof v !== 'object') return undefined;
   const o = v as Record<string, unknown>;
@@ -67,6 +46,46 @@ const normalizeImports = (v: unknown): Record<string, string[]> | undefined => {
   }
   return Object.keys(out).length ? out : undefined;
 };
+
+const ensureNoReservedScriptKeys = (scripts: Record<string, unknown>): void => {
+  const bad = ['archive', 'init'].filter((k) =>
+    Object.prototype.hasOwnProperty.call(scripts ?? {}, k),
+  );
+  if (bad.length > 0) {
+    // Keep message stable for tests: /archive.*init.*not allowed/i
+    throw new Error(`scripts: keys "archive" and "init" not allowed`);
+  }
+};
+
+const parseFile = async (abs: string): Promise<ContextConfig> => {
+  const raw = await readFile(abs, 'utf8');
+  const cfgUnknown: unknown = abs.endsWith('.json')
+    ? (JSON.parse(raw) as unknown)
+    : (YAML.parse(raw) as unknown);
+  let parsed: ParsedConfig;
+  try {
+    parsed = ConfigSchema.parse(cfgUnknown);
+  } catch (e) {
+    throw new Error(formatZodError(e));
+  }
+
+  // Guard against reserved CLI script names.
+  ensureNoReservedScriptKeys(parsed.scripts ?? {});
+
+  const importsNormalized = normalizeImports(parsed.imports);
+  return {
+    stanPath: parsed.stanPath,
+    scripts: parsed.scripts,
+    includes: parsed.includes ?? [],
+    excludes: parsed.excludes ?? [],
+    imports: importsNormalized,
+    maxUndos: parsed.maxUndos,
+    devMode: parsed.devMode,
+    patchOpenCommand: parsed.patchOpenCommand ?? DEFAULT_OPEN_COMMAND,
+    cliDefaults: parsed.cliDefaults,
+  };
+};
+
 /**
  * Load and validate STAN configuration synchronously.
  *
@@ -82,6 +101,10 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     : (YAML.parse(raw) as unknown);
   try {
     const parsed = ConfigSchema.parse(cfgUnknown);
+
+    // Guard against reserved CLI script names.
+    ensureNoReservedScriptKeys(parsed.scripts ?? {});
+
     const importsNormalized = normalizeImports(parsed.imports);
     return {
       stanPath: parsed.stanPath,
@@ -98,6 +121,7 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
     throw new Error(formatZodError(e));
   }
 };
+
 /**
  * Load and validate STAN configuration (async).
  *

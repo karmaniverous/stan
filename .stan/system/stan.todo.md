@@ -113,6 +113,11 @@ Completed (recent)
   - Clarified that developers may edit it directly but shouldn’t have to; STAN will create/update it on demand (no change to `stan init` behavior).
   - Added an always‑on separation guard to move content when requirements drift into the project prompt (or vice versa).
 
+- Config parsing polish
+  - Friendly Zod message for stanPath type errors (“stanPath must be a non‑empty string”) to satisfy tests and improve UX.
+  - Reserved scripts keys guard (disallow “archive” and “init” under scripts) with a clear error string that matches test expectations.
+  - Scope: loadConfig/loadConfigSync; preserves schema‑first approach while adding helpful post‑parse checks.
+
 - jsdiff fallback — create parent directories for new files
   - Ensure parent directory exists on non‑check writes when applying a “/dev/null” new‑file patch to a nested path (e.g., src/rrstack/describe/lexicon.ts).
   - Makes `stan patch` robust when git apply warns about trailing whitespace and falls back to jsdiff: new files in nested folders are now created reliably.
@@ -173,7 +178,7 @@ Completed (recent)
 Completed (this change set)
 
 - Schema‑first config (initial)
-  - Introduced strict zod schema for stan.config.* (scripts union; warnPattern validation; basic coercions).
+  - Introduced strict zod schema for stan.config.\* (scripts union; warnPattern validation; basic coercions).
   - wired loadConfig/loadConfigSync through the schema; normalized imports; defaulted patchOpenCommand.
   - Friendly error aggregation for regex validation (path + message).
 - WARN runtime status
@@ -187,4 +192,3 @@ Completed (this change set)
   - src/stan/config/load.ts: avoided no-unsafe-assignment by asserting JSON.parse/YAML.parse to unknown before schema parse.
   - src/stan/run/exec.ts: escaped ‘>’ in TSDoc inline code to satisfy tsdoc/syntax.
   - No behavioral changes; compile/lint/tests proceed past prior transform error.
-

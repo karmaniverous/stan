@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import YAML from 'yaml';
+import { ZodError } from 'zod';
 
 import { DEFAULT_OPEN_COMMAND, DEFAULT_STAN_PATH } from './defaults';
 import { findConfigPathSync } from './discover';
@@ -12,7 +13,7 @@ import { ConfigSchema, type ParsedConfig } from './schema';
 import type { ContextConfig } from './types';
 
 const formatZodError = (e: unknown): string => {
-  if (!(e instanceof (await import('zod')).ZodError)) return String(e);
+  if (!(e instanceof ZodError)) return String(e);
   return e.issues
     .map((i) => {
       const path = i.path.join('.') || '(root)';
@@ -23,7 +24,9 @@ const formatZodError = (e: unknown): string => {
 
 const parseFile = async (abs: string): Promise<ContextConfig> => {
   const raw = await readFile(abs, 'utf8');
-  const cfgUnknown = abs.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
+  const cfgUnknown: unknown = abs.endsWith('.json')
+    ? (JSON.parse(raw) as unknown)
+    : (YAML.parse(raw) as unknown);
   let parsed: ParsedConfig;
   try {
     parsed = ConfigSchema.parse(cfgUnknown);
@@ -74,7 +77,9 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const p = findConfigPathSync(cwd);
   if (!p) throw new Error('stan config not found');
   const raw = readFileSync(p, 'utf8');
-  const cfgUnknown = p.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
+  const cfgUnknown: unknown = p.endsWith('.json')
+    ? (JSON.parse(raw) as unknown)
+    : (YAML.parse(raw) as unknown);
   try {
     const parsed = ConfigSchema.parse(cfgUnknown);
     const importsNormalized = normalizeImports(parsed.imports);

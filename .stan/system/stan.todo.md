@@ -1,6 +1,6 @@
 # STAN Development Plan
 
-When updated: 2025-09-28 (UTC)
+When updated: 2025-09-29 (UTC)
 
 Next up (priority order)
 
@@ -180,4 +180,11 @@ Completed (this change set)
   - exec/run: evaluate warnPattern on exit=0 against combined output; status='warn' when matched.
   - UI: added WARN across Logger and Live; distinct WARN counter in summary; labels: orange “⚠ warn” (TTY) / “[WARN]” (boring).
   - Progress model/states extended with 'warn'.
-  - Tests: schema union + invalid warnPattern; logger shows [WARN] on match.
+  - Tests: schema union + invalid warnPattern; logger shows [WARN] on match.
+
+- Eliminate unnecessary dynamic import & fix lint/tsdoc
+  - src/stan/config/load.ts: replaced dynamic ‘await import("zod")’ with static import; fixes TS1308 and unblocks build/tests.
+  - src/stan/config/load.ts: avoided no-unsafe-assignment by asserting JSON.parse/YAML.parse to unknown before schema parse.
+  - src/stan/run/exec.ts: escaped ‘>’ in TSDoc inline code to satisfy tsdoc/syntax.
+  - No behavioral changes; compile/lint/tests proceed past prior transform error.
+

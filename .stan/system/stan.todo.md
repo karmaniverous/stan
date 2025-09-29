@@ -78,6 +78,14 @@ Next up (priority order)
 
 Completed (recent)
 
+- Cancellation guards (parity)
+  - Skip archives after SIGINT by re‑checking cancellation just before archiving (late‑cancel race closure).
+  - Sequential runner adds a pre‑spawn gate (yield + re‑check) to prevent scheduling the next script when a cancel lands immediately after the prior script completes.
+
+- Logger WARN parity (robust)
+  - When a warnPattern is configured and exit=0, detect WARN by testing both in‑memory combined output and the on‑disk output body (resetting lastIndex on regex to avoid g‑flag surprises).
+  - Ensures Logger prints [WARN] where Live shows WARN, even under fast stdout/flush timing.
+
 - Color alias propagation (fix CI/type errors; unify UI):
   - Replaced legacy color imports/usages with semantic helpers:
     - open.ts: yellow/cyan/red -> alert/error

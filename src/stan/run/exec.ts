@@ -185,22 +185,31 @@ export const runOne = async (
   let status: 'ok' | 'warn' | 'error' = 'ok';
   if (typeof exitCode === 'number' && exitCode !== 0) {
     status = 'error';
-  } else if (opts?.warnPattern && combined.length > 0) {
-    try {
-      if (opts.warnPattern.test(combined)) status = 'warn';
-    } catch {
-      /* ignore */
-    }
   } else if (opts?.warnPattern) {
-    // Fallback: if combined was empty (or missed a quick write), try the on-disk output body.
-    try {
-      const body = await readFile(outFile, 'utf8');
-      if (opts.warnPattern.test(body)) {
-        status = 'warn';
+    // Robust WARN detection: test both in‑memory and on‑disk bodies.
+    // Reset lastIndex in case a global regex is supplied.
+    const rx = opts.warnPattern;
+    const testBody = (s: string): boolean => {
+      try {
+        rx.lastIndex = 0;
+        return rx.test(s);
+      } catch {
+        return false;
       }
-    } catch {
-      /* ignore */
+    };
+    let matched = false;
+    if (combined.length > 0) {
+      matched = testBody(combined);
     }
+    if (!matched) {
+      try {
+        const body = await readFile(outFile, 'utf8');
+        matched = testBody(body);
+      } catch {
+        /* ignore */
+      }
+    }
+    if (matched) status = 'warn';
   }
   hooks?.onEnd?.(key, outFile, startedAt, Date.now(), exitCode, status);
 
@@ -290,7 +299,12 @@ export const runScripts = async (
   };
   if (mode === 'sequential') {
     for (const k of toRun) {
-      if (typeof shouldContinue === 'function' && !shouldContinue()) break;
+      // Pre‑spawn gate: allow pending SIGINT/keypress handlers to fire before scheduling next script.
+      if (typeof shouldContinue === 'function') {
+        if (!shouldContinue()) break;
+        await yieldToEventLoop();
+        if (!shouldContinue()) break;
+      }
       await runner(k);
       // Allow pending SIGINT/keypress handlers to run before deciding on the next script,
       // then re-check the cancellation gate.

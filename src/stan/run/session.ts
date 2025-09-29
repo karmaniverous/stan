@@ -314,6 +314,21 @@ export const runSessionOnce = async (args: {
     return { created, cancelled: true, restartRequested };
     // detachSignals executed by caller paths below before return
   }
+
+  // Late-cancellation guard: if a SIGINT lands just after the first check above,
+  // allow one tick for handlers to run and re-check before archiving.
+  // This ensures no archives are written after a cancel in both live and no-live modes.
+  {
+    try {
+      await new Promise((r) => setImmediate(r));
+    } catch {
+      /* ignore */
+    }
+    if (cancelled) {
+      detachSignals();
+      return { created, cancelled: true, restartRequested };
+    }
+  }
   // ARCHIVE PHASE
   if (behavior.archive) {
     const includeOutputs = Boolean(behavior.combine);

@@ -4,6 +4,7 @@
 import { alert, cancel, error, go, ok, stop, warn } from '@/stan/util/color';
 
 export type SummaryCounts = {
+  warn: number;
   waiting: number;
   running: number;
   quiet: number;
@@ -29,6 +30,7 @@ export const renderSummary = (
       `stalled ${counts.stalled.toString()}`,
       `TIMEOUT ${counts.timeout.toString()}`,
       `OK ${counts.ok.toString()}`,
+      `WARN ${counts.warn.toString()}`,
       `FAIL ${counts.fail.toString()}`,
       `CANCELLED ${counts.cancelled.toString()}`,
     ].join(sep);
@@ -41,6 +43,7 @@ export const renderSummary = (
     warn(`⏱ ${counts.stalled.toString()}`),
     error(`⏱ ${counts.timeout.toString()}`),
     ok(`✔ ${counts.ok.toString()}`),
+    warn(`⚠ ${counts.warn.toString()}`),
     error(`✖ ${counts.fail.toString()}`),
     stop(`◼ ${counts.cancelled.toString()}`),
   ].join(sep);

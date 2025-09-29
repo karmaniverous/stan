@@ -2,8 +2,10 @@
  * Shared types for STAN configuration and CLI defaults.
  */
 
-/** Map of script keys to shell commands invoked by `stan run`. */
-export type ScriptMap = Record<string, string>;
+/** A script entry may be a raw command string or an object with an optional warnPattern. */
+export type ScriptEntry = string | { script: string; warnPattern?: string };
+
+export type ScriptMap = Record<string, ScriptEntry>;
 
 export type CliDefaultsRun = {
   archive?: boolean;

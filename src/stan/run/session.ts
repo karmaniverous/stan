@@ -215,10 +215,20 @@ export const runSessionOnce = async (args: {
       orderFile,
       {
         onStart: (key) => ui.onScriptStart(key),
-        onEnd: (key, outFileAbs, startedAt, endedAt, code) => {
+        onEnd: (key, outFileAbs, startedAt, endedAt, code, status) => {
           if (cancelled && cancelledKeys.has(`script:${key}`)) return;
-          ui.onScriptEnd(key, outFileAbs, cwd, startedAt, endedAt, code);
-          if (typeof code === 'number' && code !== 0) process.exitCode = 1;
+          ui.onScriptEnd(
+            key,
+            outFileAbs,
+            cwd,
+            startedAt,
+            endedAt,
+            code,
+            status,
+          );
+          if (status === 'error' || (typeof code === 'number' && code !== 0)) {
+            process.exitCode = 1;
+          }
         },
         silent: true,
         onHangWarn: (key, seconds) => {

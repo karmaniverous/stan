@@ -17,6 +17,7 @@ type RunHooks = {
     startedAt: number,
     endedAt: number,
     exitCode: number,
+    status?: 'ok' | 'warn' | 'error',
   ) => void;
   /** When true, suppress per-script console logs ("stan: start/done"). */
   silent?: boolean;
@@ -90,6 +91,8 @@ export const runOne = async (
     hangWarn?: number;
     hangKill?: number;
     hangKillGrace?: number;
+    /** Optional warn regex compiled from config; when matches output+error (exit=0) =\> warn. */
+    warnPattern?: RegExp;
   },
   supervisor?: ProcessSupervisor,
 ): Promise<string> => {
@@ -99,6 +102,7 @@ export const runOne = async (
   const child = spawn(cmd, { cwd, shell: true, windowsHide: true });
 
   const debug = process.env.STAN_DEBUG === '1';
+  let combined = '';
   // Inactivity tracking for hang detection
   const hangWarnSec =
     typeof opts?.hangWarn === 'number' && opts.hangWarn > 0 ? opts.hangWarn : 0;
@@ -124,11 +128,13 @@ export const runOne = async (
   const stream = createWriteStream(outFile, { encoding: 'utf8' });
   child.stdout.on('data', (d: Buffer) => {
     stream.write(d);
+    combined += d.toString('utf8');
     if (debug) process.stdout.write(d);
     lastActivity = Date.now();
   });
   child.stderr.on('data', (d: Buffer) => {
     stream.write(d);
+    combined += d.toString('utf8');
     if (debug) process.stderr.write(d);
     lastActivity = Date.now();
   });
@@ -175,7 +181,18 @@ export const runOne = async (
   stream.end();
   await waitForStreamClose(stream);
 
-  hooks?.onEnd?.(key, outFile, startedAt, Date.now(), exitCode);
+  // Compute status: error > warn > ok
+  let status: 'ok' | 'warn' | 'error' = 'ok';
+  if (typeof exitCode === 'number' && exitCode !== 0) {
+    status = 'error';
+  } else if (opts?.warnPattern && combined.length > 0) {
+    try {
+      if (opts.warnPattern.test(combined)) status = 'warn';
+    } catch {
+      /* ignore */
+    }
+  }
+  hooks?.onEnd?.(key, outFile, startedAt, Date.now(), exitCode, status);
 
   if (orderFile) {
     await appendFile(orderFile, key.slice(0, 1).toUpperCase(), 'utf8');
@@ -211,12 +228,38 @@ export const runScripts = async (
 ): Promise<string[]> => {
   const created: string[] = [];
   const runner = async (k: string): Promise<void> => {
+    // Normalize script entry (string | { script, warnPattern? })
+    const entry = config.scripts[k] as unknown;
+    const cmd =
+      typeof entry === 'string'
+        ? entry
+        : typeof entry === 'object' &&
+            entry &&
+            'script' in (entry as Record<string, unknown>)
+          ? String((entry as { script: string }).script)
+          : '';
+    let warnPattern: RegExp | undefined;
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      'warnPattern' in (entry as Record<string, unknown>)
+    ) {
+      const raw = (entry as { warnPattern?: string }).warnPattern;
+      if (typeof raw === 'string' && raw.trim().length) {
+        try {
+          warnPattern = new RegExp(raw);
+        } catch {
+          // Already validated by schema; best-effort here.
+          warnPattern = undefined;
+        }
+      }
+    }
     const p = await runOne(
       cwd,
       outAbs,
       outRel,
       k,
-      config.scripts[k],
+      cmd,
       orderFile,
       hooks,
       // Pass thresholds down if provided
@@ -229,6 +272,7 @@ export const runScripts = async (
         hangKill: (opts as unknown as { hangKill?: number })?.hangKill,
         hangKillGrace: (opts as unknown as { hangKillGrace?: number })
           ?.hangKillGrace,
+        warnPattern,
       },
       supervisor,
     );

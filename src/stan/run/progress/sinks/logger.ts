@@ -39,6 +39,11 @@ export class LoggerSink {
       console.log(`stan: ${label('run')} "${kind}"`);
       return;
     }
+    if (state.kind === 'warn') {
+      const rel = (state.outputPath ?? '').replace(/\\/g, '/');
+      console.log(`stan: ${label('warn')} "${kind}" -> ${rel}`);
+      return;
+    }
     if (state.kind === 'done' || state.kind === 'error') {
       const ok = state.kind === 'done';
       const rel = (state.outputPath ?? '').replace(/\\/g, '/');

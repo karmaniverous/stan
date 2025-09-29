@@ -13,6 +13,7 @@ import { label } from '../labels';
 export type ScriptState =
   | { kind: 'waiting' }
   | { kind: 'running'; startedAt: number; lastOutputAt?: number }
+  | { kind: 'warn'; durationMs: number; outputPath?: string }
   | {
       kind: 'quiet';
       startedAt: number;
@@ -221,23 +222,25 @@ export class ProgressRenderer {
 
         // Map internal state to shared StatusKind
         const kind =
-          st.kind === 'waiting'
-            ? 'waiting'
-            : st.kind === 'running'
-              ? 'run'
-              : st.kind === 'quiet'
-                ? 'quiet'
-                : st.kind === 'stalled'
-                  ? 'stalled'
-                  : st.kind === 'done'
-                    ? 'ok'
-                    : st.kind === 'error'
-                      ? 'error'
-                      : st.kind === 'timedout'
-                        ? 'timeout'
-                        : st.kind === 'cancelled'
-                          ? 'cancelled'
-                          : 'killed';
+          st.kind === 'warn'
+            ? 'warn'
+            : st.kind === 'waiting'
+              ? 'waiting'
+              : st.kind === 'running'
+                ? 'run'
+                : st.kind === 'quiet'
+                  ? 'quiet'
+                  : st.kind === 'stalled'
+                    ? 'stalled'
+                    : st.kind === 'done'
+                      ? 'ok'
+                      : st.kind === 'error'
+                        ? 'error'
+                        : st.kind === 'timedout'
+                          ? 'timeout'
+                          : st.kind === 'cancelled'
+                            ? 'cancelled'
+                            : 'killed';
         rows.push([row.type, row.item, label(kind), time, out ?? '']);
       }
     }
@@ -290,6 +293,7 @@ export class ProgressRenderer {
     }
   }
   private counts(): {
+    warn: number;
     waiting: number;
     running: number;
     quiet: number;
@@ -299,6 +303,7 @@ export class ProgressRenderer {
     fail: number;
     timeout: number;
   } {
+    let warn = 0;
     let waiting = 0;
     let running = 0;
     let quiet = 0;
@@ -310,6 +315,9 @@ export class ProgressRenderer {
     for (const [, row] of this.rows.entries()) {
       const st = row.state;
       switch (st.kind) {
+        case 'warn':
+          warn += 1;
+          break;
         case 'waiting':
           waiting += 1;
           break;
@@ -339,6 +347,16 @@ export class ProgressRenderer {
           break;
       }
     }
-    return { waiting, running, quiet, stalled, ok, cancelled, fail, timeout };
+    return {
+      warn,
+      waiting,
+      running,
+      quiet,
+      stalled,
+      ok,
+      cancelled,
+      fail,
+      timeout,
+    };
   }
 }

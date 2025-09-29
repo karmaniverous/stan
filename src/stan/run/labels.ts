@@ -4,6 +4,7 @@
 import { alert, cancel, error, go, ok, stop, warn } from '@/stan/util/color';
 
 export type StatusKind =
+  | 'warn'
   | 'waiting'
   | 'run'
   | 'ok'
@@ -31,6 +32,9 @@ const isBoring = (): boolean =>
 export const label = (kind: StatusKind): string => {
   if (isBoring()) {
     // Bracketed tokens for BORING/non‑TTY to match Logger parity and tests.
+    if (kind === 'warn') {
+      return '[WARN]';
+    }
     switch (kind) {
       case 'waiting':
         return '[WAIT]';
@@ -55,6 +59,8 @@ export const label = (kind: StatusKind): string => {
     }
   }
   switch (kind) {
+    case 'warn':
+      return warn('⚠ warn');
     case 'waiting':
       return cancel('⏸ waiting');
     case 'run':

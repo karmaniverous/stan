@@ -24,6 +24,7 @@ export type RunnerUI = {
     startedAt: number,
     endedAt: number,
     exitCode?: number,
+    status?: 'ok' | 'warn' | 'error',
   ): void;
   onArchiveQueued(kind: ArchiveKind): void;
   onArchiveStart(kind: ArchiveKind): void;
@@ -72,16 +73,16 @@ export class LoggerUI implements RunnerUI {
     _startedAt: number,
     _endedAt: number,
     exitCode?: number,
+    status?: 'ok' | 'warn' | 'error',
   ): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
-    const ok = typeof exitCode !== 'number' || exitCode === 0;
-    this.model.update(
-      `script:${key}`,
-      ok
-        ? { kind: 'done', durationMs: 0, outputPath: rel }
-        : { kind: 'error', durationMs: 0, outputPath: rel },
-      { type: 'script', item: key },
-    );
+    const st =
+      status === 'error'
+        ? ({ kind: 'error', durationMs: 0, outputPath: rel } as const)
+        : status === 'warn'
+          ? ({ kind: 'warn', durationMs: 0, outputPath: rel } as const)
+          : ({ kind: 'done', durationMs: 0, outputPath: rel } as const);
+    this.model.update(`script:${key}`, st, { type: 'script', item: key });
   }
   onArchiveQueued(): void {
     // Emit a waiting row for visual parity with live.
@@ -161,20 +162,27 @@ export class LiveUI implements RunnerUI {
     startedAt: number,
     endedAt: number,
     exitCode?: number,
+    status?: 'ok' | 'warn' | 'error',
   ): void {
     const rel = relative(cwd, outAbs).replace(/\\/g, '/');
     const st =
-      exitCode && exitCode !== 0
+      status === 'error' || (typeof exitCode === 'number' && exitCode !== 0)
         ? {
             kind: 'error' as const,
             durationMs: Math.max(0, endedAt - startedAt),
             outputPath: rel,
           }
-        : {
-            kind: 'done' as const,
-            durationMs: Math.max(0, endedAt - startedAt),
-            outputPath: rel,
-          };
+        : status === 'warn'
+          ? {
+              kind: 'warn' as const,
+              durationMs: Math.max(0, endedAt - startedAt),
+              outputPath: rel,
+            }
+          : {
+              kind: 'done' as const,
+              durationMs: Math.max(0, endedAt - startedAt),
+              outputPath: rel,
+            };
     this.model.update(`script:${key}`, st, { type: 'script', item: key });
   }
   onArchiveQueued(kind: ArchiveKind): void {

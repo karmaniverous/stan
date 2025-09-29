@@ -8,51 +8,40 @@ import YAML from 'yaml';
 
 import { DEFAULT_OPEN_COMMAND, DEFAULT_STAN_PATH } from './defaults';
 import { findConfigPathSync } from './discover';
-import {
-  asBool,
-  asString,
-  normalizeCliDefaults,
-  normalizeMaxUndos,
-} from './normalize';
-import type { ContextConfig, ScriptMap } from './types';
+import { ConfigSchema, type ParsedConfig } from './schema';
+import type { ContextConfig } from './types';
+
+const formatZodError = (e: unknown): string => {
+  if (!(e instanceof (await import('zod')).ZodError)) return String(e);
+  return e.issues
+    .map((i) => {
+      const path = i.path.join('.') || '(root)';
+      return `${path}: ${i.message}`;
+    })
+    .join('\n');
+};
 
 const parseFile = async (abs: string): Promise<ContextConfig> => {
   const raw = await readFile(abs, 'utf8');
-  const cfg = abs.endsWith('.json')
-    ? (JSON.parse(raw) as unknown)
-    : (YAML.parse(raw) as unknown);
+  const cfgUnknown = abs.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
+  let parsed: ParsedConfig;
+  try {
+    parsed = ConfigSchema.parse(cfgUnknown);
+  } catch (e) {
+    throw new Error(formatZodError(e));
+  }
 
-  const stanPath = (cfg as { stanPath?: unknown }).stanPath;
-  const scripts = (cfg as { scripts?: unknown }).scripts;
-  const includes = (cfg as { includes?: unknown }).includes;
-  const excludes = (cfg as { excludes?: unknown }).excludes;
-  const importsRaw = (cfg as { imports?: unknown }).imports;
-  const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
-  const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
-  const devMode = (cfg as { devMode?: unknown }).devMode;
-  const cliAny = (cfg as { cliDefaults?: unknown }).cliDefaults;
-
-  if (typeof stanPath !== 'string' || stanPath.length === 0) {
-    throw new Error('Invalid config: "stanPath" must be a non-empty string');
-  }
-  if (typeof scripts !== 'object' || scripts === null) {
-    throw new Error('Invalid config: "scripts" must be an object');
-  }
-  const keys = Object.keys(scripts as ScriptMap);
-  if (keys.includes('archive') || keys.includes('init')) {
-    throw new Error('Script keys "archive" and "init" are not allowed');
-  }
+  const importsNormalized = normalizeImports(parsed.imports);
   return {
-    stanPath,
-    scripts: scripts as ScriptMap,
-    includes: Array.isArray(includes) ? (includes as string[]) : [],
-    excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
-    imports: normalizeImports(importsRaw),
-    maxUndos: normalizeMaxUndos(maxUndos),
-    devMode: asBool(devMode),
-    patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,
-    cliDefaults:
-      typeof cliAny === 'undefined' ? undefined : normalizeCliDefaults(cliAny),
+    stanPath: parsed.stanPath,
+    scripts: parsed.scripts,
+    includes: parsed.includes ?? [],
+    excludes: parsed.excludes ?? [],
+    imports: importsNormalized,
+    maxUndos: parsed.maxUndos,
+    devMode: parsed.devMode,
+    patchOpenCommand: parsed.patchOpenCommand ?? DEFAULT_OPEN_COMMAND,
+    cliDefaults: parsed.cliDefaults,
   };
 };
 
@@ -85,42 +74,24 @@ export const loadConfigSync = (cwd: string): ContextConfig => {
   const p = findConfigPathSync(cwd);
   if (!p) throw new Error('stan config not found');
   const raw = readFileSync(p, 'utf8');
-  const cfg = p.endsWith('.json')
-    ? (JSON.parse(raw) as unknown)
-    : (YAML.parse(raw) as unknown);
-
-  const stanPath = (cfg as { stanPath?: unknown }).stanPath;
-  const scripts = (cfg as { scripts?: unknown }).scripts;
-  const includes = (cfg as { includes?: unknown }).includes;
-  const excludes = (cfg as { excludes?: unknown }).excludes;
-  const importsRaw = (cfg as { imports?: unknown }).imports;
-  const maxUndos = (cfg as { maxUndos?: unknown }).maxUndos;
-  const openCmd = (cfg as { patchOpenCommand?: unknown }).patchOpenCommand;
-  const devMode = (cfg as { devMode?: unknown }).devMode;
-  const cliAny = (cfg as { cliDefaults?: unknown }).cliDefaults;
-
-  if (typeof stanPath !== 'string' || stanPath.length === 0) {
-    throw new Error('Invalid config: "stanPath" must be a non-empty string');
+  const cfgUnknown = p.endsWith('.json') ? JSON.parse(raw) : YAML.parse(raw);
+  try {
+    const parsed = ConfigSchema.parse(cfgUnknown);
+    const importsNormalized = normalizeImports(parsed.imports);
+    return {
+      stanPath: parsed.stanPath,
+      scripts: parsed.scripts,
+      includes: parsed.includes ?? [],
+      excludes: parsed.excludes ?? [],
+      imports: importsNormalized,
+      maxUndos: parsed.maxUndos,
+      devMode: parsed.devMode,
+      patchOpenCommand: parsed.patchOpenCommand ?? DEFAULT_OPEN_COMMAND,
+      cliDefaults: parsed.cliDefaults,
+    };
+  } catch (e) {
+    throw new Error(formatZodError(e));
   }
-  if (typeof scripts !== 'object' || scripts === null) {
-    throw new Error('Invalid config: "scripts" must be an object');
-  }
-  const keys = Object.keys(scripts as ScriptMap);
-  if (keys.includes('archive') || keys.includes('init')) {
-    throw new Error('Script keys "archive" and "init" are not allowed');
-  }
-  return {
-    stanPath,
-    scripts: scripts as ScriptMap,
-    includes: Array.isArray(includes) ? (includes as string[]) : [],
-    excludes: Array.isArray(excludes) ? (excludes as string[]) : [],
-    imports: normalizeImports(importsRaw),
-    maxUndos: normalizeMaxUndos(maxUndos),
-    devMode: asBool(devMode),
-    patchOpenCommand: asString(openCmd) ?? DEFAULT_OPEN_COMMAND,
-    cliDefaults:
-      typeof cliAny === 'undefined' ? undefined : normalizeCliDefaults(cliAny),
-  };
 };
 /**
  * Load and validate STAN configuration (async).

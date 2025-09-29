@@ -4,7 +4,7 @@ When updated: 2025-09-28 (UTC)
 
 Next up (priority order)
 
-- Scripts config: alternate object form + warn status
+- Zod schema – friendly errors & suggestions (phase 2)
   - Extend scripts map to accept either a string or `{ script, warnPattern }`.
   - On exit code 0: test combined output against `warnPattern`; emit status=warn on match.
   - Update run/exec pipeline to surface “warn” alongside ok/error.
@@ -22,7 +22,13 @@ Next up (priority order)
   - Tests: verify boring tokens and live table rows reflect WARN with orange replaced everywhere magenta was used.
 
 - Config validation: zod schema (schema‑first) + friendly errors
-  - Define top‑level zod schema; infer `ContextConfig` types.
+  - Define top‑level zod schema; infer `ContextConfig` types. (initial landing done)
+  - Phase 2 (follow‑up in this slice):
+    - Unknown keys: include closest‑match suggestions in error output.
+    - Improve pathing in error messages for nested keys.
+    - Expand coercions (where useful) and normalize without duplicate utilities.
+    - Update docs to note schema‑first validation and WARN semantics.
+  - Keep tests green; extend coverage for error text and suggestions.
   - Validate scripts union (string | object with warnPattern).
   - Disallow unknown keys with friendly messages and suggestions.
   - Tests: unknown key error wording; invalid warnPattern; happy‑path coercions as needed.
@@ -163,3 +169,15 @@ Completed (recent)
 - Project policy — class‑based design directive
   - Added a project‑level directive to prefer a class‑based design wherever possible.
   - Guidance: single‑responsibility classes, ports/adapters alignment, compositional preference, opportunistic migration, and paired tests.
+
+Completed (this change set)
+
+- Schema‑first config (initial)
+  - Introduced strict zod schema for stan.config.* (scripts union; warnPattern validation; basic coercions).
+  - wired loadConfig/loadConfigSync through the schema; normalized imports; defaulted patchOpenCommand.
+  - Friendly error aggregation for regex validation (path + message).
+- WARN runtime status
+  - exec/run: evaluate warnPattern on exit=0 against combined output; status='warn' when matched.
+  - UI: added WARN across Logger and Live; distinct WARN counter in summary; labels: orange “⚠ warn” (TTY) / “[WARN]” (boring).
+  - Progress model/states extended with 'warn'.
+  - Tests: schema union + invalid warnPattern; logger shows [WARN] on match.

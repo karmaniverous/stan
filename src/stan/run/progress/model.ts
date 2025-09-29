@@ -8,6 +8,7 @@ export type RowMeta = { type: 'script' | 'archive'; item: string };
 export type ScriptState =
   | { kind: 'waiting' }
   | { kind: 'running'; startedAt: number; lastOutputAt?: number }
+  | { kind: 'warn'; durationMs: number; outputPath?: string }
   | {
       kind: 'quiet';
       startedAt: number;
@@ -72,6 +73,7 @@ export class ProgressModel {
 
   /** Snapshot counts for high-level summaries (optional utility). */
   counts(): {
+    warn: number;
     waiting: number;
     running: number;
     quiet: number;
@@ -81,6 +83,7 @@ export class ProgressModel {
     fail: number;
     timeout: number;
   } {
+    let warn = 0;
     let waiting = 0;
     let running = 0;
     let quiet = 0;
@@ -92,6 +95,9 @@ export class ProgressModel {
     for (const [, row] of this.rows) {
       const st = row.state;
       switch (st.kind) {
+        case 'warn':
+          warn += 1;
+          break;
         case 'waiting':
           waiting += 1;
           break;
@@ -121,6 +127,16 @@ export class ProgressModel {
           break;
       }
     }
-    return { waiting, running, quiet, stalled, ok, cancelled, fail, timeout };
+    return {
+      warn,
+      waiting,
+      running,
+      quiet,
+      stalled,
+      ok,
+      cancelled,
+      fail,
+      timeout,
+    };
   }
 }

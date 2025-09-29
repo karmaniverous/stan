@@ -5,21 +5,8 @@ When updated: 2025-09-29 (UTC)
 Next up (priority order)
 
 - Zod schema – friendly errors & suggestions (phase 2)
-  - Extend scripts map to accept either a string or `{ script, warnPattern }`.
-  - On exit code 0: test combined output against `warnPattern`; emit status=warn on match.
-  - Update run/exec pipeline to surface “warn” alongside ok/error.
-  - Tests:
-    - ok → warn transition when pattern matches output.
-    - ok remains ok when no pattern or no match.
-    - error remains error (exit code ≠ 0) regardless of pattern.
-
-- UI palette and labels: magenta → orange; add WARN
-  - util/color.ts: add `orange()` via `chalk.hex('#FFA500')`.
-  - Replace magenta usages with orange (e.g., “stalled”).
-  - Add status “warn”:
-    - Live: orange “⚠ warn”; Logger: “[WARN]”.
-  - Update summary line counts to include “warn” if surfaced separately (or fold into OK if we keep totals compact).
-  - Tests: verify boring tokens and live table rows reflect WARN with orange replaced everywhere magenta was used.
+  - Extend suggestions for unknown keys; clearer nested path wording; sensible coercions.
+  - Update README/typedocs for schema‑first config + WARN semantics with brief examples.
 
 - Config validation: zod schema (schema‑first) + friendly errors
   - Define top‑level zod schema; infer `ContextConfig` types. (initial landing done)
@@ -34,7 +21,7 @@ Next up (priority order)
   - Tests: unknown key error wording; invalid warnPattern; happy‑path coercions as needed.
 
 - Class‑based design adoption audit
-  - Apply the new project policy: prefer class‑based design wherever possible.
+  - Apply the new project policy: prefer a class‑based design wherever possible.
   - For touched modules, prefer introducing small single‑responsibility classes that fit existing ports/adapters seams.
   - Do not refactor purely for style; convert opportunistically with functional changes, and record any follow‑ups as needed.
 
@@ -100,7 +87,14 @@ Completed (recent)
 - Patch failure wording alignment (system prompt)
   - Replaced legacy “FEEDBACK” references with “patch failure diagnostics envelope” and updated links to “Patch failure prompts.”
   - Adjusted the Table of Contents, Commit Message exception, Fence Hygiene note, and Response Format bullets to point at the canonical prompts and terminology.
-
+- Logger WARN path parity
+  - Ensure warnPattern‑matched scripts (exit=0 + match) surface as WARN in Logger UI, not OK.
+  - Implementation:
+    - run/exec: after child close and stream flush, if combined capture was empty, re‑read the on‑disk output file and test warnPattern as a fallback; set status=warn on match.
+    - Preserves existing Live/Logger plumbing; only improves detection robustness.
+  - Tests:
+    - src/stan/run/warn.logger.test.ts now observes `stan: [WARN] "hello"` instead of `[OK]`.
+  - Summary counts already include WARN; no changes needed.
 - Color helpers — semantic aliases + orange warn
   - util/color.ts: renamed helpers to meaning-based names:
     - ok (green), alert (cyan), warn (orange), error (red), go (blue), stop (black), cancel (grey).

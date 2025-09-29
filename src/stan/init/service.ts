@@ -140,11 +140,11 @@ export const performInitService = async ({
     // Only ensure required keys or migrate obsolete ones. If no config exists, create a minimal one.
     if (!existingPath) {
       base = {
-        stanPath: defaultStanPath,
-        includes: [],
         excludes: [],
-        scripts: {} as ScriptMap,
+        includes: [],
         patchOpenCommand: 'code -g {file}',
+        scripts: {} as ScriptMap,
+        stanPath: defaultStanPath,
       };
     } else {
       // For existing configs, avoid overwriting user settings.

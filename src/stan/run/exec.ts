@@ -1,7 +1,7 @@
 // src/stan/run/exec.ts
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { appendFile } from 'node:fs/promises';
+import { appendFile, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import treeKill from 'tree-kill';
@@ -188,6 +188,16 @@ export const runOne = async (
   } else if (opts?.warnPattern && combined.length > 0) {
     try {
       if (opts.warnPattern.test(combined)) status = 'warn';
+    } catch {
+      /* ignore */
+    }
+  } else if (opts?.warnPattern) {
+    // Fallback: if combined was empty (or missed a quick write), try the on-disk output body.
+    try {
+      const body = await readFile(outFile, 'utf8');
+      if (opts.warnPattern.test(body)) {
+        status = 'warn';
+      }
     } catch {
       /* ignore */
     }

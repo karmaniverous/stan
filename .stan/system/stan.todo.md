@@ -1,215 +1,103 @@
 # STAN Development Plan
 
-When updated: 2025-09-29 (UTC)
+When updated: 2025-10-01 (UTC)
 
-Next up (priority order)
+This plan tracks two synchronized tracks in preparation for splitting the code base into two packages: stan-core (engine) and stan-cli (CLI/runner). Until the repo is duplicated, both tracks live here; after duplication, each repo will retain only its corresponding track.
 
-- Zod schema – friendly errors & suggestions (phase 2)
-  - Extend suggestions for unknown keys; clearer nested path wording; sensible coercions.
-  - Update README/typedocs for schema‑first config + WARN semantics with brief examples.
+---
 
-- Config validation: zod schema (schema‑first) + friendly errors
-  - Follow-up: keep tightening friendly error wording and suggestions.
-  - Ensure nested-path wording is consistent and discoverable.
-  - Confirm warnPattern examples demonstrate correct escaping in YAML/JSON.
+## Track A — stan-core (engine)
 
-  - Define top‑level zod schema; infer `ContextConfig` types. (initial landing done)
-  - Phase 2 (follow‑up in this slice):
-    - Unknown keys: include closest‑match suggestions in error output.
-    - Improve pathing in error messages for nested keys.
-    - Expand coercions (where useful) and normalize without duplicate utilities.
-    - Update docs to note schema‑first validation and WARN semantics.
-  - Keep tests green; extend coverage for error text and suggestions.
-  - Validate scripts union (string | object with warnPattern).
-  - Disallow unknown keys with friendly messages and suggestions.
-  - Tests: unknown key error wording; invalid warnPattern; happy‑path coercions as needed.
+### Next up (priority order)
 
-- Class‑based design adoption audit
-  - Apply the new project policy: prefer a class‑based design wherever possible.
-  - For touched modules, prefer introducing small single‑responsibility classes that fit existing ports/adapters seams.
-  - Do not refactor purely for style; convert opportunistically with functional changes, and record any follow‑ups as needed.
+- Extract engine package scaffolding
+  - Create a new repo/package “@karmaniverous/stan-core”.
+  - Copy engine modules:
+    - config/, fs.ts, fs/reserved.ts, paths.ts
+    - archive.ts (+ archive/constants.ts), archive/util.ts (return warnings)
+    - diff.ts, snap/{capture,shared,context}.ts
+    - patch/\*\* (apply, jsdiff, detect, headers, parse, file-ops, diag/util, run/pipeline, util/fs)
+    - imports/stage.ts
+    - validate/response.ts (optional export)
+  - Remove CLI/runner/process/TTY concerns.
 
-- CLI UI unification (Live + Logger under one composable UI)
-  - Provide a single RunnerUI that composes a shared ProgressModel and a pluggable sink (LiveTableSink | LoggerSink).
-  - Share status labels and summary via one helper; preserve q/r keys, final‑frame flush, and parity with existing tests.
-  - Acceptance: existing live/no‑live parity tests remain green; logs/frames carry the same status tokens.
+- Remove console I/O from core
+  - Replace console.log in archive/util.ts with a return value (warningsBody) surfaced to the caller.
+  - Ensure snap history helpers return data/events only.
 
-- DRY status labels and summary
-  - Extract a shared status‑label + summary helper and reuse in LoggerUI and ProgressRenderer to avoid wording/color drift.
+- Patch ingestion — creation fallback (new)
+  - Implement “creation patch” heuristic in stan-core:
+    - When unified‑diff application fails and the patch is confidently detected as a new-file creation (e.g., /dev/null → b/<path>), strip diff headers and decode body by removing leading “+” from each payload line.
+    - Normalize to LF and create parent directories for nested paths.
+    - Gate behind the standard pipeline: only runs after git/jsdiff fail and only for new-file patches.
+  - Add unit tests covering:
+    - Simple creation, nested path, fenced chat artifacts, sandbox (check=true).
 
-- Archive constants
-  - Introduce ARCHIVE_BASENAME/ARCHIVE_TAR/ARCHIVE_DIFF_TAR constants and reuse across util/output/archive/diff (and tests) instead of string literals.
+- API surface and types
+  - Export public APIs listed in stan.requirements.md; ensure stable d.ts.
+  - Document return contracts where logging was removed.
 
-- Shared repo‑relative path validator
-  - Consolidate the “normalize + forbid absolute + forbid ..” checks used by File Ops (patch/file‑ops.ts) and the response validator (validate/response.ts) into one utility.
+- Imports bridge (context from cli)
+  - Add a task to configure imports in stan-core’s stan.config.yml:
+    - label: “cli-docs”
+    - patterns: paths to staged stan-cli docs (README, CHANGELOG, docs/).
 
-- openFilesInEditor test gating
-  - Decide on STAN_FORCE_OPEN policy: either honor it in openFilesInEditor or remove it from tests; align both to one rule.
+- Cross‑repo recommendation
+  - Update stan.project.md in stan-core with a section that instructs the assistant to recommend stan-cli changes for any adapter/UX concerns.
 
-- RunnerControl ‘data’ fallback
-  - Re‑evaluate after broader CI coverage; remove if redundant to reduce surface area.
+- Packaging & CI
+  - Rollup build for library + d.ts bundle (no CLI bundle).
+  - Ensure tar & fs-extra are runtime deps; no Commander/inquirer/log-update.
+  - Publish under a pre-release tag for initial integration.
 
-- Cancel settle time
-  - Reduce the post‑cancel final settle from 1200 ms toward ~250–500 ms if real‑world runs remain stable.
+### Backlog / follow‑through
 
-- Optional: subcommand harness
-  - Small helper to DRY Commander wiring (safety adapters, footer) across run/init/snap/patch.
+- Performance profiling for large repos (selection and tar streaming).
+- Optional logger injection pattern (future) to support structured logging.
 
-- Test teardown helpers
-  - Centralize stdin pause and short settle via src/test/helpers; drop per‑test duplicates to avoid Windows EBUSY flakes.
+---
 
-- Imports staging: label sanitizer helper (optional)
-  - Factor label/tail sanitizer to a tiny shared helper for future reuse if staging expands.
+## Track B — stan-cli (CLI and runner)
 
-- buildApplyAttempts: remove unused ‘stage’ param
-  - Pipeline is worktree‑first; drop dead parameter and simplify types.
+### Next up (priority order)
 
-- DMP readiness (follow‑on)
-  - When DMP apply lands, feed its stderr/summary through the same formatter and share the envelopes with diff/file ops behavior.
+- Wire stan-cli to stan-core
+  - Replace internal imports with “@karmaniverous/stan-core” APIs:
+    - config loading, selection, archive/diff, snapshot, patch pipeline, imports staging.
+  - Keep CLI behaviors: preflight/docs injection, plan printing, live/logger UI, cancellation gates, editor open, clipboard source.
 
-- Codebase reduction
-  - Identify and eliminate dead or duplicated code where safe; prefer reuse of shared helpers.
+- Archive warnings display
+  - Print stan-core’s warningsBody once per archive/diff phase in CLI.
 
-- Adopt explicit dev‑mode diagnostics triage in project prompt
-  - Analyze → ask → apply or listings; gate patch emission on explicit approval.
+- Runner cancellation hardening
+  - Ensure the sequential scheduling gate prevents “after” scripts from starting after a SIGINT boundary; preserve late‑cancel guard before archive.
 
-- DMP rung (formatter extension)
-  - Include a DMP attempt line and reasons alongside git/jsdiff in the diagnostics envelope (prep for DMP apply).
+- Help/UX parity
+  - Confirm BORING vs TTY parity on labels and summary lines.
+  - Verify defaults tagging and conflict messages.
 
-- Minor polish:
-  - Audit other diagnostics call‑sites for reuse of the shared helpers.
-  - Consider a brief docs note in README about full vs diff archive contents (patch workspace policy).
+- Imports bridge (context from core)
+  - Add a task to configure imports in stan-cli’s stan.config.yml:
+    - label: “core-docs”
+    - patterns: paths to staged stan-core API docs and changelog.
 
-Completed (recent)
+- Cross‑repo recommendation
+  - Update stan.project.md in stan-cli with a section that instructs the assistant to recommend stan-core changes for any engine concerns (selection/patch/archiving semantics).
 
-- Cancellation guards (parity)
-  - Skip archives after SIGINT by re‑checking cancellation just before archiving (late‑cancel race closure).
-  - Sequential runner adds a pre‑spawn gate (yield + re‑check) to prevent scheduling the next script when a cancel lands immediately after the prior script completes.
+- Tests & docs
+  - Keep existing CLI/runner integration tests; adjust to stan-core wiring.
+  - Update README/help footers if flags/wording changed.
 
-- Logger WARN parity (robust)
-  - When a warnPattern is configured and exit=0, detect WARN by testing both in‑memory combined output and the on‑disk output body (resetting lastIndex on regex to avoid g‑flag surprises).
-  - Ensures Logger prints [WARN] where Live shows WARN, even under fast stdout/flush timing.
+### Backlog / follow‑through
 
-- Color alias propagation (fix CI/type errors; unify UI):
-  - Replaced legacy color imports/usages with semantic helpers:
-    - open.ts: yellow/cyan/red -> alert/error
-    - run/labels.ts: gray/blue/green/red/cyan/magenta/black -> cancel/go/ok/error/alert/warn/stop
-    - run/live/renderer.ts: gray -> dim for neutral hint/idle text
-  - Resolved missing exports at build/docs/typecheck and eliminated runtime “gray/cyan/... is not a function” errors in tests.
-- Patch failure wording alignment (system prompt)
-  - Replaced legacy “FEEDBACK” references with “patch failure diagnostics envelope” and updated links to “Patch failure prompts.”
-  - Adjusted the Table of Contents, Commit Message exception, Fence Hygiene note, and Response Format bullets to point at the canonical prompts and terminology.
-- Logger WARN path parity
-  - Ensure warnPattern‑matched scripts (exit=0 + match) surface as WARN in Logger UI, not OK.
-  - Implementation:
-    - run/exec: after child close and stream flush, if combined capture was empty, re‑read the on‑disk output file and test warnPattern as a fallback; set status=warn on match.
-    - Preserves existing Live/Logger plumbing; only improves detection robustness.
-  - Tests:
-    - src/stan/run/warn.logger.test.ts now observes `stan: [WARN] "hello"` instead of `[OK]`.
-  - Summary counts already include WARN; no changes needed.
-- Color helpers — semantic aliases + orange warn
-  - util/color.ts: renamed helpers to meaning-based names:
-    - ok (green), alert (cyan), warn (orange), error (red), go (blue), stop (black), cancel (grey).
-  - Replaced magenta usages with warn (orange) for “stalled”.
-  - Updated call sites (labels, summary, preflight, archive logs, status).
-  - BORING/non‑TTY behavior unchanged (unstyled).
+- Live table final-frame flush audit for edge cases.
+- Editor-open gating policy doc (“test mode” and force‑open).
 
-- System prompt — introduce stan.requirements.md separation
-  - Added `stan.requirements.md` to CRITICAL Layout and Documentation conventions as the STAN‑maintained end‑state requirements document.
-  - Clarified that developers may edit it directly but shouldn’t have to; STAN will create/update it on demand (no change to `stan init` behavior).
-  - Added an always‑on separation guard to move content when requirements drift into the project prompt (or vice versa).
+---
 
-- Config parsing polish
-  - Friendly Zod message for stanPath type errors (“stanPath must be a non‑empty string”) to satisfy tests and improve UX.
-  - Reserved scripts keys guard (disallow “archive” and “init” under scripts) with a clear error string that matches test expectations.
-  - Scope: loadConfig/loadConfigSync; preserves schema‑first approach while adding helpful post‑parse checks.
+## Completed (recent)
 
-- jsdiff fallback — create parent directories for new files
-  - Ensure parent directory exists on non‑check writes when applying a “/dev/null” new‑file patch to a nested path (e.g., src/rrstack/describe/lexicon.ts).
-  - Makes `stan patch` robust when git apply warns about trailing whitespace and falls back to jsdiff: new files in nested folders are now created reliably.
-  - Added nested new‑file test to cover this scenario.
-
-- Patch fallback + diagnostics (downstream)
-  - jsdiff fallback now supports creating new files when the patch uses “--- /dev/null” → “+++ b/<path>”. This unblocks new‑file patches when `git apply` cannot be used.
-  - Downstream diagnostics now include attempt summaries and jsdiff reasons, eliminating blank envelopes (“START/END” with no content).
-
-- Sequential cancellation gate (tests)
-  - Added a one‑tick event‑loop yield after each sequential script completes and re‑checked the cancellation gate before scheduling the next script.
-  - Closes a race where SIGINT arriving immediately after a runner finished could allow the next script to start (fixes cancel.gate and cancel.schedule).
-
-- Live BORING labels — bracket tokens
-  - Unify Live’s BORING tokens to bracketed form ([OK]/[FAIL]/…) using the shared label helper.
-  - Fixes the final‑frame expectation in live.order.flush.test without changing non‑TTY/TTY behavior.
-  - Follow‑up: finish DRY by switching Logger to the same helper and removing its local duplicate.
-
-- Unified patch failure feedback (downstream == STAN)
-  - Formatter now emits the STAN diagnostics envelope (attempt summaries + jsdiff reasons) for both downstream and STAN repos for Diff and File Ops failures.
-  - System prompt updated to reflect the unified behavior and to direct assistant follow‑up with analysis and options.
-
-- Assistant follow‑up options (all repos)
-  - Added explicit options language to the system prompt: “1) New patch[es] (recommended)… 2) Full listings…”.
-
-- STAN‑repo gating phrase (apply/defer)
-  - Project prompt updated to include explicit gating: “Say ‘apply’ to make [prompt | code] changes now or ‘defer’ to save them to the dev plan.”
-
-- Reserved workspace exclusions (single source)
-  - Extended the reserved helpers into filterFiles() so selection and tar filters share one definition (diff/patch always excluded, output excluded unless combine).
-
-- Test teardown helpers — retry window extended
-  - Increased rmDirWithRetries default backoff with a 3200 ms step to further mitigate transient Windows EBUSY on CI.
-
-- Logger status labels — DRY via shared helper
-  - Switched the Logger UI to use the shared status‑label helper and removed its local duplicate.
-  - Maintains parity with Live; BORING tokens remain bracketed and stable; TTY colored symbols preserved where applicable.
-
-- Test updates — unified diagnostics envelope (downstream == STAN)
-  - Updated tests that asserted legacy downstream one‑liners to assert the unified diagnostics envelope:
-    - src/stan/patch/format.test.ts (diff + file‑ops cases)
-    - src/stan/patch/service.format.behavior.test.ts (integration)
-  - README docs sweep: replaced “FEEDBACK envelope” wording with “diagnostics envelope” and adjusted guide label text.
-  - Keeps the repo aligned with the completed formatter behavior change.
-
-- Windows cancel teardown — additional EBUSY hardening
-  - Increased final post‑cancel settle on Windows to 1600 ms (non‑Windows 400 ms) to further reduce transient EBUSY during test directory removal.
-
-- Windows cancel teardown — EBUSY hardening
-  - Extended default backoff in rmDirWithRetries to [50, 100, 200, 400, 800, 1600] ms to better tolerate transient rmdir EBUSY on Windows CI.
-  - Updated cancel.schedule.test.ts to use rmDirWithRetries in afterEach (was direct rm).
-  - Goal: reduce remaining cancellation‑path flakes without increasing session settle time.
-
-- Project policy — class‑based design directive
-  - Added a project‑level directive to prefer a class‑based design wherever possible.
-  - Guidance: single‑responsibility classes, ports/adapters alignment, compositional preference, opportunistic migration, and paired tests.
-
-Completed (this change set)
-
-- Cancellation pipeline (sequential race)
-  - Added a pre‑spawn gate inside the per‑script runner to re‑check the cancellation
-    flag just before spawning the next script. This closes a small race where a SIGINT
-    could land after the prior gate but immediately before spawn, preventing the “after”
-    script from starting in sequential mode.
-- WARN detection (Logger parity; test fix)
-  - Make warnPattern handling in run/exec robust by testing both in‑memory combined output and the on‑disk output body unconditionally.
-  - Ensures `stan: [WARN] "…" ` is logged by the Logger UI when exit=0 + warnPattern match.
-- Lint (tsdoc “>” escapes)
-  - Escaped “>” in an inline doc to remove the remaining tsdoc/syntax warnings in config/load.ts.
-- Docs (typedoc warning)
-  - Re‑exported ScriptEntry from config/index.ts so Typedoc includes it, resolving the “referenced but not included” warning.
-
-Completed (this change set)
-
-- Schema‑first config (initial)
-  - Introduced strict zod schema for stan.config.\* (scripts union; warnPattern validation; basic coercions).
-  - wired loadConfig/loadConfigSync through the schema; normalized imports; defaulted patchOpenCommand.
-  - Friendly error aggregation for regex validation (path + message).
-- WARN runtime status
-  - exec/run: evaluate warnPattern on exit=0 against combined output; status='warn' when matched.
-  - UI: added WARN across Logger and Live; distinct WARN counter in summary; labels: orange “⚠ warn” (TTY) / “[WARN]” (boring).
-  - Progress model/states extended with 'warn'.
-  - Tests: schema union + invalid warnPattern; logger shows [WARN] on match.
-
-- Eliminate unnecessary dynamic import & fix lint/tsdoc
-  - src/stan/config/load.ts: replaced dynamic ‘await import("zod")’ with static import; fixes TS1308 and unblocks build/tests.
-  - src/stan/config/load.ts: avoided no-unsafe-assignment by asserting JSON.parse/YAML.parse to unknown before schema parse.
-  - src/stan/run/exec.ts: escaped ‘>’ in TSDoc inline code to satisfy tsdoc/syntax.
-  - No behavioral changes; compile/lint/tests proceed past prior transform error.
+- Unified diagnostics envelope and follow-up options clarified.
+- Response-format validator improvements and WARN parity across UIs.
+- Windows EBUSY mitigation in tests and cancellation paths.
+- Imports staging and selection parity improvements.

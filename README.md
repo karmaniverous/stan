@@ -1,3 +1,18 @@
+# DEPRECATION NOTICE
+
+This repository is deprecated in favor of [`@karmaniverous/stan-cli`](https://github.com/karmaniverous/stan-cli). If you are a `stan` user, please migrate to the new package.
+
+Migration is simple:
+
+```bash
+# Global installation recommended.
+npm uninstall -g @karmaniverous/stan-cli
+npm install -g @karmaniverous/stan-cli
+
+# In repos using stan:
+stan init
+```
+
 > **_STAN is a CLI that bridges your IDE with your favorite LLM and drives a rapid, powerful, low-friction, design-first iterative development process. Real-world AI-assisted development for professional engineers!_**
 
 # STAN — STAN Tames Autoregressive Nonsense

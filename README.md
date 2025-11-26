@@ -1,12 +1,12 @@
 # DEPRECATION NOTICE
 
-This repository is deprecated in favor of [`@karmaniverous/stan-cli`](https://github.com/karmaniverous/stan-cli). If you are a `stan` user, please migrate to the new package.
+This repository is deprecated in favor of [`@karmaniverous/stan-cli`](https://github.com/karmaniverous/stan-cli). If you are a STAN user, please migrate to the new package.
 
 Migration is simple:
 
 ```bash
 # Global installation recommended.
-npm uninstall -g @karmaniverous/stan-cli
+npm uninstall -g @karmaniverous/stan
 npm install -g @karmaniverous/stan-cli
 
 # In repos using stan:
